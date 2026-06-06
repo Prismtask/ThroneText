@@ -103,6 +103,42 @@ SOLMERE_BLACKSMITH_DIALOGUE = {
     "fusion_success": "By the council's forge! Your {} now shines with {} rarity!",
 }
 
+SOLMERE_TRADE_HALL_DIALOGUE = {
+    "enter": [
+        "Welcome to the Solmere Trade Hall, where fortunes are made and lost.",
+        "Merchants from a hundred cities gather here. What do you seek?",
+        "The hall echoes with the sound of coin and quills. State your business.",
+        "Letters of credit, rare permits, trade routes – we handle it all.",
+    ],
+    "leave": [
+        "May your ventures prosper under the council's eye.",
+        "Come back when you need to move goods across Aeralis.",
+        "The Trade Hall never closes for those with ambition.",
+        "Farewell. Remember – everything has a price.",
+    ],
+}
+
+SOLMERE_TEMPLE_DIALOGUE = {
+    "enter": [
+        "The Light of Order welcomes you. Seek blessings or offer prayers?",
+        "Solmere's temple stands as a pillar of peace. Speak your heart.",
+        "May the divine council hear your plea. What brings you here?",
+        "The temple doors are always open to the faithful and the lost.",
+    ],
+    "bless": [
+        "The priest murmurs a blessing over you. May it guide your path.",
+        "Light radiates from the altar. You feel... protected.",
+        "A soft warmth settles in your chest. The gods have heard you.",
+        "Your spirit feels lighter. The blessing will linger for a time.",
+    ],
+    "leave": [
+        "Go with the council's grace.",
+        "May order follow your footsteps.",
+        "Return when your soul needs mending.",
+        "The temple's light will wait for you.",
+    ],
+}
+
 # ==================== BRINEWATCH (Port City) ====================
 BRINEWATCH_RECEPTIONIST_DIALOGUE = {
     "enter": [
@@ -207,6 +243,178 @@ BRINEWATCH_BLACKSMITH_DIALOGUE = {
     "fusion_success": "Arr! Your {} now boasts {} rarity! A fine piece!",
 }
 
+BRINEWATCH_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Portmaster's office. State your vessel and cargo.",
+        "If you need passage or permits, you talk to me.",
+        "The docks are mine. What do you want?",
+        "Another traveler seeking sea-roads. Speak quickly.",
+    ],
+    "buy_ticket": [
+        "Fair winds and a fair price. Here's your passage.",
+        "Ticket's booked. Don't miss the tide.",
+        "One voyage, paid in full. Mind the gangplank.",
+        "You're on the manifest. Safe sailing.",
+    ],
+    "leave": [
+        "Keep to the schedule. The sea waits for no one.",
+        "Come back when you need to sail again.",
+        "Farewell. Watch for storms.",
+        "The port is always busy. Return anytime.",
+    ],
+}
+
+BRINEWATCH_SHIPYARD_DIALOGUE = {
+    "enter": [
+        "Welcome to the Brinewatch Shipyard. Looking to buy or repair?",
+        "Hulls and masts – we build 'em sturdy.",
+        "Need a ship that laughs at storms? You've come to the right place.",
+        "The best vessels on the coast come from this yard.",
+    ],
+    "buy_ship": [
+        "A fine vessel! Treat her well.",
+        "She's yours. May she carry you to glory.",
+        "The sea accepts your new ship. Don't drown.",
+        "A wise purchase. That boat has years left.",
+    ],
+    "leave": [
+        "Come back when you need a bigger boat.",
+        "Fair winds to your new vessel.",
+        "The yard stays busy. Return anytime.",
+        "Farewell. Keep the hull tarred.",
+    ],
+}
+
+BRINEWATCH_TRADE_HALL_DIALOGUE = {
+    "enter": [
+        "Welcome to the Brinewatch Exchange. Smuggled goods welcome – discreetly.",
+        "The hall is loud with haggling. What's your offer?",
+        "Salt, spice, and secrets. We trade in all three.",
+        "Mind the cutpurses. Trade here is honest... mostly.",
+    ],
+    "leave": [
+        "May your profits be large and your losses small.",
+        "Come back with more cargo.",
+        "The Exchange never truly closes.",
+        "Farewell. Watch your back on the docks.",
+    ],
+}
+
+# ==================== GREYHARBOR (Foggy Port) ====================
+GREYHARBOR_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Ah, another soul through the mist. Welcome to Greyharbor.",
+        "The fog hides many things. State your business quickly.",
+        "Greyharbor welcomes the lost and the clever. Which are you?",
+        "The guild keeps a low profile here. Speak softly.",
+    ],
+    "tip": [
+        "Tip: The fog lifts at noon for exactly one hour. Use it wisely.",
+        "Tip: Some traders only appear when the bells of the sunken church ring.",
+        "Tip: Never follow a lantern that moves without a carrier.",
+        "Tip: The harbour's depths hold old secrets – and older dangers.",
+    ],
+    "leave": [
+        "May the fog part for your departure.",
+        "Return when the mist calls you.",
+        "Greyharbor remembers those who leave.",
+        "Farewell. Don't trust the lights on the water.",
+    ],
+}
+
+GREYHARBOR_SHOPKEEPER_DIALOGUE = {
+    "enter": [
+        "Ah, a customer! The fog keeps my prices low and my goods... mysterious.",
+        "Welcome to the Drowned Ledger. Everything has a story.",
+        "Need something rare? It's here. Probably.",
+        "Step inside. The mist can't follow you in here.",
+    ],
+    "success": [
+        "A fine choice. That item has been waiting for you.",
+        "Coin changes hands, secrets stay. Good doing business.",
+        "May it serve you better than the last owner.",
+        "The fog accepts your gold. Fair trade.",
+    ],
+    "fail": [
+        "Your purse is as empty as the mist is thick.",
+        "Not enough gold. Come back after a successful voyage.",
+        "I don't haggle with paupers.",
+        "The price stands. Find more coin.",
+    ],
+    "leave": [
+        "Come back when the fog grows thin.",
+        "The Drowned Ledger is always open... by appointment.",
+        "Farewell. Watch for shifting shadows.",
+        "May your next visit be richer.",
+    ],
+}
+
+GREYHARBOR_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Misty Hearth. Warm beds, hot stew, and no questions.",
+        "Ah, a weary traveler! The fog gets into bones. Sit, warm up.",
+        "Greyharbor's finest inn. The ghosts don't bother us much.",
+        "Come in, come in. The fire's lit and the ale is dark.",
+    ],
+    "rest": [
+        "There now, let the mist clear from your mind.",
+        "A short rest by the fire. You'll feel the fog lift.",
+        "Sit. The hearth keeps the damp away.",
+        "Rest easy. No ghosts in this room. Probably.",
+    ],
+    "sleep": [
+        "Sleep deep. The fog outside muffles all sound.",
+        "Eight hours of quiet. You'll wake... rested?",
+        "Dream of clear skies, traveler.",
+        "The inn is safe. The mist can't enter.",
+    ],
+    "leave": [
+        "Come back when the fog chills you again.",
+        "The Misty Hearth will be here. Hiding in the grey.",
+        "Farewell. Mind the lanterns on the pier.",
+        "Safe travels through the haze.",
+    ],
+    "early_sleep": [
+        "The innkeeper frowns: 'The sun still tries to pierce the fog, friend. Rest a while, but true sleep comes when the grey deepens.'",
+    ],
+}
+
+GREYHARBOR_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Portmaster's office. The fog delays all ships. What do you want?",
+        "If you need passage, speak quickly. The mist is unpredictable.",
+        "Greyharbor's port is quiet... too quiet. State your business.",
+        "Tide and fog charts are on the wall. Don't touch them.",
+    ],
+    "buy_ticket": [
+        "A berth booked. May the fog lift for your voyage.",
+        "Ticket in hand. Don't lose it in the mist.",
+        "Fair passage. The ship leaves when it can see the water.",
+        "Paid. Now wait by the western pier.",
+    ],
+    "leave": [
+        "The fog may delay your departure. Be patient.",
+        "Come back when you need to sail again.",
+        "Farewell. Listen for the harbor bell.",
+        "The portmaster's eyes follow you into the mist.",
+    ],
+}
+
+GREYHARBOR_TRADE_HALL_DIALOGUE = {
+    "enter": [
+        "Greyharbor Trade Consortium. We deal in what others won't touch.",
+        "The hall is quiet today. The fog keeps traders away. Good for you.",
+        "Secrets and silver. Name your need.",
+        "Welcome. Everything here has a hidden cost.",
+    ],
+    "leave": [
+        "May your deals stay in the shadows.",
+        "Come back when you have more... interesting goods.",
+        "The Consortium never forgets a face.",
+        "Farewell. Speak of this place to no one.",
+    ],
+}
+
 # ==================== ELDERFEN (Marsh City) ====================
 ELDERFEN_RECEPTIONIST_DIALOGUE = {
     "enter": [
@@ -286,29 +494,25 @@ ELDERFEN_INNKEEPER_DIALOGUE = {
     ],
 }
 
-ELDERFEN_BLACKSMITH_DIALOGUE = {
-    "greeting": [
-        "Ah, a customer! My forge runs on bog-iron and spite.",
-        "Welcome to the Mire Anvil. What needs hammering?",
-        "Marsh steel is flexible. Let me prove it.",
-        "Step closer. The fire keeps the leeches away.",
+ELDERFEN_HERBALIST_DIALOGUE = {
+    "enter": [
+        "Ah, a seeker of swamp remedies! What ails you?",
+        "Fungi, roots, and rare blossoms. I have it all.",
+        "The marsh gives me its secrets. I share them... for a price.",
+        "Welcome to the Root and Bloom. Touch nothing without asking.",
     ],
-    "farewell": [
-        "May your blade never rust in the swamp.",
-        "Come back when your gear needs mending.",
-        "Farewell. Watch for quicksand.",
-        "The forge will be hot when you return.",
+    "buy": [
+        "A wise choice. That herb will mend what ails you.",
+        "Good eye. This one is potent. Use sparingly.",
+        "The swamp's gift, passed to you. May it serve.",
+        "Fresh from the bog. Handle with care.",
     ],
-    "invalid_choice": "Speak! The bubbling bog makes you hard to hear.",
-    "no_equipment": "You've no gear to enhance. Bring me steel.",
-    "max_enhance": "That item's reached its peak. No more marsh magic.",
-    "not_enough_gold": "Your gold's lighter than a frog's breath. Come back richer.",
-    "enhance_success": "By the swamp's heart! Your {} is transformed!",
-    "no_scrolls": "No scrolls? Bring me bog-parchment enchantments.",
-    "no_equipment_fuse": "I need equipment to fuse, not empty hands.",
-    "scroll_not_higher": "This scroll's magic is weaker than the item's. Find a stronger one.",
-    "fusion_failed": "The magic sank into the mud. Nothing changed.",
-    "fusion_success": "The marsh blesses your gear! {} now has {} rarity!",
+    "leave": [
+        "May the marsh's medicine keep you alive.",
+        "Come back when your wounds need tending.",
+        "The Root and Bloom is always here. In the damp.",
+        "Farewell. Don't eat the yellow mushrooms.",
+    ],
 }
 
 # ==================== IRONDEEP (Mountain Hold) ====================
@@ -387,7 +591,7 @@ IRONDEEP_INNKEEPER_DIALOGUE = {
     ],
     "early_sleep": [
         "The innkeeper grunts: 'The sun still shines on the surface, does it? Rest a while, but true sleep comes after the deep bell tolls.'",
-    ]
+    ],
 }
 
 IRONDEEP_BLACKSMITH_DIALOGUE = {
@@ -413,6 +617,27 @@ IRONDEEP_BLACKSMITH_DIALOGUE = {
     "scroll_not_higher": "This scroll's magic is weaker. Find a deeper enchantment.",
     "fusion_failed": "The runes resisted. Nothing changed.",
     "fusion_success": "Ancestors be praised! Your {} now shines with {} rarity!",
+}
+
+IRONDEEP_BARRACKS_DIALOGUE = {
+    "enter": [
+        "State your name and allegiance. Irondeep's guard doesn't suffer fools.",
+        "Barracks of the Mountain Guard. What business have you?",
+        "If you seek training or a commission, speak now.",
+        "The Forge Council's soldiers keep the deep roads safe. Why are you here?",
+    ],
+    "train": [
+        "The drillmaster puts you through brutal exercises. You feel stronger.",
+        "Your muscles ache, but you've learned a new technique.",
+        "Sweat and steel. That's the Irondeep way. Your skills improve.",
+        "After hours of drills, you feel more combat-ready.",
+    ],
+    "leave": [
+        "The mountain guard watches you leave. Don't return as an enemy.",
+        "May your axe bite deep.",
+        "Farewell. Train harder next time.",
+        "The barracks doors close behind you with a heavy thud.",
+    ],
 }
 
 # ==================== SKYLUME (Arcane City) ====================
@@ -489,34 +714,30 @@ SKYLUME_INNKEEPER_DIALOGUE = {
         "The Astral Rest will be here. Floating as always.",
         "Farewell. Watch for dimensional rifts.",
     ],
-    "early_sleep": [ 
-    "The innkeeper smiles: 'The sun still graces the lower world, traveler. Rest if you wish, but full slumber comes when the floating lanterns ignite.'",
-    ]
+    "early_sleep": [
+        "The innkeeper smiles: 'The sun still graces the lower world, traveler. Rest if you wish, but full slumber comes when the floating lanterns ignite.'",
+    ],
 }
 
-SKYLUME_BLACKSMITH_DIALOGUE = {
-    "greeting": [
-        "Ah, a customer! My forge runs on arcane flame. What needs shaping?",
-        "Welcome to the Star Anvil. I craft magic into steel.",
-        "Weapons that sing with ley energy. That's my specialty.",
-        "Step closer. The floating hammer never misses.",
+SKYLUME_ARCANE_TOWER_DIALOGUE = {
+    "enter": [
+        "You stand before the Spire of Seven Secrets. Speak your desire.",
+        "The tower hums with concentrated magic. State your purpose, seeker.",
+        "Few are allowed this close. What arcane need brings you here?",
+        "The wards part for you... for now. Enter quickly.",
     ],
-    "farewell": [
-        "May your blade shine with starlight.",
-        "Come back when you need true enchantment.",
-        "Farewell. The arcane forge awaits.",
-        "Keep that weapon charged. Magic fades.",
+    "research": [
+        "The archmage shares a fragment of forbidden knowledge. Your mind expands.",
+        "Hours among ancient tomes reveal hidden truths. You feel wiser.",
+        "The tower's magic sharpens your understanding of the arcane.",
+        "A secret whispered by the ley lines themselves – you'll not forget it.",
     ],
-    "invalid_choice": "Speak! The ley lines buzz and I cannot hear.",
-    "no_equipment": "You've no gear to enchant. Bring me steel.",
-    "max_enhance": "That item's magic is maxed. No more work possible.",
-    "not_enough_gold": "Your gold is lighter than aether. Find more.",
-    "enhance_success": "By the stars! Your {} blazes with new magic!",
-    "no_scrolls": "No scrolls? Bring me arcane parchment.",
-    "no_equipment_fuse": "I need equipment to fuse, not empty hands.",
-    "scroll_not_higher": "This scroll's magic is weaker. Find a deeper incantation.",
-    "fusion_failed": "The ley lines rejected the fusion. Nothing changed.",
-    "fusion_success": "The arcane approves! Your {} now has {} rarity!",
+    "leave": [
+        "The tower's doors close behind you. The magic lingers on your skin.",
+        "May your newfound knowledge serve you... and not destroy you.",
+        "Return when you seek deeper mysteries.",
+        "The Spire of Seven Secrets will remember your visit.",
+    ],
 }
 
 # ==================== ASHKARA (Ruin-City) ====================
@@ -594,7 +815,28 @@ ASHKARA_INNKEEPER_DIALOGUE = {
         "The refuge door is always open... for paying customers.",
     ],
     "early_sleep": [
-    "The innkeeper snarls: 'The sun still bleeds above the ash? Rest if you must, but true sleep comes when the red moon rises. And not before.'",
+        "The innkeeper snarls: 'The sun still bleeds above the ash? Rest if you must, but true sleep comes when the red moon rises. And not before.'",
+    ],
+}
+
+ASHKARA_BLACK_MARKET_DIALOGUE = {
+    "enter": [
+        "Ah, a risk-taker. The black market has what the surface shops won't sell.",
+        "Keep your voice down. And your gold ready.",
+        "Cursed relics, illegal enchantments, smuggled goods. What's your poison?",
+        "Welcome to the Underhand. Everything here is stolen or forbidden. Or both.",
+    ],
+    "buy": [
+        "A dangerous choice. Don't say I didn't warn you.",
+        "Gold changes hands. The item is yours. What the law doesn't know...",
+        "No questions asked. No refunds given.",
+        "May this serve your dark purpose.",
+    ],
+    "leave": [
+        "Speak of this place to no one.",
+        "The shadows swallow your footsteps. Farewell.",
+        "Come back when you need something truly illegal.",
+        "The black market always remembers a good customer.",
     ],
 }
 
@@ -623,6 +865,870 @@ ASHKARA_BLACKSMITH_DIALOGUE = {
     "fusion_success": "Miracles happen! Your {} now boasts {} rarity! Don't celebrate yet.",
 }
 
+# ==================== SUNREACH (Desert Port) ====================
+SUNREACH_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Welcome to Sunreach, where the sun never hides. State your purpose.",
+        "Ah, a traveler with dust on their boots. The guild welcomes you.",
+        "Sunreach's gates are open. Business or pleasure?",
+        "The desert heat softens no one. Speak quickly.",
+    ],
+    "tip": [
+        "Tip: The sun here can kill. Always carry water.",
+        "Tip: Caravans leave at dawn. Don't be late.",
+        "Tip: The Sun Temple offers blessings against heatstroke.",
+        "Tip: Sandstorms appear without warning. Watch the horizon.",
+    ],
+    "leave": [
+        "May the sun light your path.",
+        "Return when the desert calls you again.",
+        "Farewell. Don't forget your waterskin.",
+        "The sands remember those who leave.",
+    ],
+}
+
+SUNREACH_SHOPKEEPER_DIALOGUE = {
+    "enter": [
+        "Ah, a customer! Sunreach's bazaar has everything under the blazing sun.",
+        "Spices, silks, and desert steel. What catches your eye?",
+        "Welcome to the Golden Sands. My goods are as hot as the weather.",
+        "Step into the shade. The sun can wait.",
+    ],
+    "success": [
+        "A fine choice. That item has crossed the Great Dunes to reach you.",
+        "Fair price. May it serve you well under the sun.",
+        "The desert approves your purchase. Drink water.",
+        "Good trade. Come back when your purse refills.",
+    ],
+    "fail": [
+        "Your coin is as dry as a dead oasis.",
+        "Not enough gold. Even the sun doesn't give free light.",
+        "Come back when your pockets are heavier.",
+        "I don't trade with empty purses, desert rat.",
+    ],
+    "leave": [
+        "May your next visit be richer.",
+        "The bazaar never truly closes. Return anytime.",
+        "Farewell. Watch for sand in your boots.",
+        "Come back when you need shelter from the heat.",
+    ],
+}
+
+SUNREACH_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Shaded Palm. Cool water, cooler beds.",
+        "Ah, a traveler! The desert sun is cruel. Rest here.",
+        "Sunreach's finest inn. We keep the heat out.",
+        "Come in, come in. The courtyard fountain is lovely.",
+    ],
+    "rest": [
+        "There now, let the shade cool your brow.",
+        "A short rest by the fountain. The sun can wait.",
+        "Sit. Drink this. It's not water, but it helps.",
+        "Rest easy. No sandstorms indoors.",
+    ],
+    "sleep": [
+        "Sleep under cool linens. The desert night is cold.",
+        "Eight hours of quiet. The stars watch over you.",
+        "Dream of oases and full waterskins.",
+        "The inn is safe. The sun won't find you here.",
+    ],
+    "leave": [
+        "Come back when the sun grows heavy.",
+        "The Shaded Palm will be here. Cool as ever.",
+        "Farewell. Drink water. Lots of it.",
+        "Safe travels through the golden sands.",
+    ],
+    "early_sleep": [
+        "The innkeeper laughs: 'The sun is still high, friend! Rest a while if you must, but full slumber comes when the stars appear.'",
+    ],
+}
+
+SUNREACH_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Sunreach Port Authority. Where are you sailing?",
+        "The harbor is small but busy. State your need.",
+        "Desert ships and river boats – we manage them all.",
+        "If you need passage along the coast, you talk to me.",
+    ],
+    "buy_ticket": [
+        "Ticket booked. The ship leaves at noon.",
+        "Fair passage. Don't miss the tide – what little there is.",
+        "One voyage, paid. Stay out of the captain's way.",
+        "You're on the manifest. Safe sailing.",
+    ],
+    "leave": [
+        "The port is always open. Return anytime.",
+        "May your voyage be smooth and short.",
+        "Farewell. Watch for pirates near the shallows.",
+        "Come back when you need to sail again.",
+    ],
+}
+
+SUNREACH_TEMPLE_DIALOGUE = {
+    "enter": [
+        "The Temple of the Eternal Sun welcomes you. Seek light?",
+        "Bathe in the sun's blessing. What do you offer?",
+        "The priests here heal both body and spirit. State your need.",
+        "Sunreach's holiest ground. Speak your prayer.",
+    ],
+    "bless": [
+        "The priest raises a sun-orb. Warmth flows through you.",
+        "You feel the desert's harshness soften. A blessing rests on you.",
+        "Golden light bathes your soul. You are renewed.",
+        "The sun's favor grants you strength. Use it wisely.",
+    ],
+    "leave": [
+        "May the sun always find your face.",
+        "Return when your spirit needs warmth.",
+        "The Eternal Sun watches over your journey.",
+        "Farewell. Stay hydrated.",
+    ],
+}
+
+# ==================== THORNWALL (Fortress City) ====================
+THORNWALL_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Thornwall stands against the wild. State your allegiance.",
+        "Fortress city. We don't trust outsiders. Speak fast.",
+        "The wall protects us. What brings you to the frontier?",
+        "Another traveler seeking safety behind the stone. Name yourself.",
+    ],
+    "tip": [
+        "Tip: The watch changes every four hours. Don't be on the walls then.",
+        "Tip: The forest beyond the wall is forbidden. Trespassers disappear.",
+        "Tip: Thornwall's smiths work day and night. They sleep never.",
+        "Tip: The commander hates excuses. Be brief or be gone.",
+    ],
+    "leave": [
+        "May the wall hold against what follows you.",
+        "Return with news of the wilds.",
+        "Farewell. Don't open the postern gate.",
+        "The fortress remembers your face.",
+    ],
+}
+
+THORNWALL_SHOPKEEPER_DIALOGUE = {
+    "enter": [
+        "Ah, a customer! Thornwall's goods are battle-tested.",
+        "Weapons, rations, fortification supplies. What do you need?",
+        "The frontier market has what the inner cities lack. Look around.",
+        "Welcome to the Bulwark Emporium. Everything here has killed something.",
+    ],
+    "success": [
+        "Good choice. That axe has felled a dozen trolls.",
+        "Fair price for frontier steel. Come again.",
+        "May this item help you survive the night.",
+        "The wall approves your purchase. Now go.",
+    ],
+    "fail": [
+        "Your coin is as thin as a goblin's excuse.",
+        "Not enough gold. The frontier doesn't give discounts.",
+        "Come back when you've sold something.",
+        "Empty purse, empty hands. Leave.",
+    ],
+    "leave": [
+        "Come back when you need better gear.",
+        "The Bulwark Emporium is always open. Even during sieges.",
+        "Farewell. Keep your blade sharp.",
+        "May your next visit be richer.",
+    ],
+}
+
+THORNWALL_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Stubborn Ram. Hot food, cold ale, safe beds.",
+        "Ah, a traveler from the south! Sit. The wall keeps us safe.",
+        "Thornwall's only decent inn. I don't overcharge much.",
+        "Come in, come in. The fire's hot and the stories are wild.",
+    ],
+    "rest": [
+        "There now, let the fire warm your bones.",
+        "A short rest. The watch will wake you if trouble comes.",
+        "Sit. The ale is strong. Helps with the fear.",
+        "Rest easy. The wall is thick and the guards are sober. Mostly.",
+    ],
+    "sleep": [
+        "Sleep deep. I'll keep the lantern lit.",
+        "Eight hours of dreamless rest. You'll need it.",
+        "The frontier is quiet tonight. Rest well.",
+        "No monsters in here. The wall keeps them out.",
+    ],
+    "leave": [
+        "Come back when the wild howls.",
+        "The Stubborn Ram will be here. With more ale.",
+        "Farewell. Don't go beyond the wall.",
+        "Safe travels. Mind the forest's edge.",
+    ],
+    "early_sleep": [
+        "The innkeeper grunts: 'The sun's still up, soldier. Rest a spell if you must, but full sleep comes after the evening bell.'",
+    ],
+}
+
+THORNWALL_BARRACKS_DIALOGUE = {
+    "enter": [
+        "Thornwall Garrison. State your name and rank.",
+        "If you're not militia, you're not welcome. Speak.",
+        "The barracks smell of steel and sweat. What do you want?",
+        "Commander's office is that way. Don't waste our time.",
+    ],
+    "train": [
+        "The drill sergeant works you to exhaustion. You're stronger for it.",
+        "Hours of sword practice leave you bruised but improved.",
+        "Frontier training is brutal. You survive and learn.",
+        "Your combat skills sharpen against Thornwall's veterans.",
+    ],
+    "leave": [
+        "The garrison watches you leave. Return ready to fight.",
+        "May your blade serve the wall.",
+        "Farewell. Train harder next time.",
+        "The barracks doors close. The frontier waits.",
+    ],
+}
+
+# ==================== DUNEMAR (Desert Trade Hub) ====================
+DUNEMAR_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Dunemar – where the desert meets the sea. State your business.",
+        "Ah, a traveler with sand in their hair. Welcome.",
+        "The guild here is neutral. Trade is sacred. Speak.",
+        "Dunemar welcomes all who respect the dunes.",
+    ],
+    "tip": [
+        "Tip: The desert caravans leave at moonrise.",
+        "Tip: Salt from the coast is worth more than gold inland.",
+        "Tip: Never insult a camel trader. They have long memories.",
+        "Tip: The evening markets sell the best spices.",
+    ],
+    "leave": [
+        "May the dunes guide your steps.",
+        "Return when your goods run low.",
+        "Farewell. Watch for sandstorms.",
+        "The desert remembers those who leave.",
+    ],
+}
+
+DUNEMAR_SHOPKEEPER_DIALOGUE = {
+    "enter": [
+        "Ah, a customer! Dunemar's bazaar is legendary.",
+        "Spices, silks, salt, and steel. What do you seek?",
+        "Welcome to the Sand-Swept Stall. Everything here crossed the deep desert.",
+        "The best trade on the coast. Look around.",
+    ],
+    "success": [
+        "A fine purchase. That item has traveled far.",
+        "Fair gold for fair goods. Come again.",
+        "The desert approves your choice.",
+        "Good trade. May it serve you well.",
+    ],
+    "fail": [
+        "Your coin is lighter than a desert ghost.",
+        "Not enough gold. The bazaar doesn't haggle with paupers.",
+        "Come back when you've sold your camel.",
+        "Empty purse, empty promises.",
+    ],
+    "leave": [
+        "The bazaar is always open. Return anytime.",
+        "May your next visit be richer.",
+        "Farewell. Drink water.",
+        "Come back when you need more spices.",
+    ],
+}
+
+DUNEMAR_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Oasis Rest. Cool rooms, cooler drinks.",
+        "Ah, a weary trader! Sit by the fountain.",
+        "Dunemar's finest inn. We keep the desert out.",
+        "Come in, come in. The beds are soft and the water is fresh.",
+    ],
+    "rest": [
+        "There now, let the cool air revive you.",
+        "A short rest. The fountain's murmur soothes.",
+        "Sit. Drink this mint tea. It helps.",
+        "Rest easy. No sand in here.",
+    ],
+    "sleep": [
+        "Sleep deep. The desert night is quiet.",
+        "Eight hours of peace. You'll wake refreshed.",
+        "Dream of green oases and full waterskins.",
+        "The inn is safe. The dunes can wait.",
+    ],
+    "leave": [
+        "Come back when the sun burns too hot.",
+        "The Oasis Rest will be here. Cool as ever.",
+        "Farewell. Watch for bandits on the road.",
+        "Safe travels through the golden sands.",
+    ],
+    "early_sleep": [
+        "The innkeeper smiles: 'The sun's still high, traveler. Rest a while, but full slumber comes after the evening call to prayer.'",
+    ],
+}
+
+DUNEMAR_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Dunemar Port Authority. Where to?",
+        "The harbor handles both sea and river trade. State your need.",
+        "If you need passage, speak quickly. The tide waits for no one.",
+        "Desert ships and coastal vessels – we manage them all.",
+    ],
+    "buy_ticket": [
+        "Ticket booked. Don't be late.",
+        "Fair passage. The captain is grumpy but skilled.",
+        "One voyage, paid. Stay out of the cargo hold.",
+        "You're on the manifest. Safe sailing.",
+    ],
+    "leave": [
+        "The port is always busy. Return anytime.",
+        "May your voyage be profitable.",
+        "Farewell. Watch for pirates.",
+        "Come back when you need to sail again.",
+    ],
+}
+
+DUNEMAR_TRADE_HALL_DIALOGUE = {
+    "enter": [
+        "Dunemar Trade Consortium. We move goods across sand and sea.",
+        "The hall is loud with deals. What do you offer?",
+        "Spices, salt, silk – we trade in everything.",
+        "Welcome. Mind your purse. The merchants are sharp.",
+    ],
+    "leave": [
+        "May your margins be wide.",
+        "Come back with more cargo.",
+        "The Consortium never sleeps.",
+        "Farewell. Don't trust the desert traders too much.",
+    ],
+}
+
+DUNEMAR_BLACK_MARKET_DIALOGUE = {
+    "enter": [
+        "The shadow market. Keep your voice down.",
+        "Dunemar's underbelly. What do you need that's... illegal?",
+        "We trade in what the guild won't touch. Speak softly.",
+        "Welcome to the Sand-Silk Exchange. No questions asked.",
+    ],
+    "buy": [
+        "A dangerous choice. No refunds.",
+        "Gold changes hands. The item is yours. Deny everything.",
+        "You saw nothing. I sold you nothing.",
+        "May this serve your hidden purpose.",
+    ],
+    "leave": [
+        "Speak of this place to no one.",
+        "The shadows hide your exit. Farewell.",
+        "Come back when you need something... darker.",
+        "The black market always has a spot for you.",
+    ],
+}
+
+# ==================== TIDEBREAK (Stormy Coastal City) ====================
+TIDEBREAK_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Tidebreak – where the sea fights the shore. State your business.",
+        "Ah, another soul braving the storm coast. Welcome.",
+        "The guild here is used to wet visitors. Speak.",
+        "Tidebreak welcomes all who don't fear lightning.",
+    ],
+    "tip": [
+        "Tip: The storms come fast. Stay off the cliffs during lightning.",
+        "Tip: Tidebreak's shipwrights are the best. Expensive, though.",
+        "Tip: The sea caves below the city hide smugglers – and treasure.",
+        "Tip: Never gamble with a Tidebreak sailor. They cheat honestly.",
+    ],
+    "leave": [
+        "May the storms spare your journey.",
+        "Return when the tides are calm. Ha! They never are.",
+        "Farewell. Watch for rogue waves.",
+        "The sea remembers those who leave.",
+    ],
+}
+
+TIDEBREAK_SHOPKEEPER_DIALOGUE = {
+    "enter": [
+        "Ah, a customer! Tidebreak's goods are storm-tested.",
+        "Sealskins, storm lanterns, salvage from wrecks. What do you need?",
+        "Welcome to the Breaker's Stall. Everything here survived the sea.",
+        "The best gear for sailors. Look around.",
+    ],
+    "success": [
+        "Good choice. That item has seen worse storms than you.",
+        "Fair price for sea-toughened goods. Come again.",
+        "The sea approves your purchase. Don't drop it overboard.",
+        "May it keep you dry. Probably.",
+    ],
+    "fail": [
+        "Your coin is as wet as a drowned rat.",
+        "Not enough gold. The sea doesn't give discounts.",
+        "Come back when you've sold something.",
+        "Empty purse, empty hands. Leave.",
+    ],
+    "leave": [
+        "Come back when you need more gear.",
+        "The Breaker's Stall is always open. Even during hurricanes.",
+        "Farewell. Keep your oilskin close.",
+        "May your next visit be drier.",
+    ],
+}
+
+TIDEBREAK_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Storm's Rest. Dry beds, hot food.",
+        "Ah, a soaked traveler! Sit by the fire. The sea is cruel.",
+        "Tidebreak's only decent inn. We keep the rain out. Mostly.",
+        "Come in, come in. The roof leaks but the ale is warm.",
+    ],
+    "rest": [
+        "There now, let the fire dry your bones.",
+        "A short rest. The storm can wait.",
+        "Sit. The rum helps with the shivers.",
+        "Rest easy. No lightning in here.",
+    ],
+    "sleep": [
+        "Sleep deep. The walls are thick.",
+        "Eight hours of quiet. The storm will howl outside.",
+        "Dream of calm seas. You won't find them here.",
+        "The inn is safe. The sea can't reach you.",
+    ],
+    "leave": [
+        "Come back when the storm chases you again.",
+        "The Storm's Rest will be here. Leaky but warm.",
+        "Farewell. Watch for falling masts.",
+        "Safe travels. Keep your head down.",
+    ],
+    "early_sleep": [
+        "The innkeeper laughs: 'The sun's still trying to shine, friend. Rest a while, but full slumber comes when the thunder starts.'",
+    ],
+}
+
+TIDEBREAK_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Tidebreak Port Authority. State your vessel and destination.",
+        "The harbor is rough. If you need a berth, speak now.",
+        "Storms delay everything. What do you want?",
+        "Portmaster's office. Don't waste my time.",
+    ],
+    "buy_ticket": [
+        "Ticket booked. The ship leaves when the storm pauses.",
+        "Fair passage. Hold on to something.",
+        "One voyage, paid. Don't get seasick.",
+        "You're on the manifest. Pray for calm weather.",
+    ],
+    "leave": [
+        "The port is always noisy. Return anytime.",
+        "May your voyage be less stormy than most.",
+        "Farewell. Watch for reefs.",
+        "Come back when you need to sail again.",
+    ],
+}
+
+TIDEBREAK_SHIPYARD_DIALOGUE = {
+    "enter": [
+        "Tidebreak Shipyard. We build vessels that laugh at storms.",
+        "Need a new ship or repairs? You've come to the right place.",
+        "The best shipwrights on the coast. Expensive but worth it.",
+        "Welcome to the Breaker Yard. We've seen it all.",
+    ],
+    "buy_ship": [
+        "A fine vessel. She's weathered a hundred storms.",
+        "She's yours. May she keep you afloat.",
+        "Good choice. That ship has years left.",
+        "The sea accepts your purchase. Don't drown.",
+    ],
+    "leave": [
+        "Come back when you need a bigger boat.",
+        "The yard is always busy. Return anytime.",
+        "Farewell. Keep the hull tarred.",
+        "May your new ship serve you well.",
+    ],
+}
+
+TIDEBREAK_TRADE_HALL_DIALOGUE = {
+    "enter": [
+        "Tidebreak Exchange. We trade in storm salvage and sea goods.",
+        "The hall is wet and loud. What do you offer?",
+        "Sealskins, whale oil, wreckwood – we deal in it all.",
+        "Welcome. Mind the puddles.",
+    ],
+    "leave": [
+        "May your cargo stay dry.",
+        "Come back with more salvage.",
+        "The Exchange never closes. Even in hurricanes.",
+        "Farewell. Watch for waves.",
+    ],
+}
+
+# ==================== STORMHOLD (Fortress Port) ====================
+STORMHOLD_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Stormhold – fortress of the northern sea. State your name.",
+        "The walls keep out both storms and invaders. Speak.",
+        "Another traveler seeking shelter from the wind. Welcome.",
+        "Stormhold's guild is military-minded. Be respectful.",
+    ],
+    "tip": [
+        "Tip: The north wall has the best view. And the strongest wind.",
+        "Tip: Stormhold's navy is always recruiting. Don't volunteer.",
+        "Tip: The sea caves below the fortress are forbidden. Obviously.",
+        "Tip: The commander's word is law. Don't argue.",
+    ],
+    "leave": [
+        "May the storm walls protect your journey.",
+        "Return with news of the north.",
+        "Farewell. Don't go near the cliffs.",
+        "Stormhold remembers those who leave.",
+    ],
+}
+
+STORMHOLD_SHOPKEEPER_DIALOGUE = {
+    "enter": [
+        "Ah, a customer! Stormhold's goods are built to last.",
+        "Naval supplies, weapons, storm gear. What do you need?",
+        "Welcome to the Iron Quay. Everything here is military surplus.",
+        "The best gear for sailors and soldiers. Look around.",
+    ],
+    "success": [
+        "Good choice. That item has served a hundred soldiers.",
+        "Fair price for fortress steel. Come again.",
+        "The navy approves your purchase.",
+        "May it keep you alive.",
+    ],
+    "fail": [
+        "Your coin is as weak as a summer breeze.",
+        "Not enough gold. The fortress doesn't haggle.",
+        "Come back when you've earned some coin.",
+        "Empty purse, empty hands.",
+    ],
+    "leave": [
+        "Come back when you need more gear.",
+        "The Iron Quay is always open.",
+        "Farewell. Keep your blade sharp.",
+        "May your next visit be richer.",
+    ],
+}
+
+STORMHOLD_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Stormhold Naval Port. Civilians stay clear.",
+        "If you need passage on a military vessel, state your business.",
+        "The port is under martial law. What do you want?",
+        "Portmaster's office. Speak quickly.",
+    ],
+    "buy_ticket": [
+        "Passage booked on a supply ship. Don't cause trouble.",
+        "Fair warning – the captain is strict.",
+        "One voyage, paid. Follow all orders.",
+        "You're on the manifest. No complaints.",
+    ],
+    "leave": [
+        "The port is always guarded. Return anytime.",
+        "May your voyage be uneventful.",
+        "Farewell. Don't steal from the navy.",
+        "Come back when you need to sail again.",
+    ],
+}
+
+STORMHOLD_SHIPYARD_DIALOGUE = {
+    "enter": [
+        "Stormhold Naval Shipyard. We build warships.",
+        "Need a military vessel? You'll need the commander's approval.",
+        "The best warships on the coast. Not for sale to civilians.",
+        "Welcome to the Hammer and Anchor. We don't do pleasure boats.",
+    ],
+    "buy_ship": [
+        "A fine warship. Use it well.",
+        "She's yours. May she strike fear into your enemies.",
+        "That vessel has sunk three pirate ships. Keep the streak.",
+        "The navy approves this sale. Don't embarrass us.",
+    ],
+    "leave": [
+        "Come back when you need more firepower.",
+        "The yard is always busy. Return anytime.",
+        "Farewell. Keep the cannons clean.",
+        "May your new ship bring you glory.",
+    ],
+}
+
+STORMHOLD_BARRACKS_DIALOGUE = {
+    "enter": [
+        "Stormhold Garrison. State your name and allegiance.",
+        "If you're not military, you're not welcome. Speak.",
+        "The barracks house the north's finest soldiers. What do you want?",
+        "Commander's office is that way. Don't waste our time.",
+    ],
+    "train": [
+        "The drill instructor is merciless. You improve.",
+        "Hours of combat drills leave you exhausted but stronger.",
+        "Stormhold training is legendary. You feel the difference.",
+        "Your skills sharpen under the fortress's harsh discipline.",
+    ],
+    "leave": [
+        "The garrison watches you leave. Return ready to serve.",
+        "May your sword never falter.",
+        "Farewell. Train harder next time.",
+        "The barracks doors close. The north waits.",
+    ],
+}
+
+# ==================== CORALHAVEN (Reef Port) ====================
+CORALHAVEN_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Welcome to Coralhaven, where the sea meets the reef. State your business.",
+        "Ah, a traveler with salt on their skin. The guild welcomes you.",
+        "Coralhaven is peaceful. Keep it that way.",
+        "The reef protects us. What brings you to the coast?",
+    ],
+    "tip": [
+        "Tip: The coral gardens are sacred. Don't touch.",
+        "Tip: The best fish in Aeralis comes from these waters.",
+        "Tip: The tide pools hold rare ingredients – and sea urchins.",
+        "Tip: The temple offers blessings for sailors.",
+    ],
+    "leave": [
+        "May the reef guide your way.",
+        "Return when the sea calls you again.",
+        "Farewell. Watch for riptides.",
+        "Coralhaven remembers those who leave.",
+    ],
+}
+
+CORALHAVEN_SHOPKEEPER_DIALOGUE = {
+    "enter": [
+        "Ah, a customer! Coralhaven's wares are as bright as the reef.",
+        "Pearls, coral, exotic fish. What catches your eye?",
+        "Welcome to the Reef Market. Everything here comes from the sea.",
+        "The best coastal goods. Look around.",
+    ],
+    "success": [
+        "A fine choice. That pearl is from the deep reef.",
+        "Fair price for sea-treasure. Come again.",
+        "The ocean approves your purchase.",
+        "May it bring you luck on the water.",
+    ],
+    "fail": [
+        "Your coin is as empty as a broken shell.",
+        "Not enough gold. The reef doesn't give gifts.",
+        "Come back when you've found some treasure.",
+        "Empty purse, empty hands.",
+    ],
+    "leave": [
+        "Come back when you need more sea-goods.",
+        "The Reef Market is always open.",
+        "Farewell. Watch for low tide.",
+        "May your next visit be richer.",
+    ],
+}
+
+CORALHAVEN_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Coral Rest. Soft beds, fresh fish.",
+        "Ah, a weary sailor! Sit by the sea-breeze window.",
+        "Coralhaven's finest inn. The sound of waves lulls you to sleep.",
+        "Come in, come in. The rooms have ocean views.",
+    ],
+    "rest": [
+        "There now, let the sea air revive you.",
+        "A short rest. The waves are calming.",
+        "Sit. The fish stew is excellent.",
+        "Rest easy. No storms tonight.",
+    ],
+    "sleep": [
+        "Sleep to the sound of gentle waves.",
+        "Eight hours of peace. The reef protects.",
+        "Dream of colorful fish and calm waters.",
+        "The inn is safe. The sea is kind tonight.",
+    ],
+    "leave": [
+        "Come back when the sea calls you.",
+        "The Coral Rest will be here. Waiting by the shore.",
+        "Farewell. Watch for jellyfish.",
+        "Safe travels on the coastal roads.",
+    ],
+    "early_sleep": [
+        "The innkeeper smiles: 'The sun still dances on the water, friend. Rest a while, but full slumber comes when the reef glows.'",
+    ],
+}
+
+CORALHAVEN_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Coralhaven Port Authority. Where are you sailing?",
+        "The harbor is calm today. State your need.",
+        "If you need passage, speak now. The tide is turning.",
+        "Portmaster's office. Don't track too much sand inside.",
+    ],
+    "buy_ticket": [
+        "Ticket booked. The ship leaves at dawn.",
+        "Fair passage. The captain knows the reef.",
+        "One voyage, paid. Enjoy the sea air.",
+        "You're on the manifest. Safe sailing.",
+    ],
+    "leave": [
+        "The port is peaceful. Return anytime.",
+        "May your voyage be smooth and sunny.",
+        "Farewell. Watch for coral heads.",
+        "Come back when you need to sail again.",
+    ],
+}
+
+CORALHAVEN_HERBALIST_DIALOGUE = {
+    "enter": [
+        "Ah, a seeker of sea-healing! What ails you?",
+        "Seaweed, reef-fungi, and coral powders. I have it all.",
+        "The ocean provides the best remedies. Welcome.",
+        "Welcome to the Tide Apothecary. Touch nothing without asking.",
+    ],
+    "buy": [
+        "A wise choice. That remedy comes from the deep reef.",
+        "Good eye. This one cures most poisons.",
+        "The sea's gift, passed to you. May it heal.",
+        "Fresh from the tide pools. Use carefully.",
+    ],
+    "leave": [
+        "May the sea's medicine keep you well.",
+        "Come back when your wounds need tending.",
+        "The Tide Apothecary is always here. By the shore.",
+        "Farewell. Don't eat the blue seaweed raw.",
+    ],
+}
+
+CORALHAVEN_TEMPLE_DIALOGUE = {
+    "enter": [
+        "The Temple of the Tides welcomes you. Seek peace?",
+        "The sea's blessing flows through this place. What do you offer?",
+        "The priests here calm both storms and spirits. State your need.",
+        "Coralhaven's holiest ground. Speak your prayer.",
+    ],
+    "bless": [
+        "The priest sprinkles salt water on you. A cool blessing settles.",
+        "You feel the ocean's vast calm. Your mind clears.",
+        "The tide's favor grants you resilience. Use it well.",
+        "A soft blue light surrounds you. The sea has heard you.",
+    ],
+    "leave": [
+        "May the tides always bring you home.",
+        "Return when your soul needs cleansing.",
+        "The Temple of the Tides watches over your journey.",
+        "Farewell. Listen to the waves.",
+    ],
+}
+
+# ==================== BLACKWAKE (Pirate Haven) ====================
+BLACKWAKE_RECEPTIONIST_DIALOGUE = {
+    "enter": [
+        "Blackwake doesn't have a real guild. Just me. What do you want?",
+        "Ah, a criminal or a fool. Welcome to the pirate port.",
+        "State your name and your business. Quickly.",
+        "Blackwake welcomes only those with gold or steel.",
+    ],
+    "tip": [
+        "Tip: The pirates run this city. Don't insult them.",
+        "Tip: The black market is the only market.",
+        "Tip: Never turn your back on anyone here.",
+        "Tip: The harbor is full of stolen ships. Don't ask questions.",
+    ],
+    "leave": [
+        "The pirates will remember your face. Maybe.",
+        "Come back with more gold.",
+        "Farewell. Watch for cutthroats.",
+        "Blackwake doesn't forget debts.",
+    ],
+}
+
+BLACKWAKE_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Drowned Rat. Don't steal the beds.",
+        "Ah, another desperate soul. Sit by the smoky fire.",
+        "Blackwake's only inn. We don't ask your name.",
+        "Come in, come in. The floor is sticky but the price is low.",
+    ],
+    "rest": [
+        "There. Don't fall asleep on the bar.",
+        "A short rest. Keep one eye open.",
+        "Sit. The rum is watered but safe.",
+        "Rest easy. No killing in the common room. Usually.",
+    ],
+    "sleep": [
+        "Sleep with your boots on.",
+        "Eight hours of... well, sleep if you can.",
+        "The rooms have locks. Use them.",
+        "I'll wake you if the pirates come for you. Maybe.",
+    ],
+    "leave": [
+        "Come back if you survive.",
+        "The Drowned Rat will be here. Still sticky.",
+        "Farewell. Don't trust the dock girls.",
+        "Safe travels. Ha!",
+    ],
+    "early_sleep": [
+        "The innkeeper snarls: 'The sun still shines? Rest if you must, but full sleep comes when the lanterns of the gallows are lit.'",
+    ],
+}
+
+BLACKWAKE_PORTMASTER_DIALOGUE = {
+    "enter": [
+        "Blackwake Port. We don't ask for papers. What do you want?",
+        "Need passage on a ship that won't ask questions? You found it.",
+        "The harbor is full of... independent vessels. State your need.",
+        "Portmaster's office. The one with the hook for a hand.",
+    ],
+    "buy_ticket": [
+        "Ticket booked. The captain doesn't care who you are.",
+        "Fair passage on a smuggler's ship. No guarantees.",
+        "One voyage, paid. Don't ask about the crew.",
+        "You're on the manifest. Fake name, I assume.",
+    ],
+    "leave": [
+        "The port never sleeps. Return anytime.",
+        "May your voyage be... discreet.",
+        "Farewell. Don't get thrown overboard.",
+        "Come back when you need to disappear.",
+    ],
+}
+
+BLACKWAKE_BLACK_MARKET_DIALOGUE = {
+    "enter": [
+        "The real market. Underground. What do you need?",
+        "Stolen goods, forbidden artifacts, crew for a raid. Name it.",
+        "Welcome to the Wreck. No questions, no refunds.",
+        "Blackwake's underbelly. Keep your gold hidden.",
+    ],
+    "buy": [
+        "A dangerous purchase. Deny everything.",
+        "Gold changes hands. The item is yours. I was never here.",
+        "You saw nothing. Good doing business.",
+        "May this serve your dark purpose.",
+    ],
+    "leave": [
+        "Speak of this place to no one.",
+        "The shadows hide your exit. Farewell.",
+        "Come back when you need something... illegal.",
+        "The black market always remembers.",
+    ],
+}
+
+# ==================== ISLE OF GLASS (Crystal Island) ====================
+ISLE_OF_GLASS_ARCANE_TOWER_DIALOGUE = {
+    "enter": [
+        "The Crystal Tower rises from the glass sands. State your purpose.",
+        "Welcome to the Isle of Glass, where magic is forged in crystal.",
+        "Few are allowed here. What arcane need brings you?",
+        "The tower hums with pure ley energy. Speak carefully.",
+    ],
+    "research": [
+        "The crystal mage shares a secret of crystallized magic. You understand more.",
+        "Hours among glowing crystals sharpen your arcane senses.",
+        "The tower's resonance unlocks a new insight.",
+        "A shard of pure knowledge enters your mind. You feel changed.",
+    ],
+    "leave": [
+        "The tower's crystal doors close silently. Magic lingers on your skin.",
+        "May the crystal light guide your path.",
+        "Return when you seek deeper resonance.",
+        "The Isle of Glass will remember your visit.",
+    ],
+}
+
+# ==================== Existing BLACKSMITH_DIALOGUES (unchanged) ====================
 BLACKSMITH_DIALOGUES = {
     "solmere": SOLMERE_BLACKSMITH_DIALOGUE,
     "brinewatch": BRINEWATCH_BLACKSMITH_DIALOGUE,
