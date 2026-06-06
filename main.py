@@ -77,11 +77,10 @@ def play_game(player):
             city_id = player["location"]
             print(f"\nYou are in {CITIES.get(city_id, CITIES['solmere'])['name']}...")
             if not visit_city(player, city_id):
-                    return  # Saved and quit
-            elif player.get("location") != "dungeon":
-                continue 
-            elif player.get("location") == "dungeon":
+                return  # Saved and quit
+            if player.get("location") == city_id:
                 player["location"] = "dungeon"
+            continue
 
         # === Enter Dungeon ===
         result = explore_dungeon(player)
