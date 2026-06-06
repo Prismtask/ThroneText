@@ -106,9 +106,15 @@ def play_game(player):
                 city_id = player.get("location") if player.get("location") not in ["dungeon", None] else "solmere"
                 print(f"\nYou return to {CITIES.get(city_id, CITIES['solmere'])['name']}...")
                 player["location"] = city_id
+                
                 if not visit_city(player, city_id):
-                    return
-                player["location"] = "dungeon"   # back from city
+                    return  # saved & quit
+                
+                # Only reset to dungeon if we're still intending to go back
+                if player.get("location") == city_id:  # didn't travel away
+                    player["location"] = "dungeon"
+                # else: we traveled to another city → keep the new location
+                
                 break
             elif choice == 'n':
                 print("You decide to continue deeper into the dungeon.")
