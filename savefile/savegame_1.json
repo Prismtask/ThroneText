@@ -1,36 +1,28 @@
 {
-  "name": "prism",
+  "name": "ira",
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 8,
-    "Constitution": 4,
-    "Dexterity": 4,
+    "Strength": 9,
+    "Constitution": 3,
+    "Dexterity": 2,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 7
+    "Charisma": 12
   },
-  "floor": 2,
-  "current_hp": 35,
-  "level": 3,
-  "exp": 62,
-  "level_hp_bonus": 8,
+  "floor": 5,
+  "current_hp": 44,
+  "level": 6,
+  "exp": 56,
+  "level_hp_bonus": 20,
   "inventory": [
     {
-      "id": "uncommon_scroll",
-      "name": "Uncommon Scroll of Fusion",
-      "type": "scroll",
-      "rarity": "uncommon",
-      "enhance": 0,
-      "target_rarity": "uncommon"
-    },
-    {
       "id": "superior_healing_potion",
-      "name": "Common Superior Healing Potion",
+      "name": "Rare Superior Healing Potion",
       "type": "consumable",
-      "rarity": "common",
+      "rarity": "rare",
       "enhance": 0,
-      "power": 180
+      "power": 306
     }
   ],
   "equipped": {
@@ -41,8 +33,8 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 520,
-  "time_minutes": 990,
+  "gold": 1027,
+  "time_minutes": 1410,
   "location": "dungeon",
   "day": 1
 }

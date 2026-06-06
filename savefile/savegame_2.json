@@ -1,0 +1,31 @@
+{
+  "name": "ha",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 2,
+    "Constitution": 4,
+    "Dexterity": 2,
+    "Wisdom": 1,
+    "Learning": 2,
+    "Charisma": 12
+  },
+  "floor": 1,
+  "current_hp": 27,
+  "level": 1,
+  "exp": 0,
+  "level_hp_bonus": 0,
+  "inventory": [],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 2,
+  "dungeon_time": 0,
+  "gold": 100,
+  "time_minutes": 600,
+  "location": "brinewatch",
+  "day": 1
+}

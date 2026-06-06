@@ -109,7 +109,7 @@ def play_game(player):
             print(f"Gold: {player.get('gold', 0)}")
             print(f"Time: {format_time(player.get('time_minutes', 480))}\n")
             print("1. Continue to next floor")
-            print("2. Visit a city")
+            print("2. Return to city")
             print("3. Save and return to main menu")
             choice = input("Choice: ").strip()
 
@@ -129,7 +129,7 @@ def play_game(player):
                 if player.get("location") != "dungeon":
                     # They are now in a different city – exit the floor menu entirely
                     # The outer game loop will show the new city automatically
-                    return
+                    break
                 # Otherwise, player is back in dungeon -> stay in menu loop
 
             elif choice == '3':
