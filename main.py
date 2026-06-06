@@ -1,4 +1,4 @@
-from character import create_character
+from character import create_character, player_max_hp
 from dungeon import explore_dungeon
 from save_load import list_saves, load_game, save_game
 from city import visit_city
@@ -96,43 +96,50 @@ def play_game(player):
 
         # Floor cleared
         print(f"\nYou have successfully cleared Floor {player['floor'] - 1}!\n")
+        player["floor"] += 1
+        player["current_hp"] = player_max_hp(player)   # full heal after floor
+        save_game(player)                              # auto-save floor progress
 
-        # === Optional City Visit ===
+        # Post‑floor menu
         while True:
-            choice = input("Return to a city to rest and trade? (y/n): ").strip().lower()
-            if choice == 'y':
-                # Default to last city or solmere
-                city_id = player.get("location") if player.get("location") not in ["dungeon", None] else "solmere"
-                print(f"\nYou return to {CITIES.get(city_id, CITIES['solmere'])['name']}...")
-                player["location"] = city_id
-                
-                if not visit_city(player, city_id):
-                    return  # saved & quit
-                
-                # Only reset to dungeon if we're still intending to go back
-                if player.get("location") == city_id:  # didn't travel away
-                    player["location"] = "dungeon"
-                # else: we traveled to another city → keep the new location
-                
-                break
-            elif choice == 'n':
-                print("You decide to continue deeper into the dungeon.")
+            clear_screen()
+            print(f"=== FLOOR {player['floor'] - 1} CLEARED ===")
+            print(f"Now entering Floor {player['floor']}")
+            print(f"HP: {player['current_hp']}/{player_max_hp(player)}")
+            print(f"Gold: {player.get('gold', 0)}")
+            print(f"Time: {format_time(player.get('time_minutes', 480))}\n")
+            print("1. Continue to next floor")
+            print("2. Visit a city")
+            print("3. Save and return to main menu")
+            choice = input("Choice: ").strip()
+
+            if choice == '1':
+                # Proceed to next floor
                 player["location"] = "dungeon"
                 break
-            else:
-                print("Please enter y or n.")
 
-        # Ask to continue to next floor
-        while True:
-            cont = input("\nContinue to next floor? (y/n): ").strip().lower()
-            if cont == 'y':
-                break
-            elif cont == 'n':
+            elif choice == '2':
+                # Go to city
+                city_id = player.get("location") if player.get("location") not in ["dungeon", None] else "solmere"
+                player["location"] = city_id
+                if not visit_city(player, city_id):
+                    return   # player saved & quit from within city
+                # After returning from city, loop again (show the same menu)
+                # If player traveled to another city, the main loop will handle it
+                if player.get("location") != "dungeon":
+                    # They are now in a different city – exit the floor menu entirely
+                    # The outer game loop will show the new city automatically
+                    return
+                # Otherwise, player is back in dungeon -> stay in menu loop
+
+            elif choice == '3':
                 save_game(player)
-                print("Progress saved. You return to the surface.")
+                print("Game saved. Returning to menu.")
                 return
+
             else:
-                print("Please enter y or n.")
+                print("Invalid choice. Please enter 1, 2, or 3.")
+                input("Press Enter...")
 
 
 if __name__ == "__main__":
