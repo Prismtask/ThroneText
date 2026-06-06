@@ -1,0 +1,31 @@
+{
+  "name": "prism",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 8,
+    "Constitution": 4,
+    "Dexterity": 3,
+    "Wisdom": 1,
+    "Learning": 2,
+    "Charisma": 5
+  },
+  "floor": 1,
+  "current_hp": 27,
+  "level": 1,
+  "exp": 0,
+  "level_hp_bonus": 0,
+  "inventory": [],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 1,
+  "dungeon_time": 0,
+  "gold": 100,
+  "time_minutes": 720,
+  "location": "skylume",
+  "day": 1
+}

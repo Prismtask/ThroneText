@@ -1,0 +1,65 @@
+ENEMY_RACES = {
+    "Human": {"mods": {}},
+    "Goblin": {"mods": {"Dexterity": 2, "Strength": -1, "Constitution": -1}},
+    "Orc": {"mods": {"Strength": 3, "Constitution": 1, "Charisma": -2}},
+    "Undead": {"mods": {"Constitution": 3, "Wisdom": -2, "Charisma": -3}},
+    "Beast": {"mods": {"Strength": 2, "Dexterity": 1, "Learning": -3}},
+    "Demon": {"mods": {"Strength": 2, "Charisma": 2, "Wisdom": -1}},
+    "Construct": {"mods": {"Strength": 2, "Constitution": 4, "Charisma": -5}},
+    "Dragonkin": {"mods": {"Strength": 3, "Constitution": 2, "Learning": -2}},
+    "Fey": {"mods": {"Dexterity": 3, "Charisma": 2, "Strength": -2}},
+    "Elemental": {"mods": {"Constitution": 3, "Learning": 2, "Dexterity": -1}},
+    "Giant": {"mods": {"Strength": 4, "Constitution": 2, "Dexterity": -3}},
+    "Vampire": {"mods": {"Dexterity": 3, "Charisma": 2, "Wisdom": -1, "Constitution": 1}},
+}
+
+ENEMIES = {
+    # Low level (1–3)
+    "goblin_scout": {"name": "Goblin Scout", "race": "Goblin", "level": 1,
+                     "base_hp": 13, "mods": {"Dexterity": 1}, "boss": False},
+    "goblin_knifer": {"name": "Goblin Knifer", "race": "Goblin", "level": 2,
+                      "base_hp": 17, "mods": {"Dexterity": 2}, "boss": False},
+    "wild_dog": {"name": "Wild Dog", "race": "Beast", "level": 1, "base_hp": 14, "mods": {}, "boss": False},
+    "skeleton": {"name": "Skeleton", "race": "Undead", "level": 2, "base_hp": 18, "mods": {}, "boss": False},
+    "bandit": {"name": "Bandit", "race": "Human", "level": 2, "base_hp": 19, "mods": {"Dexterity": 1}, "boss": False},
+    "imp": {"name": "Imp", "race": "Demon", "level": 1, "base_hp": 12, "mods": {"Dexterity": 2}, "boss": False},
+    "pixie_trickster": {"name": "Pixie Trickster", "race": "Fey", "level": 2, "base_hp": 13, "mods": {"Dexterity": 3}, "boss": False},
+
+    # Mid level (4–6)
+    "orc_grunt": {"name": "Orc Grunt", "race": "Orc", "level": 4, "base_hp": 28, "mods": {"Strength": 1}, "boss": False},
+    "orc_brute": {"name": "Orc Brute", "race": "Orc", "level": 5, "base_hp": 34, "mods": {"Strength": 2}, "boss": False},
+    "dire_wolf": {"name": "Dire Wolf", "race": "Beast", "level": 4, "base_hp": 32, "mods": {"Dexterity": 1}, "boss": False},
+    "zombie": {"name": "Zombie", "race": "Undead", "level": 4, "base_hp": 33, "mods": {"Strength": 1}, "boss": False},
+    "cultist": {"name": "Cultist", "race": "Human", "level": 5, "base_hp": 26, "mods": {"Learning": 1}, "boss": False},
+    "fire_elemental": {"name": "Fire Elemental", "race": "Elemental", "level": 5, "base_hp": 37, "mods": {"Constitution": 2}, "boss": False},
+    "gnoll_marauder": {"name": "Gnoll Marauder", "race": "Beast", "level": 4, "base_hp": 30, "mods": {"Strength": 2}, "boss": False},
+    "spectral_knight": {"name": "Spectral Knight", "race": "Undead", "level": 6, "base_hp": 40, "mods": {"Dexterity": 1}, "boss": False},
+
+    # High level (7–9)
+    "orc_warlord": {"name": "Orc Warlord", "race": "Orc", "level": 7, "base_hp": 48,
+                    "mods": {"Strength": 3, "Charisma": 1}, "boss": False},
+    "wraith": {"name": "Wraith", "race": "Undead", "level": 7, "base_hp": 38, "mods": {"Dexterity": 2}, "boss": False},
+    "hellhound": {"name": "Hellhound", "race": "Demon", "level": 6, "base_hp": 42, "mods": {"Dexterity": 1}, "boss": False},
+    "stone_golem": {"name": "Stone Golem", "race": "Construct", "level": 8, "base_hp": 62, "mods": {}, "boss": False},
+    "dark_knight": {"name": "Dark Knight", "race": "Human", "level": 8, "base_hp": 52,
+                    "mods": {"Strength": 2, "Constitution": 2}, "boss": False},
+    "young_dragonkin": {"name": "Young Dragonkin", "race": "Dragonkin", "level": 7, "base_hp": 50, "mods": {"Strength": 3}, "boss": False},
+    "vampire_spawn": {"name": "Vampire Spawn", "race": "Vampire", "level": 8, "base_hp": 45, "mods": {"Dexterity": 3}, "boss": False},
+    "troll_regenerator": {"name": "Troll Regenerator", "race": "Giant", "level": 7, "base_hp": 68, "mods": {"Constitution": 3}, "boss": False},
+
+    # Bosses
+    "demon_imp": {"name": "Demon Imp", "race": "Demon", "level": 6, "base_hp": 28, "mods": {"Learning": 1}, "boss": True},
+    "demon_knight": {"name": "Demon Knight", "race": "Demon", "level": 10, "base_hp": 68, "mods": {"Strength": 3}, "boss": True},
+    "lich": {"name": "Lich", "race": "Undead", "level": 11, "base_hp": 58, "mods": {"Learning": 4}, "boss": True},
+    "ancient_golem": {"name": "Ancient Golem", "race": "Construct", "level": 12, "base_hp": 88, "mods": {"Strength": 2}, "boss": True},
+    "demon_lord": {"name": "Demon Lord", "race": "Demon", "level": 15, "base_hp": 115,
+                   "mods": {"Strength": 4, "Charisma": 3}, "boss": True},
+    "ancient_dragonkin": {"name": "Ancient Dragonkin", "race": "Dragonkin", "level": 14, "base_hp": 105,
+                         "mods": {"Strength": 4, "Constitution": 3}, "boss": True},
+    "fey_lord": {"name": "Fey Lord", "race": "Fey", "level": 13, "base_hp": 82, "mods": {"Dexterity": 4, "Charisma": 3}, "boss": True},
+    "storm_elemental": {"name": "Storm Elemental", "race": "Elemental", "level": 12, "base_hp": 95,
+                       "mods": {"Learning": 3, "Constitution": 2}, "boss": True},
+    "vampire_lord": {"name": "Vampire Lord", "race": "Vampire", "level": 15, "base_hp": 102,
+                    "mods": {"Dexterity": 4, "Charisma": 3}, "boss": True},
+    "mountain_giant": {"name": "Mountain Giant", "race": "Giant", "level": 13, "base_hp": 135, "mods": {"Strength": 5}, "boss": True},
+}

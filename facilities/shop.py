@@ -1,0 +1,115 @@
+import random
+from resources.items import ITEMS, build_item, ITEM_RARITY
+from resources.cities import CITIES
+from utils import clear_screen, advance_time, format_time
+from inventory import add_item_to_inventory, get_total_equipment_mods
+from inventory_ui import display_player_status
+from city import shopkeeper_dialogue
+
+def get_effective_charisma(player):
+    base = player.get("attributes", {}).get("Charisma", 8)
+    equip_mods = get_total_equipment_mods(player)
+    return base + equip_mods.get("Charisma", 0)
+
+def get_discounted_price(base_price, player):
+    charisma = get_effective_charisma(player)
+    discount_percent = min(40, max(0, (charisma - 8) * 0.5))
+    discounted = int(base_price * (100 - discount_percent) / 100)
+    return max(1, discounted)
+
+def sell_items(player):
+    inv = player.get("inventory", [])
+    if not inv:
+        print("No items to sell.")
+        return
+    print("\nYour inventory:")
+    for i, item in enumerate(inv):
+        rarity_mult = ITEM_RARITY.get(item.get("rarity", "common"))["price_mult"]
+        sell_price = int(12 * rarity_mult)
+        charisma = get_effective_charisma(player)
+        sell_price = int(sell_price * (1 + (charisma - 8) / 100))
+        print(f"{i+1}. {item['name']} - {sell_price} gold")
+    try:
+        idx = int(input("\nSell which item? (0 to cancel): ")) - 1
+        if 0 <= idx < len(inv):
+            item = inv.pop(idx)
+            rarity_mult = ITEM_RARITY.get(item.get("rarity", "common"))["price_mult"]
+            gold = int(12 * rarity_mult)
+            player["gold"] += gold
+            print(f"Sold {item['name']} for {gold} gold.")
+    except:
+        print("Cancelled.")
+
+def city_shop(player, city_id="solmere"):
+    clear_screen()
+    shopkeeper_dialogue(city_id, "enter")
+    city = CITIES.get(city_id, CITIES["solmere"])
+    shop_config = city["shop"]
+    stock_key = f"shop_stock_{city_id}"
+    day_key = f"last_shop_day_{city_id}"
+    if stock_key not in player or player.get(day_key) != player.get("day", 1):
+        player[stock_key] = []
+        stock_size = shop_config.get("stock_size", 8)
+        for _ in range(stock_size):
+            item_id = random.choice(list(ITEMS.keys()))
+            if shop_config.get("rarity_bias") == "higher":
+                rarity = random.choices(["common", "uncommon", "rare", "epic"], weights=[30, 35, 25, 10])[0]
+            else:
+                rarity = random.choices(["common", "uncommon", "rare", "epic"], weights=[40, 35, 20, 5])[0]
+            item = build_item(item_id, rarity)
+            base_price = shop_config.get("base_price_consumable" if item["type"] == "consumable" else "base_price_other", 45)
+            base_price = int(base_price * ITEM_RARITY[rarity]["price_mult"])
+            player[stock_key].append((item, base_price))
+        player[day_key] = player.get("day", 1)
+    shop_stock = player[stock_key]
+
+    def show_shop():
+        clear_screen()
+        shopkeeper_dialogue(city_id, "enter")
+        print(f"=== {city['name'].upper()} MARKET ===")
+        print(f"Time: {format_time(player['time_minutes'])} | Gold: {player.get('gold', 0)}")
+        print(f"Charisma: {get_effective_charisma(player)} → {100 - int((get_effective_charisma(player)-8)*0.5):d}% of base price (max 60%)\n")
+        print("--- Shop Stock ---")
+        for i, (item, base_price) in enumerate(shop_stock, 1):
+            final_price = get_discounted_price(base_price, player)
+            print(f"{i}. {item['name']} - {final_price} gold (base: {base_price})")
+        print("\nOptions:")
+        print("1) Buy   2) Sell   3) View Stats   4) Back to City")
+
+    while True:
+        show_shop()
+        choice = input("\nChoice: ").strip().lower()
+        if choice == "1":
+            try:
+                idx = int(input("Buy which item? (number): ")) - 1
+                if 0 <= idx < len(shop_stock):
+                    item, base_price = shop_stock[idx]
+                    final_price = get_discounted_price(base_price, player)
+                    if player.get("gold", 0) >= final_price:
+                        player["gold"] -= final_price
+                        add_item_to_inventory(player, item.copy())
+                        del shop_stock[idx]
+                        shopkeeper_dialogue(city_id, "success")
+                        input("\nPress Enter to continue...")
+                    else:
+                        shopkeeper_dialogue(city_id, "fail")
+                        input("\nPress Enter to continue...")
+                else:
+                    shopkeeper_dialogue(city_id, "fail")
+                    input("\nPress Enter to continue...")
+            except:
+                shopkeeper_dialogue(city_id, "fail")
+                input("\nPress Enter to continue...")
+        elif choice == "2":
+            sell_items(player)
+            input("\nPress Enter to continue...")
+        elif choice == "3":
+            display_player_status(player)
+            input("\nPress Enter to continue...")
+        elif choice == "4":
+            shopkeeper_dialogue(city_id, "leave")
+            advance_time(player, 30)
+            break
+        else:
+            shopkeeper_dialogue(city_id, "fail")
+            input("\nPress Enter to continue...")

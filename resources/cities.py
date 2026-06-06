@@ -1,0 +1,126 @@
+# cities.py
+from .dialogues import (
+    SOLMERE_RECEPTIONIST_DIALOGUE,
+    SOLMERE_SHOPKEEPER_DIALOGUE,
+    SOLMERE_INNKEEPER_DIALOGUE,
+    SOLMERE_BLACKSMITH_DIALOGUE,
+    BRINEWATCH_RECEPTIONIST_DIALOGUE,
+    BRINEWATCH_SHOPKEEPER_DIALOGUE,
+    BRINEWATCH_INNKEEPER_DIALOGUE,
+    BRINEWATCH_BLACKSMITH_DIALOGUE,
+    ELDERFEN_RECEPTIONIST_DIALOGUE,
+    ELDERFEN_SHOPKEEPER_DIALOGUE,
+    ELDERFEN_INNKEEPER_DIALOGUE,
+    ELDERFEN_BLACKSMITH_DIALOGUE,
+    IRONDEEP_RECEPTIONIST_DIALOGUE,
+    IRONDEEP_SHOPKEEPER_DIALOGUE,
+    IRONDEEP_INNKEEPER_DIALOGUE,
+    IRONDEEP_BLACKSMITH_DIALOGUE,
+    SKYLUME_RECEPTIONIST_DIALOGUE,
+    SKYLUME_SHOPKEEPER_DIALOGUE,
+    SKYLUME_INNKEEPER_DIALOGUE,
+    SKYLUME_BLACKSMITH_DIALOGUE,
+    ASHKARA_RECEPTIONIST_DIALOGUE,
+    ASHKARA_SHOPKEEPER_DIALOGUE,
+    ASHKARA_INNKEEPER_DIALOGUE,
+    ASHKARA_BLACKSMITH_DIALOGUE,
+)
+
+CITIES = {
+    "solmere": {
+        "name": "Solmere",
+        "dialogues": {
+            "receptionist": SOLMERE_RECEPTIONIST_DIALOGUE,
+            "shopkeeper": SOLMERE_SHOPKEEPER_DIALOGUE,
+            "innkeeper": SOLMERE_INNKEEPER_DIALOGUE,
+            "blacksmith": SOLMERE_BLACKSMITH_DIALOGUE,
+        },
+        "services": ["shop", "inn", "blacksmith"],
+        "shop": {"stock_size": 8, "base_price_consumable": 15, "base_price_other": 45},
+        "inn": {"rest_cost": 0, "sleep_after_hour": 18},
+        "travel": {
+            "connections": ["skylume", "brinewatch", "elderfen", "irondeep"],
+            "travel_time": {"skylume": 180, "brinewatch": 120, "elderfen": 150, "irondeep": 130},
+        },
+    },
+    "brinewatch": {
+        "name": "Brinewatch",
+        "dialogues": {
+            "receptionist": BRINEWATCH_RECEPTIONIST_DIALOGUE,
+            "shopkeeper": BRINEWATCH_SHOPKEEPER_DIALOGUE,
+            "innkeeper": BRINEWATCH_INNKEEPER_DIALOGUE,
+            "blacksmith": BRINEWATCH_BLACKSMITH_DIALOGUE,
+        },
+        "services": ["shop", "inn", "blacksmith"],
+        "shop": {"stock_size": 7, "base_price_consumable": 12, "base_price_other": 48, "rarity_bias": "varied"},
+        "inn": {"rest_cost": 0, "sleep_after_hour": 20},
+        "travel": {
+            "connections": ["solmere", "ashkara"],
+            "travel_time": {"solmere": 120, "ashkara": 200},
+        },
+    },
+    "elderfen": {
+        "name": "Elderfen",
+        "dialogues": {
+            "receptionist": ELDERFEN_RECEPTIONIST_DIALOGUE,
+            "shopkeeper": ELDERFEN_SHOPKEEPER_DIALOGUE,
+            "innkeeper": ELDERFEN_INNKEEPER_DIALOGUE,
+            "blacksmith": ELDERFEN_BLACKSMITH_DIALOGUE,
+        },
+        "services": ["shop", "inn", "blacksmith"],
+        "shop": {"stock_size": 6, "base_price_consumable": 18, "base_price_other": 50, "rarity_bias": "higher"},
+        "inn": {"rest_cost": 0, "sleep_after_hour": 19},
+        "travel": {
+            "connections": ["solmere"],
+            "travel_time": {"solmere": 150},
+        },
+    },
+    "irondeep": {
+        "name": "Irondeep",
+        "dialogues": {
+            "receptionist": IRONDEEP_RECEPTIONIST_DIALOGUE,
+            "shopkeeper": IRONDEEP_SHOPKEEPER_DIALOGUE,
+            "innkeeper": IRONDEEP_INNKEEPER_DIALOGUE,
+            "blacksmith": IRONDEEP_BLACKSMITH_DIALOGUE,
+        },
+        "services": ["shop", "inn", "blacksmith"],
+        "shop": {"stock_size": 8, "base_price_consumable": 20, "base_price_other": 60, "rarity_bias": "weapons"},
+        "inn": {"rest_cost": 0, "sleep_after_hour": 17},
+        "travel": {
+            "connections": ["solmere"],
+            "travel_time": {"solmere": 130},
+        },
+    },
+    "skylume": {
+        "name": "Skylume",
+        "dialogues": {
+            "receptionist": SKYLUME_RECEPTIONIST_DIALOGUE,
+            "shopkeeper": SKYLUME_SHOPKEEPER_DIALOGUE,
+            "innkeeper": SKYLUME_INNKEEPER_DIALOGUE,
+            "blacksmith": SKYLUME_BLACKSMITH_DIALOGUE,
+        },
+        "services": ["shop", "inn", "blacksmith"],
+        "shop": {"stock_size": 6, "base_price_consumable": 25, "base_price_other": 70},
+        "inn": {"rest_cost": 0, "sleep_after_hour": 21},
+        "travel": {
+            "connections": ["solmere"],
+            "travel_time": {"solmere": 180},
+        },
+    },
+    "ashkara": {
+        "name": "Ashkara",
+        "dialogues": {
+            "receptionist": ASHKARA_RECEPTIONIST_DIALOGUE,
+            "shopkeeper": ASHKARA_SHOPKEEPER_DIALOGUE,
+            "innkeeper": ASHKARA_INNKEEPER_DIALOGUE,
+            "blacksmith": ASHKARA_BLACKSMITH_DIALOGUE,
+        },
+        "services": ["shop", "inn", "blacksmith"],
+        "shop": {"stock_size": 5, "base_price_consumable": 10, "base_price_other": 35, "rarity_bias": "cursed"},
+        "inn": {"rest_cost": 0, "sleep_after_hour": 22},
+        "travel": {
+            "connections": ["brinewatch"],
+            "travel_time": {"brinewatch": 200},
+        },
+    },
+}
