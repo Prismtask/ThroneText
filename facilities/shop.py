@@ -1,10 +1,11 @@
+# facilities/shop.py
 import random
 from resources.items import ITEMS, build_item, ITEM_RARITY
 from resources.cities import CITIES
 from utils import clear_screen, advance_time, format_time
 from inventory import add_item_to_inventory, get_total_equipment_mods
 from inventory_ui import display_player_status
-from city import shopkeeper_dialogue
+from city_dialogue import service_dialogue   # changed import
 
 def get_effective_charisma(player):
     base = player.get("attributes", {}).get("Charisma", 8)
@@ -42,7 +43,7 @@ def sell_items(player):
 
 def city_shop(player, city_id="solmere"):
     clear_screen()
-    shopkeeper_dialogue(city_id, "enter")
+    service_dialogue(city_id, "shop", "enter")   # changed
     city = CITIES.get(city_id, CITIES["solmere"])
     shop_config = city["shop"]
     stock_key = f"shop_stock_{city_id}"
@@ -65,7 +66,7 @@ def city_shop(player, city_id="solmere"):
 
     def show_shop():
         clear_screen()
-        shopkeeper_dialogue(city_id, "enter")
+        service_dialogue(city_id, "shop", "enter")
         print(f"=== {city['name'].upper()} MARKET ===")
         print(f"Time: {format_time(player['time_minutes'])} | Gold: {player.get('gold', 0)}")
         print(f"Charisma: {get_effective_charisma(player)} → {100 - int((get_effective_charisma(player)-8)*0.5):d}% of base price (max 60%)\n")
@@ -89,16 +90,16 @@ def city_shop(player, city_id="solmere"):
                         player["gold"] -= final_price
                         add_item_to_inventory(player, item.copy())
                         del shop_stock[idx]
-                        shopkeeper_dialogue(city_id, "success")
+                        service_dialogue(city_id, "shop", "success")
                         input("\nPress Enter to continue...")
                     else:
-                        shopkeeper_dialogue(city_id, "fail")
+                        service_dialogue(city_id, "shop", "fail")
                         input("\nPress Enter to continue...")
                 else:
-                    shopkeeper_dialogue(city_id, "fail")
+                    service_dialogue(city_id, "shop", "fail")
                     input("\nPress Enter to continue...")
             except:
-                shopkeeper_dialogue(city_id, "fail")
+                service_dialogue(city_id, "shop", "fail")
                 input("\nPress Enter to continue...")
         elif choice == "2":
             sell_items(player)
@@ -107,9 +108,9 @@ def city_shop(player, city_id="solmere"):
             display_player_status(player)
             input("\nPress Enter to continue...")
         elif choice == "4":
-            shopkeeper_dialogue(city_id, "leave")
+            service_dialogue(city_id, "shop", "leave")
             advance_time(player, 30)
             break
         else:
-            shopkeeper_dialogue(city_id, "fail")
+            service_dialogue(city_id, "shop", "fail")
             input("\nPress Enter to continue...")

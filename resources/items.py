@@ -1,4 +1,6 @@
 # resources/items.py
+import random
+
 ITEM_RARITY = {
     "common":    {"stat_mult": 1.0,  "price_mult": 1.0},
     "uncommon":  {"stat_mult": 1.3,  "price_mult": 1.5},
@@ -51,6 +53,14 @@ ITEMS = {
     "smoke_bomb":  {"name": "Smoke Bomb", "type": "utility", "escape_bonus": 8},
     "thunder_bomb": {"name": "Thunder Bomb", "type": "utility", "base_power": 45},
     "acid_flask":   {"name": "Acid Flask", "type": "utility", "base_power": 32},
+    "healing_salve":     {"name": "Healing Salve",     "type": "consumable", "base_power": 40, "heal_over_time": 3, "duration": 3},
+    "battle_drink":      {"name": "Battle Drink",      "type": "consumable", "temp_stat": "Strength", "base_power": 5, "duration": 3},
+    "iron_skin_potion":  {"name": "Iron Skin Potion",  "type": "consumable", "defense_buff": 4, "duration": 3},
+    "poison_flask":      {"name": "Poison Flask",      "type": "utility",    "base_power": 18, "damage_over_time": 8, "duration": 3},
+    "stun_bomb":         {"name": "Stun Bomb",         "type": "utility",    "stun_chance": 0.6, "base_power": 12},
+    "flash_powder":      {"name": "Flash Powder",      "type": "utility",    "escape_bonus": 12, "blind_enemy": True},
+    "throwing_knife":    {"name": "Throwing Knife",    "type": "utility",    "base_power": 22, "armor_pierce": 2},
+    "curse_cleansing_scroll": {"name": "Scroll of Cleansing", "type": "consumable", "cure_curse": True},
 
     # === Scrolls ===
     "common_scroll":     {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "common"},
@@ -92,6 +102,27 @@ def build_item(item_id, rarity="common", enhance=0):
     elif base["type"] == "scroll":
         item["target_rarity"] = rarity
     return item
+
+def random_equipment(rarity=None):
+    """Generate a random equipment item (weapon, armor, or accessory)."""
+    if rarity is None:
+        rarity = random.choices(
+            ["common", "uncommon", "rare", "epic", "legendary"],
+            weights=[50, 30, 15, 4, 1]
+        )[0]
+    # Filter equipment items (those with a 'slot' key)
+    equip_ids = [item_id for item_id, data in ITEMS.items() if data.get("slot")]
+    if not equip_ids:
+        # Fallback: create a generic placeholder
+        return {
+            "name": "Mysterious Relic",
+            "type": "equipment",
+            "rarity": rarity,
+            "mods": {},
+            "slot": "accessory"
+        }
+    item_id = random.choice(equip_ids)
+    return build_item(item_id, rarity)
 
 def upgrade_rarity(rarity: str) -> str:
     order = ["common", "uncommon", "rare", "epic", "legendary"]

@@ -1,0 +1,157 @@
+{
+  "name": "pr",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 6,
+    "Constitution": 3,
+    "Dexterity": 2,
+    "Wisdom": 0,
+    "Learning": 2,
+    "Charisma": 12
+  },
+  "floor": 3,
+  "current_hp": 32,
+  "level": 3,
+  "exp": 50,
+  "level_hp_bonus": 8,
+  "inventory": [
+    {
+      "id": "elixir_of_strength",
+      "name": "Uncommon Elixir of Strength",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Strength",
+      "duration": 4
+    }
+  ],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [
+    {
+      "type": "blessing",
+      "stat": "all",
+      "value": 2,
+      "remaining": 1
+    }
+  ],
+  "save_slot": 1,
+  "dungeon_time": 0,
+  "gold": 227,
+  "time_minutes": 2600,
+  "location": "solmere",
+  "day": 1,
+  "xp": 50,
+  "active_debuffs": [],
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "short_sword",
+        "name": "Epic Short Sword",
+        "type": "equipment",
+        "rarity": "epic",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 4
+        }
+      },
+      270
+    ],
+    [
+      {
+        "id": "poison_flask",
+        "name": "Uncommon Poison Flask",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 23
+      },
+      67
+    ],
+    [
+      {
+        "id": "battle_axe",
+        "name": "Common Battle Axe",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 4
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "poison_flask",
+        "name": "Common Poison Flask",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 18
+      },
+      45
+    ],
+    [
+      {
+        "id": "acid_flask",
+        "name": "Epic Acid Flask",
+        "type": "utility",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 76
+      },
+      270
+    ],
+    [
+      {
+        "id": "greatsword",
+        "name": "Uncommon Greatsword",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 6
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "long_sword",
+        "name": "Uncommon Long Sword",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 3
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "tome_of_knowledge",
+        "name": "Common Tome of Knowledge",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Learning": 3
+        }
+      },
+      45
+    ]
+  ],
+  "last_shop_day_solmere": 1
+}

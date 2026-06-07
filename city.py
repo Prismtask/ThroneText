@@ -1,88 +1,39 @@
+# city.py (simplified – handlers removed, now imports from facility modules and city_dialogue)
 from utils import clear_screen, advance_time, format_time
 from character import player_max_hp
 from resources.cities import CITIES
 from save_load import save_game
-import random
-from resources.dialogues import (
-    SOLMERE_RECEPTIONIST_DIALOGUE,
-    SOLMERE_SHOPKEEPER_DIALOGUE,
-    SOLMERE_INNKEEPER_DIALOGUE,
-    BRINEWATCH_RECEPTIONIST_DIALOGUE,
-    BRINEWATCH_SHOPKEEPER_DIALOGUE,
-    BRINEWATCH_INNKEEPER_DIALOGUE,
-    ELDERFEN_RECEPTIONIST_DIALOGUE,
-    ELDERFEN_SHOPKEEPER_DIALOGUE,
-    ELDERFEN_INNKEEPER_DIALOGUE,
-    IRONDEEP_RECEPTIONIST_DIALOGUE,
-    IRONDEEP_SHOPKEEPER_DIALOGUE,
-    IRONDEEP_INNKEEPER_DIALOGUE,
-    SKYLUME_RECEPTIONIST_DIALOGUE,
-    SKYLUME_SHOPKEEPER_DIALOGUE,
-    SKYLUME_INNKEEPER_DIALOGUE,
-    ASHKARA_RECEPTIONIST_DIALOGUE,
-    ASHKARA_SHOPKEEPER_DIALOGUE,
-    ASHKARA_INNKEEPER_DIALOGUE,
-)
+from city_dialogue import service_dialogue
 
-CITY_DIALOGUES = {
-    "solmere": {
-        "receptionist": SOLMERE_RECEPTIONIST_DIALOGUE,
-        "shopkeeper": SOLMERE_SHOPKEEPER_DIALOGUE,
-        "innkeeper": SOLMERE_INNKEEPER_DIALOGUE,
-    },
-    "brinewatch": {
-        "receptionist": BRINEWATCH_RECEPTIONIST_DIALOGUE,
-        "shopkeeper": BRINEWATCH_SHOPKEEPER_DIALOGUE,
-        "innkeeper": BRINEWATCH_INNKEEPER_DIALOGUE,
-    },
-    "elderfen": {
-        "receptionist": ELDERFEN_RECEPTIONIST_DIALOGUE,
-        "shopkeeper": ELDERFEN_SHOPKEEPER_DIALOGUE,
-        "innkeeper": ELDERFEN_INNKEEPER_DIALOGUE,
-    },
-    "irondeep": {
-        "receptionist": IRONDEEP_RECEPTIONIST_DIALOGUE,
-        "shopkeeper": IRONDEEP_SHOPKEEPER_DIALOGUE,
-        "innkeeper": IRONDEEP_INNKEEPER_DIALOGUE,
-    },
-    "skylume": {
-        "receptionist": SKYLUME_RECEPTIONIST_DIALOGUE,
-        "shopkeeper": SKYLUME_SHOPKEEPER_DIALOGUE,
-        "innkeeper": SKYLUME_INNKEEPER_DIALOGUE,
-    },
-    "ashkara": {
-        "receptionist": ASHKARA_RECEPTIONIST_DIALOGUE,
-        "shopkeeper": ASHKARA_SHOPKEEPER_DIALOGUE,
-        "innkeeper": ASHKARA_INNKEEPER_DIALOGUE,
-    },
+# Import all facility handlers
+from facilities.shop import city_shop
+from facilities.inn import inn_menu
+from facilities.blacksmith import blacksmith_menu
+from facilities.temple import temple_menu
+from facilities.port import port_service
+from facilities.shipyard import shipyard_service
+from facilities.trade_hall import trade_hall_service
+from facilities.barracks import barracks_service
+from facilities.herbalist import herbalist_service
+from facilities.arcane_tower import arcane_tower_service
+from facilities.black_market import black_market_service
+
+# Map service names to handler functions
+SERVICE_HANDLERS = {
+    "shop": city_shop,
+    "inn": inn_menu,
+    "blacksmith": blacksmith_menu,
+    "port": port_service,
+    "shipyard": shipyard_service,
+    "trade_hall": trade_hall_service,
+    "temple": temple_menu,
+    "barracks": barracks_service,
+    "herbalist": herbalist_service,
+    "arcane_tower": arcane_tower_service,
+    "black_market": black_market_service,
 }
 
-def get_city_dialogues(city_id):
-    return CITY_DIALOGUES.get(city_id, CITY_DIALOGUES["solmere"])
-
-def receptionist_dialogue(player, city_id, context="enter"):
-    dialogues = get_city_dialogues(city_id)["receptionist"]
-    if context == "tip":
-        print(random.choice(dialogues["tip"]))
-    else:
-        print(random.choice(dialogues[context]))
-
-def shopkeeper_dialogue(city_id, context="enter"):
-    dialogues = get_city_dialogues(city_id)["shopkeeper"]
-    print(random.choice(dialogues[context]))
-
-def innkeeper_dialogue(city_id, context="enter"):
-    dialogues = get_city_dialogues(city_id)["innkeeper"]
-    print(random.choice(dialogues[context]))
-
 def visit_city(player, city_id=None):
-    # Lazy imports from facilities
-    from facilities.shop import city_shop
-    from facilities.inn import inn_menu
-    from facilities.travel import travel_to_city
-    from facilities.blacksmith import blacksmith_menu   # note: blacksmith now in facilities
-    from inventory_ui import manage_inventory_menu
-
     if city_id is None:
         city_id = player.get("location", "solmere") if player.get("location") != "dungeon" else "solmere"
 
@@ -93,56 +44,63 @@ def visit_city(player, city_id=None):
 
     city = CITIES.get(city_id, CITIES["solmere"])
 
-    receptionist_dialogue(player, city_id, "enter")
+    service_dialogue(city_id, "receptionist", "enter")
     print(f"\nA kind but stern receptionist nods at you from the guild desk in {city['name']}.")
 
     while True:
         clear_screen()
         current_time_str = format_time(player["time_minutes"])
         print(f"=== {city['name'].upper()} ===")
-        receptionist_dialogue(player, city_id, "enter")
+        service_dialogue(city_id, "receptionist", "enter")
         print(f"Adventurer: {player['name']} | Floor: {player['floor']} | Time: {current_time_str} | Gold: {player.get('gold', 0)}")
 
         print("\nAvailable Services:")
-        if "shop" in city["services"]:
-            print("1. Enter Market (Shop)")
-        if "inn" in city["services"]:
-            print("2. Visit the Inn")
-        if "blacksmith" in city["services"]:
-            print("3. Visit Blacksmith")
-        print("4. View Stats / Inventory")
-        print("5. Travel to Another City")
-        print("6. Return to Dungeon")
-        print("7. Save & Return to Main Menu")
+        menu_options = {}
+        option_num = 1
+        for service in city["services"]:
+            if service in SERVICE_HANDLERS:
+                display_name = service.replace("_", " ").title()
+                print(f"{option_num}. {display_name}")
+                menu_options[str(option_num)] = service
+                option_num += 1
+        print(f"{option_num}. View Stats / Inventory")
+        inv_option = str(option_num)
+        option_num += 1
+        print(f"{option_num}. Travel to Another City")
+        travel_option = str(option_num)
+        option_num += 1
+        print(f"{option_num}. Return to Dungeon")
+        dungeon_option = str(option_num)
+        option_num += 1
+        print(f"{option_num}. Save & Return to Main Menu")
+        save_option = str(option_num)
 
         choice = input("\nChoice: ").strip()
 
-        if choice == "1" and "shop" in city["services"]:
+        if choice in menu_options:
+            service = menu_options[choice]
             advance_time(player, 30)
-            city_shop(player, city_id)
-        elif choice == "2" and "inn" in city["services"]:
+            SERVICE_HANDLERS[service](player, city_id)
+        elif choice == inv_option:
             advance_time(player, 30)
-            inn_menu(player, city_id)
-        elif choice == "3" and "blacksmith" in city["services"]:
-            advance_time(player, 30)
-            blacksmith_menu(player, city_id)
-        elif choice == "4":
-            advance_time(player, 30)
+            from inventory_ui import manage_inventory_menu
             manage_inventory_menu(player)
-        elif choice == "5":
+        elif choice == travel_option:
+            from facilities.travel import travel_to_city
             travel_to_city(player, city_id)
             if player.get("location") != city_id:
                 return True
-        elif choice == "6":
-            receptionist_dialogue(player, city_id, "leave")
+        elif choice == dungeon_option:
+            service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 30)
             print("You head back into the dungeon...")
             player["location"] = "dungeon"
             return True
-        elif choice == "7":
+        elif choice == save_option:
             player["location"] = city_id
             save_game(player)
             print("Game saved. Returning to menu.")
             return False
         else:
             print("Invalid choice.")
+            input("\nPress Enter to continue...")

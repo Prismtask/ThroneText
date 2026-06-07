@@ -130,6 +130,8 @@ CITIES = {
                 "thornwall": 100,
             },
         },
+        "shop": {"stock_size": 8, "base_price_consumable": 15, "base_price_other": 45, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 0, "sleep_after_hour": 18}
     },
     "brinewatch": {
         "name": "Brinewatch",
@@ -152,6 +154,8 @@ CITIES = {
                 "blackwake": 80,
             },
         },
+        "shop": {"stock_size": 10, "base_price_consumable": 18, "base_price_other": 55, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 8, "sleep_after_hour": 19}
     },
     "greyharbor": {
         "name": "Greyharbor",
@@ -170,6 +174,8 @@ CITIES = {
                 "stormhold": 130,
             },
         },
+        "shop": {"stock_size": 7, "base_price_consumable": 14, "base_price_other": 42, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 5, "sleep_after_hour": 18}
     },
     "elderfen": {
         "name": "Elderfen",
@@ -184,6 +190,8 @@ CITIES = {
             "connections": ["solmere"],
             "travel_time": {"solmere": 150},
         },
+        "shop": {"stock_size": 6, "base_price_consumable": 12, "base_price_other": 40, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 6, "sleep_after_hour": 17}
     },
     "irondeep": {
         "name": "Irondeep",
@@ -199,6 +207,8 @@ CITIES = {
             "connections": ["solmere"],
             "travel_time": {"solmere": 130},
         },
+        "shop": {"stock_size": 8, "base_price_consumable": 16, "base_price_other": 50, "rarity_bias": "higher"},
+        "inn": {"rest_cost": 7, "sleep_after_hour": 19}
     },
     "skylume": {
         "name": "Skylume",
@@ -216,6 +226,8 @@ CITIES = {
                 "isle_of_glass": 240,
             },
         },
+        "shop": {"stock_size": 9, "base_price_consumable": 20, "base_price_other": 60, "rarity_bias": "higher"},
+        "inn": {"rest_cost": 12, "sleep_after_hour": 20}
     },
     "ashkara": {
         "name": "Ashkara",
@@ -230,6 +242,8 @@ CITIES = {
             "connections": ["brinewatch"],
             "travel_time": {"brinewatch": 200},
         },
+        "shop": {"stock_size": 7, "base_price_consumable": 22, "base_price_other": 65, "rarity_bias": "higher"},
+        "inn": {"rest_cost": 15, "sleep_after_hour": 21}
     },
     "sunreach": {
         "name": "Sunreach",
@@ -249,6 +263,8 @@ CITIES = {
                 "coralhaven": 120,
             },
         },
+        "shop": {"stock_size": 8, "base_price_consumable": 16, "base_price_other": 48, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 7, "sleep_after_hour": 18}
     },
     "thornwall": {
         "name": "Thornwall",
@@ -263,6 +279,8 @@ CITIES = {
             "connections": ["solmere"],
             "travel_time": {"solmere": 100},
         },
+        "shop": {"stock_size": 6, "base_price_consumable": 13, "base_price_other": 38, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 4, "sleep_after_hour": 19}
     },
     "dunemar": {
         "name": "Dunemar",
@@ -282,6 +300,8 @@ CITIES = {
                 "tidebreak": 110,
             },
         },
+        "shop": {"stock_size": 9, "base_price_consumable": 17, "base_price_other": 52, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 9, "sleep_after_hour": 18}
     },
     "tidebreak": {
         "name": "Tidebreak",
@@ -303,6 +323,8 @@ CITIES = {
                 "stormhold": 80,
             },
         },
+        "shop": {"stock_size": 10, "base_price_consumable": 19, "base_price_other": 58, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 10, "sleep_after_hour": 19}
     },
     "stormhold": {
         "name": "Stormhold",
@@ -321,6 +343,8 @@ CITIES = {
                 "tidebreak": 80,
             },
         },
+        "shop": {"stock_size": 7, "base_price_consumable": 15, "base_price_other": 45, "rarity_bias": "normal"}
+        # No inn
     },
     "coralhaven": {
         "name": "Coralhaven",
@@ -340,6 +364,8 @@ CITIES = {
                 "tidebreak": 70,
             },
         },
+        "shop": {"stock_size": 8, "base_price_consumable": 16, "base_price_other": 50, "rarity_bias": "normal"},
+        "inn": {"rest_cost": 8, "sleep_after_hour": 18}
     },
     "blackwake": {
         "name": "Blackwake",
@@ -354,6 +380,7 @@ CITIES = {
             "connections": ["brinewatch"],
             "travel_time": {"brinewatch": 80},
         },
+        "inn": {"rest_cost": 6, "sleep_after_hour": 20}
     },
     "isle_of_glass": {
         "name": "Isle of Glass",
