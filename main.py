@@ -164,9 +164,7 @@ def play_game(player):
                 if not visit_city(player, city_id):
                     return   # player saved & quit from within city
                 # After returning from city, loop again (show the same menu)
-                # If player traveled to another city, the main loop will handle it
                 if player.get("location") != "dungeon":
-                    # The outer game loop will show the new city automatically
                     break
 
             elif choice == '3':

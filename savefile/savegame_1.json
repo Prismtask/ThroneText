@@ -3,55 +3,33 @@
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 7,
-    "Constitution": 5,
+    "Strength": 14,
+    "Constitution": 9,
     "Dexterity": 1,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 14
+    "Charisma": 9
   },
   "floor": 5,
-  "current_hp": 54,
-  "level": 7,
-  "exp": 133,
-  "level_hp_bonus": 24,
+  "current_hp": 90,
+  "level": 13,
+  "exp": 204,
+  "level_hp_bonus": 48,
   "inventory": [
     {
-      "id": "greatsword",
-      "name": "Common Greatsword",
+      "id": "dragonhide",
+      "name": "Common Dragonhide Armor",
       "type": "equipment",
       "rarity": "common",
       "enhance": 0,
-      "slot": "weapon",
+      "slot": "armor",
       "mods": {
-        "Strength": 5
+        "Constitution": 4,
+        "Dexterity": 2
       }
     },
     {
-      "id": "cloak_of_shadows",
-      "name": "Uncommon Cloak of Shadows",
-      "type": "equipment",
-      "rarity": "uncommon",
-      "enhance": 0,
-      "slot": "accessory",
-      "mods": {
-        "Dexterity": 2,
-        "Charisma": 1
-      }
-    },
-    {
-      "id": "tome_of_knowledge",
-      "name": "Common Tome of Knowledge",
-      "type": "equipment",
-      "rarity": "common",
-      "enhance": 0,
-      "slot": "accessory",
-      "mods": {
-        "Learning": 3
-      }
-    },
-    {
-      "id": "common_scroll",
+      "id": "rare_scroll",
       "name": "Uncommon Scroll of Fusion",
       "type": "scroll",
       "rarity": "uncommon",
@@ -59,33 +37,130 @@
       "target_rarity": "uncommon"
     },
     {
-      "id": "elixir_of_mind",
-      "name": "Uncommon Elixir of Mind",
-      "type": "consumable",
+      "id": "amulet_of_vigor",
+      "name": "Uncommon Amulet of Vigor",
+      "type": "equipment",
       "rarity": "uncommon",
       "enhance": 0,
-      "power": 3,
-      "temp_stat": "Learning",
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "elixir_of_speed",
+      "name": "Epic Elixir of Speed",
+      "type": "consumable",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 7,
+      "temp_stat": "Dexterity",
       "duration": 4
     },
     {
-      "id": "minor_healing_potion",
-      "name": "Common Minor Healing Potion",
-      "type": "consumable",
-      "rarity": "common",
+      "id": "stun_bomb",
+      "name": "Uncommon Stun Bomb",
+      "type": "utility",
+      "rarity": "uncommon",
       "enhance": 0,
-      "power": 25
+      "power": 15,
+      "stun_chance": 0.6
     },
     {
-      "id": "leather_armor",
-      "name": "Common Leather Armor",
+      "id": "tome_of_knowledge",
+      "name": "Uncommon Tome of Knowledge",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 3
+      }
+    },
+    {
+      "id": "mace",
+      "name": "Uncommon Mace",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "fire_bomb",
+      "name": "Common Fire Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 35
+    },
+    {
+      "id": "amulet_of_vigor",
+      "name": "Rare Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 5
+      }
+    },
+    {
+      "id": "chainmail",
+      "name": "Common Chainmail",
       "type": "equipment",
       "rarity": "common",
       "enhance": 0,
       "slot": "armor",
       "mods": {
-        "Dexterity": 2,
-        "Constitution": 1
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "throwing_knife",
+      "name": "Uncommon Throwing Knife",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 28,
+      "armor_pierce": 2
+    },
+    {
+      "id": "legendary_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "uncommon_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "greater_healing_potion",
+      "name": "Common Greater Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 110
+    },
+    {
+      "id": "ring_of_grace",
+      "name": "Common Ring of Grace",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2
       }
     }
   ],
@@ -97,8 +172,8 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 943,
-  "time_minutes": 1290,
+  "gold": 1915,
+  "time_minutes": 3000,
   "location": "dungeon",
   "day": 1
 }

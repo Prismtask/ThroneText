@@ -1,30 +1,37 @@
+# travel.py
 from resources.cities import CITIES
-from utils import advance_time, format_time
+from utils import advance_time
 
 def travel_to_city(player, current_city_id):
     city = CITIES.get(current_city_id, CITIES["solmere"])
-    connections = city.get("travel", {}).get("connections", [])
-    travel_times = city.get("travel", {}).get("travel_time", {})
-    if not connections:
-        print("No other cities connected from here.")
+    all_connections = city.get("travel", {}).get("connections", [])
+    
+    # FILTER: Only allow land travel from this menu
+    land_connections = [c for c in all_connections if c.get("type", "land") == "land"]
+    
+    if not land_connections:
+        print("There are no overland roads leading out of this city.")
         input("Press Enter...")
         return
-    print(f"\nAvailable destinations from {city['name']}:")
-    for i, dest_id in enumerate(connections, 1):
-        dest = CITIES.get(dest_id, {})
-        minutes = travel_times.get(dest_id, 60)
-        print(f"{i}. {dest.get('name', dest_id)} ({minutes} minutes)")
+
+    print(f"\nAvailable overland destinations from {city['name']}:")
+    for i, conn in enumerate(land_connections, 1):
+        dest_id = conn["dest"]
+        dest_name = CITIES.get(dest_id, {}).get("name", dest_id)
+        print(f"{i}. {dest_name} ({conn['travel_time']} minutes walk)")
+
     try:
         idx = int(input("Choose destination (0 to cancel): ")) - 1
-        if idx < 0 or idx >= len(connections):
+        if idx < 0 or idx >= len(land_connections):
             return
-        dest_id = connections[idx]
+        
+        chosen_route = land_connections[idx]
+        dest_id = chosen_route["dest"]
         dest_name = CITIES.get(dest_id, {}).get("name", dest_id)
-        travel_minutes = travel_times.get(dest_id, 60)
-        print(f"Traveling to {dest_name}... ({travel_minutes} minutes)")
-        advance_time(player, travel_minutes)
+        
+        print(f"Traveling on foot to {dest_name}... ({chosen_route['travel_time']} minutes)")
+        advance_time(player, chosen_route["travel_time"])
         player["location"] = dest_id
         print(f"Arrived in {dest_name}!")
-        input("Press Enter to continue...")
-    except:
-        print("Travel cancelled.")
+    except ValueError:
+        return

@@ -87,6 +87,8 @@ def visit_city(player, city_id=None):
         if choice in menu_options:
             service = menu_options[choice]
             SERVICE_HANDLERS[service](player, city_id)
+            if player.get("location") != city_id:   # <-- ADD THIS LINE
+                return True  
         elif choice == inv_option:
             advance_time(player, 30)
             from inventory_ui import manage_inventory_menu
