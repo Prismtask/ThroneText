@@ -14,6 +14,9 @@ def get_random_enemy_key(floor, boss=False):
     """Pick a random enemy suitable for the current floor."""
     pool = []
     for key, data in ENEMIES.items():
+        # Skip super bosses on regular floors
+        if floor % 10 != 0 and data.get("super_boss", False):
+            continue
         if boss and not data.get("boss", False):
             continue
         if boss:
@@ -114,6 +117,40 @@ def add_gold_drop(player, enemy_key):
 def explore_dungeon(player):
     """Main dungeon loop. Clears one floor. Returns False if player dies."""
     floor = player["floor"]
+    
+    # ----- SUPER BOSS ENCOUNTER (every 10th floor) -----
+    if floor % 10 == 0:
+        print("\n" + "="*50)
+        print("⚠️  A dark, suffocating energy fills the air...")
+        print("The walls are covered in dense, toxic cobwebs.")
+        print("You have stumbled directly into a SUPER BOSS ARENA!")
+        print("="*50)
+        input("Press Enter to face the horror...")
+
+        # Combat loop – cannot flee (if flee, restart combat)
+        while True:
+            advance_time(player, 60)   # time passes
+            result = combat(player, ["broodmother_vileheart"])
+            if result == "victory":
+                # Reward
+                super_boss_exp = 500 + (floor * 50)
+                super_boss_gold = 300 + (floor * 30)
+                player["gold"] = player.get("gold", 0) + super_boss_gold
+                print(f"\n🏆 Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
+                gain_exp(player, super_boss_exp)
+                
+                # Full heal and save (outer loop will increment floor and heal again, but that's fine)
+                player["current_hp"] = player_max_hp(player)
+                save_game(player)
+                return True   # floor cleared, outer loop will handle floor+1 and full heal
+            elif result == "fled":
+                print("You cannot flee from a milestone Super Boss! The webs trap you.")
+                input("Press Enter to continue the fight...")
+                continue
+            elif result == "dead":
+                return False
+
+    # ----- NORMAL FLOORS (non‑milestone) -----
     print(f"\n=== DESCENDING INTO DUNGEON FLOOR {floor} ===")
     input("Press Enter to begin your descent...")
 
@@ -174,7 +211,7 @@ def explore_dungeon(player):
                 print("Your adventure ends here...")
                 return False
 
-    # Floor cleared
+    # Floor cleared (normal)
     player["floor"] += 1
 
     if player.get("active_buffs"):

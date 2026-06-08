@@ -139,4 +139,24 @@ ENEMIES = {
     "primordial_elemental": {"name": "Primordial Elemental", "race": "Elemental", "level": 17, "base_hp": 130, "mods": {"Constitution": 5, "Learning": 4}, "boss": True},
     "abyssal_abomination": {"name": "Abyssal Abomination", "race": "Abomination", "level": 20, "base_hp": 180, "mods": {"Strength": 7, "Constitution": 6}, "boss": True},
     "eternal_shadow": {"name": "Eternal Shadow", "race": "Shadow", "level": 16, "base_hp": 95, "mods": {"Dexterity": 6, "Charisma": 3}, "boss": True},
+
+    # Super Bosses (20+)
+    #Broodmother Vilehart
+    "broodmother_vileheart": {
+    "name": "Broodmother Vileheart",
+    "race": "Beast",
+    "level": 20,
+    "base_hp": 350,
+    "mods": {"Strength": 6, "Constitution": 6, "Dexterity": 4},
+    "boss": True,
+    "super_boss": True
+    },
+    "vileheart_spiderling": {
+    "name": "Vileheart Spiderling",
+    "race": "Beast",
+    "level": 15,
+    "base_hp": 45,
+    "mods": {"Dexterity": 5, "Strength": 2},
+    "boss": False
+    }
 }
