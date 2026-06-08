@@ -33,11 +33,24 @@ def get_random_enemy_key(floor, boss=False):
 
 
 def generate_floor(floor):
-    """Create a list of enemy keys: 4 normal rooms + 1 boss."""
-    enemies = [get_random_enemy_key(floor, boss=False) for _ in range(4)]
-    boss = get_random_enemy_key(floor, boss=True)
-    enemies.append(boss)
-    return enemies
+    """Create a list of rooms, where each room contains a list of enemy keys (up to 5)."""
+    rooms = []
+    max_enemies = min(5, floor)  # Max group size matches floor level up to a hard cap of 5
+
+    # Generate 4 normal rooms
+    for _ in range(4):
+        num_enemies = random.randint(1, max_enemies)
+        room_enemies = [get_random_enemy_key(floor, boss=False) for _ in range(num_enemies)]
+        rooms.append(room_enemies)
+
+    # Generate 1 Boss Room (Boss + scaled minion pack up to max cap of 5 characters total)
+    boss_room = [get_random_enemy_key(floor, boss=True)]
+    num_minions = random.randint(0, min(4, floor - 1))
+    for _ in range(num_minions):
+        boss_room.append(get_random_enemy_key(floor, boss=False))
+    rooms.append(boss_room)
+
+    return rooms
 
 
 def roll_drop(enemy_level):
@@ -85,7 +98,7 @@ def add_drop_to_inventory(player, enemy_level):
         item_id, rarity = drop
         item = build_item(item_id, rarity)
         player.setdefault("inventory", []).append(item)
-        print(f"\nYou found: {item['name']}!")
+        print(f"You found: {item['name']}!")
         return True
     return False
 
@@ -97,6 +110,7 @@ def add_gold_drop(player, enemy_key):
     player["gold"] = player.get("gold", 0) + gold
     print(f"You found {gold} gold on the enemy!")
 
+
 def explore_dungeon(player):
     """Main dungeon loop. Clears one floor. Returns False if player dies."""
     floor = player["floor"]
@@ -106,7 +120,7 @@ def explore_dungeon(player):
     rooms = generate_floor(floor)
     total_rooms = len(rooms)
 
-    for i, enemy_key in enumerate(rooms):
+    for i, enemy_keys in enumerate(rooms):
         if i == total_rooms - 1:
             print(f"\n*** BOSS ROOM ***")
         else:
@@ -119,13 +133,15 @@ def explore_dungeon(player):
         while True:
             clear_screen()
             print(f"Dungeon Floor {floor} - Room {i+1}/{total_rooms} | Time: {format_time(player.get('time_minutes', 480))}")
-            result = combat(player, enemy_key)
+            result = combat(player, enemy_keys)
 
             if result == "victory":
-                enemy_level = ENEMIES[enemy_key]["level"]
-                gain_exp(player, enemy_level * 12)
-                add_drop_to_inventory(player, enemy_level)
-                add_gold_drop(player, enemy_key)
+                print("\n--- Room Victory Rewards ---")
+                for enemy_key in enemy_keys:
+                    enemy_level = ENEMIES[enemy_key]["level"]
+                    gain_exp(player, enemy_level * 12)
+                    add_drop_to_inventory(player, enemy_level)
+                    add_gold_drop(player, enemy_key)
 
                 # Heal after victory
                 heal = random.randint(1, 5) + player_con_mod(player)
@@ -133,7 +149,7 @@ def explore_dungeon(player):
                     player["current_hp"] + heal,
                     player_max_hp(player)
                 )
-                print(f"You catch your breath and recover {heal} HP.")
+                print(f"\nYou catch your breath and recover {heal} HP.")
 
                 while True:
                     print("\n[Enter] to continue  [I]nventory/Stats  [S]ave and quit")
@@ -152,7 +168,7 @@ def explore_dungeon(player):
                 break
 
             elif result == "fled":
-                print("You retreat from the room. The enemy remains.")
+                print("You retreat from the room. The enemies remain.")
                 continue
             elif result == "dead":
                 print("Your adventure ends here...")
@@ -166,6 +182,7 @@ def explore_dungeon(player):
         player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "blessing"]
         if len(player["active_buffs"]) < orig_len:
             print("\nYour divine temple blessing has worn off as you transition floors.")
+    
     # Advance time by 1 hour for floor completion
     current_time = advance_time(player, 60)
     

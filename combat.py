@@ -35,6 +35,7 @@ def enemy_stats(enemy_key, player=None):
     scaled_dex = int(dex_mod * (1 + (multiplier - 1) * 0.5))
 
     return {
+        "key": enemy_key,
         "name": template["name"],
         "hp": scaled_hp,
         "str_mod": scaled_str,
@@ -57,12 +58,10 @@ def player_dex_mod(player):
     return player["attributes"]["Dexterity"]
 
 
-def combat(player, enemy_key):
-    """Run turn‑based battle. Returns 'victory', 'fled', or 'dead'."""
-    enemy = enemy_stats(enemy_key, player)
+def combat(player, enemy_keys):
+    """Run turn‑based battle against a group of enemies. Returns 'victory', 'fled', or 'dead'."""
+    enemies = [enemy_stats(k, player) for k in enemy_keys]
     player_hp = player["current_hp"]   # backup
-
-    enemy_slowed = False
 
     equip_mods = get_total_equipment_mods(player)
     p_str = player_str_mod(player) + equip_mods.get("Strength", 0)
@@ -87,27 +86,59 @@ def combat(player, enemy_key):
             elif buff.get("stat") == "Constitution": p_con += buff["value"]
             elif buff.get("stat") == "Dexterity": p_dex += buff["value"]
 
-    print(f"\nA {enemy['name']} appears! (HP: {enemy['hp']})")
+    print("\nEnemies approach!")
+    for e in enemies:
+        print(f"- A {e['name']} appears! (HP: {e['hp']})")
 
     while True:
-        print(f"\nYour HP: {player['current_hp']}  |  {enemy['name']} HP: {enemy['hp']}")
-        if enemy_slowed:
-            print(f"(The {enemy['name']} is slowed!)")
+        # Validate roster population
+        enemies = [e for e in enemies if e["hp"] > 0]
+        if not enemies:
+            print("All enemies have been defeated!")
+            return "victory"
+
+        print(f"\nYour HP: {player['current_hp']}")
+        print("Enemies in the room:")
+        for idx, e in enumerate(enemies):
+            statuses = []
+            if e.get("slowed"): statuses.append("Slowed")
+            if e.get("stunned"): statuses.append("Stunned")
+            if e.get("blinded"): statuses.append("Blinded")
+            status_str = f" ({', '.join(statuses)})" if statuses else ""
+            print(f"  [{idx + 1}] {e['name']} - HP: {e['hp']}{status_str}")
+
         print("[A]ttack  [D]efend  [F]lee  [U]se item")
         action = input("Choose: ").strip().lower()
 
         defending = False
         if action == "a":
-            dmg = random.randint(4, 10) + p_str - enemy["con_mod"]
+            if len(enemies) > 1:
+                try:
+                    choice = int(input("Select target number: ")) - 1
+                    if choice < 0 or choice >= len(enemies):
+                        print("Invalid target selection.")
+                        continue
+                    target = enemies[choice]
+                except ValueError:
+                    print("Please enter a valid number.")
+                    continue
+            else:
+                target = enemies[0]
+
+            dmg = random.randint(4, 10) + p_str - target["con_mod"]
             dmg = max(0, dmg)
-            enemy["hp"] -= dmg
-            print(f"You strike for {dmg} damage!")
-            if enemy["hp"] <= 0:
-                print(f"You defeated {enemy['name']}!")
-                return "victory"
+            target["hp"] -= dmg
+            print(f"You strike {target['name']} for {dmg} damage!")
+            if target["hp"] <= 0:
+                print(f"You defeated {target['name']}!")
+                enemies = [e for e in enemies if e["hp"] > 0]
+                if not enemies:
+                    return "victory"
+
         elif action == "d":
             defending = True
             print("You brace for impact, raising your guard.")
+
         elif action == "u":
             combat_inventory = [
                 (idx, item) for idx, item in enumerate(player.get("inventory", []))
@@ -126,6 +157,23 @@ def combat(player, enemy_key):
                     continue
                 true_idx, item = combat_inventory[choice]
                 msg = ""
+
+                # Target selection logic for items that apply an external effect onto an enemy
+                affects_enemy = any(k in item for k in ["status", "blind_enemy", "base_power", "damage_over_time", "stun_chance"])
+                if affects_enemy:
+                    if len(enemies) > 1:
+                        try:
+                            t_choice = int(input(f"Select target for {item['name']}: ")) - 1
+                            if t_choice < 0 or t_choice >= len(enemies):
+                                print("Invalid target choice.")
+                                continue
+                            target = enemies[t_choice]
+                        except ValueError:
+                            print("Invalid input.")
+                            continue
+                    else:
+                        target = enemies[0]
+
                 if "power" in item:
                     heal = item["power"]
                     player["current_hp"] = min(player["current_hp"] + heal, player.get("max_hp", 999))
@@ -163,36 +211,36 @@ def combat(player, enemy_key):
                         msg += "You are not cursed. "
                 if "base_power" in item and "damage_over_time" not in item and "stun_chance" not in item:
                     dmg = item["base_power"]
-                    armor = enemy["con_mod"]
+                    armor = target["con_mod"]
                     if "armor_pierce" in item:
                         armor = max(0, armor - item["armor_pierce"])
                         msg += f"(ignores {item['armor_pierce']} armor) "
                     final_dmg = max(1, dmg - armor)
-                    enemy["hp"] -= final_dmg
-                    msg += f"You deal {final_dmg} damage to the {enemy['name']}! "
+                    target["hp"] -= final_dmg
+                    msg += f"You deal {final_dmg} damage to the {target['name']}! "
                 if "damage_over_time" in item:
-                    enemy.setdefault("active_debuffs", []).append({
+                    target.setdefault("active_debuffs", []).append({
                         "type": "dot",
                         "damage": item["damage_over_time"],
                         "remaining": item.get("duration", 3)
                     })
-                    msg += f"The {enemy['name']} is poisoned/burning! "
+                    msg += f"The {target['name']} is poisoned/burning! "
                 if "stun_chance" in item:
                     if random.random() < item["stun_chance"]:
-                        enemy["stunned"] = True
-                        msg += f"The {enemy['name']} is stunned and loses its next turn! "
+                        target["stunned"] = True
+                        msg += f"The {target['name']} is stunned and loses its next turn! "
                     else:
                         msg += "The stun attempt fails. "
                 if item.get("status") == "slow":
-                    enemy_slowed = True
-                    msg += "The enemy is slowed. "
+                    target["slowed"] = True
+                    msg += f"The {target['name']} is slowed. "
                 if item.get("blind_enemy"):
-                    enemy["blinded"] = True
-                    enemy.setdefault("active_debuffs", []).append({
+                    target["blinded"] = True
+                    target.setdefault("active_debuffs", []).append({
                         "type": "blind",
                         "remaining": 3
                     })
-                    msg += "The enemy is blinded (reduced dexterity). "
+                    msg += f"The {target['name']} is blinded (reduced dexterity). "
                 if "escape_bonus" in item:
                     print(msg)
                     player["inventory"].pop(true_idx)
@@ -201,7 +249,8 @@ def combat(player, enemy_key):
                 print(msg)
                 player["inventory"].pop(true_idx)
 
-                if enemy["hp"] <= 0:
+                enemies = [e for e in enemies if e["hp"] > 0]
+                if not enemies:
                     return "victory"
                 if player["current_hp"] <= 0:
                     return "dead"
@@ -209,89 +258,121 @@ def combat(player, enemy_key):
             except (ValueError, IndexError):
                 print("Invalid choice.")
                 continue
+
         elif action == "f":
             effective_player_dex = p_dex
             for debuff in player.get("active_debuffs", []):
                 if debuff["type"] == "slow":
                     effective_player_dex -= 3
-            effective_enemy_dex = enemy["dex_mod"]
-            if enemy_slowed:
-                effective_enemy_dex -= 2
-            if enemy.get("blinded"):
-                effective_enemy_dex -= 3
-            roll = random.randint(1,20) + effective_player_dex
-            difficulty = 10 + effective_enemy_dex
+            
+            # Escape checks are calculated against the highest effective speed among all active attackers
+            max_enemy_dex = -999
+            for e in enemies:
+                eff_enemy_dex = e["dex_mod"]
+                if e.get("slowed"): eff_enemy_dex -= 2
+                if e.get("blinded"): eff_enemy_dex -= 3
+                if eff_enemy_dex > max_enemy_dex:
+                    max_enemy_dex = eff_enemy_dex
+
+            roll = random.randint(1, 20) + effective_player_dex
+            difficulty = 10 + max_enemy_dex
             if roll >= difficulty:
                 print("You successfully flee from battle!")
                 return "fled"
             else:
                 print("You fail to escape and expose yourself!")
 
-        # Enemy turn (only if enemy is still alive)
-        if enemy["hp"] <= 0:
-            continue
+        # --- Enemy Turn Process Loop ---
+        for enemy in enemies[:]:
+            if enemy["hp"] <= 0:
+                continue
 
-        # Check if enemy is stunned
-        if enemy.get("stunned"):
-            print(f"The {enemy['name']} is stunned and cannot act!")
-            enemy["stunned"] = False
-        else:
-            # Calculate damage
-            block = p_con + (5 if defending else 0)
-            enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
-            enemy_dmg = max(0, enemy_dmg)
-            player["current_hp"] -= enemy_dmg
+            # Process ticks for active status condition updates tracking on specific entities
+            if enemy.get("active_debuffs"):
+                for debuff in enemy["active_debuffs"][:]:
+                    if debuff["type"] == "dot":
+                        dot_dmg = debuff["damage"]
+                        enemy["hp"] -= dot_dmg
+                        print(f"The {enemy['name']} takes {dot_dmg} status damage!")
+                        debuff["remaining"] -= 1
+                        if debuff["remaining"] <= 0:
+                            enemy["active_debuffs"].remove(debuff)
+                    elif debuff["type"] == "blind":
+                        debuff["remaining"] -= 1
+                        if debuff["remaining"] <= 0:
+                            enemy["blinded"] = False
+                            enemy["active_debuffs"].remove(debuff)
+                            print(f"The {enemy['name']} recovers their vision.")
 
-            if enemy_dmg > 0:
-                print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
+            if enemy["hp"] <= 0:
+                print(f"The {enemy['name']} has succumbed to status damage!")
+                continue
+
+            # Turn behavior evaluation
+            if enemy.get("stunned"):
+                print(f"The {enemy['name']} is stunned and cannot act!")
+                enemy["stunned"] = False
             else:
-                print(f"The {enemy['name']} attacks but you block all damage!")
+                block = p_con + (5 if defending else 0)
+                enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
+                enemy_dmg = max(0, enemy_dmg)
+                player["current_hp"] -= enemy_dmg
 
-            if player["current_hp"] <= 0:
-                print("You have been slain.")
-                return "dead"
-
-            # Enemy applies debuff (poison/slow/curse) after attacking
-            race = ENEMIES[enemy_key]["race"]
-            debuff_chance = 0.3
-            if race in ["Undead", "Demon", "Shadow", "Vampire"]:
-                debuff_chance = 0.45
-            if random.random() < debuff_chance:
-                if race in ["Undead", "Shadow", "Vampire"]:
-                    effect = random.choices(["poison", "slow", "curse"], weights=[30, 30, 40])[0]
-                elif race in ["Demon", "Abomination"]:
-                    effect = random.choices(["poison", "curse", "slow"], weights=[25, 50, 25])[0]
-                elif race in ["Beast", "Lizardfolk"]:
-                    effect = random.choices(["poison", "slow"], weights=[70, 30])[0]
+                if enemy_dmg > 0:
+                    print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
                 else:
-                    effect = random.choice(["poison", "slow"])
+                    print(f"The {enemy['name']} attacks but you block all incoming damage!")
 
-                if effect == "poison":
-                    dmg = random.randint(3, 7)
-                    player.setdefault("active_debuffs", []).append({
-                        "type": "poison",
-                        "damage": dmg,
-                        "remaining": 3
-                    })
-                    print(f"The {enemy['name']} poisons you! You will take {dmg} damage each turn for 3 turns.")
-                elif effect == "slow":
-                    player.setdefault("active_debuffs", []).append({
-                        "type": "slow",
-                        "remaining": 3
-                    })
-                    print(f"The {enemy['name']} slows you! Your dexterity is reduced for 3 turns.")
-                elif effect == "curse":
-                    if not player.get("cursed"):
-                        player["cursed"] = True
-                        player.setdefault("active_debuffs", []).append({
-                            "type": "curse",
-                            "remaining": -1
-                        })
-                        print(f"A dark curse falls upon you! It will not fade on its own. Visit a temple to remove it.")
+                if player["current_hp"] <= 0:
+                    print("You have been slain.")
+                    return "dead"
+
+                # Trigger tactical context modifiers
+                race = ENEMIES[enemy["key"]]["race"]
+                debuff_chance = 0.45 if race in ["Undead", "Demon", "Shadow", "Vampire"] else 0.3
+                
+                if random.random() < debuff_chance:
+                    if race in ["Undead", "Shadow", "Vampire"]:
+                        effect = random.choices(["poison", "slow", "curse"], weights=[30, 30, 40])[0]
+                    elif race in ["Demon", "Abomination"]:
+                        effect = random.choices(["poison", "curse", "slow"], weights=[25, 50, 25])[0]
+                    elif race in ["Beast", "Lizardfolk"]:
+                        effect = random.choices(["poison", "slow"], weights=[70, 30])[0]
                     else:
-                        print("You are already cursed. The enemy's curse fails to take hold.")
+                        effect = random.choice(["poison", "slow"])
 
-        # Process active debuffs on player (poison, etc.) at end of turn
+                    if effect == "poison":
+                        dmg = random.randint(3, 7)
+                        player.setdefault("active_debuffs", []).append({
+                            "type": "poison",
+                            "damage": dmg,
+                            "remaining": 3
+                        })
+                        print(f"The {enemy['name']} poisons you! You will take {dmg} damage each turn for 3 turns.")
+                    elif effect == "slow":
+                        player.setdefault("active_debuffs", []).append({
+                            "type": "slow",
+                            "remaining": 3
+                        })
+                        print(f"The {enemy['name']} slows you! Your dexterity is reduced for 3 turns.")
+                    elif effect == "curse":
+                        if not player.get("cursed"):
+                            player["cursed"] = True
+                            player.setdefault("active_debuffs", []).append({
+                                "type": "curse",
+                                "remaining": -1
+                            })
+                            print(f"A dark curse falls upon you from the {enemy['name']}! It will not fade on its own.")
+                        else:
+                            print(f"The {enemy['name']}'s curse fails to take hold.")
+
+        # Clean dead references
+        enemies = [e for e in enemies if e["hp"] > 0]
+        if not enemies:
+            print("All enemies have been defeated!")
+            return "victory"
+
+        # End of round player maintenance phase
         if player.get("active_debuffs"):
             for debuff in player["active_debuffs"][:]:
                 if debuff["type"] == "poison":
@@ -305,12 +386,13 @@ def combat(player, enemy_key):
                     debuff["remaining"] -= 1
                     if debuff["remaining"] <= 0:
                         player["active_debuffs"].remove(debuff)
-                # curse has no auto-removal
 
-        # Process active buffs on player
+        if player["current_hp"] <= 0:
+            print("You have been slain.")
+            return "dead"
+
         if player.get("active_buffs"):
             for buff in player["active_buffs"][:]:
-                # Skip over floor-wide blessings so they don't tick down per turn
                 if buff.get("type") == "blessing":
                     continue
                 
