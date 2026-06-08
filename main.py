@@ -134,7 +134,7 @@ def play_game(player):
             break
 
         # Floor cleared
-        print(f"\nYou have successfully cleared Floor {player['floor'] - 1}!\n")
+        print(f"\nYou have successfully cleared Floor {player['floor']}!\n")
         player["floor"] += 1
         player["current_hp"] = player_max_hp(player)   # full heal after floor
         save_game(player)                              # auto-save floor progress

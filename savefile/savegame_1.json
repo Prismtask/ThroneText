@@ -1,0 +1,104 @@
+{
+  "name": "prism",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 7,
+    "Constitution": 5,
+    "Dexterity": 1,
+    "Wisdom": 1,
+    "Learning": 1,
+    "Charisma": 14
+  },
+  "floor": 5,
+  "current_hp": 54,
+  "level": 7,
+  "exp": 133,
+  "level_hp_bonus": 24,
+  "inventory": [
+    {
+      "id": "greatsword",
+      "name": "Common Greatsword",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5
+      }
+    },
+    {
+      "id": "cloak_of_shadows",
+      "name": "Uncommon Cloak of Shadows",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "tome_of_knowledge",
+      "name": "Common Tome of Knowledge",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 3
+      }
+    },
+    {
+      "id": "common_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "elixir_of_mind",
+      "name": "Uncommon Elixir of Mind",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Learning",
+      "duration": 4
+    },
+    {
+      "id": "minor_healing_potion",
+      "name": "Common Minor Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 25
+    },
+    {
+      "id": "leather_armor",
+      "name": "Common Leather Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 2,
+        "Constitution": 1
+      }
+    }
+  ],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 1,
+  "dungeon_time": 0,
+  "gold": 943,
+  "time_minutes": 1290,
+  "location": "dungeon",
+  "day": 1
+}

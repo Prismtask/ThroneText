@@ -212,7 +212,6 @@ def explore_dungeon(player):
                 return False
 
     # Floor cleared (normal)
-    player["floor"] += 1
 
     if player.get("active_buffs"):
         orig_len = len(player["active_buffs"])
@@ -223,7 +222,6 @@ def explore_dungeon(player):
     # Advance time by 1 hour for floor completion
     current_time = advance_time(player, 60)
     
-    print(f"\nYou have cleared Floor {floor}!")
     print(f"Current time: {current_time} | Gold: {player.get('gold', 0)}")
 
     player["current_hp"] = player_max_hp(player)
