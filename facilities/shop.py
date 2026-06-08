@@ -91,9 +91,11 @@ def city_shop(player, city_id="solmere"):
                         add_item_to_inventory(player, item.copy())
                         del shop_stock[idx]
                         service_dialogue(city_id, "shop", "success")
+                        advance_time(player, 15)
                         input("\nPress Enter to continue...")
                     else:
                         service_dialogue(city_id, "shop", "fail")
+                        advance_time(player, 10)
                         input("\nPress Enter to continue...")
                 else:
                     service_dialogue(city_id, "shop", "fail")
@@ -103,9 +105,11 @@ def city_shop(player, city_id="solmere"):
                 input("\nPress Enter to continue...")
         elif choice == "2":
             sell_items(player)
+            advance_time(player, 15)
             input("\nPress Enter to continue...")
         elif choice == "3":
             display_player_status(player)
+            advance_time(player, 10)
             input("\nPress Enter to continue...")
         elif choice == "4":
             service_dialogue(city_id, "shop", "leave")
@@ -113,4 +117,5 @@ def city_shop(player, city_id="solmere"):
             break
         else:
             service_dialogue(city_id, "shop", "fail")
+            advance_time(player, 10)
             input("\nPress Enter to continue...")

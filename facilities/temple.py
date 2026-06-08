@@ -35,7 +35,7 @@ def temple_menu(player, city_id="solmere"):
         else:
             print("Invalid choice.")
             input("Press Enter...")
-            advance_time(player, 30)
+            advance_time(player, 15)
 
 def remove_curse(player, city_id):
     if not player.get("cursed"):

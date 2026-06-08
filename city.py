@@ -86,7 +86,6 @@ def visit_city(player, city_id=None):
 
         if choice in menu_options:
             service = menu_options[choice]
-            advance_time(player, 30)
             SERVICE_HANDLERS[service](player, city_id)
         elif choice == inv_option:
             advance_time(player, 30)

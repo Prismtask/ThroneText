@@ -133,4 +133,4 @@ def blacksmith_menu(player, city_id="solmere"):
             break
         else:
             print(dialogues["invalid_choice"])
-            advance_time(player, 30)
+            advance_time(player, 15)

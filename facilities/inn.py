@@ -35,6 +35,8 @@ def inn_menu(player, city_id="solmere"):
                 service_dialogue(city_id, "inn", "early_sleep")
         elif choice == "3":
             service_dialogue(city_id, "inn", "leave")
+            advance_time(player, 30)
             break
         else:
             print("Invalid choice.")
+            advance_time(player, 15)

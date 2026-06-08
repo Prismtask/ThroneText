@@ -21,3 +21,4 @@ def port_service(player, city_id):
     else:
         service_dialogue(city_id, "port", "leave")
     input("\nPress Enter...")
+    advance_time(player, 30)
