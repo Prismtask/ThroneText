@@ -60,3 +60,14 @@ def load_game(slot):
             return json.load(f)
     except (json.JSONDecodeError, IOError):
         return None
+    
+def delete_save(slot):
+    """Delete savefile/savegame_<slot>.json if it exists. Returns True if successful."""
+    filename = get_filename(slot)
+    if os.path.exists(filename):
+        try:
+            os.remove(filename)
+            return True
+        except OSError:
+            return False
+    return False

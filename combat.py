@@ -18,7 +18,7 @@ def compute_enemy_attributes(enemy_key):
     return base
 
 def enemy_stats(enemy_key, player=None):
-    """Now accepts dungeon_time for scaling."""
+    """Accepts player reference for time-scaling mechanics."""
     template = ENEMIES[enemy_key]
     attrs = compute_enemy_attributes(enemy_key)
     
@@ -30,7 +30,7 @@ def enemy_stats(enemy_key, player=None):
     dex_mod = attrs["Dexterity"]
 
     scaled_hp = int(base_hp * multiplier)
-    scaled_str = int(str_mod * (1 + (multiplier - 1) * 0.7))  # Attack scales a bit slower
+    scaled_str = int(str_mod * (1 + (multiplier - 1) * 0.7))
     scaled_con = int(con_mod * (1 + (multiplier - 1) * 0.6))
     scaled_dex = int(dex_mod * (1 + (multiplier - 1) * 0.5))
 
@@ -42,7 +42,7 @@ def enemy_stats(enemy_key, player=None):
         "con_mod": scaled_con,
         "dex_mod": scaled_dex,
         "level": template["level"],
-        "multiplier": round(multiplier, 2)  # for debugging
+        "multiplier": round(multiplier, 2)
     }
 
 
@@ -61,7 +61,6 @@ def player_dex_mod(player):
 def combat(player, enemy_keys):
     """Run turn‑based battle against a group of enemies. Returns 'victory', 'fled', or 'dead'."""
     enemies = [enemy_stats(k, player) for k in enemy_keys]
-    player_hp = player["current_hp"]   # backup
 
     equip_mods = get_total_equipment_mods(player)
     p_str = player_str_mod(player) + equip_mods.get("Strength", 0)
@@ -91,7 +90,6 @@ def combat(player, enemy_keys):
         print(f"- A {e['name']} appears! (HP: {e['hp']})")
 
     while True:
-        # Validate roster population
         enemies = [e for e in enemies if e["hp"] > 0]
         if not enemies:
             print("All enemies have been defeated!")
@@ -158,7 +156,6 @@ def combat(player, enemy_keys):
                 true_idx, item = combat_inventory[choice]
                 msg = ""
 
-                # Target selection logic for items that apply an external effect onto an enemy
                 affects_enemy = any(k in item for k in ["status", "blind_enemy", "base_power", "damage_over_time", "stun_chance"])
                 if affects_enemy:
                     if len(enemies) > 1:
@@ -265,7 +262,6 @@ def combat(player, enemy_keys):
                 if debuff["type"] == "slow":
                     effective_player_dex -= 3
             
-            # Escape checks are calculated against the highest effective speed among all active attackers
             max_enemy_dex = -999
             for e in enemies:
                 eff_enemy_dex = e["dex_mod"]
@@ -287,7 +283,6 @@ def combat(player, enemy_keys):
             if enemy["hp"] <= 0:
                 continue
 
-            # Process ticks for active status condition updates tracking on specific entities
             if enemy.get("active_debuffs"):
                 for debuff in enemy["active_debuffs"][:]:
                     if debuff["type"] == "dot":
@@ -308,7 +303,6 @@ def combat(player, enemy_keys):
                 print(f"The {enemy['name']} has succumbed to status damage!")
                 continue
 
-            # Turn behavior evaluation
             if enemy.get("stunned"):
                 print(f"The {enemy['name']} is stunned and cannot act!")
                 enemy["stunned"] = False
@@ -327,7 +321,6 @@ def combat(player, enemy_keys):
                     print("You have been slain.")
                     return "dead"
 
-                # Trigger tactical context modifiers
                 race = ENEMIES[enemy["key"]]["race"]
                 debuff_chance = 0.45 if race in ["Undead", "Demon", "Shadow", "Vampire"] else 0.3
                 
@@ -343,12 +336,24 @@ def combat(player, enemy_keys):
 
                     if effect == "poison":
                         dmg = random.randint(3, 7)
-                        player.setdefault("active_debuffs", []).append({
-                            "type": "poison",
-                            "damage": dmg,
-                            "remaining": 3
-                        })
-                        print(f"The {enemy['name']} poisons you! You will take {dmg} damage each turn for 3 turns.")
+                        
+                        # Search for an already existing poison item inside active_debuffs
+                        existing_poison = next((d for d in player.get("active_debuffs", []) if d["type"] == "poison"), None)
+                        
+                        if existing_poison:
+                            # Instead of stacking, reset countdown and update potency
+                            existing_poison["remaining"] = 3
+                            existing_poison["damage"] = dmg
+                            print(f"The {enemy['name']} poisons you again! The poison countdown resets to 3 turns ({dmg} damage/turn).")
+                        else:
+                            # Fresh poison application
+                            player.setdefault("active_debuffs", []).append({
+                                "type": "poison",
+                                "damage": dmg,
+                                "remaining": 3
+                            })
+                            print(f"The {enemy['name']} poisons you! You will take {dmg} damage each turn for 3 turns.")
+                            
                     elif effect == "slow":
                         player.setdefault("active_debuffs", []).append({
                             "type": "slow",
@@ -366,7 +371,6 @@ def combat(player, enemy_keys):
                         else:
                             print(f"The {enemy['name']}'s curse fails to take hold.")
 
-        # Clean dead references
         enemies = [e for e in enemies if e["hp"] > 0]
         if not enemies:
             print("All enemies have been defeated!")

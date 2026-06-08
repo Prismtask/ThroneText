@@ -1,6 +1,6 @@
 from character import create_character, player_max_hp
 from dungeon import explore_dungeon
-from save_load import list_saves, load_game, save_game
+from save_load import list_saves, load_game, save_game, delete_save  # Added delete_save
 from city import visit_city
 from resources.cities import CITIES
 from utils import clear_screen, format_time
@@ -13,7 +13,8 @@ def main_menu():
         print("=" * 40)
         print("1. New Game")
         print("2. Continue")
-        print("3. Quit")
+        print("3. Delete Save")  # New option
+        print("4. Quit")         # Shifted down
         choice = input("\nEnter choice: ").strip()
 
         if choice == "1":
@@ -51,7 +52,45 @@ def main_menu():
 
             play_game(player)
 
-        elif choice == "3":
+        elif choice == "3":  # Handle deletion menu
+            saves = list_saves()
+            if not saves:
+                print("No save files found to delete.")
+                input("Press Enter...")
+                continue
+
+            print("\nAvailable saves:")
+            for slot, name in saves.items():
+                print(f"  {slot}. {name}")
+
+            try:
+                slot_input = input("\nEnter slot number to delete (or press Enter to cancel): ").strip()
+                if not slot_input:
+                    continue
+                
+                slot = int(slot_input)
+                if slot not in saves:
+                    print("Invalid slot number.")
+                    input("Press Enter...")
+                    continue
+
+                # Confirm choice before wiping progress
+                confirm = input(f"Are you sure you want to permanently delete '{saves[slot]}' (Slot {slot})? (y/N): ").strip().lower()
+                if confirm == 'y':
+                    if delete_save(slot):
+                        print("Save file successfully deleted.")
+                    else:
+                        print("Error: Could not delete the save file.")
+                else:
+                    print("Deletion cancelled.")
+                input("Press Enter...")
+
+            except ValueError:
+                print("Invalid input.")
+                input("Press Enter...")
+                continue
+
+        elif choice == "4":  # Updated choice index
             print("Farewell, adventurer.")
             break
         else:
