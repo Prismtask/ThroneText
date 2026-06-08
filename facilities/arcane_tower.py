@@ -13,7 +13,7 @@ def arcane_tower_service(player, city_id):
         cost = 100
         if player.get("gold", 0) >= cost:
             player["gold"] -= cost
-            player["xp"] = player.get("xp", 0) + 50
+            player["exp"] = player.get("exp", 0) + 50
             print("You spend hours studying. You feel wiser.")
             service_dialogue(city_id, "arcane_tower", "research")
         else:
