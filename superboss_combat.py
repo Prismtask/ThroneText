@@ -1,72 +1,25 @@
-# combat.py – generic turn‑based combat (no super boss mechanics)
+# superboss_combat.py – Broodmother Vileheart encounter
 
 import random
-from resources.enemies import ENEMIES, ENEMY_RACES
-from resources.races_classes import ATTRIBUTES
-from inventory import use_consumable, get_total_equipment_mods
-from utils import get_difficulty_multiplier_from_time
+from combat import enemy_stats, player_str_mod, player_con_mod, player_dex_mod
 from character import player_max_hp
 
 
-def compute_enemy_attributes(enemy_key):
-    template = ENEMIES[enemy_key]
-    race_name = template["race"]
-    race_mods = ENEMY_RACES[race_name].get("mods", {})
-    personal_mods = template.get("mods", {})
+def combat_broodmother(player):
+    """
+    Special combat for the Broodmother Vileheart super boss.
+    Implements retreat at 75% HP, minion phase, enrage, double actions,
+    and poison mechanics.
+    Returns 'victory', 'fled', or 'dead'.
+    """
+    # Prepare boss
+    boss_key = "broodmother_vileheart"
+    boss = enemy_stats(boss_key, player)
+    boss["max_hp"] = boss["hp"]
+    enemies = [boss]
 
-    base = {attr: 0 for attr in ATTRIBUTES}
-    for attr, mod in race_mods.items():
-        base[attr] += mod
-    for attr, mod in personal_mods.items():
-        base[attr] += mod
-    return base
-
-
-def enemy_stats(enemy_key, player=None):
-    template = ENEMIES[enemy_key]
-    attrs = compute_enemy_attributes(enemy_key)
-    
-    multiplier = get_difficulty_multiplier_from_time(player) if player else 1.0
-    
-    base_hp = template["base_hp"]
-    str_mod = attrs["Strength"]
-    con_mod = attrs["Constitution"]
-    dex_mod = attrs["Dexterity"]
-
-    scaled_hp = int(base_hp * multiplier)
-    scaled_str = int(str_mod * (1 + (multiplier - 1) * 0.7))
-    scaled_con = int(con_mod * (1 + (multiplier - 1) * 0.6))
-    scaled_dex = int(dex_mod * (1 + (multiplier - 1) * 0.5))
-
-    return {
-        "key": enemy_key,
-        "name": template["name"],
-        "hp": scaled_hp,
-        "max_hp": scaled_hp,
-        "str_mod": scaled_str,
-        "con_mod": scaled_con,
-        "dex_mod": scaled_dex,
-        "level": template["level"],
-        "multiplier": round(multiplier, 2)
-    }
-
-
-def player_str_mod(player):
-    return player["attributes"]["Strength"]
-
-
-def player_con_mod(player):
-    return player["attributes"]["Constitution"]
-
-
-def player_dex_mod(player):
-    return player["attributes"]["Dexterity"]
-
-
-def combat(player, enemy_keys):
-    """Generic turn‑based battle. Returns 'victory', 'fled', or 'dead'."""
-    enemies = [enemy_stats(k, player) for k in enemy_keys]
-
+    # Player stats (replicated from generic combat)
+    from inventory import get_total_equipment_mods
     equip_mods = get_total_equipment_mods(player)
     p_str = player_str_mod(player) + equip_mods.get("Strength", 0)
     p_con = player_con_mod(player) + equip_mods.get("Constitution", 0)
@@ -93,15 +46,21 @@ def combat(player, enemy_keys):
             elif buff.get("stat") == "Dexterity":
                 p_dex += buff["value"]
 
-    print("\nEnemies approach!")
-    for e in enemies:
-        print(f"- A {e['name']} appears! (HP: {e['hp']})")
+    print("\n" + "=" * 50)
+    print("The floor trembles... Broodmother Vileheart emerges from the shadows!")
+    print(f"{boss['name']} - HP: {boss['hp']}")
+    print("=" * 50)
+
+    # Phase tracking
+    boss_escaped_data = None
+    minion_phase_active = False
+    minion_timer = 0
+    boss_enraged_turns = 0
 
     while True:
-        # Remove dead enemies
         enemies = [e for e in enemies if e["hp"] > 0]
         if not enemies:
-            print("All enemies have been defeated!")
+            print("Broodmother Vileheart has been defeated!")
             return "victory"
 
         print(f"\nYour HP: {player['current_hp']}")
@@ -292,54 +251,103 @@ def combat(player, enemy_keys):
             else:
                 print("You fail to escape and expose yourself!")
 
+        # ----- SUPER BOSS PHASE CHECK (retreat at 75% HP) -----
+        if not minion_phase_active and boss_escaped_data is None:
+            for idx, e in enumerate(enemies[:]):
+                if e.get("key") == "broodmother_vileheart" and e["hp"] <= int(e["max_hp"] * 0.75):
+                    print(f"\n[GIMMICK] {e['name']} screeches and retreats into the shadows!")
+                    print("Three Vileheart Spiderlings drop from the ceiling!")
+                    
+                    boss_escaped_data = e
+                    enemies.remove(e)
+                    
+                    for _ in range(3):
+                        m_stats = enemy_stats("vileheart_spiderling", player)
+                        m_stats["key"] = "vileheart_spiderling"
+                        m_stats["max_hp"] = m_stats["hp"]
+                        enemies.append(m_stats)
+                    
+                    minion_phase_active = True
+                    minion_timer = 3
+                    break
+
         # ----- ENEMY TURN PHASE -----
         for enemy in enemies[:]:
             if enemy["hp"] <= 0:
                 continue
 
-            # Process enemy status effects (dot, blind) before acting
-            if enemy.get("active_debuffs"):
-                for debuff in enemy["active_debuffs"][:]:
-                    if debuff["type"] == "dot":
-                        dot_dmg = debuff["damage"]
-                        enemy["hp"] -= dot_dmg
-                        print(f"The {enemy['name']} takes {dot_dmg} status damage!")
-                        debuff["remaining"] -= 1
-                        if debuff["remaining"] <= 0:
-                            enemy["active_debuffs"].remove(debuff)
-                    elif debuff["type"] == "blind":
-                        debuff["remaining"] -= 1
-                        if debuff["remaining"] <= 0:
-                            enemy["blinded"] = False
-                            enemy["active_debuffs"].remove(debuff)
-                            print(f"The {enemy['name']} recovers their vision.")
+            # Determine number of actions
+            actions = 1
+            if enemy.get("key") == "broodmother_vileheart":
+                # Permanent double action below 25% HP
+                if enemy["hp"] <= int(enemy["max_hp"] * 0.25):
+                    actions = 2
+                    print(f"⚠️ {enemy['name']} is FRENZIED! (Permanent Double Actions)")
+                elif boss_enraged_turns > 0:
+                    actions = 2
+                    print(f"🔥 {enemy['name']} is ENRAGED! (Double Action remaining: {boss_enraged_turns})")
 
-            if enemy["hp"] <= 0:
-                print(f"The {enemy['name']} has succumbed to status damage!")
-                continue
+            for _ in range(actions):
+                # Process enemy status effects (dot, blind)
+                if enemy.get("active_debuffs"):
+                    for debuff in enemy["active_debuffs"][:]:
+                        if debuff["type"] == "dot":
+                            dot_dmg = debuff["damage"]
+                            enemy["hp"] -= dot_dmg
+                            print(f"The {enemy['name']} takes {dot_dmg} status damage!")
+                            debuff["remaining"] -= 1
+                            if debuff["remaining"] <= 0:
+                                enemy["active_debuffs"].remove(debuff)
+                        elif debuff["type"] == "blind":
+                            debuff["remaining"] -= 1
+                            if debuff["remaining"] <= 0:
+                                enemy["blinded"] = False
+                                enemy["active_debuffs"].remove(debuff)
+                                print(f"The {enemy['name']} recovers their vision.")
 
-            if enemy.get("stunned"):
-                print(f"The {enemy['name']} is stunned and cannot act!")
-                enemy["stunned"] = False
-            else:
-                block = p_con + (5 if defending else 0)
-                enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
-                enemy_dmg = max(0, enemy_dmg)
-                player["current_hp"] -= enemy_dmg
+                if enemy["hp"] <= 0:
+                    print(f"The {enemy['name']} has succumbed to status damage!")
+                    continue
 
-                if enemy_dmg > 0:
-                    print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
+                if enemy.get("stunned"):
+                    print(f"The {enemy['name']} is stunned and cannot act!")
+                    enemy["stunned"] = False
                 else:
-                    print(f"The {enemy['name']} attacks but you block all incoming damage!")
+                    block = p_con + (5 if defending else 0)
+                    enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
+                    enemy_dmg = max(0, enemy_dmg)
+                    player["current_hp"] -= enemy_dmg
 
-                if player["current_hp"] <= 0:
-                    print("You have been slain.")
-                    return "dead"
+                    if enemy_dmg > 0:
+                        print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
+                    else:
+                        print(f"The {enemy['name']} attacks but you block all incoming damage!")
+
+                    if player["current_hp"] <= 0:
+                        print("You have been slain.")
+                        return "dead"
+
+                    # Poison infliction (Broodmother & Spiderlings)
+                    if enemy.get("key") in ("broodmother_vileheart", "vileheart_spiderling"):
+                        if random.random() < 0.5:
+                            poison_dmg = 4
+                            existing_poison = next((d for d in player.get("active_debuffs", []) if d["type"] == "poison"), None)
+                            if existing_poison:
+                                existing_poison["remaining"] = 3
+                                existing_poison["damage"] = poison_dmg
+                                print(f"The {enemy['name']} re-infects you! Poison intensifies and resets to 3 turns ({poison_dmg} dmg/turn).")
+                            else:
+                                player.setdefault("active_debuffs", []).append({
+                                    "type": "poison",
+                                    "damage": poison_dmg,
+                                    "remaining": 3
+                                })
+                                print(f"You are poisoned by the {enemy['name']}! Take {poison_dmg} damage each turn for 3 turns.")
 
         # ----- END OF ROUND MAINTENANCE -----
         enemies = [e for e in enemies if e["hp"] > 0]
-        if not enemies:
-            print("All enemies have been defeated!")
+        if not enemies and not minion_phase_active:
+            print("Broodmother Vileheart has been defeated!")
             return "victory"
 
         # Player status effect ticks (poison, slow)
@@ -361,7 +369,7 @@ def combat(player, enemy_keys):
             print("You have been slain.")
             return "dead"
 
-        # Player buff
+        # Player buffs (HoT, etc.)
         if player.get("active_buffs"):
             for buff in player["active_buffs"][:]:
                 if buff.get("type") == "hot":
@@ -383,3 +391,26 @@ def combat(player, enemy_keys):
                     player["active_buffs"].remove(buff)
                     if "stat" in buff:
                         print(f"Your {buff['stat']} buff wears off.")
+
+        # ----- MINION PHASE TIMER -----
+        if minion_phase_active:
+            spiderlings_alive = any(e.get("key") == "vileheart_spiderling" for e in enemies)
+            if not spiderlings_alive:
+                print("\n[GIMMICK] You slaughtered all spiderlings!")
+                print("Broodmother Vileheart descends again, enraged by your defiance.")
+                enemies.append(boss_escaped_data)
+                boss_escaped_data = None
+                minion_phase_active = False
+            else:
+                minion_timer -= 1
+                if minion_timer <= 0:
+                    print("\n[GIMMICK] Time's up! The remaining spiderlings retreat.")
+                    print("Broodmother Vileheart ambushes you, ENRAGED with double actions for 3 turns!")
+                    enemies = [e for e in enemies if e.get("key") != "vileheart_spiderling"]
+                    boss_enraged_turns = 3
+                    enemies.append(boss_escaped_data)
+                    boss_escaped_data = None
+                    minion_phase_active = False
+
+        if boss_enraged_turns > 0:
+            boss_enraged_turns -= 1

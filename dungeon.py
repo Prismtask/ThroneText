@@ -3,6 +3,7 @@ from resources.enemies import ENEMIES
 from resources.items import build_item, ITEMS, ITEM_RARITY
 from resources.cities import CITIES
 from combat import combat, player_con_mod
+from superboss_combat import combat_broodmother
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
@@ -130,7 +131,7 @@ def explore_dungeon(player):
         # Combat loop – cannot flee (if flee, restart combat)
         while True:
             advance_time(player, 60)   # time passes
-            result = combat(player, ["broodmother_vileheart"])
+            result = combat_broodmother(player)
             if result == "victory":
                 # Reward
                 super_boss_exp = 500 + (floor * 50)

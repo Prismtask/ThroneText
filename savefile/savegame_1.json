@@ -162,6 +162,14 @@
       "mods": {
         "Dexterity": 2
       }
+    },
+    {
+      "id": "epic_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
     }
   ],
   "equipped": {
@@ -172,8 +180,101 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 1915,
-  "time_minutes": 3000,
-  "location": "dungeon",
-  "day": 1
+  "gold": 1849,
+  "time_minutes": 3065,
+  "location": "solmere",
+  "day": 1,
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "mace",
+        "name": "Common Mace",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 2,
+          "Wisdom": 1
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "leather_armor",
+        "name": "Common Leather Armor",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Dexterity": 2,
+          "Constitution": 1
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "minor_healing_potion",
+        "name": "Uncommon Minor Healing Potion",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 32
+      },
+      22
+    ],
+    [
+      {
+        "id": "iron_skin_potion",
+        "name": "Rare Iron Skin Potion",
+        "type": "consumable",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 0,
+        "duration": 3,
+        "defense_buff": 4
+      },
+      45
+    ],
+    [
+      {
+        "id": "stun_bomb",
+        "name": "Common Stun Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 12,
+        "stun_chance": 0.6
+      },
+      45
+    ],
+    [
+      {
+        "id": "smoke_bomb",
+        "name": "Epic Smoke Bomb",
+        "type": "utility",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 8
+      },
+      270
+    ],
+    [
+      {
+        "id": "curse_cleansing_scroll",
+        "name": "Common Scroll of Cleansing",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "cure_curse": true
+      },
+      15
+    ]
+  ],
+  "last_shop_day_solmere": 1
 }
