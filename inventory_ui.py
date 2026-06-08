@@ -4,17 +4,36 @@ from resources.races_classes import ATTRIBUTES
 from utils import clear_screen, format_time
 
 def display_player_status(player):
-    """Show player name, level, HP, attributes (with equipment bonuses), and equipped items."""
+    """Show player name, level, HP, attributes (with equipment and buff bonuses), and equipped items."""
     equip_mods = get_total_equipment_mods(player)
+    
+    # Calculate additional bonuses from active buffs/blessings
+    buff_mods = {}
+    for buff in player.get("active_buffs", []):
+        if buff.get("stat") == "all" or buff.get("type") == "blessing":
+            for attr in ATTRIBUTES:
+                buff_mods[attr] = buff_mods.get(attr, 0) + buff["value"]
+        elif buff.get("stat") in ATTRIBUTES:
+            attr = buff["stat"]
+            buff_mods[attr] = buff_mods.get(attr, 0) + buff["value"]
+
     print(f"\n=== {player['name']} (Level {player.get('level',1)}) ===")
     print(f"HP: {player['current_hp']}/{player_max_hp(player)}")
     print(f"Time: {format_time(player.get('time_minutes', 480))}")
-    print(f"GOld: {player['gold']}")
-    print("Attributes (base + equipment):")
+    print(f"Gold: {player['gold']}")
+    print("Attributes (base + equipment + buffs):")
     for attr in ATTRIBUTES:
         base = player["attributes"][attr]
-        bonus = equip_mods.get(attr, 0)
-        print(f"  {attr}: {base} + {bonus} = {base+bonus}")
+        eq_bonus = equip_mods.get(attr, 0)
+        bf_bonus = buff_mods.get(attr, 0)
+        total_bonus = eq_bonus + bf_bonus
+        
+        # Display breakdown if there is a buff active
+        if bf_bonus > 0:
+            print(f"  {attr}: {base} + {eq_bonus}(eq) + {bf_bonus}(buff) = {base + total_bonus}")
+        else:
+            print(f"  {attr}: {base} + {eq_bonus} = {base + total_bonus}")
+            
     print("\nEquipment:")
     for slot in ["weapon", "armor", "accessory"]:
         item = player.get("equipped", {}).get(slot)

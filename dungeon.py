@@ -160,6 +160,12 @@ def explore_dungeon(player):
 
     # Floor cleared
     player["floor"] += 1
+
+    if player.get("active_buffs"):
+        orig_len = len(player["active_buffs"])
+        player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "blessing"]
+        if len(player["active_buffs"]) < orig_len:
+            print("\nYour divine temple blessing has worn off as you transition floors.")
     # Advance time by 1 hour for floor completion
     current_time = advance_time(player, 60)
     

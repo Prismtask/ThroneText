@@ -52,7 +52,14 @@ def visit_city(player, city_id=None):
         current_time_str = format_time(player["time_minutes"])
         print(f"=== {city['name'].upper()} ===")
         service_dialogue(city_id, "receptionist", "enter")
-        print(f"Adventurer: {player['name']} | Floor: {player['floor']} | Time: {current_time_str} | Gold: {player.get('gold', 0)}")
+        status_effects = []
+        if any(buff.get("type") == "blessing" for buff in player.get("active_buffs", [])):
+            status_effects.append("Blessed")
+        if player.get("cursed"):
+            status_effects.append("Cursed")
+        # Create the extra field string if any status is active
+        status_field = f" | Status: {' & '.join(status_effects)}" if status_effects else ""
+        print(f"Adventurer: {player['name']} | Floor: {player['floor']} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{status_field}")
 
         print("\nAvailable Services:")
         menu_options = {}

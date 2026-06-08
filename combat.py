@@ -78,9 +78,14 @@ def combat(player, enemy_key):
             p_dex -= 2
 
     for buff in player.get("active_buffs", []):
-        if buff["stat"] == "Strength": p_str += buff["value"]
-        elif buff["stat"] == "Constitution": p_con += buff["value"]
-        elif buff["stat"] == "Dexterity": p_dex += buff["value"]
+        if buff.get("stat") == "all" or buff.get("type") == "blessing":
+            p_str += buff["value"]
+            p_con += buff["value"]
+            p_dex += buff["value"]
+        else:
+            if buff.get("stat") == "Strength": p_str += buff["value"]
+            elif buff.get("stat") == "Constitution": p_con += buff["value"]
+            elif buff.get("stat") == "Dexterity": p_dex += buff["value"]
 
     print(f"\nA {enemy['name']} appears! (HP: {enemy['hp']})")
 
@@ -305,6 +310,10 @@ def combat(player, enemy_key):
         # Process active buffs on player
         if player.get("active_buffs"):
             for buff in player["active_buffs"][:]:
+                # Skip over floor-wide blessings so they don't tick down per turn
+                if buff.get("type") == "blessing":
+                    continue
+                
                 buff["remaining"] -= 1
                 if buff["remaining"] <= 0:
                     player["active_buffs"].remove(buff)

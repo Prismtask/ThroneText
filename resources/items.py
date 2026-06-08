@@ -90,17 +90,25 @@ def build_item(item_id, rarity="common", enhance=0):
             for stat, val in base_mods.items()
         }
     elif base["type"] == "consumable":
-        item["power"] = int(base["base_power"] * r["stat_mult"])
-        if "temp_stat" in base:
-            item["temp_stat"] = base["temp_stat"]
-            item["duration"] = base.get("duration", 0)
-    elif base["type"] == "utility":
+        # Safely use .get() so items without upfront power (like scrolls or armor buffs) don't crash
         item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
-        for k in ["status", "bonus_vs", "escape_bonus"]:
+        
+        # Ensure all unique consumable mechanics carry over into the active item
+        for k in ["temp_stat", "duration", "heal_over_time", "defense_buff", "cure_curse"]:
             if k in base:
                 item[k] = base[k]
+                
+    elif base["type"] == "utility":
+        item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
+        
+        # Ensure all unique utility/combat mechanics carry over into the active item
+        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce"]:
+            if k in base:
+                item[k] = base[k]
+                
     elif base["type"] == "scroll":
         item["target_rarity"] = rarity
+        
     return item
 
 def random_equipment(rarity=None):
