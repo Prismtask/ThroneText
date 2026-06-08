@@ -61,6 +61,7 @@ ITEMS = {
     "flash_powder":      {"name": "Flash Powder",      "type": "utility",    "escape_bonus": 12, "blind_enemy": True},
     "throwing_knife":    {"name": "Throwing Knife",    "type": "utility",    "base_power": 22, "armor_pierce": 2},
     "curse_cleansing_scroll": {"name": "Scroll of Cleansing", "type": "consumable", "cure_curse": True},
+    "antidote": {"name": "Antidote", "type": "consumable", "base_power": 0, "cure_poison": True},
 
     # === Scrolls ===
     "common_scroll":     {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "common"},
