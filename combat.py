@@ -12,7 +12,6 @@ from status_effects import (
     cure_curse,
 )
 
-
 def compute_enemy_attributes(enemy_key):
     template = ENEMIES[enemy_key]
     race_name = template["race"]
@@ -25,7 +24,6 @@ def compute_enemy_attributes(enemy_key):
     for attr, mod in personal_mods.items():
         base[attr] += mod
     return base
-
 
 def enemy_stats(enemy_key, player=None):
     template = ENEMIES[enemy_key]
@@ -55,6 +53,30 @@ def enemy_stats(enemy_key, player=None):
         "multiplier": round(multiplier, 2)
     }
 
+def get_effective_attribute(player, attr_name):
+    """Return effective attribute value after applying curse penalty.
+    Works for Strength, Constitution, Dexterity, Charisma, Learning, Wisdom, etc.
+    """
+    # Base from attributes
+    base = player["attributes"].get(attr_name, 0)
+    # Equipment bonuses
+    equip_mods = get_total_equipment_mods(player)
+    total = base + equip_mods.get(attr_name, 0)
+    
+    # Apply curse penalty if present
+    for debuff in player.get("active_debuffs", []):
+        if debuff.get("type") == "curse":
+            penalty = debuff.get("penalty", 2)
+            total -= penalty
+    
+    # Apply buffs (if any)
+    for buff in player.get("active_buffs", []):
+        if buff.get("type") == "blessing" or buff.get("stat") == "all":
+            total += buff.get("value", 0)
+        elif buff.get("stat") == attr_name:
+            total += buff.get("value", 0)
+    
+    return total
 
 def player_str_mod(player):
     return player["attributes"]["Strength"]
@@ -69,33 +91,9 @@ def player_dex_mod(player):
 
 
 def compute_player_stats(player):
-    """Compute effective p_str/p_con/p_dex from base attributes, equipment, buffs, and debuffs."""
-    equip_mods = get_total_equipment_mods(player)
-    p_str = player_str_mod(player) + equip_mods.get("Strength", 0)
-    p_con = player_con_mod(player) + equip_mods.get("Constitution", 0)
-    p_dex = player_dex_mod(player) + equip_mods.get("Dexterity", 0)
-
-    for debuff in player.get("active_debuffs", []):
-        if debuff["type"] == "slow":
-            p_dex -= 3
-        if debuff["type"] == "curse":
-            p_str -= 2
-            p_con -= 2
-            p_dex -= 2
-
-    for buff in player.get("active_buffs", []):
-        if buff.get("stat") == "all" or buff.get("type") == "blessing":
-            p_str += buff["value"]
-            p_con += buff["value"]
-            p_dex += buff["value"]
-        else:
-            if buff.get("stat") == "Strength":
-                p_str += buff["value"]
-            elif buff.get("stat") == "Constitution":
-                p_con += buff["value"]
-            elif buff.get("stat") == "Dexterity":
-                p_dex += buff["value"]
-
+    p_str = get_effective_attribute(player, "Strength")
+    p_con = get_effective_attribute(player, "Constitution")
+    p_dex = get_effective_attribute(player, "Dexterity")
     return p_str, p_con, p_dex
 
 
@@ -326,7 +324,6 @@ def combat(player, enemy_keys):
     """Generic turn‑based battle. Returns 'victory', 'fled', or 'dead'."""
     enemies = [enemy_stats(k, player) for k in enemy_keys]
 
-    p_str, p_con, p_dex = compute_player_stats(player)
 
     print("\nEnemies approach!")
     for e in enemies:
@@ -334,6 +331,8 @@ def combat(player, enemy_keys):
 
     while True:
         # Remove dead enemies
+        p_str, p_con, p_dex = compute_player_stats(player)
+        
         enemies = [e for e in enemies if e["hp"] > 0]
         if not enemies:
             print("All enemies have been defeated!")

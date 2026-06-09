@@ -22,8 +22,6 @@ def combat_broodmother(player):
     boss["max_hp"] = boss["hp"]
     enemies = [boss]
 
-    p_str, p_con, p_dex = compute_player_stats(player)
-
     print("\n" + "=" * 50)
     print("The floor trembles... Broodmother Vileheart emerges from the shadows!")
     print(f"{boss['name']} - HP: {boss['hp']}")
@@ -40,6 +38,8 @@ def combat_broodmother(player):
         if not enemies:
             print("Broodmother Vileheart has been defeated!")
             return "victory"
+        
+        p_str, p_con, p_dex = compute_player_stats(player)
 
         result, defending = handle_player_turn(player, enemies, p_str, p_con, p_dex)
         if result == "retry":
@@ -203,6 +203,8 @@ def combat_slitcurrent(player):
         if not enemies:
             print("Dream-Devouring Slitcurrent has been devoured by reality!")
             return "victory"
+        
+        p_str, p_con, p_dex = compute_player_stats(player)
 
         # ----- FLOATSAM SPAWN (once at ≤80% HP) -----
         if not floatsam_spawned and boss["hp"] <= boss["max_hp"] * 0.8:

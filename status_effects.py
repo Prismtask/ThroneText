@@ -30,17 +30,16 @@ def apply_poison(target, damage, duration):
     return "applied"
 
 
-def apply_curse(target):
-    """Apply a permanent curse debuff (remaining = -1 means indefinite).
-
-    Returns 'applied' or 'already_cursed'.
-    """
-    if target.get("cursed"):
+def apply_curse(player, enemy_level=None):
+    if player.get("cursed"):
         return "already_cursed"
-    target["cursed"] = True
-    target.setdefault("active_debuffs", []).append(
-        {"type": "curse", "remaining": -1}
-    )
+    penalty = max(2, player.get("level", 1) // 3)   # dynamic
+    player["cursed"] = True
+    player.setdefault("active_debuffs", []).append({
+        "type": "curse",
+        "remaining": -1,
+        "penalty": penalty
+    })
     return "applied"
 
 

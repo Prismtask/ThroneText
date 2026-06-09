@@ -4,13 +4,12 @@ from resources.items import ITEMS, build_item, ITEM_RARITY
 from resources.cities import CITIES
 from utils import clear_screen, advance_time, format_time
 from inventory import add_item_to_inventory, get_total_equipment_mods
+from combat import get_effective_attribute
 from inventory_ui import display_player_status
 from city_dialogue import service_dialogue   # changed import
 
 def get_effective_charisma(player):
-    base = player.get("attributes", {}).get("Charisma", 8)
-    equip_mods = get_total_equipment_mods(player)
-    return base + equip_mods.get("Charisma", 0)
+    return get_effective_attribute(player, "Charisma")
 
 def get_discounted_price(base_price, player):
     charisma = get_effective_charisma(player)
