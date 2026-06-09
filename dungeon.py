@@ -3,7 +3,7 @@ from resources.enemies import ENEMIES
 from resources.items import build_item, ITEMS, ITEM_RARITY
 from resources.cities import CITIES
 from combat import combat, player_con_mod
-from superboss_combat import combat_broodmother
+from superboss_combat import combat_broodmother, combat_slitcurrent
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
@@ -123,7 +123,10 @@ def explore_dungeon(player):
     if floor % 10 == 0:
         print("\n" + "="*50)
         print("⚠️  A dark, suffocating energy fills the air...")
-        print("The walls are covered in dense, toxic cobwebs.")
+        if (floor // 10) % 2 == 0:
+            print("The walls are covered in dense, toxic cobwebs.")
+        else:
+            print("Reality itself frays... distorted dream fragments float everywhere.")
         print("You have stumbled directly into a SUPER BOSS ARENA!")
         print("="*50)
         input("Press Enter to face the horror...")
@@ -131,7 +134,10 @@ def explore_dungeon(player):
         # Combat loop – cannot flee (if flee, restart combat)
         while True:
             advance_time(player, 60)   # time passes
-            result = combat_broodmother(player)
+            if (floor // 10) % 2 == 0:
+                result = combat_broodmother(player)
+            else:
+                result = combat_slitcurrent(player)
             if result == "victory":
                 # Reward
                 super_boss_exp = 500 + (floor * 50)

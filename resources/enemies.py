@@ -158,5 +158,24 @@ ENEMIES = {
     "base_hp": 45,
     "mods": {"Dexterity": 5, "Strength": 2},
     "boss": False
+    },
+
+    # Dream-Devouring Slitcurrent
+    "dream_devouring_slitcurrent": {
+    "name": "Dream-Devouring Slitcurrent",
+    "race": "Abomination",
+    "level": 21,
+    "base_hp": 420,
+    "mods": {"Strength": 5, "Constitution": 7, "Dexterity": 6},
+    "boss": True,
+    "super_boss": True
+    },
+    "dream_floatsam": {
+    "name": "Dream Floatsam",
+    "race": "Construct",
+    "level": 16,
+    "base_hp": 55,
+    "mods": {"Dexterity": 4, "Constitution": 2},
+    "boss": False
     }
 }

@@ -3,18 +3,18 @@
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 14,
+    "Strength": 15,
     "Constitution": 9,
     "Dexterity": 1,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 9
+    "Charisma": 12
   },
-  "floor": 5,
-  "current_hp": 90,
-  "level": 13,
-  "exp": 204,
-  "level_hp_bonus": 48,
+  "floor": 6,
+  "current_hp": 106,
+  "level": 17,
+  "exp": 64,
+  "level_hp_bonus": 64,
   "inventory": [
     {
       "id": "dragonhide",
@@ -170,6 +170,127 @@
       "rarity": "uncommon",
       "enhance": 0,
       "target_rarity": "uncommon"
+    },
+    {
+      "id": "minor_healing_potion",
+      "name": "Common Minor Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 25
+    },
+    {
+      "id": "uncommon_scroll",
+      "name": "Common Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "common",
+      "enhance": 0,
+      "target_rarity": "common"
+    },
+    {
+      "id": "elixir_of_strength",
+      "name": "Common Elixir of Strength",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Strength",
+      "duration": 4
+    },
+    {
+      "id": "ring_of_grace",
+      "name": "Common Ring of Grace",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2
+      }
+    },
+    {
+      "id": "cloak_of_shadows",
+      "name": "Uncommon Cloak of Shadows",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "iron_skin_potion",
+      "name": "Common Iron Skin Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 0,
+      "duration": 3,
+      "defense_buff": 4
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Common Thunder Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 45
+    },
+    {
+      "id": "common_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "curse_cleansing_scroll",
+      "name": "Rare Scroll of Cleansing",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 0,
+      "cure_curse": true
+    },
+    {
+      "id": "legendary_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "healing_salve",
+      "name": "Uncommon Healing Salve",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 52,
+      "duration": 3,
+      "heal_over_time": 3
+    },
+    {
+      "id": "amulet_of_vigor",
+      "name": "Rare Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 5
+      }
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Epic Thunder Bomb",
+      "type": "utility",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 108
     }
   ],
   "equipped": {
@@ -180,9 +301,9 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 1849,
-  "time_minutes": 3065,
-  "location": "solmere",
+  "gold": 3465,
+  "time_minutes": 3725,
+  "location": "dungeon",
   "day": 1,
   "shop_stock_solmere": [
     [
