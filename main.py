@@ -162,9 +162,7 @@ def play_game(player):
                 player["location"] = city_id
                 if not visit_city(player, city_id):
                     return   # player saved & quit from within city
-                # After returning from city, loop again (show the same menu)
-                if player.get("location") != "dungeon":
-                    break
+                break
 
             elif choice == '3':
                 save_game(player)
