@@ -7,74 +7,81 @@ from city_dialogue import service_dialogue
 
 
 def generate_bounties(player, city_id):
-    """Generate city-specific bounties based on biome and player favor."""
+    """Generate flexible bounties scaling with player level and favor."""
     city = CITIES[city_id]
     biome = city.get("biome", "temperate")
     allowed_races = BIOME_RACES.get(biome, BIOME_RACES["temperate"])
     
-    # Filter valid enemies based on the city's biome races (excluding bosses)
     possible_enemies = {k: v for k, v in ENEMIES.items() 
                         if v.get("race") in allowed_races 
                         and not v.get("boss") 
                         and not v.get("super_boss")}
+    if not possible_enemies:
+        possible_enemies = {k: v for k, v in ENEMIES.items() 
+                            if not v.get("boss") and not v.get("super_boss")}
     
+    player_level = player.get("level", 1)
     favor = player.get("favor", {}).get(city_id, 0)
     
-    # Higher favor gives more bounty options (max 7)
-    num_bounties = min(7, 3 + (favor // 20))
+    level_offset = min(5, 2 + favor // 30)
+    min_level = max(1, player_level - 2)
+    max_level = player_level + level_offset
     
+    candidates = [k for k, v in possible_enemies.items() 
+                  if min_level <= v["level"] <= max_level]
+    
+    num_bounties = min(7, 2 + (favor // 20))
     bounties = []
+    
     for _ in range(num_bounties):
-        # Higher favor increases chance of high-difficulty bounties
-        roll = random.randint(1, 100)
-        if favor >= 50 and roll > 40:
-            diff = 3
-        elif favor >= 20 and roll > 50:
-            diff = 2
-        else:
-            diff = random.choices([1, 2, 3], weights=[60, 30, 10])[0]
-        
-        # Select target matching difficulty level
-        if diff == 1:
-            candidates = [k for k, v in possible_enemies.items() if v["level"] <= 3]
-        elif diff == 2:
-            candidates = [k for k, v in possible_enemies.items() if 4 <= v["level"] <= 6]
-        else:
-            candidates = [k for k, v in possible_enemies.items() if v["level"] >= 7]
-            
         if not candidates:
             candidates = list(possible_enemies.keys())
-        
         target = random.choice(candidates)
         enemy_data = ENEMIES[target]
+        enemy_level = enemy_data["level"]
         
-        # Target count and tight deadlines
-        target_count = random.randint(3, 6) + (diff * 2)
+        base_kills = random.randint(3, 6) + (favor // 25)
+        kills_needed = max(2, int(base_kills * random.uniform(0.8, 1.5)))
         
-        if diff == 1:
-            days_given = random.randint(4, 6)
-        elif diff == 2:
-            days_given = random.randint(2, 4)
-        else:
-            days_given = random.randint(1, 2)  # Very tight deadline
+        deadline_base = 7 - (favor // 25) - (kills_needed // 6)
+        deadline = max(1, deadline_base)
+        tightness = 1.0 + (max(0, 6 - deadline) * 0.15)
         
-        # Reward calculation: scale with target level and tight deadlines
-        base_reward = target_count * enemy_data["level"] * 12
-        time_bonus_multiplier = 1.0 + (max(1, 6 - days_given) * 0.15) 
-        reward_gold = int(base_reward * time_bonus_multiplier)
-        reward_favor = diff * 2 + max(0, 3 - days_given)
+        base_gold_per_kill = enemy_level * random.randint(8, 12)
+        favor_mult = 1.0 + (favor / 100)
+        reward_gold = int(kills_needed * base_gold_per_kill * favor_mult * tightness)
+        reward_favor = int((5 + random.randint(0, 10)) * (0.8 + tightness * 0.5))
+        
+        # ---------- Difficulty calculation (1–20) ----------
+        # Level difference (enemy - player), clamped and mapped to 1–10
+        level_diff = enemy_level - player_level
+        # Clamp to [-5, +10]
+        clamped_diff = max(-5, min(10, level_diff))
+        # Map to 1–10: -5 → 1, 0 → 5, +10 → 10
+        level_factor = int(5 + (clamped_diff * 0.5))
+        level_factor = max(1, min(10, level_factor))
+        
+        # Kills factor: kills_needed / 5, max 5
+        kills_factor = min(5, kills_needed / 5)
+        
+        # Deadline factor: inverse of deadline (1–7) → 5 down to 0
+        deadline_factor = max(0, 5 - deadline)
+        
+        total = level_factor + kills_factor + deadline_factor
+        difficulty = int(max(1, min(20, round(total))))
+        # ---------------------------------------------------
         
         bounties.append({
             "id": f"bounty_{random.randint(10000, 99999)}",
             "target_enemy": target,
             "target_name": enemy_data["name"],
-            "required": target_count,
-            "difficulty": diff,
-            "days_given": days_given,
+            "required": kills_needed,
+            "difficulty": difficulty,   # Now 1–20
+            "days_given": deadline,
             "reward_gold": reward_gold,
             "reward_favor": reward_favor
         })
-        
+    
     return bounties
 
 def guild_service(player, city_id="solmere"):

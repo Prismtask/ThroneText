@@ -1,17 +1,17 @@
 {
   "name": "prism",
   "race": "Human",
-  "class": "Barbarian",
+  "class": "Warrior",
   "attributes": {
-    "Strength": 15,
-    "Constitution": 4,
-    "Dexterity": 0,
+    "Strength": 14,
+    "Constitution": 2,
+    "Dexterity": 2,
     "Wisdom": 1,
-    "Learning": 0,
-    "Charisma": 2
+    "Learning": 1,
+    "Charisma": 3
   },
   "floor": 1,
-  "current_hp": 27,
+  "current_hp": 21,
   "level": 1,
   "exp": 0,
   "level_hp_bonus": 0,
@@ -25,7 +25,150 @@
   "save_slot": 1,
   "dungeon_time": 0,
   "gold": 100,
-  "time_minutes": 480,
+  "time_minutes": 535,
   "location": "solmere",
-  "day": 1
+  "day": 1,
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "ice_bomb",
+        "name": "Common Ice Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 28,
+        "status": "slow"
+      },
+      45
+    ],
+    [
+      {
+        "id": "fire_bomb",
+        "name": "Common Fire Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 35
+      },
+      45
+    ],
+    [
+      {
+        "id": "short_sword",
+        "name": "Rare Short Sword",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 3
+        }
+      },
+      135
+    ],
+    [
+      {
+        "id": "smoke_bomb",
+        "name": "Common Smoke Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 8
+      },
+      45
+    ],
+    [
+      {
+        "id": "cloak_of_shadows",
+        "name": "Uncommon Cloak of Shadows",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 2,
+          "Charisma": 1
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "fire_bomb",
+        "name": "Common Fire Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 35
+      },
+      45
+    ],
+    [
+      {
+        "id": "talisman_of_warding",
+        "name": "Rare Talisman of Warding",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 3,
+          "Wisdom": 1
+        }
+      },
+      135
+    ],
+    [
+      {
+        "id": "flash_powder",
+        "name": "Rare Flash Powder",
+        "type": "utility",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 12,
+        "blind_enemy": true
+      },
+      135
+    ]
+  ],
+  "last_shop_day_solmere": 1,
+  "favor": {
+    "solmere": 0
+  },
+  "active_bounties": [],
+  "bounty_board_solmere": [
+    {
+      "id": "bounty_36087",
+      "target_enemy": "shadow_lord",
+      "target_name": "Shadow Lord",
+      "required": 10,
+      "difficulty": 3,
+      "days_given": 2,
+      "reward_gold": 1728,
+      "reward_favor": 7
+    },
+    {
+      "id": "bounty_92408",
+      "target_enemy": "wild_dog",
+      "target_name": "Wild Dog",
+      "required": 8,
+      "difficulty": 1,
+      "days_given": 6,
+      "reward_gold": 110,
+      "reward_favor": 2
+    },
+    {
+      "id": "bounty_18758",
+      "target_enemy": "lizardfolk_spearman",
+      "target_name": "Lizardfolk Spearman",
+      "required": 8,
+      "difficulty": 2,
+      "days_given": 3,
+      "reward_gold": 556,
+      "reward_favor": 4
+    }
+  ],
+  "bounty_refresh_day_solmere": 8
 }
