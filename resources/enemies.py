@@ -177,5 +177,24 @@ ENEMIES = {
     "base_hp": 55,
     "mods": {"Dexterity": 4, "Constitution": 2},
     "boss": False
-    }
+    },
+    # Queen of Mirrors Sylvana
+    "queen_of_mirrors_sylvana": {
+        "name": "Queen of Mirrors Sylvana",
+        "race": "Fey",
+        "level": 21,
+        "base_hp": 380,
+        "mods": {"Dexterity": 7, "Charisma": 5, "Constitution": 3, "Strength": 2},
+        "boss": True,
+        "super_boss": True,
+    },
+    # Her illusory copy (spawned during Mirror Reflection; not a real enemy entry)
+    "sylvana_mirror_copy": {
+        "name": "Sylvana Mirror Copy",  # name is overwritten at runtime by _scramble_name()
+        "race": "Fey",
+        "level": 21,
+        "base_hp": 1,                  # HP is synced from the real boss at spawn time
+        "mods": {"Dexterity": 7, "Charisma": 5, "Constitution": 3, "Strength": 2},
+        "boss": False,
+    },
 }

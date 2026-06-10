@@ -44,7 +44,7 @@ def combat_slitcurrent(player):
             failure_timer = 0  # reset failure timer when a Floatsam dies
             if devour_focus_stacks >= 3:
                 print("\n[GIMMICK] NIGHTMARE OVERLOAD! Slitcurrent is stunned for 2 turns and takes +40% damage!")
-                boss_stun_turns = 2
+                boss_stun_turns = 3
                 boss["stunned"] = True      # immediate effect
                 devour_focus_stacks = 0
 

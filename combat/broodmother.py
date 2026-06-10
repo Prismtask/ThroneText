@@ -85,23 +85,44 @@ def combat_broodmother(player):
             if enemy["hp"] <= 0:
                 continue
 
-            # Determine number of actions for this round
-            actions = 1
-            if enemy.get("key") == "broodmother_vileheart":
-                if enemy["hp"] <= int(enemy["max_hp"] * 0.25):
-                    actions = 2
-                    print(f"⚠️ {enemy['name']} is FRENZIED! (Permanent Double Actions)")
-                elif boss_enraged_turns > 0:
-                    actions = 2
-                    print(f"🔥 {enemy['name']} is ENRAGED! (Double Action remaining: {boss_enraged_turns})")
+            # Check if this specific enemy is the enraged boss
+            is_boss = (enemy.get("key") == "broodmother_vileheart")
+            is_enraged = (is_boss and boss_enraged_turns > 0)
+            
+            # If enraged, it executes 2 actions, otherwise 1
+            actions = 2 if is_enraged else 1
 
-            for _ in range(actions):
-                outcome = enemy_attack(
-                    enemy, player, p_con, defending,
-                    extra_logic=_broodmother_poison,
-                )
-                if outcome in ("died", "stunned"):
-                    break          # no more actions for this enemy this round
+            for action_idx in range(actions):
+                # ─── VISUAL INDICATOR FOR DOUBLE ATTACKS ───
+                if is_enraged:
+                    print(f"\n⚡ ENRAGED SPEED! {enemy['name']} unleashes Action {action_idx + 1}/2!")
+
+                # Determine boss custom ability modifiers or generic actions
+                extra = None
+                if is_boss:
+                    # Gimmick: Poison bite or sweeping strike logic
+                    r = random.random()
+                    if r < 0.4:
+                        # Vile Poison Strike
+                        def poison_strike_logic(dmg_taken):
+                            if dmg_taken > 0:
+                                p_dmg = 6 if is_enraged else 4
+                                apply_poison(player, p_dmg, 3)
+                                return f"🧪 Vileheart toxins seep into your veins! (Poisoned)"
+                            return None
+                        extra = poison_strike_logic
+                    elif r < 0.7:
+                        # Heavy Trample (ignores 30% armor calculation)
+                        enemy["attributes"]["Strength"] += 3  # Temporary bump
+                        # The base attack script handles the rest
+                
+                # Execute the actual health point deductions and attack printing
+                outcome = enemy_attack(enemy, player, p_con, defending, extra_logic=extra)
+                
+                # Clean up temporary stat bumps if applicable
+                if is_boss and extra is None and 0.4 <= r < 0.7:
+                    enemy["attributes"]["Strength"] -= 3
+
                 if outcome == "dead":
                     print("You have been slain.")
                     return "dead"

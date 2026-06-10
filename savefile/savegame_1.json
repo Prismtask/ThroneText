@@ -8,13 +8,13 @@
     "Dexterity": 2,
     "Wisdom": 1,
     "Learning": 2,
-    "Charisma": 8
+    "Charisma": 9
   },
-  "floor": 10,
-  "current_hp": 146,
-  "level": 24,
-  "exp": 1088,
-  "level_hp_bonus": 92,
+  "floor": 11,
+  "current_hp": 150,
+  "level": 25,
+  "exp": 418,
+  "level_hp_bonus": 96,
   "inventory": [
     {
       "id": "ice_bomb",
@@ -432,16 +432,6 @@
       }
     },
     {
-      "id": "healing_salve",
-      "name": "Common Healing Salve",
-      "type": "consumable",
-      "rarity": "common",
-      "enhance": 0,
-      "power": 40,
-      "duration": 3,
-      "heal_over_time": 3
-    },
-    {
       "id": "amulet_of_vigor",
       "name": "Uncommon Amulet of Vigor",
       "type": "equipment",
@@ -804,9 +794,9 @@
   ],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 1684,
-  "time_minutes": 1330,
-  "location": "solmere",
+  "gold": 2284,
+  "time_minutes": 1420,
+  "location": "dungeon",
   "day": 10,
   "shop_stock_solmere": [
     [
@@ -1016,11 +1006,6 @@
       "type": "curse",
       "remaining": -1,
       "penalty": 8
-    },
-    {
-      "type": "poison",
-      "damage": 5,
-      "remaining": 1
     }
   ],
   "shop_stock_thornwall": [

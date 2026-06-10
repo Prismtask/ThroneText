@@ -5,6 +5,7 @@ from resources.cities import CITIES
 from combat.generic import combat, player_con_mod
 from combat.broodmother import combat_broodmother 
 from combat.slitcurrent import combat_slitcurrent
+from combat.sylvana import combat_sylvana
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
@@ -124,10 +125,13 @@ def explore_dungeon(player):
     if floor % 10 == 0:
         print("\n" + "="*50)
         print("⚠️  A dark, suffocating energy fills the air...")
-        if (floor // 10) % 2 == 0:
+        tier = (floor // 10) % 3
+        if tier == 0:
             print("The walls are covered in dense, toxic cobwebs.")
-        else:
+        elif tier == 1:
             print("Reality itself frays... distorted dream fragments float everywhere.")
+        else:
+            print("Every surface becomes a mirror. You see a thousand versions of yourself — all afraid.")
         print("You have stumbled directly into a SUPER BOSS ARENA!")
         print("="*50)
         input("Press Enter to face the horror...")
@@ -135,10 +139,12 @@ def explore_dungeon(player):
         # Combat loop – cannot flee (if flee, restart combat)
         while True:
             advance_time(player, 60)   # time passes
-            if (floor // 10) % 2 == 0:
+            if tier == 0:
                 result = combat_broodmother(player)
-            else:
+            elif tier == 1:
                 result = combat_slitcurrent(player)
+            else:
+                result = combat_sylvana(player)
             if result == "victory":
                 # Reward
                 super_boss_exp = 500 + (floor * 50)
@@ -152,7 +158,7 @@ def explore_dungeon(player):
                 save_game(player)
                 return True   # floor cleared, outer loop will handle floor+1 and full heal
             elif result == "fled":
-                print("You cannot flee from a milestone Super Boss! The webs trap you.")
+                print("You cannot flee from a milestone Super Boss!")
                 input("Press Enter to continue the fight...")
                 continue
             elif result == "dead":
