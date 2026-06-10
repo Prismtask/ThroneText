@@ -107,7 +107,7 @@ CITIES = {
     "solmere": {
         "name": "Solmere",
         "biome": "temperate",
-        "services": ["shop", "inn", "blacksmith", "trade_hall", "temple"],
+        "services": ["shop", "inn", "blacksmith", "trade_hall", "temple", "guild"],
         "dialogues": {
             "receptionist": SOLMERE_RECEPTIONIST_DIALOGUE,
             "shop": SOLMERE_SHOPKEEPER_DIALOGUE,
@@ -195,7 +195,7 @@ CITIES = {
     "irondeep": {
         "name": "Irondeep",
         "biome": "mountain",
-        "services": ["shop", "inn", "blacksmith", "barracks"],
+        "services": ["shop", "inn", "blacksmith", "barracks", "guild"],
         "dialogues": {
             "receptionist": IRONDEEP_RECEPTIONIST_DIALOGUE,
             "shop": IRONDEEP_SHOPKEEPER_DIALOGUE,
@@ -233,7 +233,7 @@ CITIES = {
     "ashkara": {
         "name": "Ashkara",
         "biome": "desert",
-        "services": ["shop", "inn", "black_market"],
+        "services": ["shop", "inn", "black_market", "guild"],
         "dialogues": {
             "receptionist": ASHKARA_RECEPTIONIST_DIALOGUE,
             "shop": ASHKARA_SHOPKEEPER_DIALOGUE,
@@ -353,7 +353,7 @@ CITIES = {
     "coralhaven": {
         "name": "Coralhaven",
         "biome": "coastal",
-        "services": ["shop", "inn", "port", "herbalist", "temple"],
+        "services": ["shop", "inn", "port", "herbalist", "temple", "guild"],
         "dialogues": {
             "receptionist": CORALHAVEN_RECEPTIONIST_DIALOGUE,
             "shop": CORALHAVEN_SHOPKEEPER_DIALOGUE,

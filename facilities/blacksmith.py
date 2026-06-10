@@ -5,6 +5,7 @@ from resources.dialogues import BLACKSMITH_DIALOGUES
 from inventory import add_item_to_inventory, apply_scroll_to_item
 from utils import clear_screen, advance_time, format_time
 from combat.generic import get_effective_attribute
+from city_dialogue import service_dialogue
 
 def blacksmith_greeting(dialogues):
     print(random.choice(dialogues["greeting"]))
@@ -74,8 +75,7 @@ def enhance_item(player, dialogues, city_id):
         base_cost = int(50 * new_enhance * rarity_mult)
         cost = get_discounted_blacksmith_price(base_cost, player, city_id)
         print(f"Enhance to +{new_enhance} costs {cost} gold (Discounts applied).")
-        
-        print(f"Enhance to +{new_enhance} costs {cost} gold (Charisma discount applied).")
+
         confirm = input("Proceed? (y/n): ").strip().lower()
         if confirm != 'y':
             return

@@ -41,6 +41,18 @@ def display_player_status(player):
             print(f"  {slot.title()}: {item['name']} ({item.get('rarity','common')})")
         else:
             print(f"  {slot.title()}: empty")
+    display_active_bounties(player)
+
+def display_active_bounties(player):
+    """Show active bounties and which are ready to turn in."""
+    bounties = player.get("active_bounties", [])
+    if not bounties:
+        return
+    print("\n--- Active Bounties ---")
+    for b in bounties:
+        ready = "✓ READY TO CLAIM" if b.get("current", 0) >= b["required"] else f"{b.get('current',0)}/{b['required']}"
+        days_left = b["deadline"] - player.get("day", 1)
+        print(f"  {b['target_name']}: {ready} (expires in {days_left} days)")
 
 def display_inventory_menu_options():
     """Print the main inventory menu choices."""

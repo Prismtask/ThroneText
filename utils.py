@@ -25,7 +25,15 @@ def advance_time(player, minutes):
     if player["time_minutes"] >= 1440:
         days_passed = player["time_minutes"] // 1440
         player["day"] += days_passed
-        player["time_minutes"] %= 1440  # Caps the clock strictly between 0 and 1439
+        player["time_minutes"] %= 1440
+        
+        # CHECK BOUNTY EXPIRY AFTER DAY ROLLOVER
+        from facilities.guild import check_bounty_expiry
+        expired = check_bounty_expiry(player)
+        if expired:
+            print(f"\n {len(expired)} bounty(s) expired due to time!")
+            for b in expired:
+                print(f"  - {b['target_name']} (deadline passed)")
         
     return format_time(player["time_minutes"])
 

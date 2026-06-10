@@ -5,6 +5,7 @@ from resources.cities import CITIES
 from resources.enemies import ENEMIES, BIOME_RACES
 from city_dialogue import service_dialogue
 
+
 def generate_bounties(player, city_id):
     """Generate city-specific bounties based on biome and player favor."""
     city = CITIES[city_id]
@@ -78,7 +79,7 @@ def generate_bounties(player, city_id):
 
 def guild_service(player, city_id="solmere"):
     clear_screen()
-    service_dialogue(city_id, "guild", "enter")
+    service_dialogue(city_id, "receptionist", "enter")
     
     if "favor" not in player:
         player["favor"] = {}
@@ -111,7 +112,7 @@ def guild_service(player, city_id="solmere"):
         elif choice == "2":
             _manage_bounties(player, city_id)
         elif choice == "3":
-            service_dialogue(city_id, "guild", "leave")
+            service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 15)
             break
 
@@ -142,6 +143,21 @@ def _view_bounty_board(player, city_id, stock_key):
                 print(f"Accepted bounty to hunt {bounty['target_name']}!")
                 advance_time(player, 5)
                 input("Press Enter...")
+
+def check_bounty_expiry(player):
+    """Remove expired bounties and return list of expired ones."""
+    if "active_bounties" not in player:
+        return []
+    expired = []
+    remaining = []
+    current_day = player.get("day", 1)
+    for bounty in player["active_bounties"]:
+        if current_day > bounty["deadline"]:
+            expired.append(bounty)
+        else:
+            remaining.append(bounty)
+    player["active_bounties"] = remaining
+    return expired
 
 def _manage_bounties(player, city_id):
     while True:

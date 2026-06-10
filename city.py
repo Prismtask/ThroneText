@@ -17,6 +17,7 @@ from facilities.barracks import barracks_service
 from facilities.herbalist import herbalist_service
 from facilities.arcane_tower import arcane_tower_service
 from facilities.black_market import black_market_service
+from facilities.guild import guild_service
 
 # Map service names to handler functions
 SERVICE_HANDLERS = {
@@ -31,6 +32,7 @@ SERVICE_HANDLERS = {
     "herbalist": herbalist_service,
     "arcane_tower": arcane_tower_service,
     "black_market": black_market_service,
+    "guild": guild_service
 }
 
 def visit_city(player, city_id=None):
