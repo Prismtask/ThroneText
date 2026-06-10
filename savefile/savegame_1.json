@@ -794,91 +794,114 @@
   ],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 2284,
-  "time_minutes": 1420,
-  "location": "dungeon",
-  "day": 10,
+  "gold": 2184,
+  "time_minutes": 580,
+  "location": "solmere",
+  "day": 11,
   "shop_stock_solmere": [
     [
       {
-        "id": "amulet_of_vigor",
-        "name": "Uncommon Amulet of Vigor",
+        "id": "ice_bomb",
+        "name": "Common Ice Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 28,
+        "status": "slow"
+      },
+      45
+    ],
+    [
+      {
+        "id": "talisman_of_warding",
+        "name": "Epic Talisman of Warding",
         "type": "equipment",
-        "rarity": "uncommon",
+        "rarity": "epic",
         "enhance": 0,
         "slot": "accessory",
         "mods": {
-          "Constitution": 3
+          "Constitution": 4,
+          "Wisdom": 2
         }
+      },
+      270
+    ],
+    [
+      {
+        "id": "armor_shatter_flask",
+        "name": "Common Armour Shatter Flask",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0
+      },
+      45
+    ],
+    [
+      {
+        "id": "battle_drink",
+        "name": "Epic Battle Drink",
+        "type": "consumable",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 12,
+        "temp_stat": "Strength",
+        "duration": 3
+      },
+      90
+    ],
+    [
+      {
+        "id": "stun_bomb",
+        "name": "Uncommon Stun Bomb",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 15,
+        "stun_chance": 0.6
       },
       67
     ],
     [
       {
-        "id": "thunder_bomb",
-        "name": "Rare Thunder Bomb",
-        "type": "utility",
-        "rarity": "rare",
-        "enhance": 0,
-        "power": 76
-      },
-      135
-    ],
-    [
-      {
-        "id": "battle_drink",
-        "name": "Common Battle Drink",
+        "id": "iron_skin_potion",
+        "name": "Uncommon Iron Skin Potion",
         "type": "consumable",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 5,
-        "temp_stat": "Strength",
-        "duration": 3
-      },
-      15
-    ],
-    [
-      {
-        "id": "smoke_bomb",
-        "name": "Common Smoke Bomb",
-        "type": "utility",
-        "rarity": "common",
+        "rarity": "uncommon",
         "enhance": 0,
         "power": 0,
-        "escape_bonus": 8
+        "duration": 3,
+        "defense_buff": 4
       },
-      45
+      22
     ],
     [
       {
-        "id": "padded_armor",
-        "name": "Common Padded Armor",
-        "type": "equipment",
+        "id": "fire_bomb",
+        "name": "Common Fire Bomb",
+        "type": "utility",
         "rarity": "common",
         "enhance": 0,
-        "slot": "armor",
-        "mods": {
-          "Constitution": 2
-        }
+        "power": 35
       },
       45
     ],
     [
       {
-        "id": "ring_of_grace",
-        "name": "Rare Ring of Grace",
+        "id": "greatsword",
+        "name": "Uncommon Greatsword",
         "type": "equipment",
-        "rarity": "rare",
+        "rarity": "uncommon",
         "enhance": 0,
-        "slot": "accessory",
+        "slot": "weapon",
         "mods": {
-          "Dexterity": 3
+          "Strength": 6
         }
       },
-      135
+      67
     ]
   ],
-  "last_shop_day_solmere": 8,
+  "last_shop_day_solmere": 11,
   "shop_stock_brinewatch": [
     [
       {
@@ -1000,14 +1023,8 @@
   ],
   "last_shop_day_brinewatch": 1,
   "trade_permit": true,
-  "cursed": true,
-  "active_debuffs": [
-    {
-      "type": "curse",
-      "remaining": -1,
-      "penalty": 8
-    }
-  ],
+  "cursed": false,
+  "active_debuffs": [],
   "shop_stock_thornwall": [
     [
       {

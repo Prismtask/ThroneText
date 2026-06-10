@@ -197,4 +197,18 @@ ENEMIES = {
         "mods": {"Dexterity": 7, "Charisma": 5, "Constitution": 3, "Strength": 2},
         "boss": False,
     },
+    # Ignis, the Melt-Forge Golem
+    "melt_forge_golem_ignis": {
+        "name": "Ignis, the Melt-Forge Golem",
+        "race": "Construct",
+        "level": 21,
+        "base_hp": 400,
+        "mods": {
+            "Strength": 6,
+            "Constitution": 8,   # High armour — heat stacks eat into this
+            "Dexterity": 1,
+        },
+        "boss": True,
+        "super_boss": True,
+    },
 }

@@ -6,6 +6,7 @@ from combat.generic import combat, player_con_mod
 from combat.broodmother import combat_broodmother 
 from combat.slitcurrent import combat_slitcurrent
 from combat.sylvana import combat_sylvana
+from combat.ignis import combat_ignis
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
@@ -130,8 +131,10 @@ def explore_dungeon(player):
             print("The walls are covered in dense, toxic cobwebs.")
         elif tier == 1:
             print("Reality itself frays... distorted dream fragments float everywhere.")
-        else:
+        elif tier == 2:
             print("Every surface becomes a mirror. You see a thousand versions of yourself — all afraid.")
+        elif tier == 3:
+            print("The air shimmers with heat haze. The stone floor has begun to glow.")
         print("You have stumbled directly into a SUPER BOSS ARENA!")
         print("="*50)
         input("Press Enter to face the horror...")
@@ -143,8 +146,10 @@ def explore_dungeon(player):
                 result = combat_broodmother(player)
             elif tier == 1:
                 result = combat_slitcurrent(player)
-            else:
+            elif tier == 2:
                 result = combat_sylvana(player)
+            elif tier == 3:
+                result = combat_ignis(player)
             if result == "victory":
                 # Reward
                 super_boss_exp = 500 + (floor * 50)
