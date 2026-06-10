@@ -35,10 +35,14 @@ def get_time_period(total_minutes):
     hour = (total_minutes // 60) % 24
     if 0 <= hour <= 3:
         return "midnight"  # Very punishing
+    elif 4 <= hour <= 7:
+        return "dawn"
     elif hour == 12 or 13 <= hour <= 14:  # Noon period
         return "noon"
     elif 17 <= hour <= 20:  # Dusk
         return "dusk"
+    elif 21 <= hour <= 23:
+        return "night"
     return "normal"
 
 
@@ -49,8 +53,12 @@ def get_difficulty_multiplier_from_time(player):
     period = get_time_period(player["time_minutes"])
     if period == "midnight":
         return 1.8  # Very punishing for early-mid game
+    elif period == "dawn":
+        return 1.1
     elif period == "noon":
         return 1.25
     elif period == "dusk":
         return 1.4
+    elif period == "night":
+        return 1.6
     return 1.0
