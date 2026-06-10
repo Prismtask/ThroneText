@@ -119,15 +119,15 @@ def combat_slitcurrent(player):
                     extra = f" [Devour: {devour_focus_stacks}/3]"
                     if boss_stun_turns > 0:
                         extra += f" [Stunned: {boss_stun_turns} turns left]"
-                print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
-                print("[A]ttack  [D]efend  [F]lee  [U]se item")
-                action = input("Choose: ").strip().lower()
+            print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
+            print("[A]ttack  [D]efend  [F]lee  [U]se item")
+            action = input("Choose: ").strip().lower()
 
-        result, defending = handle_player_turn(
-            player, enemies, p_str, p_con, p_dex,
-            on_kill=on_kill_floatsam,
-            _action_override=action,
-        )
+            result, defending = handle_player_turn(
+                player, enemies, p_str, p_con, p_dex,
+                on_kill=on_kill_floatsam,
+                _action_override=action,
+            )
         if result == "retry":
             continue
         if result in ("fled", "victory", "dead"):
