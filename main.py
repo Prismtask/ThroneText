@@ -75,7 +75,7 @@ def main_menu():
                     continue
 
                 # Confirm choice before wiping progress
-                confirm = input(f"Are you sure you want to permanently delete '{saves[slot]}' (Slot {slot})? (y/N): ").strip().lower()
+                confirm = input(f"Are you sure you want to permanently delete '{saves[slot]}' (Slot {slot})? (y/n): ").strip().lower()
                 if confirm == 'y':
                     if delete_save(slot):
                         print("Save file successfully deleted.")
