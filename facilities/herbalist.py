@@ -29,16 +29,7 @@ def herbalist_service(player, city_id):
         cost = 30
         if player.get("gold", 0) >= cost:
             player["gold"] -= cost
-            # Since 'Antidote' isn't explicitly in items.py yet, we match its mechanics 
-            # to your scroll of cleansing or structural standards. 
-            # (Recommendation: Add "antidote" to your ITEMS dictionary in items.py)
-            antidote = {
-                "id": "antidote",
-                "name": "Common Antidote",
-                "type": "consumable",
-                "power": 0,
-                "cure_curse": False, # Or add an explicit 'cure_poison' flag to combat.py if needed
-            }
+            antidote = build_item("antidote", rarity="common")
             add_item_to_inventory(player, antidote)
             print("You receive an antidote.")
             service_dialogue(city_id, "herbalist", "buy")
