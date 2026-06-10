@@ -8,8 +8,11 @@ from utils import get_difficulty_multiplier_from_time
 from character import player_max_hp
 from combat.status_effects import (
     apply_poison, apply_curse,
+    apply_weaken, apply_bleed, apply_silence, apply_drain, apply_dread,
     tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
     cure_curse,
+    get_weaken_penalty, is_silenced, is_dreaded,
+    format_player_status_line,
 )
 
 def compute_enemy_attributes(enemy_key):
@@ -68,6 +71,10 @@ def get_effective_attribute(player, attr_name):
         if debuff.get("type") == "curse":
             penalty = debuff.get("penalty", 2)
             total -= penalty
+
+    # Apply weaken penalty to Strength only
+    if attr_name == "Strength":
+        total -= get_weaken_penalty(player)
     
     # Apply buffs (if any)
     for buff in player.get("active_buffs", []):
@@ -124,6 +131,12 @@ def format_enemy_status_line(enemy, extra=""):
         statuses.append("Stunned")
     if enemy.get("blinded"):
         statuses.append("Blinded")
+    if enemy.get("frozen"):
+        statuses.append("Frozen")
+    if any(d["type"] == "burn" for d in enemy.get("active_debuffs", [])):
+        statuses.append("Burning")
+    if enemy.get("expose_stacks", 0) > 0:
+        statuses.append(f"Exposed×{enemy['expose_stacks']}")
     status_str = f" ({', '.join(statuses)})" if statuses else ""
     return f"{enemy['name']} - HP: {enemy['hp']}{status_str}{extra}"
 
@@ -176,6 +189,11 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None):
         enemy["stunned"] = False
         return "stunned"
 
+    if enemy.get("frozen"):
+        print(f"The {enemy['name']} is frozen solid and cannot act!")
+        # tick_enemy_debuffs handles countdown and thaw — don't clear frozen here
+        return "stunned"
+
     block = p_con + (5 if defending else 0)
     enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
     enemy_dmg = max(0, enemy_dmg)
@@ -219,7 +237,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
     ('retry',    False)      – invalid input; caller should re-prompt the same turn
     """
     if _action_override is None:
-        print(f"\nYour HP: {player['current_hp']}")
+        status_str = format_player_status_line(player)
+        print(f"\nYour HP: {player['current_hp']} {status_str}".rstrip())
         print("Enemies in the room:")
         for idx, e in enumerate(enemies):
             print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
@@ -230,6 +249,10 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
 
     # ----- ATTACK -----
     if action == "a":
+        # Dread: 40% chance the attack falters before target selection
+        if is_dreaded(player) and random.random() < 0.40:
+            print("Dread grips your weapon arm — your strike goes wide! (Miss)")
+            return "continue", False
         if len(enemies) > 1:
             try:
                 choice = int(input("Select target number: ")) - 1
@@ -260,6 +283,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
 
     # ----- USE ITEM -----
     elif action == "u":
+        if is_silenced(player):
+            print("You are silenced! Your hands cannot reach your pack.")
+            return "retry", False
         combat_inventory = [
             (idx, item) for idx, item in enumerate(player.get("inventory", []))
             if item.get("type") in ["consumable", "utility"]
@@ -329,6 +355,15 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
                     msg += "The dark curse is lifted! "
                 else:
                     msg += "You are not cursed. "
+            if item.get("cure_poison"):
+                # Remove poison debuff from player
+                before = len([d for d in player.get("active_debuffs", []) if d["type"] == "poison"])
+                player["active_debuffs"] = [d for d in player.get("active_debuffs", []) if d["type"] != "poison"]
+                after = len([d for d in player.get("active_debuffs", []) if d["type"] == "poison"])
+                if before > after:
+                    msg += "The poison is cleansed from your body. "
+                else:
+                    msg += "You are not poisoned. "
             if "base_power" in item and "damage_over_time" not in item and "stun_chance" not in item:
                 dmg = item["base_power"]
                 armor = target["con_mod"]
@@ -338,13 +373,10 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
                 final_dmg = max(1, dmg - armor)
                 target["hp"] -= final_dmg
                 msg += f"You deal {final_dmg} damage to the {target['name']}! "
-            if "damage_over_time" in item:
-                target.setdefault("active_debuffs", []).append({
-                    "type": "dot",
-                    "damage": item["damage_over_time"],
-                    "remaining": item.get("duration", 3)
-                })
-                msg += f"The {target['name']} is poisoned/burning! "
+            if "poison_damage" in item:
+                from combat.status_effects import apply_poison
+                apply_poison(target, item["poison_damage"], item.get("poison_duration", 3))
+                msg += f"The {target['name']} is poisoned! "
             if "stun_chance" in item:
                 if random.random() < item["stun_chance"]:
                     target["stunned"] = True
@@ -400,6 +432,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
 
         roll = random.randint(1, 20) + effective_player_dex
         difficulty = 10 + max_enemy_dex
+        if is_dreaded(player):
+            difficulty += 4   # dread makes it much harder to turn and run
         if roll >= difficulty:
             print("You successfully flee from battle!")
             return "fled", False
@@ -408,6 +442,119 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
             return "continue", False
 
     return "retry", False
+
+
+def get_race_extra_logic(enemy):
+    """Return an extra_logic callable for this enemy based on its race, or None.
+
+    Each function signature must match: extra_logic(enemy, player, dmg) -> str | None
+    Only fires when dmg > 0 (the hit landed).
+    """
+    race = ENEMIES[enemy["key"]]["race"]
+
+    # ----- Beast: Bleed on hit (35% chance) -----
+    if race == "Beast":
+        def beast_bleed(e, player, dmg):
+            if dmg > 0 and random.random() < 0.35:
+                bleed_dmg = max(2, dmg // 3)
+                result = apply_bleed(player, damage=bleed_dmg, duration=4)
+                if result == "applied":
+                    return f"The {e['name']}'s claws open a wound! You bleed for {bleed_dmg}/round."
+                elif result == "refreshed":
+                    return f"The {e['name']} tears your wound wider! ({bleed_dmg}/round)"
+            return None
+        return beast_bleed
+
+    # ----- Undead: Curse on hit (20% chance) — existing effect, now race-driven -----
+    if race == "Undead":
+        def undead_curse(e, player, dmg):
+            if dmg > 0 and random.random() < 0.20:
+                result = apply_curse(player)
+                if result == "applied":
+                    return f"The {e['name']}'s touch carries a dark curse! All attributes reduced."
+                elif result == "already_cursed":
+                    return f"The {e['name']}'s curse washes over you, but you are already afflicted."
+            return None
+        return undead_curse
+
+    # ----- Shadow: Dread on hit (30% chance) -----
+    if race == "Shadow":
+        def shadow_dread(e, player, dmg):
+            if dmg > 0 and random.random() < 0.30:
+                result = apply_dread(player, duration=2)
+                if result == "applied":
+                    return f"The {e['name']}'s darkness fills you with supernatural dread!"
+            return None
+        return shadow_dread
+
+    # ----- Demon: Weaken on hit (25% chance) -----
+    if race == "Demon":
+        def demon_weaken(e, player, dmg):
+            if dmg > 0 and random.random() < 0.25:
+                result = apply_weaken(player, str_penalty=2, duration=3)
+                if result == "applied":
+                    return f"The {e['name']}'s hellfire saps your strength! STR reduced for 3 turns."
+                elif result == "refreshed":
+                    return f"Your weakness deepens under the {e['name']}'s assault!"
+            return None
+        return demon_weaken
+
+    # ----- Vampire: Drain on hit (always, steals dmg//2 HP) -----
+    if race == "Vampire":
+        def vampire_drain(e, player, dmg):
+            if dmg > 0:
+                drained = apply_drain(player, e, drain_amount=max(1, dmg // 2))
+                if drained > 0:
+                    return f"The {e['name']} drains {drained} HP from your life force!"
+            return None
+        return vampire_drain
+
+    # ----- Fey: Silence on hit (25% chance) -----
+    if race == "Fey":
+        def fey_silence(e, player, dmg):
+            if dmg > 0 and random.random() < 0.25:
+                result = apply_silence(player, duration=2)
+                if result == "applied":
+                    return f"The {e['name']}'s enchantment seals your pack shut for 2 turns!"
+            return None
+        return fey_silence
+
+    # ----- Abomination: Weaken on hit (35% chance, stronger penalty) -----
+    if race == "Abomination":
+        def abomination_weaken(e, player, dmg):
+            if dmg > 0 and random.random() < 0.35:
+                result = apply_weaken(player, str_penalty=3, duration=3)
+                if result == "applied":
+                    return f"The {e['name']}'s corrosive flesh weakens your muscles! STR -3 for 3 turns."
+                elif result == "refreshed":
+                    return f"The corruption deepens — your strength ebbs further!"
+            return None
+        return abomination_weaken
+
+    # ----- Giant: Weaken on hit (30% chance, strongest penalty) -----
+    if race == "Giant":
+        def giant_weaken(e, player, dmg):
+            if dmg > 0 and random.random() < 0.30:
+                result = apply_weaken(player, str_penalty=4, duration=2)
+                if result == "applied":
+                    return f"The {e['name']}'s crushing blow leaves your arms numb! STR -4 for 2 turns."
+                elif result == "refreshed":
+                    return f"Another bone-crushing hit — your strength fails!"
+            return None
+        return giant_weaken
+
+    # ----- Gnome (casters): Silence on hit (20% chance) -----
+    if race == "Gnome":
+        def gnome_silence(e, player, dmg):
+            if dmg > 0 and random.random() < 0.20:
+                result = apply_silence(player, duration=2)
+                if result == "applied":
+                    return f"The {e['name']}'s arcane static disrupts your concentration!"
+            return None
+        return gnome_silence
+
+    # No special debuff for this race
+    return None
 
 
 def combat(player, enemy_keys):
@@ -437,7 +584,8 @@ def combat(player, enemy_keys):
         for enemy in enemies[:]:
             if enemy["hp"] <= 0:
                 continue
-            outcome = enemy_attack(enemy, player, p_con, defending)
+            extra = get_race_extra_logic(enemy)
+            outcome = enemy_attack(enemy, player, p_con, defending, extra_logic=extra)
             if outcome == "dead":
                 print("You have been slain.")
                 return "dead"

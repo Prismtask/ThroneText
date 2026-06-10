@@ -1,0 +1,114 @@
+{
+  "name": "prism",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 16,
+    "Constitution": 3,
+    "Dexterity": 1,
+    "Wisdom": 1,
+    "Learning": 1,
+    "Charisma": 6
+  },
+  "floor": 3,
+  "current_hp": 44,
+  "level": 6,
+  "exp": 104,
+  "level_hp_bonus": 20,
+  "inventory": [
+    {
+      "id": "leather_armor",
+      "name": "Common Leather Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 2,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "elixir_of_strength",
+      "name": "Uncommon Elixir of Strength",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Strength",
+      "duration": 4
+    },
+    {
+      "id": "flash_powder",
+      "name": "Common Flash Powder",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 0,
+      "escape_bonus": 12,
+      "blind_enemy": true
+    },
+    {
+      "id": "chainmail",
+      "name": "Uncommon Chainmail",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "tome_of_knowledge",
+      "name": "Uncommon Tome of Knowledge",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 3
+      }
+    },
+    {
+      "id": "common_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "antidote",
+      "name": "Rare Antidote",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 0
+    },
+    {
+      "id": "cloak_of_shadows",
+      "name": "Common Cloak of Shadows",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2,
+        "Charisma": 1
+      }
+    }
+  ],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 1,
+  "dungeon_time": 0,
+  "gold": 968,
+  "time_minutes": 1710,
+  "location": "solmere",
+  "day": 1
+}

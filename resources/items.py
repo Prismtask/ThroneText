@@ -56,12 +56,13 @@ ITEMS = {
     "healing_salve":     {"name": "Healing Salve",     "type": "consumable", "base_power": 40, "heal_over_time": 3, "duration": 3},
     "battle_drink":      {"name": "Battle Drink",      "type": "consumable", "temp_stat": "Strength", "base_power": 5, "duration": 3},
     "iron_skin_potion":  {"name": "Iron Skin Potion",  "type": "consumable", "defense_buff": 4, "duration": 3},
-    "poison_flask":      {"name": "Poison Flask",      "type": "utility",    "base_power": 18, "damage_over_time": 8, "duration": 3},
+    "poison_flask":      {"name": "Poison Flask",      "type": "utility",    "base_power": 18, "poison_damage": 8, "duration": 3},
     "stun_bomb":         {"name": "Stun Bomb",         "type": "utility",    "stun_chance": 0.6, "base_power": 12},
     "flash_powder":      {"name": "Flash Powder",      "type": "utility",    "escape_bonus": 12, "blind_enemy": True},
     "throwing_knife":    {"name": "Throwing Knife",    "type": "utility",    "base_power": 22, "armor_pierce": 2},
     "curse_cleansing_scroll": {"name": "Scroll of Cleansing", "type": "consumable", "cure_curse": True},
     "antidote": {"name": "Antidote", "type": "consumable", "base_power": 0, "cure_poison": True},
+    "armor_shatter_flask": { "name": "Armour Shatter Flask", "type": "utility", "base_power": 0, "expose_armor": 2,},
 
     # === Scrolls ===
     "common_scroll":     {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "common"},

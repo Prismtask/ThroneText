@@ -6,15 +6,18 @@
 from character import player_max_hp
 
 
-# ---------------------------------------------------------------------------
+# ===========================================================================
 # APPLYING EFFECTS
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# EXISTING EFFECTS (unchanged API)
 # ---------------------------------------------------------------------------
 
 def apply_poison(target, damage, duration):
     """Apply or refresh poison on a target (player or enemy dict).
 
-    Returns 'applied' or 'refreshed'. Does NOT print – caller prints using
-    the returned status so each combat file can word the message differently.
+    Returns 'applied' or 'refreshed'.
     """
     existing = next(
         (d for d in target.get("active_debuffs", []) if d["type"] == "poison"),
@@ -44,27 +47,198 @@ def apply_curse(player, enemy_level=None):
 
 
 # ---------------------------------------------------------------------------
-# TICKING DEBUFFS  (called once per round for each entity that can be debuffed)
+# NEW ENEMY DEBUFFS  (applied to enemy dicts)
 # ---------------------------------------------------------------------------
 
-def tick_enemy_debuffs(enemy):
-    """Tick dot/blind debuffs on an enemy dict.
+def apply_burn(enemy, damage, duration=3):
+    existing = next((d for d in enemy.get("active_debuffs", []) if d["type"] == "burn"), None)
+    if existing:
+        existing["remaining"] = duration
+        existing["damage"] = damage
+        return "refreshed"
+    # Store original CON before reducing
+    enemy.setdefault("burn_original_con", enemy["con_mod"])
+    enemy["con_mod"] = max(0, enemy["con_mod"] - 1)
+    enemy.setdefault("active_debuffs", []).append(
+        {"type": "burn", "damage": damage, "remaining": duration}
+    )
+    return "applied"
 
-    Mutates enemy["hp"] and enemy["blinded"] where appropriate.
-    Returns (messages, died) where died=True if hp dropped to 0 or below.
+
+def apply_freeze(enemy, duration=2):
+    """Freeze an enemy solid.
+
+    Frozen enemies:
+    - Skip their next attack (like stun) AND
+    - Gain the 'slowed' flag after thawing for 1 round.
+
+    Returns 'applied' or 'already_frozen'.
+    """
+    if enemy.get("frozen"):
+        return "already_frozen"
+    enemy["frozen"] = True
+    enemy["freeze_duration"] = duration
+    return "applied"
+
+
+def apply_expose(enemy, armor_reduction=2):
+    """Shatter an enemy's armour plating.
+
+    Permanently reduces con_mod for this fight.  Cannot reduce below 0.
+    Multiple applications stack up to a cap of 5 total reduction.
+
+    Returns ('applied', new_con) or ('capped', current_con).
+    """
+    total_reduction = enemy.get("expose_stacks", 0) + armor_reduction
+    if total_reduction > 5:
+        armor_reduction = 5 - enemy.get("expose_stacks", 0)
+        if armor_reduction <= 0:
+            return "capped", enemy.get("con_mod", 0)
+    enemy["expose_stacks"] = enemy.get("expose_stacks", 0) + armor_reduction
+    enemy["con_mod"] = max(0, enemy.get("con_mod", 0) - armor_reduction)
+    return "applied", enemy["con_mod"]
+
+
+# ---------------------------------------------------------------------------
+# NEW PLAYER DEBUFFS  (applied to player dicts)
+# ---------------------------------------------------------------------------
+
+def apply_weaken(player, str_penalty=2, duration=3):
+    """Apply a Weakened condition to the player.
+
+    Reduces effective Strength for damage rolls.  Tracked via active_debuffs
+    so get_effective_attribute() must read it (see integration notes below).
+
+    Returns 'applied' or 'refreshed'.
+    """
+    existing = next(
+        (d for d in player.get("active_debuffs", []) if d["type"] == "weaken"),
+        None,
+    )
+    if existing:
+        existing["remaining"] = duration
+        existing["penalty"] = max(existing.get("penalty", 0), str_penalty)
+        return "refreshed"
+    player.setdefault("active_debuffs", []).append({
+        "type": "weaken",
+        "penalty": str_penalty,
+        "remaining": duration,
+    })
+    return "applied"
+
+
+def apply_bleed(player, damage, duration=4):
+    """Apply a Bleed wound to the player.
+
+    Bleed deals damage each round.  Unlike poison it does NOT stack — a
+    heavier bleed (higher damage) overwrites a lighter one.
+
+    Returns 'applied', 'refreshed', or 'no_change' (existing bleed is worse).
+    """
+    existing = next(
+        (d for d in player.get("active_debuffs", []) if d["type"] == "bleed"),
+        None,
+    )
+    if existing:
+        if damage > existing["damage"]:
+            existing["damage"] = damage
+            existing["remaining"] = duration
+            return "refreshed"
+        return "no_change"
+    player.setdefault("active_debuffs", []).append({
+        "type": "bleed",
+        "damage": damage,
+        "remaining": duration,
+    })
+    return "applied"
+
+
+def apply_silence(player, duration=2):
+    """Silence the player, preventing item use for N turns.
+
+    Returns 'applied' or 'already_silenced'.
+    """
+    if player.get("silenced"):
+        return "already_silenced"
+    player["silenced"] = True
+    player.setdefault("active_debuffs", []).append({
+        "type": "silence",
+        "remaining": duration,
+    })
+    return "applied"
+
+
+def apply_drain(player, enemy, drain_amount):
+    """Vampire drain: steals HP from player and heals the enemy.
+
+    Caps the heal so the enemy cannot exceed its max_hp.
+    Mutates both dicts in place.
+
+    Returns actual amount drained (may be less than drain_amount if player
+    would die — caller decides whether to clamp at 1).
+    """
+    actual = min(drain_amount, player["current_hp"] - 1)   # leave player at 1
+    actual = max(0, actual)
+    player["current_hp"] -= actual
+    enemy["hp"] = min(enemy["hp"] + actual, enemy.get("max_hp", enemy["hp"]))
+    return actual
+
+
+def apply_dread(player, duration=2):
+    """Fill the player with supernatural dread.
+
+    While dreaded:
+    - 40 % chance each attack action misses entirely (rolled in combat).
+    - Flee difficulty increases by 4 (applied in flee roll).
+
+    Returns 'applied' or 'already_dreaded'.
+    """
+    if player.get("dreaded"):
+        return "already_dreaded"
+    player["dreaded"] = True
+    player.setdefault("active_debuffs", []).append({
+        "type": "dread",
+        "remaining": duration,
+    })
+    return "applied"
+
+
+# ===========================================================================
+# TICKING DEBUFFS  (called once per round)
+# ===========================================================================
+
+def tick_enemy_debuffs(enemy):
+    """Tick dot/burn/blind/freeze debuffs on an enemy dict.
+
+    Returns (messages, died).
     """
     messages = []
     if not enemy.get("active_debuffs"):
-        return messages, False
+        # Still need to handle freeze separately (stored as flat flag)
+        messages, died = _tick_enemy_freeze(enemy, messages)
+        return messages, died
 
     for debuff in enemy["active_debuffs"][:]:
-        if debuff["type"] == "dot":
+
+        if debuff["type"] == "poison":
             dmg = debuff["damage"]
             enemy["hp"] -= dmg
-            messages.append(f"The {enemy['name']} takes {dmg} status damage!")
+            messages.append(f"The {enemy['name']} takes {dmg} poison damage!")
             debuff["remaining"] -= 1
             if debuff["remaining"] <= 0:
                 enemy["active_debuffs"].remove(debuff)
+        elif debuff["type"] == "burn":
+            dmg = debuff["damage"]
+            enemy["hp"] -= dmg
+            messages.append(f"The {enemy['name']} burns for {dmg} fire damage!")
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+        # Restore original CON
+                if "burn_original_con" in enemy:
+                    enemy["con_mod"] = enemy["burn_original_con"]
+                    del enemy["burn_original_con"]
+                enemy["active_debuffs"].remove(debuff)
+                messages.append(f"The flames on {enemy['name']} die out.")
 
         elif debuff["type"] == "blind":
             debuff["remaining"] -= 1
@@ -73,19 +247,29 @@ def tick_enemy_debuffs(enemy):
                 enemy["active_debuffs"].remove(debuff)
                 messages.append(f"The {enemy['name']} recovers their vision.")
 
+    # Handle freeze (stored as flat flag + counter, not in active_debuffs list)
+    messages, died_from_freeze = _tick_enemy_freeze(enemy, messages)
+
     died = enemy["hp"] <= 0
     if died:
         messages.append(f"The {enemy['name']} has succumbed to status damage!")
+    return messages, died or died_from_freeze
+
+
+def _tick_enemy_freeze(enemy, messages):
+    """Internal helper: count down freeze and apply slow on thaw."""
+    died = False
+    if enemy.get("frozen"):
+        enemy["freeze_duration"] = enemy.get("freeze_duration", 1) - 1
+        if enemy["freeze_duration"] <= 0:
+            enemy["frozen"] = False
+            enemy["slowed"] = True   # slow on thaw for 1 round
+            messages.append(f"The {enemy['name']} thaws — but is still sluggish!")
     return messages, died
 
 
 def tick_player_debuffs(player):
-    """Tick poison/slow/curse debuffs on the player dict.
-
-    - poison  : deals damage and counts down; removed at 0.
-    - slow    : counts down silently; removal message included.
-    - curse   : remaining == -1 means indefinite – never ticked off here;
-                use cure_curse() to remove it explicitly.
+    """Tick poison/bleed/slow/weaken/silence/dread/curse debuffs on the player.
 
     Returns (messages, died).
     """
@@ -94,7 +278,9 @@ def tick_player_debuffs(player):
         return messages, False
 
     for debuff in player["active_debuffs"][:]:
-        if debuff["type"] == "poison":
+        dtype = debuff["type"]
+
+        if dtype == "poison":
             dmg = debuff["damage"]
             player["current_hp"] -= dmg
             messages.append(f"You suffer {dmg} poison damage!")
@@ -103,36 +289,58 @@ def tick_player_debuffs(player):
                 player["active_debuffs"].remove(debuff)
                 messages.append("The poison fades from your system.")
 
-        elif debuff["type"] == "slow":
+        elif dtype == "bleed":
+            dmg = debuff["damage"]
+            player["current_hp"] -= dmg
+            messages.append(f"Your wounds bleed for {dmg} damage!")
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                player["active_debuffs"].remove(debuff)
+                messages.append("Your wounds finally clot.")
+
+        elif dtype == "slow":
             debuff["remaining"] -= 1
             if debuff["remaining"] <= 0:
                 player["active_debuffs"].remove(debuff)
                 messages.append("You are no longer slowed.")
 
-        elif debuff["type"] == "curse":
-            # Indefinite – only removed by cure_curse(); skip tick
+        elif dtype == "weaken":
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                player["active_debuffs"].remove(debuff)
+                player_name = player.get("name", "You")
+                messages.append(f"Your strength returns — the weakening fades.")
+
+        elif dtype == "silence":
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                player["silenced"] = False
+                player["active_debuffs"].remove(debuff)
+                messages.append("You can reach your pack again — silence lifts.")
+
+        elif dtype == "dread":
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                player["dreaded"] = False
+                player["active_debuffs"].remove(debuff)
+                messages.append("The supernatural dread recedes from your mind.")
+
+        elif dtype == "curse":
+            # Indefinite — only removed by cure_curse()
             continue
 
     died = player["current_hp"] <= 0
     return messages, died
 
 
-# ---------------------------------------------------------------------------
-# TICKING BUFFS  (called once per round for each entity that can be buffed)
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# TICKING BUFFS
+# ===========================================================================
 
 def tick_player_buffs(player):
     """Tick HoT, stat buffs, and other timed buffs on the player dict.
 
-    Handles:
-    - "hot"      : heals each round, then expires.
-    - "blessing" : permanent, never ticked.
-    - anything else with "remaining": counts down; prints expiry if it had a "stat".
-
-    NOTE: The original code had a double-decrement bug for non-hot/non-blessing buffs
-    (it decremented inside the hot block AND again in the outer loop). This function
-    fixes that – each buff is decremented exactly once per call.
-
+    Fixed the double-decrement bug present in the original code.
     Returns a list of message strings.
     """
     messages = []
@@ -156,7 +364,7 @@ def tick_player_buffs(player):
                 messages.append("Your healing salve's effect has worn off.")
 
         elif btype == "blessing":
-            # Permanent – never expires through ticking
+            # Permanent — never expires through ticking
             continue
 
         else:
@@ -170,15 +378,12 @@ def tick_player_buffs(player):
     return messages
 
 
-# ---------------------------------------------------------------------------
+# ===========================================================================
 # REMOVING EFFECTS  (triggered by items, abilities, scripted events)
-# ---------------------------------------------------------------------------
+# ===========================================================================
 
 def cure_curse(player):
-    """Remove a curse from the player.
-
-    Returns 'cured' or 'not_cursed'.
-    """
+    """Remove a curse from the player. Returns 'cured' or 'not_cursed'."""
     if not player.get("cursed"):
         return "not_cursed"
     player["cursed"] = False
@@ -186,3 +391,95 @@ def cure_curse(player):
         d for d in player.get("active_debuffs", []) if d.get("type") != "curse"
     ]
     return "cured"
+
+
+def cure_bleed(player):
+    """Stop a bleed on the player. Returns 'cured' or 'not_bleeding'."""
+    bleeding = any(d["type"] == "bleed" for d in player.get("active_debuffs", []))
+    if not bleeding:
+        return "not_bleeding"
+    player["active_debuffs"] = [
+        d for d in player.get("active_debuffs", []) if d.get("type") != "bleed"
+    ]
+    return "cured"
+
+
+def cure_silence(player):
+    """Lift silence from the player. Returns 'cured' or 'not_silenced'."""
+    if not player.get("silenced"):
+        return "not_silenced"
+    player["silenced"] = False
+    player["active_debuffs"] = [
+        d for d in player.get("active_debuffs", []) if d.get("type") != "silence"
+    ]
+    return "cured"
+
+
+def dispel_dread(player):
+    """Dispel dread from the player. Returns 'dispelled' or 'not_dreaded'."""
+    if not player.get("dreaded"):
+        return "not_dreaded"
+    player["dreaded"] = False
+    player["active_debuffs"] = [
+        d for d in player.get("active_debuffs", []) if d.get("type") != "dread"
+    ]
+    return "dispelled"
+
+
+# ===========================================================================
+# QUERY HELPERS  (read-only; used by combat to apply effect-based modifiers)
+# ===========================================================================
+
+def get_weaken_penalty(player):
+    """Return the current Strength penalty from Weaken (0 if none)."""
+    for d in player.get("active_debuffs", []):
+        if d["type"] == "weaken":
+            return d.get("penalty", 0)
+    return 0
+
+
+def is_silenced(player):
+    """True if the player is currently silenced."""
+    return bool(player.get("silenced"))
+
+
+def is_dreaded(player):
+    """True if the player is currently dreaded."""
+    return bool(player.get("dreaded"))
+
+
+def is_frozen(enemy):
+    """True if the enemy is currently frozen solid."""
+    return bool(enemy.get("frozen"))
+
+
+# ===========================================================================
+# STATUS DISPLAY  (for HUD / player info panels)
+# ===========================================================================
+
+def get_player_status_tags(player):
+    """Return a list of short status strings for the player HUD.
+
+    Example return: ['Poisoned', 'Weakened', 'Silenced']
+    """
+    tags = []
+    type_labels = {
+        "poison":  "Poisoned",
+        "bleed":   "Bleeding",
+        "slow":    "Slowed",
+        "weaken":  "Weakened",
+        "silence": "Silenced",
+        "dread":   "Dreaded",
+        "curse":   "Cursed",
+    }
+    for d in player.get("active_debuffs", []):
+        label = type_labels.get(d["type"])
+        if label and label not in tags:
+            tags.append(label)
+    return tags
+
+
+def format_player_status_line(player):
+    """Return a compact status string for inline display, e.g. '[Poisoned, Bleeding]'."""
+    tags = get_player_status_tags(player)
+    return f"[{', '.join(tags)}]" if tags else ""
