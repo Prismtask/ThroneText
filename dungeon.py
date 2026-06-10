@@ -2,7 +2,7 @@ import random
 from resources.enemies import ENEMIES
 from resources.items import build_item, ITEMS, ITEM_RARITY
 from resources.cities import CITIES
-from combat import combat, player_con_mod
+from combat.generic import combat, player_con_mod
 from superboss_combat import combat_broodmother, combat_slitcurrent
 from character import player_max_hp
 from save_load import save_game

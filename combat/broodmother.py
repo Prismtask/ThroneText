@@ -1,0 +1,146 @@
+# broodmother_combat.py – Broodmother Vileheart super boss encounter
+
+import random
+from combat import (
+    enemy_stats, compute_player_stats, handle_player_turn,
+    enemy_attack, format_enemy_status_line,
+)
+from character import player_max_hp
+from status_effects import (
+    apply_poison, apply_curse,
+    tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
+    cure_curse,
+)
+
+
+def combat_broodmother(player):
+    """
+    Special combat for the Broodmother Vileheart super boss.
+    Implements retreat at 75% HP, minion phase, enrage, double actions,
+    and poison mechanics.
+    Returns 'victory', 'fled', or 'dead'.
+    """
+    boss_key = "broodmother_vileheart"
+    boss = enemy_stats(boss_key, player)
+    boss["max_hp"] = boss["hp"]
+    enemies = [boss]
+
+    print("\n" + "=" * 50)
+    print("The floor trembles... Broodmother Vileheart emerges from the shadows!")
+    print(f"{boss['name']} - HP: {boss['hp']}")
+    print("=" * 50)
+
+    # Phase tracking
+    boss_escaped_data = None
+    minion_phase_active = False
+    minion_timer = 0
+    boss_enraged_turns = 0
+
+    def _broodmother_poison(enemy, player, enemy_dmg):
+        """50% chance to poison the player on any Broodmother-family hit."""
+        if enemy.get("key") not in ("broodmother_vileheart", "vileheart_spiderling"):
+            return None
+        if random.random() >= 0.5:
+            return None
+        status = apply_poison(player, 4, 3)
+        if status == "applied":
+            return f"You are poisoned by the {enemy['name']}!"
+        return f"The {enemy['name']} re-infects you!"
+
+    while True:
+        enemies = [e for e in enemies if e["hp"] > 0]
+        if not enemies:
+            print("Broodmother Vileheart has been defeated!")
+            return "victory"
+
+        p_str, p_con, p_dex = compute_player_stats(player)
+
+        result, defending = handle_player_turn(player, enemies, p_str, p_con, p_dex)
+        if result == "retry":
+            continue
+        if result in ("fled", "victory", "dead"):
+            return result
+
+        # ----- SUPER BOSS PHASE CHECK (retreat at 75% HP) -----
+        if not minion_phase_active and boss_escaped_data is None:
+            for e in enemies[:]:
+                if e.get("key") == "broodmother_vileheart" and e["hp"] <= int(e["max_hp"] * 0.75):
+                    print(f"\n[GIMMICK] {e['name']} screeches and retreats into the shadows!")
+                    print("Three Vileheart Spiderlings drop from the ceiling!")
+                    boss_escaped_data = e
+                    enemies.remove(e)
+                    for _ in range(3):
+                        m_stats = enemy_stats("vileheart_spiderling", player)
+                        m_stats["key"] = "vileheart_spiderling"
+                        m_stats["max_hp"] = m_stats["hp"]
+                        enemies.append(m_stats)
+                    minion_phase_active = True
+                    minion_timer = 3
+                    break
+
+        # ----- ENEMY TURN PHASE -----
+        for enemy in enemies[:]:
+            if enemy["hp"] <= 0:
+                continue
+
+            # Determine number of actions for this round
+            actions = 1
+            if enemy.get("key") == "broodmother_vileheart":
+                if enemy["hp"] <= int(enemy["max_hp"] * 0.25):
+                    actions = 2
+                    print(f"⚠️ {enemy['name']} is FRENZIED! (Permanent Double Actions)")
+                elif boss_enraged_turns > 0:
+                    actions = 2
+                    print(f"🔥 {enemy['name']} is ENRAGED! (Double Action remaining: {boss_enraged_turns})")
+
+            for _ in range(actions):
+                outcome = enemy_attack(
+                    enemy, player, p_con, defending,
+                    extra_logic=_broodmother_poison,
+                )
+                if outcome in ("died", "stunned"):
+                    break          # no more actions for this enemy this round
+                if outcome == "dead":
+                    print("You have been slain.")
+                    return "dead"
+
+        # ----- END OF ROUND MAINTENANCE -----
+        enemies = [e for e in enemies if e["hp"] > 0]
+        if not enemies and not minion_phase_active:
+            print("Broodmother Vileheart has been defeated!")
+            return "victory"
+
+        # Player status effect ticks (poison, slow)
+        msgs, died = tick_player_debuffs(player)
+        for m in msgs:
+            print(m)
+        if died:
+            print("You have been slain.")
+            return "dead"
+
+        # Player buffs (HoT, etc.)
+        for m in tick_player_buffs(player):
+            print(m)
+
+        # ----- MINION PHASE TIMER -----
+        if minion_phase_active:
+            spiderlings_alive = any(e.get("key") == "vileheart_spiderling" for e in enemies)
+            if not spiderlings_alive:
+                print("\n[GIMMICK] You slaughtered all spiderlings!")
+                print("Broodmother Vileheart descends again, enraged by your defiance.")
+                enemies.append(boss_escaped_data)
+                boss_escaped_data = None
+                minion_phase_active = False
+            else:
+                minion_timer -= 1
+                if minion_timer <= 0:
+                    print("\n[GIMMICK] Time's up! The remaining spiderlings retreat.")
+                    print("Broodmother Vileheart ambushes you, ENRAGED with double actions for 3 turns!")
+                    enemies = [e for e in enemies if e.get("key") != "vileheart_spiderling"]
+                    boss_enraged_turns = 3
+                    enemies.append(boss_escaped_data)
+                    boss_escaped_data = None
+                    minion_phase_active = False
+
+        if boss_enraged_turns > 0:
+            boss_enraged_turns -= 1
