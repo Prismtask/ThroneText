@@ -4,17 +4,17 @@
   "class": "Warrior",
   "attributes": {
     "Strength": 20,
-    "Constitution": 11,
+    "Constitution": 13,
     "Dexterity": 2,
     "Wisdom": 1,
     "Learning": 2,
     "Charisma": 4
   },
-  "floor": 7,
-  "current_hp": 116,
-  "level": 18,
-  "exp": 229,
-  "level_hp_bonus": 68,
+  "floor": 8,
+  "current_hp": 130,
+  "level": 20,
+  "exp": 201,
+  "level_hp_bonus": 76,
   "inventory": [
     {
       "id": "ice_bomb",
@@ -409,6 +409,88 @@
       "power": 68,
       "duration": 3,
       "heal_over_time": 3
+    },
+    {
+      "id": "battle_drink",
+      "name": "Rare Battle Drink",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 8,
+      "temp_stat": "Strength",
+      "duration": 3
+    },
+    {
+      "id": "padded_armor",
+      "name": "Uncommon Padded Armor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 2
+      }
+    },
+    {
+      "id": "healing_salve",
+      "name": "Common Healing Salve",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 40,
+      "duration": 3,
+      "heal_over_time": 3
+    },
+    {
+      "id": "amulet_of_vigor",
+      "name": "Uncommon Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "minor_healing_potion",
+      "name": "Common Minor Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 25
+    },
+    {
+      "id": "smoke_bomb",
+      "name": "Legendary Smoke Bomb",
+      "type": "utility",
+      "rarity": "legendary",
+      "enhance": 0,
+      "power": 0,
+      "escape_bonus": 8
+    },
+    {
+      "id": "amulet_of_vigor",
+      "name": "Uncommon Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "dragonhide",
+      "name": "Common Dragonhide Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 4,
+        "Dexterity": 2
+      }
     }
   ],
   "equipped": {
@@ -450,87 +532,105 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 3646,
-  "time_minutes": 630,
-  "location": "solmere",
+  "gold": 5122,
+  "time_minutes": 1105,
+  "location": "dungeon",
   "day": 8,
   "shop_stock_solmere": [
     [
       {
-        "id": "healing_potion",
-        "name": "Rare Healing Potion",
-        "type": "consumable",
-        "rarity": "rare",
-        "enhance": 0,
-        "power": 93
-      },
-      45
-    ],
-    [
-      {
-        "id": "elixir_of_mind",
-        "name": "Rare Elixir of Mind",
-        "type": "consumable",
-        "rarity": "rare",
-        "enhance": 0,
-        "power": 5,
-        "temp_stat": "Learning",
-        "duration": 4
-      },
-      45
-    ],
-    [
-      {
-        "id": "acid_flask",
-        "name": "Common Acid Flask",
-        "type": "utility",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 32
-      },
-      45
-    ],
-    [
-      {
-        "id": "iron_skin_potion",
-        "name": "Common Iron Skin Potion",
-        "type": "consumable",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 0,
-        "duration": 3,
-        "defense_buff": 4
-      },
-      15
-    ],
-    [
-      {
-        "id": "plate_armor",
-        "name": "Uncommon Plate Armor",
+        "id": "amulet_of_vigor",
+        "name": "Uncommon Amulet of Vigor",
         "type": "equipment",
         "rarity": "uncommon",
         "enhance": 0,
-        "slot": "armor",
+        "slot": "accessory",
         "mods": {
-          "Constitution": 6,
-          "Dexterity": -1
+          "Constitution": 3
         }
       },
       67
     ],
     [
       {
-        "id": "uncommon_scroll",
-        "name": "Common Scroll of Fusion",
-        "type": "scroll",
+        "id": "thunder_bomb",
+        "name": "Rare Thunder Bomb",
+        "type": "utility",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 76
+      },
+      135
+    ],
+    [
+      {
+        "id": "battle_drink",
+        "name": "Common Battle Drink",
+        "type": "consumable",
         "rarity": "common",
         "enhance": 0,
-        "target_rarity": "common"
+        "power": 5,
+        "temp_stat": "Strength",
+        "duration": 3
+      },
+      15
+    ],
+    [
+      {
+        "id": "smoke_bomb",
+        "name": "Common Smoke Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 8
       },
       45
+    ],
+    [
+      {
+        "id": "padded_armor",
+        "name": "Common Padded Armor",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 2
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "battle_axe",
+        "name": "Epic Battle Axe",
+        "type": "equipment",
+        "rarity": "epic",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 9
+        }
+      },
+      270
+    ],
+    [
+      {
+        "id": "ring_of_grace",
+        "name": "Rare Ring of Grace",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 3
+        }
+      },
+      135
     ]
   ],
-  "last_shop_day_solmere": 7,
+  "last_shop_day_solmere": 8,
   "shop_stock_brinewatch": [
     [
       {
@@ -719,9 +819,5 @@
       114
     ]
   ],
-  "last_shop_day_thornwall": 8,
-  "training_buff": {
-    "strength": 2,
-    "expires_after": 1
-  }
+  "last_shop_day_thornwall": 8
 }

@@ -41,16 +41,19 @@ def enhance_item(player, dialogues):
             print(dialogues["not_enough_gold"])
             input("Press Enter...")
             return
+            
+        # Deduct Gold and track the new level
         player["gold"] -= cost
         item["enhance"] = new_enhance
-        base = ITEMS[item["id"]]
-        r = ITEM_RARITY[item["rarity"]]
-        item["mods"] = {
-            stat: int(val * r["stat_mult"]) + new_enhance
-            for stat, val in base["base_mods"].items()
-        }
-        base_name = f"{item['rarity'].title()} {base['name']}"
-        item["name"] = f"{base_name} +{new_enhance}"
+        
+        # --- FIXED LOGIC: Safely boost existing stats instead of wiping them ---
+        if "mods" in item:
+            for stat in item["mods"]:
+                item["mods"][stat] += 1 
+    
+        base_display_name = item["name"].split(" +")[0]
+        item["name"] = f"{base_display_name} +{new_enhance}"
+        
         print(dialogues["enhance_success"].format(item['name']))
     except (ValueError, IndexError):
         print(dialogues["invalid_choice"])
