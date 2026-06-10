@@ -491,6 +491,17 @@
         "Constitution": 4,
         "Dexterity": 2
       }
+    },
+    {
+      "id": "battle_axe",
+      "name": "Epic Battle Axe",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 9
+      }
     }
   ],
   "equipped": {
@@ -532,10 +543,10 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 5122,
-  "time_minutes": 1105,
-  "location": "dungeon",
-  "day": 8,
+  "gold": 4852,
+  "time_minutes": 220,
+  "location": "solmere",
+  "day": 9,
   "shop_stock_solmere": [
     [
       {
@@ -600,20 +611,6 @@
         }
       },
       45
-    ],
-    [
-      {
-        "id": "battle_axe",
-        "name": "Epic Battle Axe",
-        "type": "equipment",
-        "rarity": "epic",
-        "enhance": 0,
-        "slot": "weapon",
-        "mods": {
-          "Strength": 9
-        }
-      },
-      270
     ],
     [
       {

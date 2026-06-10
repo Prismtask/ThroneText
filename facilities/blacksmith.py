@@ -11,52 +11,80 @@ def blacksmith_farewell(dialogues):
     print(random.choice(dialogues["farewell"]))
 
 def enhance_item(player, dialogues):
+    # 1. Build a unified list of options: (is_equipped, item_key_or_idx, item_dict)
+    enhanceable_pool = []
+    
+    # Add equipped items first (Weapon, Armor, Accessory)
+    equipped_slots = ["weapon", "armor", "accessory"]
+    for slot in equipped_slots:
+        equipped_item = player.get("equipped", {}).get(slot)
+        if equipped_item: # Make sure the slot isn't empty (None)
+            enhanceable_pool.append((True, slot, equipped_item))
+            
+    # Add unequipped equipment from inventory
     inv = player.get("inventory", [])
-    equip_items = [(idx, itm) for idx, itm in enumerate(inv) if itm["type"] == "equipment"]
-    if not equip_items:
+    for idx, item in enumerate(inv):
+        if item.get("type") == "equipment":
+            enhanceable_pool.append((False, idx, item))
+            
+    # If no items were found at all, back out
+    if not enhanceable_pool:
         print(dialogues["no_equipment"])
         input("Press Enter...")
         return
+        
     print("\n--- Enhance Equipment ---")
-    for i, (idx, itm) in enumerate(equip_items):
-        print(f"{i+1}. {itm['name']} (enhance +{itm.get('enhance',0)})")
+    # 2. Display the list (Equipped items appear first)
+    for i, (is_equipped, _, item) in enumerate(enhanceable_pool):
+        tag = " (Equipped)" if is_equipped else ""
+        print(f"{i+1}. {item['name']}{tag} (enhance +{item.get('enhance', 0)})")
+        
     try:
         choice = int(input("Choose item to enhance (0 cancel): ")) - 1
         if choice < 0:
             return
-        _, item = equip_items[choice]
+            
+        # Extract the chosen item details
+        is_equipped, location_key, item = enhanceable_pool[choice]
+        
         current_enhance = item.get("enhance", 0)
         if current_enhance >= 10:
             print(dialogues["max_enhance"])
             input("Press Enter...")
             return
+            
         new_enhance = current_enhance + 1
         rarity_mult = ITEM_RARITY[item["rarity"]]["price_mult"]
         cost = int(50 * new_enhance * rarity_mult)
+        
         print(f"Enhance to +{new_enhance} costs {cost} gold.")
         confirm = input("Proceed? (y/n): ").strip().lower()
         if confirm != 'y':
             return
+            
         if player.get("gold", 0) < cost:
             print(dialogues["not_enough_gold"])
             input("Press Enter...")
             return
             
-        # Deduct Gold and track the new level
+        # Process payment
         player["gold"] -= cost
         item["enhance"] = new_enhance
         
-        # --- FIXED LOGIC: Safely boost existing stats instead of wiping them ---
+        # Safe stat boost calculation (keeps random custom modifiers safe)
         if "mods" in item:
             for stat in item["mods"]:
-                item["mods"][stat] += 1 
-    
+                item["mods"][stat] += 1
+                
+        # Handle renaming cleanly without piling up (+1 +2) suffixes
         base_display_name = item["name"].split(" +")[0]
         item["name"] = f"{base_display_name} +{new_enhance}"
         
         print(dialogues["enhance_success"].format(item['name']))
+        
     except (ValueError, IndexError):
         print(dialogues["invalid_choice"])
+        
     input("Press Enter...")
 
 def fuse_scroll_with_item(player, dialogues):
