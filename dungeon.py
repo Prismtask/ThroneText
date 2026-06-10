@@ -44,7 +44,9 @@ def get_random_enemy_key(floor, boss=False, region=None):
     if not pool:
         # fallback – ignore region but keep level constraints
         pool = [k for k, d in ENEMIES.items()
-                if (d.get("boss", False) == boss) and (d["level"] >= floor - 2)]
+            if (d.get("boss", False) == boss)
+            and (d["level"] >= floor - 2)
+            and not (floor % 10 != 0 and d.get("super_boss", False))]
     if not pool:
         pool = [k for k, d in ENEMIES.items() if d.get("boss", False) == boss]
 

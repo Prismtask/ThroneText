@@ -3,172 +3,121 @@
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 14,
-    "Constitution": 2,
-    "Dexterity": 2,
+    "Strength": 16,
+    "Constitution": 8,
+    "Dexterity": 1,
     "Wisdom": 1,
     "Learning": 1,
     "Charisma": 3
   },
-  "floor": 1,
-  "current_hp": 21,
-  "level": 1,
-  "exp": 0,
-  "level_hp_bonus": 0,
-  "inventory": [],
+  "floor": 3,
+  "current_hp": 67,
+  "level": 8,
+  "exp": 47,
+  "level_hp_bonus": 28,
+  "inventory": [
+    {
+      "id": "greatsword",
+      "name": "Common Greatsword",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5
+      }
+    },
+    {
+      "id": "ring_of_grace",
+      "name": "Common Ring of Grace",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2
+      }
+    },
+    {
+      "id": "minor_healing_potion",
+      "name": "Uncommon Minor Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 32
+    },
+    {
+      "id": "ring_of_power",
+      "name": "Common Ring of Power",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 2
+      }
+    },
+    {
+      "id": "leather_armor",
+      "name": "Rare Leather Armor",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 3,
+        "Constitution": 1
+      }
+    }
+  ],
   "equipped": {
-    "weapon": null,
+    "weapon": {
+      "id": "greatsword",
+      "name": "Rare Greatsword",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 8
+      }
+    },
     "armor": null,
     "accessory": null
   },
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 100,
-  "time_minutes": 535,
-  "location": "solmere",
+  "gold": 1383,
+  "time_minutes": 1245,
+  "location": "dungeon",
   "day": 1,
-  "shop_stock_solmere": [
-    [
-      {
-        "id": "ice_bomb",
-        "name": "Common Ice Bomb",
-        "type": "utility",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 28,
-        "status": "slow"
-      },
-      45
-    ],
-    [
-      {
-        "id": "fire_bomb",
-        "name": "Common Fire Bomb",
-        "type": "utility",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 35
-      },
-      45
-    ],
-    [
-      {
-        "id": "short_sword",
-        "name": "Rare Short Sword",
-        "type": "equipment",
-        "rarity": "rare",
-        "enhance": 0,
-        "slot": "weapon",
-        "mods": {
-          "Strength": 3
-        }
-      },
-      135
-    ],
-    [
-      {
-        "id": "smoke_bomb",
-        "name": "Common Smoke Bomb",
-        "type": "utility",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 0,
-        "escape_bonus": 8
-      },
-      45
-    ],
-    [
-      {
-        "id": "cloak_of_shadows",
-        "name": "Uncommon Cloak of Shadows",
-        "type": "equipment",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "slot": "accessory",
-        "mods": {
-          "Dexterity": 2,
-          "Charisma": 1
-        }
-      },
-      67
-    ],
-    [
-      {
-        "id": "fire_bomb",
-        "name": "Common Fire Bomb",
-        "type": "utility",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 35
-      },
-      45
-    ],
-    [
-      {
-        "id": "talisman_of_warding",
-        "name": "Rare Talisman of Warding",
-        "type": "equipment",
-        "rarity": "rare",
-        "enhance": 0,
-        "slot": "accessory",
-        "mods": {
-          "Constitution": 3,
-          "Wisdom": 1
-        }
-      },
-      135
-    ],
-    [
-      {
-        "id": "flash_powder",
-        "name": "Rare Flash Powder",
-        "type": "utility",
-        "rarity": "rare",
-        "enhance": 0,
-        "power": 0,
-        "escape_bonus": 12,
-        "blind_enemy": true
-      },
-      135
-    ]
-  ],
-  "last_shop_day_solmere": 1,
   "favor": {
     "solmere": 0
   },
   "active_bounties": [],
   "bounty_board_solmere": [
     {
-      "id": "bounty_36087",
-      "target_enemy": "shadow_lord",
-      "target_name": "Shadow Lord",
-      "required": 10,
-      "difficulty": 3,
-      "days_given": 2,
-      "reward_gold": 1728,
-      "reward_favor": 7
+      "id": "bounty_26995",
+      "target_enemy": "zombie_minion",
+      "target_name": "Zombie Minion",
+      "required": 3,
+      "difficulty": 7,
+      "days_given": 7,
+      "reward_gold": 108,
+      "reward_favor": 11
     },
     {
-      "id": "bounty_92408",
-      "target_enemy": "wild_dog",
-      "target_name": "Wild Dog",
-      "required": 8,
-      "difficulty": 1,
-      "days_given": 6,
-      "reward_gold": 110,
-      "reward_favor": 2
-    },
-    {
-      "id": "bounty_18758",
-      "target_enemy": "lizardfolk_spearman",
-      "target_name": "Lizardfolk Spearman",
-      "required": 8,
-      "difficulty": 2,
-      "days_given": 3,
-      "reward_gold": 556,
-      "reward_favor": 4
+      "id": "bounty_98572",
+      "target_enemy": "goblin_archer",
+      "target_name": "Goblin Archer",
+      "required": 2,
+      "difficulty": 5,
+      "days_given": 7,
+      "reward_gold": 32,
+      "reward_favor": 16
     }
   ],
-  "bounty_refresh_day_solmere": 8
+  "bounty_refresh_day_solmere": 8,
+  "dungeon_region": "temperate"
 }
