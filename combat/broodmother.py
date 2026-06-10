@@ -1,7 +1,7 @@
 # broodmother_combat.py – Broodmother Vileheart super boss encounter
 
 import random
-from combat import (
+from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
     enemy_attack, format_enemy_status_line,
 )

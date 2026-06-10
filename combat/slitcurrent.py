@@ -1,7 +1,7 @@
 # slitcurrent_combat.py – Dream-Devouring Slitcurrent super boss encounter
 
 import random
-from combat import (
+from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
     format_enemy_status_line,
 )
