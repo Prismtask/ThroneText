@@ -11,7 +11,7 @@ from city_dialogue import service_dialogue   # changed import
 def get_effective_charisma(player):
     return get_effective_attribute(player, "Charisma")
 
-def get_discounted_price(base_price, player):
+def get_discounted_price(base_price, player, city_id):
     charisma = get_effective_charisma(player)
     favor = player.get("favor", {}).get(city_id, 0)
     
@@ -97,7 +97,7 @@ def city_shop(player, city_id="solmere"):
                 idx = int(input("Buy which item? (number): ")) - 1
                 if 0 <= idx < len(shop_stock):
                     item, base_price = shop_stock[idx]
-                    final_price = get_discounted_price(base_price, player)
+                    final_price = get_discounted_price(base_price, player, city_id)
                     if player.get("gold", 0) >= final_price:
                         player["gold"] -= final_price
                         add_item_to_inventory(player, item.copy())
