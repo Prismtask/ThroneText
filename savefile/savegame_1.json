@@ -8,13 +8,13 @@
     "Dexterity": 2,
     "Wisdom": 1,
     "Learning": 2,
-    "Charisma": 4
+    "Charisma": 8
   },
-  "floor": 8,
-  "current_hp": 130,
-  "level": 20,
-  "exp": 201,
-  "level_hp_bonus": 76,
+  "floor": 10,
+  "current_hp": 146,
+  "level": 24,
+  "exp": 88,
+  "level_hp_bonus": 92,
   "inventory": [
     {
       "id": "ice_bomb",
@@ -502,10 +502,36 @@
       "mods": {
         "Strength": 9
       }
-    }
-  ],
-  "equipped": {
-    "weapon": {
+    },
+    {
+      "id": "fire_bomb",
+      "name": "Uncommon Fire Bomb",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 45
+    },
+    {
+      "id": "stun_bomb",
+      "name": "Legendary Stun Bomb",
+      "type": "utility",
+      "rarity": "legendary",
+      "enhance": 0,
+      "power": 42,
+      "stun_chance": 0.6
+    },
+    {
+      "id": "padded_armor",
+      "name": "Legendary Padded Armor",
+      "type": "equipment",
+      "rarity": "legendary",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 7
+      }
+    },
+    {
       "id": "greatsword",
       "name": "Rare Greatsword",
       "type": "equipment",
@@ -514,6 +540,242 @@
       "slot": "weapon",
       "mods": {
         "Strength": 8
+      }
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Uncommon Arcane Staff",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 5
+      }
+    },
+    {
+      "id": "long_sword",
+      "name": "Common Long Sword",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 3
+      }
+    },
+    {
+      "id": "minor_healing_potion",
+      "name": "Uncommon Minor Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 32
+    },
+    {
+      "id": "ring_of_power",
+      "name": "Common Ring of Power",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 2
+      }
+    },
+    {
+      "id": "elixir_of_vitality",
+      "name": "Common Elixir of Vitality",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Constitution",
+      "duration": 4
+    },
+    {
+      "id": "uncommon_scroll",
+      "name": "Epic Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "epic",
+      "enhance": 0,
+      "target_rarity": "epic"
+    },
+    {
+      "id": "ring_of_power",
+      "name": "Rare Ring of Power",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 3
+      }
+    },
+    {
+      "id": "epic_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "healing_potion",
+      "name": "Uncommon Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 71
+    },
+    {
+      "id": "tome_of_knowledge",
+      "name": "Rare Tome of Knowledge",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 5
+      }
+    },
+    {
+      "id": "acid_flask",
+      "name": "Rare Acid Flask",
+      "type": "utility",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 54
+    },
+    {
+      "id": "chainmail",
+      "name": "Common Chainmail",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "common_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Rare Arcane Staff",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 6
+      }
+    },
+    {
+      "id": "talisman_of_warding",
+      "name": "Legendary Talisman of Warding",
+      "type": "equipment",
+      "rarity": "legendary",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 7,
+        "Wisdom": 3
+      }
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Rare Arcane Staff",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 6
+      }
+    },
+    {
+      "id": "armor_shatter_flask",
+      "name": "Uncommon Armour Shatter Flask",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 0
+    },
+    {
+      "id": "holy_water",
+      "name": "Uncommon Holy Water",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 52,
+      "bonus_vs": "Undead"
+    },
+    {
+      "id": "ice_bomb",
+      "name": "Uncommon Ice Bomb",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 36,
+      "status": "slow"
+    },
+    {
+      "id": "dragonhide",
+      "name": "Uncommon Dragonhide Armor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 5,
+        "Dexterity": 2
+      }
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Rare Thunder Bomb",
+      "type": "utility",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 76
+    },
+    {
+      "id": "fire_bomb",
+      "name": "Epic Fire Bomb",
+      "type": "utility",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 84
+    },
+    {
+      "id": "tome_of_knowledge",
+      "name": "Rare Tome of Knowledge",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 5
+      }
+    }
+  ],
+  "equipped": {
+    "weapon": {
+      "id": "greatsword",
+      "name": "Rare Greatsword +7",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 7,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 15
       }
     },
     "armor": {
@@ -543,9 +805,9 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 4852,
-  "time_minutes": 220,
-  "location": "solmere",
+  "gold": 6259,
+  "time_minutes": 1330,
+  "location": "dungeon",
   "day": 9,
   "shop_stock_solmere": [
     [
