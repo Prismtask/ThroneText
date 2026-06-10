@@ -112,17 +112,16 @@ def combat_slitcurrent(player):
         else:
             # Your normal input interface code here:
             print(f"\nYour HP: {player['current_hp']}")
-        print("Enemies in the room:")
-        for idx, e in enumerate(enemies):
-            extra = ""
-            if e.get("key") == "dream_devouring_slitcurrent":
-                extra = f" [Devour: {devour_focus_stacks}/3]"
-                if boss_stun_turns > 0:
-                    extra += f" [Stunned: {boss_stun_turns} turns left]"
-            print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
-
-        print("[A]ttack  [D]efend  [F]lee  [U]se item")
-        action = input("Choose: ").strip().lower()
+            print("Enemies in the room:")
+            for idx, e in enumerate(enemies):
+                extra = ""
+                if e.get("key") == "dream_devouring_slitcurrent":
+                    extra = f" [Devour: {devour_focus_stacks}/3]"
+                    if boss_stun_turns > 0:
+                        extra += f" [Stunned: {boss_stun_turns} turns left]"
+                print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
+            print("[A]ttack  [D]efend  [F]lee  [U]se item")
+            action = input("Choose: ").strip().lower()
 
         result, defending = handle_player_turn(
             player, enemies, p_str, p_con, p_dex,
