@@ -120,8 +120,8 @@ def combat_slitcurrent(player):
                     if boss_stun_turns > 0:
                         extra += f" [Stunned: {boss_stun_turns} turns left]"
                 print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
-            print("[A]ttack  [D]efend  [F]lee  [U]se item")
-            action = input("Choose: ").strip().lower()
+                print("[A]ttack  [D]efend  [F]lee  [U]se item")
+                action = input("Choose: ").strip().lower()
 
         result, defending = handle_player_turn(
             player, enemies, p_str, p_con, p_dex,
