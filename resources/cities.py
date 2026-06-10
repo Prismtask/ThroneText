@@ -106,6 +106,7 @@ from .dialogues import (
 CITIES = {
     "solmere": {
         "name": "Solmere",
+        "biome": "temperate",
         "services": ["shop", "inn", "blacksmith", "trade_hall", "temple"],
         "dialogues": {
             "receptionist": SOLMERE_RECEPTIONIST_DIALOGUE,
@@ -131,6 +132,7 @@ CITIES = {
     },
     "brinewatch": {
         "name": "Brinewatch",
+        "biome": "coastal",
         "services": ["shop", "inn", "blacksmith", "port", "shipyard", "trade_hall"],
         "dialogues": {
             "receptionist": BRINEWATCH_RECEPTIONIST_DIALOGUE,
@@ -154,6 +156,7 @@ CITIES = {
     },
     "greyharbor": {
         "name": "Greyharbor",
+        "biome": "coastal",
         "services": ["shop", "inn", "port", "trade_hall"],
         "dialogues": {
             "receptionist": GREYHARBOR_RECEPTIONIST_DIALOGUE,
@@ -173,6 +176,7 @@ CITIES = {
     },
     "elderfen": {
         "name": "Elderfen",
+        "biome": "swamp",
         "services": ["shop", "inn", "herbalist"],
         "dialogues": {
             "receptionist": ELDERFEN_RECEPTIONIST_DIALOGUE,
@@ -190,6 +194,7 @@ CITIES = {
     },
     "irondeep": {
         "name": "Irondeep",
+        "biome": "mountain",
         "services": ["shop", "inn", "blacksmith", "barracks"],
         "dialogues": {
             "receptionist": IRONDEEP_RECEPTIONIST_DIALOGUE,
@@ -208,6 +213,7 @@ CITIES = {
     },
     "skylume": {
         "name": "Skylume",
+        "biome": "magical",
         "services": ["shop", "inn", "arcane_tower"],
         "dialogues": {
             "receptionist": SKYLUME_RECEPTIONIST_DIALOGUE,
@@ -226,6 +232,7 @@ CITIES = {
     },
     "ashkara": {
         "name": "Ashkara",
+        "biome": "desert",
         "services": ["shop", "inn", "black_market"],
         "dialogues": {
             "receptionist": ASHKARA_RECEPTIONIST_DIALOGUE,
@@ -243,6 +250,7 @@ CITIES = {
     },
     "sunreach": {
         "name": "Sunreach",
+        "biome": "coastal",
         "services": ["shop", "inn", "port", "temple"],
         "dialogues": {
             "receptionist": SUNREACH_RECEPTIONIST_DIALOGUE,
@@ -263,6 +271,7 @@ CITIES = {
     },
     "thornwall": {
         "name": "Thornwall",
+        "biome": "temperate",
         "services": ["shop", "inn", "barracks"],
         "dialogues": {
             "receptionist": THORNWALL_RECEPTIONIST_DIALOGUE,
@@ -280,6 +289,7 @@ CITIES = {
     },
     "dunemar": {
         "name": "Dunemar",
+        "biome": "desert",
         "services": ["shop", "inn", "port", "trade_hall", "black_market"],
         "dialogues": {
             "receptionist": DUNEMAR_RECEPTIONIST_DIALOGUE,
@@ -300,6 +310,7 @@ CITIES = {
     },
     "tidebreak": {
         "name": "Tidebreak",
+        "biome": "coastal",
         "services": ["shop", "inn", "port", "shipyard", "trade_hall"],
         "dialogues": {
             "receptionist": TIDEBREAK_RECEPTIONIST_DIALOGUE,
@@ -322,6 +333,7 @@ CITIES = {
     },
     "stormhold": {
         "name": "Stormhold",
+        "biome": "coastal",
         "services": ["shop", "port", "shipyard", "barracks"],
         "dialogues": {
             "receptionist": STORMHOLD_RECEPTIONIST_DIALOGUE,
@@ -340,6 +352,7 @@ CITIES = {
     },
     "coralhaven": {
         "name": "Coralhaven",
+        "biome": "coastal",
         "services": ["shop", "inn", "port", "herbalist", "temple"],
         "dialogues": {
             "receptionist": CORALHAVEN_RECEPTIONIST_DIALOGUE,
@@ -360,6 +373,7 @@ CITIES = {
     },
     "blackwake": {
         "name": "Blackwake",
+        "biome": "coastal",
         "services": ["inn", "port", "black_market"],
         "dialogues": {
             "receptionist": BLACKWAKE_RECEPTIONIST_DIALOGUE,
@@ -376,6 +390,7 @@ CITIES = {
     },
     "isle_of_glass": {
         "name": "Isle of Glass",
+        "biome": "magical",
         "services": ["arcane_tower"],
         "dialogues": {
             "arcane_tower": ISLE_OF_GLASS_ARCANE_TOWER_DIALOGUE,

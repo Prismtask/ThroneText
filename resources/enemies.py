@@ -18,6 +18,17 @@ ENEMY_RACES = {
     "Abomination": {"mods": {"Strength": 4, "Constitution": 3, "Wisdom": -3, "Charisma": -4}},
 }
 
+BIOME_RACES = {
+    "temperate": ["Human", "Goblin", "Beast", "Undead", "Fey", "Gnome", "Lizardfolk", "Shadow", "Abomination", "Vampire"],
+    "coastal":   ["Human", "Lizardfolk", "Beast", "Elemental", "Undead", "Vampire", "Giant"],
+    "forest":    ["Beast", "Fey", "Goblin", "Human", "Gnome", "Elemental", "Dragonkin"],
+    "swamp":     ["Undead", "Lizardfolk", "Abomination", "Beast", "Shadow", "Vampire"],
+    "mountain":  ["Orc", "Giant", "Dragonkin", "Construct", "Human", "Elemental"],
+    "desert":    ["Human", "Undead", "Lizardfolk", "Elemental", "Gnome", "Beast"],
+    "volcanic":  ["Demon", "Elemental", "Dragonkin", "Construct", "Giant"],
+    "magical":   ["Fey", "Construct", "Clockwork", "Elemental", "Gnome", "Shadow", "Abomination"],
+}
+
 ENEMIES = {
     # Low level (1–3)
     "goblin_scout": {"name": "Goblin Scout", "race": "Goblin", "level": 1, "base_hp": 13, "mods": {"Dexterity": 1}, "boss": False},

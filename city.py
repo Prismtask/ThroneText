@@ -102,6 +102,8 @@ def visit_city(player, city_id=None):
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 30)
             print("You head back into the dungeon...")
+            # Set the dungeon region to this city's biome
+            player["dungeon_region"] = city.get("biome", "temperate")
             player["location"] = "dungeon"
             return True
         elif choice == save_option:

@@ -1,5 +1,5 @@
 import random
-from resources.enemies import ENEMIES
+from resources.enemies import ENEMIES, BIOME_RACES
 from resources.items import build_item, ITEMS, ITEM_RARITY
 from resources.cities import CITIES
 from combat.generic import combat, player_con_mod
@@ -14,47 +14,57 @@ from inventory_ui import manage_inventory_menu
 from leveling import gain_exp
 
 
-def get_random_enemy_key(floor, boss=False):
+def get_random_enemy_key(floor, boss=False, region=None):
     """Pick a random enemy suitable for the current floor."""
     pool = []
+    allowed_races = None
+    if region and region in BIOME_RACES:
+        allowed_races = set(BIOME_RACES[region])
     for key, data in ENEMIES.items():
-        # Skip super bosses on regular floors
+        # skip super bosses on non‑milestone floors
         if floor % 10 != 0 and data.get("super_boss", False):
             continue
         if boss and not data.get("boss", False):
             continue
         if boss:
-            if data["level"] >= floor + 1 and data["level"] <= floor + 5:
-                pool.append(key)
+            if not (data["level"] >= floor + 1 and data["level"] <= floor + 5):
+                continue
         else:
-            if data["level"] >= max(1, floor - 1) and data["level"] <= floor + 3:
-                pool.append(key)
+            if not (data["level"] >= max(1, floor - 1) and data["level"] <= floor + 3):
+                continue
+
+        # region filter
+        if allowed_races:
+            enemy_race = data.get("race")
+            if enemy_race not in allowed_races:
+                continue
+
+        pool.append(key)
 
     if not pool:
-        pool = [k for k, d in ENEMIES.items() 
-                if d.get("boss", False) == boss and d["level"] >= floor - 2]
+        # fallback – ignore region but keep level constraints
+        pool = [k for k, d in ENEMIES.items()
+                if (d.get("boss", False) == boss) and (d["level"] >= floor - 2)]
     if not pool:
         pool = [k for k, d in ENEMIES.items() if d.get("boss", False) == boss]
 
     return random.choice(pool)
 
 
-def generate_floor(floor):
-    """Create a list of rooms, where each room contains a list of enemy keys (up to 5)."""
+def generate_floor(floor, region=None):
     rooms = []
-    max_enemies = min(5, floor)  # Max group size matches floor level up to a hard cap of 5
+    max_enemies = min(5, floor)
 
-    # Generate 4 normal rooms
     for _ in range(4):
         num_enemies = random.randint(1, max_enemies)
-        room_enemies = [get_random_enemy_key(floor, boss=False) for _ in range(num_enemies)]
+        room_enemies = [get_random_enemy_key(floor, boss=False, region=region)
+                        for _ in range(num_enemies)]
         rooms.append(room_enemies)
 
-    # Generate 1 Boss Room (Boss + scaled minion pack up to max cap of 5 characters total)
-    boss_room = [get_random_enemy_key(floor, boss=True)]
+    boss_room = [get_random_enemy_key(floor, boss=True, region=region)]
     num_minions = random.randint(0, min(4, floor - 1))
     for _ in range(num_minions):
-        boss_room.append(get_random_enemy_key(floor, boss=False))
+        boss_room.append(get_random_enemy_key(floor, boss=False, region=region))
     rooms.append(boss_room)
 
     return rooms
@@ -121,6 +131,19 @@ def add_gold_drop(player, enemy_key):
 def explore_dungeon(player):
     """Main dungeon loop. Clears one floor. Returns False if player dies."""
     floor = player["floor"]
+
+    # ----- Determine current dungeon region -----
+    # If we already have a region stored, use it (e.g. after loading)
+    # Otherwise, derive from the city the player is in (if any)
+    if "dungeon_region" not in player or player["dungeon_region"] is None:
+        current_city = player.get("location")
+        if current_city and current_city != "dungeon":
+            city_data = CITIES.get(current_city, CITIES["solmere"])
+            player["dungeon_region"] = city_data.get("biome", "temperate")
+        else:
+            player["dungeon_region"] = "temperate"
+
+    region = player["dungeon_region"]
     
     # ----- SUPER BOSS ENCOUNTER (every 10th floor) -----
     if floor % 10 == 0:
@@ -155,7 +178,7 @@ def explore_dungeon(player):
                 super_boss_exp = 500 + (floor * 50)
                 super_boss_gold = 300 + (floor * 30)
                 player["gold"] = player.get("gold", 0) + super_boss_gold
-                print(f"\n🏆 Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
+                print(f"\n Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
                 gain_exp(player, super_boss_exp)
                 
                 # Full heal and save (outer loop will increment floor and heal again, but that's fine)
@@ -170,10 +193,10 @@ def explore_dungeon(player):
                 return False
 
     # ----- NORMAL FLOORS (non‑milestone) -----
-    print(f"\n=== DESCENDING INTO DUNGEON FLOOR {floor} ===")
-    input("Press Enter to begin your descent...")
+    print(f"\n=== DESCENDING INTO {region.upper()} DUNGEON – FLOOR {floor} ===")
+    input("Press Enter to begin...")
 
-    rooms = generate_floor(floor)
+    rooms = generate_floor(floor, region=region)
     total_rooms = len(rooms)
 
     for i, enemy_keys in enumerate(rooms):
@@ -198,6 +221,14 @@ def explore_dungeon(player):
                     gain_exp(player, enemy_level * 12)
                     add_drop_to_inventory(player, enemy_level)
                     add_gold_drop(player, enemy_key)
+                    
+                    # BOUNTY TRACKING:
+                    if "active_bounties" in player:
+                        for b in player["active_bounties"]:
+                            if b["target_enemy"] == enemy_key and b["current"] < b["required"]:
+                                b["current"] += 1
+                                if b["current"] == b["required"]:
+                                    print(f"★ Bounty objective complete: Hunt {b['required']} {b['target_name']}!")
 
                 # Heal after victory
                 heal = random.randint(1, 5) + player_con_mod(player)

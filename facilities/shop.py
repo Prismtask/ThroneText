@@ -13,8 +13,14 @@ def get_effective_charisma(player):
 
 def get_discounted_price(base_price, player):
     charisma = get_effective_charisma(player)
+    favor = player.get("favor", {}).get(city_id, 0)
+    
+    # Max 40% from Charisma, Max 30% from Favor, Max Total 70%
     discount_percent = min(40, max(0, (charisma - 8) * 0.5))
-    discounted = int(base_price * (100 - discount_percent) / 100)
+    favor_discount = min(30, favor * 0.5) 
+    total_discount = min(70, discount_percent + favor_discount)
+    
+    discounted = int(base_price * (100 - total_discount) / 100)
     return max(1, discounted)
 
 def sell_items(player):
@@ -68,10 +74,17 @@ def city_shop(player, city_id="solmere"):
         service_dialogue(city_id, "shop", "enter")
         print(f"=== {city['name'].upper()} MARKET ===")
         print(f"Time: {format_time(player['time_minutes'])} | Gold: {player.get('gold', 0)}")
-        print(f"Charisma: {get_effective_charisma(player)} → {100 - int((get_effective_charisma(player)-8)*0.5):d}% of base price (max 60%)\n")
+        
+        # Display favor and total discount
+        favor = player.get('favor', {}).get(city_id, 0)
+        c_disc = min(40, max(0, (get_effective_charisma(player) - 8) * 0.5))
+        f_disc = min(30, favor * 0.5)
+        total_disc = min(70, c_disc + f_disc)
+        
+        print(f"Charisma & Favor ({favor}): → {100 - total_disc:.0f}% of base price (max 70%)\n")
         print("--- Shop Stock ---")
         for i, (item, base_price) in enumerate(shop_stock, 1):
-            final_price = get_discounted_price(base_price, player)
+            final_price = get_discounted_price(base_price, player, city_id)  # Pass city_id here!
             print(f"{i}. {item['name']} - {final_price} gold (base: {base_price})")
         print("\nOptions:")
         print("1) Buy   2) Sell   3) View Stats   4) Back to City")
