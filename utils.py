@@ -13,10 +13,20 @@ def format_time(total_minutes):
 
 
 def advance_time(player, minutes):
-    """Advance player's time by minutes and return new time string."""
+    """Advance player's time by minutes, handling day rollover cleanly."""
     if "time_minutes" not in player:
         player["time_minutes"] = 8 * 60  # Start at 08:00
+    if "day" not in player:
+        player["day"] = 1
+
     player["time_minutes"] += minutes
+    
+    # 1440 minutes = 24 hours
+    if player["time_minutes"] >= 1440:
+        days_passed = player["time_minutes"] // 1440
+        player["day"] += days_passed
+        player["time_minutes"] %= 1440  # Caps the clock strictly between 0 and 1439
+        
     return format_time(player["time_minutes"])
 
 

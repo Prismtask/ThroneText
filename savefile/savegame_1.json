@@ -4,17 +4,17 @@
   "class": "Warrior",
   "attributes": {
     "Strength": 20,
-    "Constitution": 3,
+    "Constitution": 9,
     "Dexterity": 2,
     "Wisdom": 1,
-    "Learning": 1,
-    "Charisma": 1
+    "Learning": 2,
+    "Charisma": 4
   },
-  "floor": 3,
-  "current_hp": 44,
-  "level": 6,
-  "exp": 56,
-  "level_hp_bonus": 20,
+  "floor": 6,
+  "current_hp": 102,
+  "level": 16,
+  "exp": 105,
+  "level_hp_bonus": 60,
   "inventory": [
     {
       "id": "ice_bomb",
@@ -88,14 +88,6 @@
       }
     },
     {
-      "id": "superior_healing_potion",
-      "name": "Uncommon Superior Healing Potion",
-      "type": "consumable",
-      "rarity": "uncommon",
-      "enhance": 0,
-      "power": 234
-    },
-    {
       "id": "dragonhide",
       "name": "Common Dragonhide Armor",
       "type": "equipment",
@@ -105,6 +97,214 @@
       "mods": {
         "Constitution": 4,
         "Dexterity": 2
+      }
+    },
+    {
+      "id": "acid_flask",
+      "name": "Common Acid Flask",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 32
+    },
+    {
+      "id": "leather_armor",
+      "name": "Common Leather Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 2,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Uncommon Thunder Bomb",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 58
+    },
+    {
+      "id": "uncommon_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "short_sword",
+      "name": "Common Short Sword",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 2
+      }
+    },
+    {
+      "id": "talisman_of_warding",
+      "name": "Common Talisman of Warding",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "battle_drink",
+      "name": "Uncommon Battle Drink",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 6,
+      "temp_stat": "Strength",
+      "duration": 3
+    },
+    {
+      "id": "legendary_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "healing_potion",
+      "name": "Rare Healing Potion",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 93
+    },
+    {
+      "id": "elixir_of_strength",
+      "name": "Epic Elixir of Strength",
+      "type": "consumable",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 7,
+      "temp_stat": "Strength",
+      "duration": 4
+    },
+    {
+      "id": "elixir_of_vitality",
+      "name": "Rare Elixir of Vitality",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 5,
+      "temp_stat": "Constitution",
+      "duration": 4
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Common Thunder Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 45
+    },
+    {
+      "id": "short_sword",
+      "name": "Common Short Sword",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 2
+      }
+    },
+    {
+      "id": "fire_bomb",
+      "name": "Rare Fire Bomb",
+      "type": "utility",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 59
+    },
+    {
+      "id": "greatsword",
+      "name": "Common Greatsword",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5
+      }
+    },
+    {
+      "id": "plate_armor",
+      "name": "Uncommon Plate Armor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 6,
+        "Dexterity": -1
+      }
+    },
+    {
+      "id": "war_bow",
+      "name": "Uncommon War Bow",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 5
+      }
+    },
+    {
+      "id": "chainmail",
+      "name": "Uncommon Chainmail",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "stun_bomb",
+      "name": "Common Stun Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 12,
+      "stun_chance": 0.6
+    },
+    {
+      "id": "healing_salve",
+      "name": "Common Healing Salve",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 40,
+      "duration": 3,
+      "heal_over_time": 3
+    },
+    {
+      "id": "talisman_of_warding",
+      "name": "Common Talisman of Warding",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 2,
+        "Wisdom": 1
       }
     }
   ],
@@ -126,9 +326,9 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 493,
-  "time_minutes": 2200,
-  "location": "dungeon",
+  "gold": 3146,
+  "time_minutes": 7300,
+  "location": "solmere",
   "day": 1,
   "shop_stock_solmere": [
     [
@@ -346,12 +546,6 @@
   ],
   "last_shop_day_brinewatch": 1,
   "trade_permit": true,
-  "cursed": true,
-  "active_debuffs": [
-    {
-      "type": "curse",
-      "remaining": -1,
-      "penalty": 2
-    }
-  ]
+  "cursed": false,
+  "active_debuffs": []
 }
