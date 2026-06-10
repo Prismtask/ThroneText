@@ -4,17 +4,17 @@
   "class": "Warrior",
   "attributes": {
     "Strength": 20,
-    "Constitution": 9,
+    "Constitution": 11,
     "Dexterity": 2,
     "Wisdom": 1,
     "Learning": 2,
     "Charisma": 4
   },
-  "floor": 6,
-  "current_hp": 102,
-  "level": 16,
-  "exp": 105,
-  "level_hp_bonus": 60,
+  "floor": 7,
+  "current_hp": 116,
+  "level": 18,
+  "exp": 229,
+  "level_hp_bonus": 68,
   "inventory": [
     {
       "id": "ice_bomb",
@@ -306,6 +306,109 @@
         "Constitution": 2,
         "Wisdom": 1
       }
+    },
+    {
+      "id": "greatsword",
+      "name": "Uncommon Greatsword",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 6
+      }
+    },
+    {
+      "id": "common_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "rare_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "chainmail",
+      "name": "Epic Chainmail",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 7
+      }
+    },
+    {
+      "id": "thunder_bomb",
+      "name": "Common Thunder Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 45
+    },
+    {
+      "id": "holy_water",
+      "name": "Uncommon Holy Water",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 52,
+      "bonus_vs": "Undead"
+    },
+    {
+      "id": "mace",
+      "name": "Common Mace",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "minor_healing_potion",
+      "name": "Epic Minor Healing Potion",
+      "type": "consumable",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 60
+    },
+    {
+      "id": "antidote",
+      "name": "Rare Antidote",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 0
+    },
+    {
+      "id": "elixir_of_strength",
+      "name": "Common Elixir of Strength",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Strength",
+      "duration": 4
+    },
+    {
+      "id": "healing_salve",
+      "name": "Rare Healing Salve",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 68,
+      "duration": 3,
+      "heal_over_time": 3
     }
   ],
   "equipped": {
@@ -320,111 +423,114 @@
         "Strength": 8
       }
     },
-    "armor": null,
-    "accessory": null
+    "armor": {
+      "id": "dragonhide",
+      "name": "Epic Dragonhide Armor",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 9,
+        "Dexterity": 4
+      }
+    },
+    "accessory": {
+      "id": "ring_of_grace",
+      "name": "Epic Ring of Grace",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 4
+      }
+    }
   },
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 3146,
-  "time_minutes": 8290,
+  "gold": 3646,
+  "time_minutes": 630,
   "location": "solmere",
-  "day": 1,
+  "day": 8,
   "shop_stock_solmere": [
     [
       {
-        "id": "smoke_bomb",
-        "name": "Uncommon Smoke Bomb",
-        "type": "utility",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "power": 0,
-        "escape_bonus": 8
-      },
-      67
-    ],
-    [
-      {
-        "id": "war_bow",
-        "name": "Uncommon War Bow",
-        "type": "equipment",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "slot": "weapon",
-        "mods": {
-          "Dexterity": 5
-        }
-      },
-      67
-    ],
-    [
-      {
-        "id": "poison_flask",
-        "name": "Rare Poison Flask",
-        "type": "utility",
+        "id": "healing_potion",
+        "name": "Rare Healing Potion",
+        "type": "consumable",
         "rarity": "rare",
         "enhance": 0,
-        "power": 30,
-        "duration": 3
-      },
-      135
-    ],
-    [
-      {
-        "id": "elixir_of_strength",
-        "name": "Common Elixir of Strength",
-        "type": "consumable",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 3,
-        "temp_stat": "Strength",
-        "duration": 4
-      },
-      15
-    ],
-    [
-      {
-        "id": "elixir_of_mind",
-        "name": "Uncommon Elixir of Mind",
-        "type": "consumable",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "power": 3,
-        "temp_stat": "Learning",
-        "duration": 4
-      },
-      22
-    ],
-    [
-      {
-        "id": "war_bow",
-        "name": "Common War Bow",
-        "type": "equipment",
-        "rarity": "common",
-        "enhance": 0,
-        "slot": "weapon",
-        "mods": {
-          "Dexterity": 4
-        }
+        "power": 93
       },
       45
     ],
     [
       {
-        "id": "tome_of_knowledge",
-        "name": "Uncommon Tome of Knowledge",
+        "id": "elixir_of_mind",
+        "name": "Rare Elixir of Mind",
+        "type": "consumable",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 5,
+        "temp_stat": "Learning",
+        "duration": 4
+      },
+      45
+    ],
+    [
+      {
+        "id": "acid_flask",
+        "name": "Common Acid Flask",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 32
+      },
+      45
+    ],
+    [
+      {
+        "id": "iron_skin_potion",
+        "name": "Common Iron Skin Potion",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "duration": 3,
+        "defense_buff": 4
+      },
+      15
+    ],
+    [
+      {
+        "id": "plate_armor",
+        "name": "Uncommon Plate Armor",
         "type": "equipment",
         "rarity": "uncommon",
         "enhance": 0,
-        "slot": "accessory",
+        "slot": "armor",
         "mods": {
-          "Learning": 3
+          "Constitution": 6,
+          "Dexterity": -1
         }
       },
       67
+    ],
+    [
+      {
+        "id": "uncommon_scroll",
+        "name": "Common Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "common",
+        "enhance": 0,
+        "target_rarity": "common"
+      },
+      45
     ]
   ],
-  "last_shop_day_solmere": 1,
+  "last_shop_day_solmere": 7,
   "shop_stock_brinewatch": [
     [
       {
@@ -547,5 +653,75 @@
   "last_shop_day_brinewatch": 1,
   "trade_permit": true,
   "cursed": false,
-  "active_debuffs": []
+  "active_debuffs": [],
+  "shop_stock_thornwall": [
+    [
+      {
+        "id": "elixir_of_speed",
+        "name": "Rare Elixir of Speed",
+        "type": "consumable",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 5,
+        "temp_stat": "Dexterity",
+        "duration": 4
+      },
+      39
+    ],
+    [
+      {
+        "id": "ice_bomb",
+        "name": "Epic Ice Bomb",
+        "type": "utility",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 67,
+        "status": "slow"
+      },
+      228
+    ],
+    [
+      {
+        "id": "antidote",
+        "name": "Uncommon Antidote",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 0
+      },
+      19
+    ],
+    [
+      {
+        "id": "battle_drink",
+        "name": "Common Battle Drink",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 5,
+        "temp_stat": "Strength",
+        "duration": 3
+      },
+      13
+    ],
+    [
+      {
+        "id": "ring_of_grace",
+        "name": "Rare Ring of Grace",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 3
+        }
+      },
+      114
+    ]
+  ],
+  "last_shop_day_thornwall": 8,
+  "training_buff": {
+    "strength": 2,
+    "expires_after": 1
+  }
 }

@@ -101,6 +101,8 @@ def compute_player_stats(player):
     p_str = get_effective_attribute(player, "Strength")
     p_con = get_effective_attribute(player, "Constitution")
     p_dex = get_effective_attribute(player, "Dexterity")
+    if player.get("training_buff"):
+        p_str += player["training_buff"].get("strength", 0)
     return p_str, p_con, p_dex
 
 
