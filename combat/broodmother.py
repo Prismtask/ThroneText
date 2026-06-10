@@ -1,6 +1,7 @@
 # broodmother_combat.py – Broodmother Vileheart super boss encounter
 
 import random
+from utils import clear_screen
 from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
     enemy_attack, format_enemy_status_line,
@@ -52,7 +53,8 @@ def combat_broodmother(player):
         if not enemies:
             print("Broodmother Vileheart has been defeated!")
             return "victory"
-
+        
+        clear_screen()
         p_str, p_con, p_dex = compute_player_stats(player)
 
         result, defending = handle_player_turn(player, enemies, p_str, p_con, p_dex)

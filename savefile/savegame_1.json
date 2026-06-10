@@ -10,10 +10,10 @@
     "Learning": 2,
     "Charisma": 8
   },
-  "floor": 10,
+  "floor": 11,
   "current_hp": 146,
   "level": 24,
-  "exp": 88,
+  "exp": 1088,
   "level_hp_bonus": 92,
   "inventory": [
     {
@@ -594,14 +594,6 @@
       "duration": 4
     },
     {
-      "id": "uncommon_scroll",
-      "name": "Epic Scroll of Fusion",
-      "type": "scroll",
-      "rarity": "epic",
-      "enhance": 0,
-      "target_rarity": "epic"
-    },
-    {
       "id": "ring_of_power",
       "name": "Rare Ring of Power",
       "type": "equipment",
@@ -769,25 +761,25 @@
   "equipped": {
     "weapon": {
       "id": "greatsword",
-      "name": "Rare Greatsword +7",
+      "name": "Epic Greatsword +10",
       "type": "equipment",
-      "rarity": "rare",
-      "enhance": 7,
+      "rarity": "epic",
+      "enhance": 10,
       "slot": "weapon",
       "mods": {
-        "Strength": 15
+        "Strength": 22
       }
     },
     "armor": {
       "id": "dragonhide",
-      "name": "Epic Dragonhide Armor",
+      "name": "Epic Dragonhide Armor +2",
       "type": "equipment",
       "rarity": "epic",
-      "enhance": 0,
+      "enhance": 2,
       "slot": "armor",
       "mods": {
-        "Constitution": 9,
-        "Dexterity": 4
+        "Constitution": 11,
+        "Dexterity": 6
       }
     },
     "accessory": {
@@ -802,13 +794,20 @@
       }
     }
   },
-  "active_buffs": [],
+  "active_buffs": [
+    {
+      "type": "blessing",
+      "stat": "all",
+      "value": 2,
+      "remaining": 1
+    }
+  ],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 6259,
+  "gold": 1684,
   "time_minutes": 1330,
-  "location": "dungeon",
-  "day": 9,
+  "location": "solmere",
+  "day": 10,
   "shop_stock_solmere": [
     [
       {
@@ -1011,8 +1010,19 @@
   ],
   "last_shop_day_brinewatch": 1,
   "trade_permit": true,
-  "cursed": false,
-  "active_debuffs": [],
+  "cursed": true,
+  "active_debuffs": [
+    {
+      "type": "curse",
+      "remaining": -1,
+      "penalty": 8
+    },
+    {
+      "type": "poison",
+      "damage": 5,
+      "remaining": 1
+    }
+  ],
   "shop_stock_thornwall": [
     [
       {
@@ -1078,5 +1088,10 @@
       114
     ]
   ],
-  "last_shop_day_thornwall": 8
+  "last_shop_day_thornwall": 8,
+  "training_buff": {
+    "strength": 2,
+    "expires_after": 1
+  },
+  "stunned": true
 }

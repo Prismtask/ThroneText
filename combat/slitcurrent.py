@@ -1,6 +1,7 @@
 # slitcurrent_combat.py – Dream-Devouring Slitcurrent super boss encounter
 
 import random
+from utils import clear_screen
 from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
     format_enemy_status_line,
@@ -33,6 +34,7 @@ def combat_slitcurrent(player):
     failure_timer = 0                 # turns Floatsam have been alive without hitting 3 stacks
     boss_buff_turns = 0               # temporary all-stats buff after failure
     massive_attack_triggered = False  # prevent multiple failure triggers
+    player_stunned = False
 
     def on_kill_floatsam(target, enemies):
         nonlocal devour_focus_stacks, failure_timer, boss_stun_turns
@@ -51,7 +53,8 @@ def combat_slitcurrent(player):
         if not enemies:
             print("Dream-Devouring Slitcurrent has been devoured by reality!")
             return "victory"
-
+        
+        clear_screen()
         p_str, p_con, p_dex = compute_player_stats(player)
 
         # ----- FLOATSAM SPAWN (once at ≤80% HP) -----
@@ -102,7 +105,14 @@ def combat_slitcurrent(player):
             boss.pop("temp_str_bonus", None)
 
         # ----- Player turn (custom HUD shows stacks & multi-turn stun counter) -----
-        print(f"\nYour HP: {player['current_hp']}")
+        if player_stunned:
+            print("\nYou are STUNNED from the Nightmarish Tide and cannot act this turn!")
+            input("Press Enter to yield your turn...")
+            player_stunned = False # Reset the stun status
+            result = "skipped"
+        else:
+            # Your normal input interface code here:
+            print(f"\nYour HP: {player['current_hp']}")
         print("Enemies in the room:")
         for idx, e in enumerate(enemies):
             extra = ""
@@ -167,6 +177,7 @@ def combat_slitcurrent(player):
                 # Apply stun to player
                 player["stunned"] = True
                 print("You are STUNNED and will lose your next turn!")
+                player_stunned = True
                 if player["current_hp"] <= 0:
                     print("You have been slain.")
                     return "dead"
