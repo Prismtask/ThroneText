@@ -144,5 +144,9 @@ def combat_broodmother(player):
                     boss_escaped_data = None
                     minion_phase_active = False
 
+        print("\n" + "-" * 40)
+        input("Press Enter to proceed to the next round...")
+        clear_screen()
+
         if boss_enraged_turns > 0:
             boss_enraged_turns -= 1

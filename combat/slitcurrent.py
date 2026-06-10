@@ -54,7 +54,6 @@ def combat_slitcurrent(player):
             print("Dream-Devouring Slitcurrent has been devoured by reality!")
             return "victory"
         
-        clear_screen()
         p_str, p_con, p_dex = compute_player_stats(player)
 
         # ----- FLOATSAM SPAWN (once at ≤80% HP) -----
@@ -227,3 +226,7 @@ def combat_slitcurrent(player):
 
         for m in tick_player_buffs(player):
             print(m)
+
+        print("\n" + "-" * 40)
+        input("Press Enter to proceed to the next round...")
+        clear_screen()
