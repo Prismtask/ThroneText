@@ -86,7 +86,6 @@ def generate_bounties(player, city_id):
 
 def guild_service(player, city_id="solmere"):
     clear_screen()
-    service_dialogue(city_id, "receptionist", "enter")
     
     if "favor" not in player:
         player["favor"] = {}
@@ -108,6 +107,7 @@ def guild_service(player, city_id="solmere"):
     while True:
         clear_screen()
         print(f"=== {CITIES[city_id]['name'].upper()} GUILD HALL ===")
+        service_dialogue(city_id, "receptionist", "enter")
         print(f"Favor: {player['favor'].get(city_id, 0)} | Gold: {player.get('gold', 0)} | Day: {player.get('day', 1)}")
         print("1. View Bounty Board")
         print("2. Manage Active Bounties")
