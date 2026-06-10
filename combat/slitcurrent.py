@@ -107,8 +107,10 @@ def combat_slitcurrent(player):
         if player_stunned:
             print("\nYou are STUNNED from the Nightmarish Tide and cannot act this turn!")
             input("Press Enter to yield your turn...")
-            player_stunned = False # Reset the stun status
-            result = "skipped"
+            player_stunned = False
+            defending = False
+            turn_counter += 1      # still counts as a turn
+            # Skip directly to enemy phase
         else:
             # Your normal input interface code here:
             print(f"\nYour HP: {player['current_hp']}")
@@ -119,7 +121,7 @@ def combat_slitcurrent(player):
                     extra = f" [Devour: {devour_focus_stacks}/3]"
                     if boss_stun_turns > 0:
                         extra += f" [Stunned: {boss_stun_turns} turns left]"
-            print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
+                print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
             print("[A]ttack  [D]efend  [F]lee  [U]se item")
             action = input("Choose: ").strip().lower()
 
@@ -128,13 +130,12 @@ def combat_slitcurrent(player):
                 on_kill=on_kill_floatsam,
                 _action_override=action,
             )
-        if result == "retry":
-            continue
-        if result in ("fled", "victory", "dead"):
-            return result
+            if result == "retry":
+                continue
+            if result in ("fled", "victory", "dead"):
+                return result
 
-        # ----- INCREMENT TURN COUNTER (for Nightmarish Tide) -----
-        turn_counter += 1
+            turn_counter += 1
 
         # ----- ENEMY TURN PHASE -----
         for enemy in enemies[:]:
