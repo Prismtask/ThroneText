@@ -3,112 +3,355 @@
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 16,
+    "Strength": 20,
     "Constitution": 3,
-    "Dexterity": 1,
+    "Dexterity": 2,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 6
+    "Charisma": 1
   },
   "floor": 3,
   "current_hp": 44,
   "level": 6,
-  "exp": 104,
+  "exp": 56,
   "level_hp_bonus": 20,
   "inventory": [
     {
-      "id": "leather_armor",
-      "name": "Common Leather Armor",
-      "type": "equipment",
-      "rarity": "common",
-      "enhance": 0,
-      "slot": "armor",
-      "mods": {
-        "Dexterity": 2,
-        "Constitution": 1
-      }
-    },
-    {
-      "id": "elixir_of_strength",
-      "name": "Uncommon Elixir of Strength",
-      "type": "consumable",
+      "id": "ice_bomb",
+      "name": "Uncommon Ice Bomb",
+      "type": "utility",
       "rarity": "uncommon",
       "enhance": 0,
-      "power": 3,
-      "temp_stat": "Strength",
-      "duration": 4
+      "power": 36,
+      "status": "slow"
     },
     {
       "id": "flash_powder",
-      "name": "Common Flash Powder",
+      "name": "Rare Flash Powder",
       "type": "utility",
-      "rarity": "common",
+      "rarity": "rare",
       "enhance": 0,
       "power": 0,
       "escape_bonus": 12,
       "blind_enemy": true
     },
     {
-      "id": "chainmail",
-      "name": "Uncommon Chainmail",
+      "id": "acid_flask",
+      "name": "Common Acid Flask",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 32
+    },
+    {
+      "id": "long_sword",
+      "name": "Common Long Sword",
       "type": "equipment",
-      "rarity": "uncommon",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 3
+      }
+    },
+    {
+      "id": "padded_armor",
+      "name": "Common Padded Armor",
+      "type": "equipment",
+      "rarity": "common",
       "enhance": 0,
       "slot": "armor",
       "mods": {
-        "Constitution": 3
+        "Constitution": 2
       }
     },
     {
-      "id": "tome_of_knowledge",
-      "name": "Uncommon Tome of Knowledge",
-      "type": "equipment",
-      "rarity": "uncommon",
-      "enhance": 0,
-      "slot": "accessory",
-      "mods": {
-        "Learning": 3
-      }
-    },
-    {
-      "id": "common_scroll",
-      "name": "Rare Scroll of Fusion",
-      "type": "scroll",
-      "rarity": "rare",
-      "enhance": 0,
-      "target_rarity": "rare"
-    },
-    {
-      "id": "antidote",
-      "name": "Rare Antidote",
-      "type": "consumable",
-      "rarity": "rare",
-      "enhance": 0,
-      "power": 0
-    },
-    {
-      "id": "cloak_of_shadows",
-      "name": "Common Cloak of Shadows",
+      "id": "ring_of_grace",
+      "name": "Common Ring of Grace",
       "type": "equipment",
       "rarity": "common",
       "enhance": 0,
       "slot": "accessory",
       "mods": {
-        "Dexterity": 2,
-        "Charisma": 1
+        "Dexterity": 2
+      }
+    },
+    {
+      "id": "war_bow",
+      "name": "Uncommon War Bow",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 5
+      }
+    },
+    {
+      "id": "superior_healing_potion",
+      "name": "Uncommon Superior Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 234
+    },
+    {
+      "id": "dragonhide",
+      "name": "Common Dragonhide Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 4,
+        "Dexterity": 2
       }
     }
   ],
   "equipped": {
-    "weapon": null,
+    "weapon": {
+      "id": "greatsword",
+      "name": "Rare Greatsword",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 8
+      }
+    },
     "armor": null,
     "accessory": null
   },
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 968,
-  "time_minutes": 1710,
-  "location": "solmere",
-  "day": 1
+  "gold": 493,
+  "time_minutes": 2200,
+  "location": "dungeon",
+  "day": 1,
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "smoke_bomb",
+        "name": "Uncommon Smoke Bomb",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 8
+      },
+      67
+    ],
+    [
+      {
+        "id": "war_bow",
+        "name": "Uncommon War Bow",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 5
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "poison_flask",
+        "name": "Rare Poison Flask",
+        "type": "utility",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 30,
+        "duration": 3
+      },
+      135
+    ],
+    [
+      {
+        "id": "elixir_of_strength",
+        "name": "Common Elixir of Strength",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 3,
+        "temp_stat": "Strength",
+        "duration": 4
+      },
+      15
+    ],
+    [
+      {
+        "id": "elixir_of_mind",
+        "name": "Uncommon Elixir of Mind",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 3,
+        "temp_stat": "Learning",
+        "duration": 4
+      },
+      22
+    ],
+    [
+      {
+        "id": "war_bow",
+        "name": "Common War Bow",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 4
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "tome_of_knowledge",
+        "name": "Uncommon Tome of Knowledge",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Learning": 3
+        }
+      },
+      67
+    ]
+  ],
+  "last_shop_day_solmere": 1,
+  "shop_stock_brinewatch": [
+    [
+      {
+        "id": "battle_drink",
+        "name": "Common Battle Drink",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 5,
+        "temp_stat": "Strength",
+        "duration": 3
+      },
+      18
+    ],
+    [
+      {
+        "id": "superior_healing_potion",
+        "name": "Common Superior Healing Potion",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 180
+      },
+      18
+    ],
+    [
+      {
+        "id": "war_bow",
+        "name": "Common War Bow",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 4
+        }
+      },
+      55
+    ],
+    [
+      {
+        "id": "war_bow",
+        "name": "Rare War Bow",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 6
+        }
+      },
+      165
+    ],
+    [
+      {
+        "id": "long_sword",
+        "name": "Common Long Sword",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 3
+        }
+      },
+      55
+    ],
+    [
+      {
+        "id": "greater_healing_potion",
+        "name": "Uncommon Greater Healing Potion",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 143
+      },
+      27
+    ],
+    [
+      {
+        "id": "curse_cleansing_scroll",
+        "name": "Common Scroll of Cleansing",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "cure_curse": true
+      },
+      18
+    ],
+    [
+      {
+        "id": "amulet_of_vigor",
+        "name": "Uncommon Amulet of Vigor",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 3
+        }
+      },
+      82
+    ],
+    [
+      {
+        "id": "padded_armor",
+        "name": "Rare Padded Armor",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 3
+        }
+      },
+      165
+    ]
+  ],
+  "last_shop_day_brinewatch": 1,
+  "trade_permit": true,
+  "cursed": true,
+  "active_debuffs": [
+    {
+      "type": "curse",
+      "remaining": -1,
+      "penalty": 2
+    }
+  ]
 }

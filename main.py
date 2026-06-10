@@ -129,7 +129,6 @@ def play_game(player):
             break
 
         if not result:  # Player died
-            print("Your adventure has ended...")
             input("Press Enter to return to main menu...")
             break
 
