@@ -6,7 +6,7 @@ from combat.generic import (
     enemy_attack, format_enemy_status_line, prune_dead,
 )
 from character import player_max_hp
-from status_effects import (
+from combat.status_effects import (
     apply_poison, apply_curse,
     tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
     cure_curse,

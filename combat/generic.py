@@ -6,7 +6,7 @@ from resources.races_classes import ATTRIBUTES
 from inventory import use_consumable, get_total_equipment_mods
 from utils import get_difficulty_multiplier_from_time
 from character import player_max_hp
-from status_effects import (
+from combat.status_effects import (
     apply_poison, apply_curse,
     tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
     cure_curse,

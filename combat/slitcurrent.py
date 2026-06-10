@@ -5,7 +5,7 @@ from combat import (
     enemy_stats, compute_player_stats, handle_player_turn,
     format_enemy_status_line,
 )
-from status_effects import (
+from combat.status_effects import (
     apply_poison, apply_curse,
     tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
     cure_curse,
