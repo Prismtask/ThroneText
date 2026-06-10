@@ -97,6 +97,105 @@ def compute_player_stats(player):
     return p_str, p_con, p_dex
 
 
+def format_enemy_status_line(enemy, extra=""):
+    """Return one HUD line for a single enemy.
+
+    Collects the standard status flags (slowed / stunned / blinded) into a
+    parenthetical, then appends the caller-supplied ``extra`` string.  The
+    caller is responsible for the leading ``[N]`` index prefix and the
+    trailing newline.
+
+    Examples
+    --------
+    Basic call (standard combat)::
+
+        format_enemy_status_line(e)
+        # "Vileheart Spiderling - HP: 34 (Slowed)"
+
+    Boss call with extra data (superboss HUD)::
+
+        format_enemy_status_line(boss, extra=" [Devour: 2/3]")
+        # "Slitcurrent - HP: 88 (Stunned) [Devour: 2/3]"
+    """
+    statuses = []
+    if enemy.get("slowed"):
+        statuses.append("Slowed")
+    if enemy.get("stunned"):
+        statuses.append("Stunned")
+    if enemy.get("blinded"):
+        statuses.append("Blinded")
+    status_str = f" ({', '.join(statuses)})" if statuses else ""
+    return f"{enemy['name']} - HP: {enemy['hp']}{status_str}{extra}"
+
+
+def prune_dead(enemies):
+    """Return a new list containing only enemies with hp > 0."""
+    return [e for e in enemies if e["hp"] > 0]
+
+
+def enemy_attack(enemy, player, p_con, defending, extra_logic=None):
+    """Execute one standard attack action for a single enemy.
+
+    Handles the shared logic that every enemy attack must go through:
+
+    1. ``tick_enemy_debuffs`` — dot/blind tick; returns ``'died'`` immediately
+       if the enemy's HP drops to zero from status damage.
+    2. Stun check — clears the flag, prints the message, returns ``'stunned'``
+       without issuing an attack.
+    3. Damage roll, block calculation, player-HP mutation, hit/block message,
+       and player-death check (returns ``'dead'`` if ``player['current_hp']``
+       drops to zero).
+    4. ``extra_logic`` hook — called only after a successful hit resolves.
+
+    Parameters
+    ----------
+    enemy       : enemy dict, mutated in place (hp may change via debuff tick)
+    player      : player dict, mutated in place (current_hp reduced on hit)
+    p_con       : effective Constitution value used for the block calculation
+    defending   : bool — True when the player chose [D]efend this round
+    extra_logic : optional callable(enemy, player, enemy_dmg) -> str | None
+                  Boss-specific side-effects (poison, curse, flavour text, …).
+                  Return a non-empty string to have it printed; return None to
+                  suppress output.
+
+    Returns
+    -------
+    ``'died'``    enemy died from dot damage; caller should skip further logic
+    ``'stunned'`` attack skipped; stun flag consumed
+    ``'dead'``    attack resolved and player HP reached zero
+    ``'hit'``     attack resolved normally; player may or may not have taken dmg
+    """
+    msgs, died = tick_enemy_debuffs(enemy)
+    for m in msgs:
+        print(m)
+    if died:
+        return "died"
+
+    if enemy.get("stunned"):
+        print(f"The {enemy['name']} is stunned and cannot act!")
+        enemy["stunned"] = False
+        return "stunned"
+
+    block = p_con + (5 if defending else 0)
+    enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
+    enemy_dmg = max(0, enemy_dmg)
+    player["current_hp"] -= enemy_dmg
+
+    if enemy_dmg > 0:
+        print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
+    else:
+        print(f"The {enemy['name']} attacks but you block all incoming damage!")
+
+    if extra_logic:
+        msg = extra_logic(enemy, player, enemy_dmg)
+        if msg:
+            print(msg)
+
+    if player["current_hp"] <= 0:
+        return "dead"
+    return "hit"
+
+
 def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _action_override=None):
     """
     Handle a single player turn: Attack, Defend, Use item, or Flee.
@@ -123,16 +222,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         print(f"\nYour HP: {player['current_hp']}")
         print("Enemies in the room:")
         for idx, e in enumerate(enemies):
-            statuses = []
-            if e.get("slowed"):
-                statuses.append("Slowed")
-            if e.get("stunned"):
-                statuses.append("Stunned")
-            if e.get("blinded"):
-                statuses.append("Blinded")
-            status_str = f" ({', '.join(statuses)})" if statuses else ""
-            print(f"  [{idx + 1}] {e['name']} - HP: {e['hp']}{status_str}")
-
+            print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
         print("[A]ttack  [D]efend  [F]lee  [U]se item")
         action = input("Choose: ").strip().lower()
     else:
@@ -330,10 +420,9 @@ def combat(player, enemy_keys):
         print(f"- A {e['name']} appears! (HP: {e['hp']})")
 
     while True:
-        # Remove dead enemies
         p_str, p_con, p_dex = compute_player_stats(player)
-        
-        enemies = [e for e in enemies if e["hp"] > 0]
+
+        enemies = prune_dead(enemies)
         if not enemies:
             print("All enemies have been defeated!")
             return "victory"
@@ -348,39 +437,17 @@ def combat(player, enemy_keys):
         for enemy in enemies[:]:
             if enemy["hp"] <= 0:
                 continue
-
-            # Process enemy status effects (dot, blind) before acting
-            msgs, died = tick_enemy_debuffs(enemy)
-            for m in msgs:
-                print(m)
-            if died:
-                continue
-
-            if enemy.get("stunned"):
-                print(f"The {enemy['name']} is stunned and cannot act!")
-                enemy["stunned"] = False
-            else:
-                block = p_con + (5 if defending else 0)
-                enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
-                enemy_dmg = max(0, enemy_dmg)
-                player["current_hp"] -= enemy_dmg
-
-                if enemy_dmg > 0:
-                    print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
-                else:
-                    print(f"The {enemy['name']} attacks but you block all incoming damage!")
-
-                if player["current_hp"] <= 0:
-                    print("You have been slain.")
-                    return "dead"
+            outcome = enemy_attack(enemy, player, p_con, defending)
+            if outcome == "dead":
+                print("You have been slain.")
+                return "dead"
 
         # ----- END OF ROUND MAINTENANCE -----
-        enemies = [e for e in enemies if e["hp"] > 0]
+        enemies = prune_dead(enemies)
         if not enemies:
             print("All enemies have been defeated!")
             return "victory"
 
-        # Player status effect ticks (poison, slow)
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             print(m)
@@ -388,6 +455,5 @@ def combat(player, enemy_keys):
             print("You have been slain.")
             return "dead"
 
-        # Player buff
         for m in tick_player_buffs(player):
             print(m)

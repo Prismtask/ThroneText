@@ -1,7 +1,10 @@
 # superboss_combat.py – Broodmother Vileheart & Dream-Devouring Slitcurrent encounters
 
 import random
-from combat import enemy_stats, compute_player_stats, handle_player_turn
+from combat import (
+    enemy_stats, compute_player_stats, handle_player_turn,
+    enemy_attack, format_enemy_status_line, prune_dead,
+)
 from character import player_max_hp
 from status_effects import (
     apply_poison, apply_curse,
@@ -65,11 +68,22 @@ def combat_broodmother(player):
                     break
 
         # ----- ENEMY TURN PHASE -----
+        def _broodmother_poison(enemy, player, enemy_dmg):
+            """50 % chance to poison the player on any Broodmother-family hit."""
+            if enemy.get("key") not in ("broodmother_vileheart", "vileheart_spiderling"):
+                return None
+            if random.random() >= 0.5:
+                return None
+            status = apply_poison(player, 4, 3)
+            if status == "applied":
+                return f"You are poisoned by the {enemy['name']}!"
+            return f"The {enemy['name']} re-infects you!"
+
         for enemy in enemies[:]:
             if enemy["hp"] <= 0:
                 continue
 
-            # Determine number of actions
+            # Determine number of actions for this round
             actions = 1
             if enemy.get("key") == "broodmother_vileheart":
                 if enemy["hp"] <= int(enemy["max_hp"] * 0.25):
@@ -80,47 +94,15 @@ def combat_broodmother(player):
                     print(f"🔥 {enemy['name']} is ENRAGED! (Double Action remaining: {boss_enraged_turns})")
 
             for _ in range(actions):
-                # Process enemy status effects (dot, blind)
-                msgs, died = tick_enemy_debuffs(enemy)
-                for m in msgs:
-                    print(m)
-                if died:
-                    continue
-
-                if enemy.get("stunned"):
-                    print(f"The {enemy['name']} is stunned and cannot act!")
-                    enemy["stunned"] = False
-                else:
-                    block = p_con + (5 if defending else 0)
-                    enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
-                    enemy_dmg = max(0, enemy_dmg)
-                    player["current_hp"] -= enemy_dmg
-
-                    if enemy_dmg > 0:
-                        print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
-                    else:
-                        print(f"The {enemy['name']} attacks but you block all incoming damage!")
-
-                    if player["current_hp"] <= 0:
-                        print("You have been slain.")
-                        return "dead"
-
-                    # Poison infliction (Broodmother & Spiderlings)
-                    if enemy.get("key") in ("broodmother_vileheart", "vileheart_spiderling"):
-                        if random.random() < 0.5:
-                            poison_dmg = 4
-                            status = apply_poison(player, poison_dmg, 3)
-                            if status == "applied":
-                                print(f"You are poisoned by the {enemy['name']}! ...")
-                            else:
-                                print(f"The {enemy['name']} re-infects you! ...")
-                        else:
-                            player.setdefault("active_debuffs", []).append({
-                                "type": "poison",
-                                "damage": poison_dmg,
-                                "remaining": 3
-                            })
-                            print(f"You are poisoned by the {enemy['name']}! Take {poison_dmg} damage each turn for 3 turns.")
+                outcome = enemy_attack(
+                    enemy, player, p_con, defending,
+                    extra_logic=_broodmother_poison,
+                )
+                if outcome in ("died", "stunned"):
+                    break          # no more actions for this enemy this round
+                if outcome == "dead":
+                    print("You have been slain.")
+                    return "dead"
 
         # ----- END OF ROUND MAINTENANCE -----
         enemies = [e for e in enemies if e["hp"] > 0]
@@ -253,22 +235,16 @@ def combat_slitcurrent(player):
         else:
             boss.pop("temp_str_bonus", None)
 
-        # ----- Player turn (custom HUD to show stacks & stun turns) -----
+        # ----- Player turn (custom HUD shows stacks & multi-turn stun counter) -----
         print(f"\nYour HP: {player['current_hp']}")
         print("Enemies in the room:")
         for idx, e in enumerate(enemies):
-            statuses = []
-            if e.get("slowed"):   statuses.append("Slowed")
-            if e.get("stunned"):  statuses.append("Stunned")
-            if e.get("blinded"):  statuses.append("Blinded")
-            status_str = f" ({', '.join(statuses)})" if statuses else ""
+            extra = ""
             if e.get("key") == "dream_devouring_slitcurrent":
                 extra = f" [Devour: {devour_focus_stacks}/3]"
                 if boss_stun_turns > 0:
                     extra += f" [Stunned: {boss_stun_turns} turns left]"
-                print(f"  [{idx+1}] {e['name']} - HP: {e['hp']}{status_str}{extra}")
-            else:
-                print(f"  [{idx+1}] {e['name']} - HP: {e['hp']}{status_str}")
+            print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
 
         print("[A]ttack  [D]efend  [F]lee  [U]se item")
         action = input("Choose: ").strip().lower()
