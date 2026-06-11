@@ -195,6 +195,14 @@ def combat_ignis(player, floor=None):
 
             input("Press Enter to continue...")
 
+        
+        triple_remaining = player.get("abyss_triple_actions", 0)
+        if triple_remaining > 0 and result == "continue":
+            for attack_num in range(2):
+                live = [e for e in enemies if e["hp"] > 0]
+                if not live:
+                    break
+                print(f"\n⚔️  ABYSS TEMPO — extra action ({attack_num + 2}/3)!")
         # ── PLAYER TURN ──────────────────────────────────────────────────────
         clear_screen()
         status_str = format_player_status_line(player)

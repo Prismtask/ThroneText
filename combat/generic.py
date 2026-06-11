@@ -224,6 +224,14 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None):
     return "hit"
 
 
+def _player_has_abyss_fang(player):
+    """Return the Abyss Fang item dict if it's in the player's inventory, else None."""
+    for item in player.get("inventory", []):
+        if item.get("id") == "abyss_fang" or item.get("special") == "dream_devour":
+            return item
+    return None
+
+
 def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _action_override=None):
     """
     Handle a single player turn: Attack, Defend, Use item, or Flee.
@@ -252,7 +260,15 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         print("Enemies in the room:")
         for idx, e in enumerate(enemies):
             print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
-        print("[A]ttack  [D]efend  [F]lee  [U]se item")
+        # Show Abyss Fang option if the player carries it and it is not on cooldown
+        abyss_fang = _player_has_abyss_fang(player)
+        abyss_cd = player.get("abyss_fang_cooldown", 0)
+        if abyss_fang and abyss_cd <= 0:
+            print("[A]ttack  [D]efend  [F]lee  [U]se item  [W]ield the Abyss")
+        elif abyss_fang and abyss_cd > 0:
+            print(f"[A]ttack  [D]efend  [F]lee  [U]se item  (Abyss Fang recharging: {abyss_cd} turn(s))")
+        else:
+            print("[A]ttack  [D]efend  [F]lee  [U]se item")
         action = input("Choose: ").strip().lower()
     else:
         action = _action_override
@@ -424,6 +440,52 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         except (ValueError, IndexError):
             print("Invalid choice.")
             return "retry", False
+
+        return "continue", False
+
+    # ----- WIELD THE ABYSS (Abyss Fang special) -----
+    elif action == "w":
+        abyss_fang = _player_has_abyss_fang(player)
+        if not abyss_fang:
+            print("You have no weapon that responds to that command.")
+            return "retry", False
+        abyss_cd = player.get("abyss_fang_cooldown", 0)
+        if abyss_cd > 0:
+            print(f"The Abyss Fang is still recharging. ({abyss_cd} turn(s) remaining)")
+            return "retry", False
+
+        # --- Flavor text ---
+        print("\n" + "≈" * 55)
+        print("The Abyss Fang SCREAMS. A void tears open across your")
+        print("vision — stolen faces from the Slitcurrent's body flash")
+        print("across the blade, mouthing silent warnings. You grip it")
+        print("anyway. Reality peels back. You are the wound now.")
+        print("≈" * 55)
+        input("Press Enter to unleash it...")
+
+        # --- Cost: lose 40% of max HP ---
+        max_hp = player_max_hp(player)
+        hp_cost = int(max_hp * 0.40)
+        player["current_hp"] = max(1, player["current_hp"] - hp_cost)
+        print(f"\nThe blade drinks deep — you lose {hp_cost} HP ({player['current_hp']}/{max_hp} remaining).")
+
+        # --- Strength buff: +8 STR for 4 turns ---
+        str_bonus = 8
+        player.setdefault("active_buffs", []).append({
+            "stat": "Strength",
+            "value": str_bonus,
+            "remaining": 4,
+            "source": "abyss_fang",
+        })
+        print(f"⚔️  Abyss-Tempered: Strength +{str_bonus} for 4 turns!")
+
+        # --- Triple action: 4 turns ---
+        player["abyss_triple_actions"] = 4
+        print("⚔️  Nightmare Tempo: You act THREE TIMES each turn for 4 turns!")
+
+        # --- Cooldown: 6 turns ---
+        player["abyss_fang_cooldown"] = 6
+        print("(The blade will recharge in 6 turns.)\n")
 
         return "continue", False
 
@@ -612,6 +674,23 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
         if result in ("fled", "victory", "dead"):
             return result
 
+        # ----- ABYSS FANG TRIPLE ACTION -----
+        triple_remaining = player.get("abyss_triple_actions", 0)
+        if triple_remaining > 0 and result == "continue":
+            extra_attacks = 2   # 3 total actions (1 already taken + 2 bonus)
+            for attack_num in range(extra_attacks):
+                enemies = prune_dead(enemies)
+                if not enemies:
+                    break
+                print(f"\n⚔️  ABYSS TEMPO — extra action ({attack_num + 2}/3)!")
+                sub_result, _ = handle_player_turn(player, enemies, p_str, p_con, p_dex)
+                if sub_result in ("fled", "victory", "dead"):
+                    return sub_result
+            enemies = prune_dead(enemies)
+            if not enemies:
+                print("All enemies have been defeated!")
+                return "victory"
+
         # ----- ENEMY TURN PHASE -----
         for enemy in enemies[:]:
             if enemy["hp"] <= 0:
@@ -630,6 +709,16 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
         if not enemies:
             print("All enemies have been defeated!")
             return "victory"
+
+        # Tick Abyss Fang cooldown and triple-action counter
+        if player.get("abyss_fang_cooldown", 0) > 0:
+            player["abyss_fang_cooldown"] -= 1
+            if player["abyss_fang_cooldown"] == 0:
+                print("⚔️  The Abyss Fang hums — its hunger is renewed.")
+        if player.get("abyss_triple_actions", 0) > 0:
+            player["abyss_triple_actions"] -= 1
+            if player["abyss_triple_actions"] == 0:
+                print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
 
         msgs, died = tick_player_debuffs(player)
         for m in msgs:

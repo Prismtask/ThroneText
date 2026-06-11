@@ -59,6 +59,13 @@ def combat_broodmother(player, floor=None):
             print("Broodmother Vileheart has been defeated!")
             return "victory"
         
+        triple_remaining = player.get("abyss_triple_actions", 0)
+        if triple_remaining > 0 and result == "continue":
+            for attack_num in range(2):
+                live = [e for e in enemies if e["hp"] > 0]
+                if not live:
+                    break
+                print(f"\n⚔️  ABYSS TEMPO — extra action ({attack_num + 2}/3)!")
         clear_screen()
         p_str, p_con, p_dex = compute_player_stats(player)
 

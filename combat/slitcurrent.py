@@ -11,6 +11,7 @@ from combat.status_effects import (
     tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
     cure_curse,
 )
+from resources.items import build_item
 
 
 def combat_slitcurrent(player, floor=None):
@@ -56,6 +57,17 @@ def combat_slitcurrent(player, floor=None):
         enemies = [e for e in enemies if e["hp"] > 0]
         if not enemies:
             print("Dream-Devouring Slitcurrent has been devoured by reality!")
+            # ── ABYSS FANG DROP ──────────────────────────────────────────────
+            print("\n" + "~" * 55)
+            print("As the Dream-Devourer dissolves, a blade crystallises")
+            print("from the void where its heart once beat. It hums with")
+            print("an eerie, hungry resonance — as if the abyss itself")
+            print("has been shaped into an edge.")
+            print("\n  ✦ You obtained: ABYSS FANG (Legendary) ✦")
+            print("~" * 55)
+            abyss_fang = build_item("abyss_fang", "legendary")
+            player.setdefault("inventory", []).append(abyss_fang)
+            input("\nPress Enter to continue...")
             return "victory"
         
         p_str, p_con, p_dex = compute_player_stats(player)
@@ -140,6 +152,33 @@ def combat_slitcurrent(player, floor=None):
             if result in ("fled", "victory", "dead"):
                 return result
 
+            # ----- ABYSS FANG TRIPLE ACTION (superboss) -----
+            triple_remaining = player.get("abyss_triple_actions", 0)
+            if triple_remaining > 0 and result == "continue":
+                for attack_num in range(2):
+                    live = [e for e in enemies if e["hp"] > 0]
+                    if not live:
+                        break
+                    print(f"\n⚔️  ABYSS TEMPO — extra action ({attack_num + 2}/3)!")
+                    clear_screen()
+                    print_superboss_header(player, floor, "Dream-Devouring Slitcurrent", "")
+                    print("\nEnemies in the room:")
+                    for idx, e in enumerate(live):
+                        extra = ""
+                        if e.get("key") == "dream_devouring_slitcurrent":
+                            extra = f" [Devour: {devour_focus_stacks}/3]"
+                        print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
+                    print("[A]ttack  [D]efend  [F]lee  [U]se item")
+                    sub_action = input("Choose: ").strip().lower()
+                    sub_result, _ = handle_player_turn(
+                        player, live, p_str, p_con, p_dex,
+                        on_kill=on_kill_floatsam,
+                        _action_override=sub_action,
+                    )
+                    enemies = live  # sync back
+                    if sub_result in ("fled", "victory", "dead"):
+                        return sub_result
+
             turn_counter += 1
 
         # ----- ENEMY TURN PHASE -----
@@ -221,6 +260,16 @@ def combat_slitcurrent(player, floor=None):
         enemies = [e for e in enemies if e["hp"] > 0]
         if not enemies:
             return "victory"
+
+        # Tick Abyss Fang cooldown and triple-action counter
+        if player.get("abyss_fang_cooldown", 0) > 0:
+            player["abyss_fang_cooldown"] -= 1
+            if player["abyss_fang_cooldown"] == 0:
+                print("⚔️  The Abyss Fang hums — its hunger is renewed.")
+        if player.get("abyss_triple_actions", 0) > 0:
+            player["abyss_triple_actions"] -= 1
+            if player["abyss_triple_actions"] == 0:
+                print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
 
         # Player debuffs (poison, slow)
         msgs, died = tick_player_debuffs(player)

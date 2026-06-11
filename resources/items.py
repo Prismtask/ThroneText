@@ -31,6 +31,17 @@ ITEMS = {
     "arcane_staff": {"name": "Arcane Staff","type": "equipment", "slot": "weapon", "base_mods": {"Learning": 4}},
     "mace":         {"name": "Mace",        "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2, "Wisdom": 1}},
 
+    "abyss_fang": {
+        "name": "Abyss Fang",
+        "type": "equipment",
+        "slot": "weapon",
+        "unique": True,
+        "base_mods": {"Strength": 6, "Dexterity": 3},
+        "special": "dream_devour",       # signals the combat system to show [W]ield the Abyss
+        "drop_source": "dream_devouring_slitcurrent",
+        "drop_rarity": "legendary",
+    },
+
     # === Armor ===
     "padded_armor": {"name": "Padded Armor","type": "equipment","slot": "armor","base_mods": {"Constitution": 2}},
     "leather_armor":{"name": "Leather Armor","type": "equipment","slot": "armor","base_mods": {"Dexterity": 2, "Constitution": 1}},

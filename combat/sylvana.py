@@ -216,6 +216,30 @@ def combat_sylvana(player, floor=None):
         if result in ("fled", "victory", "dead"):
             return result
 
+        # ----- ABYSS FANG TRIPLE ACTION (Sylvana fight) -----
+        triple_remaining = player.get("abyss_triple_actions", 0)
+        if triple_remaining > 0 and result == "continue":
+            for attack_num in range(2):
+                live = [e for e in enemies if e["hp"] > 0]
+                if not live:
+                    break
+                print(f"\n⚔️  ABYSS TEMPO — extra action ({attack_num + 2}/3)!")
+                clear_screen()
+                print_superboss_header(player, floor, "Queen of Mirrors Sylvana", "")
+                print("\nEnemies:")
+                for idx, e in enumerate(live):
+                    print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
+                print("[A]ttack  [D]efend  [F]lee  [U]se item")
+                sub_action = input("Choose: ").strip().lower()
+                sub_result, _ = handle_player_turn(
+                    player, live, p_str, p_con, p_dex,
+                    on_kill=on_kill_sylvana,
+                    _action_override=sub_action,
+                )
+                enemies = live
+                if sub_result in ("fled", "victory", "dead"):
+                    return sub_result
+
         # Prune again after player turn
         enemies = [e for e in enemies if e["hp"] > 0]
         if not enemies:
@@ -316,6 +340,16 @@ def combat_sylvana(player, floor=None):
             split_active = False
 
         # ── END-OF-ROUND MAINTENANCE ─────────────────────────────────────────
+        # Tick Abyss Fang cooldown and triple-action counter
+        if player.get("abyss_fang_cooldown", 0) > 0:
+            player["abyss_fang_cooldown"] -= 1
+            if player["abyss_fang_cooldown"] == 0:
+                print("⚔️  The Abyss Fang hums — its hunger is renewed.")
+        if player.get("abyss_triple_actions", 0) > 0:
+            player["abyss_triple_actions"] -= 1
+            if player["abyss_triple_actions"] == 0:
+                print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
+
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             print(m)

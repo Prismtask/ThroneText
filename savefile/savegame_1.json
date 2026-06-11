@@ -1,0 +1,266 @@
+{
+  "name": "prism",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 12,
+    "Constitution": 7,
+    "Dexterity": 3,
+    "Wisdom": 1,
+    "Learning": 1,
+    "Charisma": 8
+  },
+  "floor": 4,
+  "max_floor": 4,
+  "current_hp": 72,
+  "level": 10,
+  "exp": 0,
+  "level_hp_bonus": 36,
+  "inventory": [
+    {
+      "id": "curse_cleansing_scroll",
+      "name": "Common Scroll of Cleansing",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 0,
+      "cure_curse": true
+    },
+    {
+      "id": "battle_drink",
+      "name": "Common Battle Drink",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 5,
+      "temp_stat": "Strength",
+      "duration": 3
+    },
+    {
+      "id": "rare_scroll",
+      "name": "Common Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "common",
+      "enhance": 0,
+      "target_rarity": "common"
+    },
+    {
+      "id": "elixir_of_mind",
+      "name": "Rare Elixir of Mind",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 5,
+      "temp_stat": "Learning",
+      "duration": 4
+    },
+    {
+      "id": "epic_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "healing_potion",
+      "name": "Uncommon Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 71
+    },
+    {
+      "id": "healing_potion",
+      "name": "Uncommon Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 71
+    },
+    {
+      "id": "throwing_knife",
+      "name": "Uncommon Throwing Knife",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 28,
+      "armor_pierce": 2
+    },
+    {
+      "id": "healing_potion",
+      "name": "Rare Healing Potion",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 93
+    },
+    {
+      "id": "plate_armor",
+      "name": "Uncommon Plate Armor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 6,
+        "Dexterity": -1
+      }
+    }
+  ],
+  "equipped": {
+    "weapon": {
+      "id": "war_bow",
+      "name": "Epic War Bow +2",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 2,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 11
+      }
+    },
+    "armor": {
+      "id": "padded_armor",
+      "name": "Rare Padded Armor",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    "accessory": {
+      "id": "amulet_of_vigor",
+      "name": "Uncommon Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3
+      }
+    }
+  },
+  "active_buffs": [],
+  "save_slot": 1,
+  "dungeon_time": 0,
+  "gold": 227,
+  "time_minutes": 495,
+  "location": "solmere",
+  "superboss_seed": 573117,
+  "day": 2,
+  "dungeon_region": "temperate",
+  "active_debuffs": [],
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "legendary_scroll",
+        "name": "Common Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "common",
+        "enhance": 0,
+        "target_rarity": "common"
+      },
+      45
+    ],
+    [
+      {
+        "id": "ice_bomb",
+        "name": "Common Ice Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 28,
+        "status": "slow"
+      },
+      45
+    ],
+    [
+      {
+        "id": "talisman_of_warding",
+        "name": "Common Talisman of Warding",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 2,
+          "Wisdom": 1
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "short_sword",
+        "name": "Common Short Sword",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 2
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "cloak_of_shadows",
+        "name": "Common Cloak of Shadows",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 2,
+          "Charisma": 1
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "flash_powder",
+        "name": "Common Flash Powder",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 12,
+        "blind_enemy": true
+      },
+      45
+    ]
+  ],
+  "last_shop_day_solmere": 2,
+  "favor": {
+    "solmere": 0
+  },
+  "active_bounties": [],
+  "bounty_board_solmere": [
+    {
+      "id": "bounty_44264",
+      "target_enemy": "elven_blade_dancer",
+      "target_name": "Elven Blade Dancer",
+      "required": 4,
+      "difficulty": 6,
+      "days_given": 7,
+      "reward_gold": 360,
+      "reward_favor": 14
+    },
+    {
+      "id": "bounty_91219",
+      "target_enemy": "gnome_skycaptain",
+      "target_name": "Gnome Skycaptain",
+      "required": 5,
+      "difficulty": 5,
+      "days_given": 7,
+      "reward_gold": 360,
+      "reward_favor": 10
+    }
+  ],
+  "bounty_refresh_day_solmere": 9
+}
