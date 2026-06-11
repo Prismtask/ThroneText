@@ -103,8 +103,20 @@ def visit_city(player, city_id=None):
         elif choice == dungeon_option:
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 30)
-            print("You head back into the dungeon...")
-            # Set the dungeon region to this city's biome
+            
+            print(f"\n=== Enter Dungeon (Max Unlocked: Floor {player.get('max_floor', 1)}) ===")
+            while True:
+                try:
+                    target = input(f"Enter floor to descend to (1-{player.get('max_floor', 1)}): ").strip()
+                    chosen_floor = int(target)
+                    if 1 <= chosen_floor <= player.get("max_floor", 1):
+                        player["floor"] = chosen_floor  # Set current position to their choice
+                        break
+                    else:
+                        print("Invalid floor tier.")
+                except ValueError:
+                    print("Please enter a valid floor number.")
+
             player["dungeon_region"] = city.get("biome", "temperate")
             player["location"] = "dungeon"
             return True

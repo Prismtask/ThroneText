@@ -131,6 +131,7 @@ def create_character():
         "class": CLASSES[class_key]["name"],
         "attributes": final_attrs,
         "floor": 1,
+        "max_floor": 1,
         "current_hp": player_max_hp(final_attrs),
         "level": 1,
         "exp": 0,
