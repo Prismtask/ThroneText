@@ -27,10 +27,12 @@ def get_random_enemy_key(floor, boss=False, region=None):
         if boss and not data.get("boss", False):
             continue
         if boss:
-            if not (data["level"] >= floor + 1 and data["level"] <= floor + 5):
+            # TWEAK HERE IF YOU WANT BOSSES TO BE MORE SPREAD OUT TOO
+            if not (data["level"] >= floor + 1 and data["level"] <= floor + 3):
                 continue
         else:
-            if not (data["level"] >= max(1, floor - 1) and data["level"] <= floor + 3):
+            # TWEAK HERE: Changed 'floor - 1' to 'floor - 6' to allow lower levels on higher floors
+            if not (data["level"] >= max(1, floor - 4) and data["level"] <= floor + 3):
                 continue
 
         # region filter
@@ -43,9 +45,10 @@ def get_random_enemy_key(floor, boss=False, region=None):
 
     if not pool:
         # fallback – ignore region but keep level constraints
+        # TWEAK HERE: Changed 'floor - 2' to 'floor - 6' to match the new spread
         pool = [k for k, d in ENEMIES.items()
             if (d.get("boss", False) == boss)
-            and (d["level"] >= floor - 2)
+            and (d["level"] >= max(1, floor - 6))
             and not (floor % 10 != 0 and d.get("super_boss", False))]
     if not pool:
         pool = [k for k, d in ENEMIES.items() if d.get("boss", False) == boss]

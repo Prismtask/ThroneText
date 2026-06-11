@@ -3,19 +3,19 @@
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 12,
+    "Strength": 13,
     "Constitution": 7,
     "Dexterity": 3,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 8
+    "Charisma": 10
   },
-  "floor": 4,
-  "max_floor": 4,
-  "current_hp": 72,
-  "level": 10,
-  "exp": 0,
-  "level_hp_bonus": 36,
+  "floor": 5,
+  "max_floor": 5,
+  "current_hp": 84,
+  "level": 13,
+  "exp": 60,
+  "level_hp_bonus": 48,
   "inventory": [
     {
       "id": "curse_cleansing_scroll",
@@ -106,6 +106,85 @@
         "Constitution": 6,
         "Dexterity": -1
       }
+    },
+    {
+      "id": "antidote",
+      "name": "Uncommon Antidote",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 0
+    },
+    {
+      "id": "dragonhide",
+      "name": "Uncommon Dragonhide Armor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 5,
+        "Dexterity": 2
+      }
+    },
+    {
+      "id": "legendary_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "ring_of_grace",
+      "name": "Uncommon Ring of Grace",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2
+      }
+    },
+    {
+      "id": "common_scroll",
+      "name": "Rare Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "rare",
+      "enhance": 0,
+      "target_rarity": "rare"
+    },
+    {
+      "id": "war_bow",
+      "name": "Uncommon War Bow",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 5
+      }
+    },
+    {
+      "id": "iron_skin_potion",
+      "name": "Uncommon Iron Skin Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 0,
+      "duration": 3,
+      "defense_buff": 4
+    },
+    {
+      "id": "greatsword",
+      "name": "Rare Greatsword",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 8
+      }
     }
   ],
   "equipped": {
@@ -146,11 +225,11 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 227,
-  "time_minutes": 495,
-  "location": "solmere",
+  "gold": 995,
+  "time_minutes": 500,
+  "location": "irondeep",
   "superboss_seed": 573117,
-  "day": 2,
+  "day": 3,
   "dungeon_region": "temperate",
   "active_debuffs": [],
   "shop_stock_solmere": [
@@ -237,7 +316,8 @@
   ],
   "last_shop_day_solmere": 2,
   "favor": {
-    "solmere": 0
+    "solmere": 0,
+    "irondeep": 0
   },
   "active_bounties": [],
   "bounty_board_solmere": [
@@ -262,5 +342,328 @@
       "reward_favor": 10
     }
   ],
-  "bounty_refresh_day_solmere": 9
+  "bounty_refresh_day_solmere": 9,
+  "shop_stock_skylume": [
+    [
+      {
+        "id": "iron_skin_potion",
+        "name": "Rare Iron Skin Potion",
+        "type": "consumable",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 0,
+        "duration": 3,
+        "defense_buff": 4
+      },
+      60
+    ],
+    [
+      {
+        "id": "long_sword",
+        "name": "Uncommon Long Sword",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 3
+        }
+      },
+      90
+    ],
+    [
+      {
+        "id": "stun_bomb",
+        "name": "Uncommon Stun Bomb",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 15,
+        "stun_chance": 0.6
+      },
+      90
+    ],
+    [
+      {
+        "id": "uncommon_scroll",
+        "name": "Common Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "common",
+        "enhance": 0,
+        "target_rarity": "common"
+      },
+      60
+    ],
+    [
+      {
+        "id": "ice_bomb",
+        "name": "Uncommon Ice Bomb",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 36,
+        "status": "slow"
+      },
+      90
+    ],
+    [
+      {
+        "id": "fire_bomb",
+        "name": "Rare Fire Bomb",
+        "type": "utility",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 59
+      },
+      180
+    ],
+    [
+      {
+        "id": "elixir_of_strength",
+        "name": "Uncommon Elixir of Strength",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 3,
+        "temp_stat": "Strength",
+        "duration": 4
+      },
+      30
+    ],
+    [
+      {
+        "id": "ring_of_grace",
+        "name": "Uncommon Ring of Grace",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 2
+        }
+      },
+      90
+    ],
+    [
+      {
+        "id": "iron_skin_potion",
+        "name": "Common Iron Skin Potion",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "duration": 3,
+        "defense_buff": 4
+      },
+      20
+    ]
+  ],
+  "last_shop_day_skylume": 2,
+  "shop_stock_elderfen": [
+    [
+      {
+        "id": "uncommon_scroll",
+        "name": "Rare Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "rare",
+        "enhance": 0,
+        "target_rarity": "rare"
+      },
+      120
+    ],
+    [
+      {
+        "id": "short_sword",
+        "name": "Common Short Sword",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 2
+        }
+      },
+      40
+    ],
+    [
+      {
+        "id": "chainmail",
+        "name": "Uncommon Chainmail",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 3
+        }
+      },
+      60
+    ],
+    [
+      {
+        "id": "iron_skin_potion",
+        "name": "Rare Iron Skin Potion",
+        "type": "consumable",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 0,
+        "duration": 3,
+        "defense_buff": 4
+      },
+      36
+    ],
+    [
+      {
+        "id": "cloak_of_shadows",
+        "name": "Uncommon Cloak of Shadows",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 2,
+          "Charisma": 1
+        }
+      },
+      60
+    ],
+    [
+      {
+        "id": "leather_armor",
+        "name": "Uncommon Leather Armor",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Dexterity": 2,
+          "Constitution": 1
+        }
+      },
+      60
+    ]
+  ],
+  "last_shop_day_elderfen": 3,
+  "shop_stock_irondeep": [
+    [
+      {
+        "id": "ring_of_power",
+        "name": "Uncommon Ring of Power",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Strength": 2
+        }
+      },
+      75
+    ],
+    [
+      {
+        "id": "healing_salve",
+        "name": "Common Healing Salve",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 40,
+        "duration": 3,
+        "heal_over_time": 3
+      },
+      16
+    ],
+    [
+      {
+        "id": "elixir_of_mind",
+        "name": "Rare Elixir of Mind",
+        "type": "consumable",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 5,
+        "temp_stat": "Learning",
+        "duration": 4
+      },
+      48
+    ],
+    [
+      {
+        "id": "elixir_of_strength",
+        "name": "Uncommon Elixir of Strength",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 3,
+        "temp_stat": "Strength",
+        "duration": 4
+      },
+      24
+    ],
+    [
+      {
+        "id": "short_sword",
+        "name": "Uncommon Short Sword",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 2
+        }
+      },
+      75
+    ],
+    [
+      {
+        "id": "talisman_of_warding",
+        "name": "Common Talisman of Warding",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 2,
+          "Wisdom": 1
+        }
+      },
+      50
+    ],
+    [
+      {
+        "id": "short_sword",
+        "name": "Uncommon Short Sword",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 2
+        }
+      },
+      75
+    ]
+  ],
+  "last_shop_day_irondeep": 3,
+  "bounty_board_irondeep": [
+    {
+      "id": "bounty_72134",
+      "target_enemy": "titanic_behemoth",
+      "target_name": "Titanic Behemoth",
+      "required": 7,
+      "difficulty": 7,
+      "days_given": 6,
+      "reward_gold": 1155,
+      "reward_favor": 10
+    },
+    {
+      "id": "bounty_34289",
+      "target_enemy": "mature_dragonkin",
+      "target_name": "Mature Dragonkin",
+      "required": 4,
+      "difficulty": 5,
+      "days_given": 7,
+      "reward_gold": 440,
+      "reward_favor": 16
+    }
+  ],
+  "bounty_refresh_day_irondeep": 10
 }

@@ -84,101 +84,101 @@ def generate_bounties(player, city_id):
     
     return bounties
 
-def _get_biome_enemies(city_id):
-    """Return all non-boss, non-superboss enemies valid for this city's biome, sorted by level."""
-    city = CITIES[city_id]
-    biome = city.get("biome", "temperate")
-    allowed_races = BIOME_RACES.get(biome, BIOME_RACES["temperate"])
-    result = {
-        k: v for k, v in ENEMIES.items()
-        if v.get("race") in allowed_races
-        and not v.get("boss")
-        and not v.get("super_boss")
-    }
-    return dict(sorted(result.items(), key=lambda x: x[1]["level"]))
+def _get_floor_pool(floor, biome, boss=False):
+    """
+    Mirror get_random_enemy_key() from dungeon.py exactly.
+    Normal: level in [max(1, floor-1), floor+3]
+    Boss:   level in [floor+1,          floor+5]   (excludes super_boss)
+    Falls back to ignoring biome if the biome-filtered pool is empty.
+    Returns list of (key, data) tuples — every entry has equal spawn weight.
+    """
+    allowed_races = set(BIOME_RACES.get(biome, BIOME_RACES["temperate"]))
 
+    def _passes_level(data):
+        lvl = data["level"]
+        if boss:
+            return floor + 1 <= lvl <= floor + 3
+        else:
+            return max(1, floor - 4) <= lvl <= floor + 3
 
-def _get_biome_bosses(city_id):
-    """Return all boss (non-superboss) enemies valid for this city's biome, sorted by level."""
-    city = CITIES[city_id]
-    biome = city.get("biome", "temperate")
-    allowed_races = BIOME_RACES.get(biome, BIOME_RACES["temperate"])
-    result = {
-        k: v for k, v in ENEMIES.items()
-        if v.get("race") in allowed_races
-        and v.get("boss")
-        and not v.get("super_boss")
-    }
-    return dict(sorted(result.items(), key=lambda x: x[1]["level"]))
+    def _build(use_race_filter):
+        pool = []
+        for key, data in ENEMIES.items():
+            if data.get("super_boss"):
+                continue
+            if boss != bool(data.get("boss")):
+                continue
+            if not _passes_level(data):
+                continue
+            if use_race_filter and data.get("race") not in allowed_races:
+                continue
+            pool.append((key, data))
+        return pool
+
+    pool = _build(use_race_filter=True)
+    if not pool:
+        pool = _build(use_race_filter=False)   # dungeon fallback: drop biome filter
+    return pool
 
 
 def _view_enemy_intelligence(player, city_id):
     """
-    Show a paginated, floor-grouped list of enemies that can spawn in this city's dungeon.
-    Spawn chance shown as a percentage among all enemies sharing the same floor/level.
-    Active bounty targets are flagged. Bosses listed separately.
+    Show a paginated floor-by-floor breakdown of what can actually spawn in this dungeon.
+    Spawn % mirrors the uniform random selection in get_random_enemy_key().
+    Active bounty targets are flagged. Boss pool shown separately below each floor.
     """
-    city = CITIES[city_id]
-    biome = city.get("biome", "temperate")
+    city   = CITIES[city_id]
+    biome  = city.get("biome", "temperate")
 
-    normal_enemies = _get_biome_enemies(city_id)
-    boss_enemies   = _get_biome_bosses(city_id)
+    bounty_targets = {b["target_enemy"] for b in player.get("active_bounties", [])}
 
-    # Build active bounty target set for quick lookup
-    bounty_targets = {
-        b["target_enemy"]
-        for b in player.get("active_bounties", [])
-    }
+    # Discover the highest floor that has any pool at all (cap search at 20)
+    MAX_FLOOR = 20
+    valid_floors = []
+    for f in range(1, MAX_FLOOR + 1):
+        if _get_floor_pool(f, biome, boss=False) or _get_floor_pool(f, biome, boss=True):
+            valid_floors.append(f)
 
-    # Group normal enemies by level (= floor)
-    floors = {}
-    for key, data in normal_enemies.items():
-        lvl = data["level"]
-        floors.setdefault(lvl, []).append((key, data))
-
-    sorted_floors = sorted(floors.keys())
-
-    # Pagination: show N floors at a time
-    FLOORS_PER_PAGE = 4
-    page = 0
-    total_pages = max(1, (len(sorted_floors) + FLOORS_PER_PAGE - 1) // FLOORS_PER_PAGE)
+    FLOORS_PER_PAGE = 3
+    page            = 0
+    total_pages     = max(1, (len(valid_floors) + FLOORS_PER_PAGE - 1) // FLOORS_PER_PAGE)
 
     while True:
         clear_screen()
-        print(f"=== ENEMY INTELLIGENCE — {city['name'].upper()} ({biome.title()} Dungeon) ===\n")
+        print(f"=== ENEMY INTELLIGENCE — {city['name'].upper()} ({biome.title()} Dungeon) ===")
 
-        start = page * FLOORS_PER_PAGE
-        end   = start + FLOORS_PER_PAGE
-        page_floors = sorted_floors[start:end]
+        start       = page * FLOORS_PER_PAGE
+        page_floors = valid_floors[start : start + FLOORS_PER_PAGE]
 
-        if not page_floors:
-            print("  No enemy records found for this region.")
-        else:
-            for floor_lvl in page_floors:
-                entries = floors[floor_lvl]
-                total_entries = len(entries)
-                chance_each = 100.0 / total_entries  # uniform weight assumed
+        for floor in page_floors:
+            normal_pool = _get_floor_pool(floor, biome, boss=False)
+            boss_pool   = _get_floor_pool(floor, biome, boss=True)
 
-                print(f"  --- Floor {floor_lvl} (Level {floor_lvl} enemies) ---")
-                for key, data in entries:
-                    tag = " [BOUNTY]" if key in bounty_targets else ""
-                    print(f"    {data['name']:<30} Race: {data['race']:<12} "
-                          f"Spawn: {chance_each:5.1f}%{tag}")
-                print()
+            # ---- normal enemies ----
+            print(f"  ══ Floor {floor} ══")
+            if normal_pool:
+                n = len(normal_pool)
+                pct = 100.0 / n
+                for key, data in sorted(normal_pool, key=lambda x: x[1]["level"]):
+                    tag = "  ★ BOUNTY" if key in bounty_targets else ""
+                    print(f"    {data['name']:<28} Lv{data['level']:<3} "
+                          f"({pct:4.1f}%){tag}")
+            else:
+                print("    (no regular enemies)")
 
-        print(f"  Page {page + 1}/{total_pages}")
-        print()
-
-        # Boss summary at the end of the last page
-        if page == total_pages - 1 and boss_enemies:
-            print("  --- Dungeon Bosses (appear as floor guardians) ---")
-            for key, data in boss_enemies.items():
-                tag = " [BOUNTY]" if key in bounty_targets else ""
-                print(f"    {data['name']:<30} Race: {data['race']:<12} "
-                      f"Floor ~{data['level']}{tag}")
+            # ---- boss enemies ----
+            if boss_pool:
+                b_n  = len(boss_pool)
+                b_pct = 100.0 / b_n
+                print(f"    -- Boss Room --")
+                for key, data in sorted(boss_pool, key=lambda x: x[1]["level"]):
+                    tag = "  ★ BOUNTY" if key in bounty_targets else ""
+                    print(f"    {data['name']:<28} Lv{data['level']:<3} "
+                          f"({b_pct:4.1f}%){tag}")
             print()
 
-        # Navigation
+        print(f"  Page {page + 1}/{total_pages}")
+
         nav_hints = []
         if page > 0:
             nav_hints.append("[P]rev")
