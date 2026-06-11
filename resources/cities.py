@@ -214,7 +214,7 @@ CITIES = {
     "skylume": {
         "name": "Skylume",
         "biome": "magical",
-        "services": ["shop", "inn", "arcane_tower"],
+        "services": ["shop", "inn"],
         "dialogues": {
             "receptionist": SKYLUME_RECEPTIONIST_DIALOGUE,
             "shop": SKYLUME_SHOPKEEPER_DIALOGUE,

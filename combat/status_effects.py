@@ -167,6 +167,18 @@ def apply_silence(player, duration=2):
     })
     return "applied"
 
+def apply_blind(player, duration=2):
+    """Blind the player – 25% miss chance, -2 Dex for flee."""
+    existing = next((d for d in player.get("active_debuffs", []) if d["type"] == "blind"), None)
+    if existing:
+        existing["remaining"] = max(existing["remaining"], duration)
+        return "refreshed"
+    player.setdefault("active_debuffs", []).append({
+        "type": "blind",
+        "remaining": duration,
+    })
+    player["blinded"] = True
+    return "applied"
 
 def apply_drain(player, enemy, drain_amount):
     """Vampire drain: steals HP from player and heals the enemy.
@@ -325,6 +337,13 @@ def tick_player_debuffs(player):
                 player["active_debuffs"].remove(debuff)
                 messages.append("The supernatural dread recedes from your mind.")
 
+        elif dtype == "blind":
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                player["blinded"] = False
+                player["active_debuffs"].remove(debuff)
+                messages.append("Your vision clears – the blindness fades.")
+
         elif dtype == "curse":
             # Indefinite — only removed by cure_curse()
             continue
@@ -471,6 +490,7 @@ def get_player_status_tags(player):
         "silence": "Silenced",
         "dread":   "Dreaded",
         "curse":   "Cursed",
+        "blind":   "Blinded",
     }
     for d in player.get("active_debuffs", []):
         label = type_labels.get(d["type"])

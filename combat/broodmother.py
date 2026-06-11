@@ -4,7 +4,7 @@ import random
 from utils import clear_screen
 from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
-    enemy_attack, format_enemy_status_line,
+    enemy_attack, format_enemy_status_line, print_superboss_header
 )
 from character import player_max_hp
 from combat.status_effects import (
@@ -14,7 +14,7 @@ from combat.status_effects import (
 )
 
 
-def combat_broodmother(player):
+def combat_broodmother(player, floor=None):
     """
     Special combat for the Broodmother Vileheart super boss.
     Implements retreat at 75% HP, minion phase, enrage, double actions,
@@ -26,10 +26,15 @@ def combat_broodmother(player):
     boss["max_hp"] = boss["hp"]
     enemies = [boss]
 
-    print("\n" + "=" * 50)
-    print("The floor trembles... Broodmother Vileheart emerges from the shadows!")
-    print(f"{boss['name']} - HP: {boss['hp']}")
-    print("=" * 50)
+    print("\n" + "=" * 60)
+    print("The air grows thick with the stench of rot and venom.")
+    print("Hundreds of tiny legs skitter in the darkness above and below.")
+    print("A monstrous, bloated silhouette rises — crowned with thrashing")
+    print("limbs and dripping fangs. Countless spider eyes gleam with")
+    print("pure, instinctual hunger.")
+    print(f"\nBroodmother Vileheart — HP: {boss['hp']}")
+    print("=" * 60)
+    input("\nPress Enter to face the Broodmother...")
 
     # Phase tracking
     boss_escaped_data = None
@@ -56,6 +61,8 @@ def combat_broodmother(player):
         
         clear_screen()
         p_str, p_con, p_dex = compute_player_stats(player)
+
+        print_superboss_header(player, floor, "Broodmother Vileheart", "")
 
         result, defending = handle_player_turn(player, enemies, p_str, p_con, p_dex)
         if result == "retry":
@@ -166,7 +173,7 @@ def combat_broodmother(player):
                     minion_phase_active = False
 
         print("\n" + "-" * 40)
-        input("Press Enter to proceed to the next round...")
+        input("Press Enter to continue.....")
         clear_screen()
 
         if boss_enraged_turns > 0:

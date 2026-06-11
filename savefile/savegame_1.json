@@ -3,61 +3,19 @@
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 16,
-    "Constitution": 8,
-    "Dexterity": 2,
+    "Strength": 15,
+    "Constitution": 2,
+    "Dexterity": 1,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 1
+    "Charisma": 3
   },
-  "floor": 3,
-  "current_hp": 63,
-  "level": 7,
-  "exp": 73,
-  "level_hp_bonus": 24,
-  "inventory": [
-    {
-      "id": "stun_bomb",
-      "name": "Common Stun Bomb",
-      "type": "utility",
-      "rarity": "common",
-      "enhance": 0,
-      "power": 12,
-      "stun_chance": 0.6
-    },
-    {
-      "id": "smoke_bomb",
-      "name": "Uncommon Smoke Bomb",
-      "type": "utility",
-      "rarity": "uncommon",
-      "enhance": 0,
-      "power": 0,
-      "escape_bonus": 8
-    },
-    {
-      "id": "leather_armor",
-      "name": "Rare Leather Armor",
-      "type": "equipment",
-      "rarity": "rare",
-      "enhance": 0,
-      "slot": "armor",
-      "mods": {
-        "Dexterity": 3,
-        "Constitution": 1
-      }
-    },
-    {
-      "id": "long_sword",
-      "name": "Uncommon Long Sword",
-      "type": "equipment",
-      "rarity": "uncommon",
-      "enhance": 0,
-      "slot": "weapon",
-      "mods": {
-        "Strength": 3
-      }
-    }
-  ],
+  "floor": 1,
+  "current_hp": 21,
+  "level": 1,
+  "exp": 0,
+  "level_hp_bonus": 0,
+  "inventory": [],
   "equipped": {
     "weapon": null,
     "armor": null,
@@ -66,114 +24,8 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 724,
-  "time_minutes": 1320,
+  "gold": 100,
+  "time_minutes": 480,
   "location": "solmere",
-  "day": 1,
-  "dungeon_region": "temperate",
-  "active_debuffs": [],
-  "shop_stock_solmere": [
-    [
-      {
-        "id": "elixir_of_speed",
-        "name": "Common Elixir of Speed",
-        "type": "consumable",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 3,
-        "temp_stat": "Dexterity",
-        "duration": 4
-      },
-      15
-    ],
-    [
-      {
-        "id": "stun_bomb",
-        "name": "Uncommon Stun Bomb",
-        "type": "utility",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "power": 15,
-        "stun_chance": 0.6
-      },
-      67
-    ],
-    [
-      {
-        "id": "rare_scroll",
-        "name": "Uncommon Scroll of Fusion",
-        "type": "scroll",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "target_rarity": "uncommon"
-      },
-      67
-    ],
-    [
-      {
-        "id": "iron_skin_potion",
-        "name": "Common Iron Skin Potion",
-        "type": "consumable",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 0,
-        "duration": 3,
-        "defense_buff": 4
-      },
-      15
-    ],
-    [
-      {
-        "id": "rare_scroll",
-        "name": "Uncommon Scroll of Fusion",
-        "type": "scroll",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "target_rarity": "uncommon"
-      },
-      67
-    ],
-    [
-      {
-        "id": "ring_of_power",
-        "name": "Uncommon Ring of Power",
-        "type": "equipment",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "slot": "accessory",
-        "mods": {
-          "Strength": 2
-        }
-      },
-      67
-    ]
-  ],
-  "last_shop_day_solmere": 1,
-  "favor": {
-    "solmere": 0
-  },
-  "active_bounties": [],
-  "bounty_board_solmere": [
-    {
-      "id": "bounty_48202",
-      "target_enemy": "bone_colossus",
-      "target_name": "Bone Colossus",
-      "required": 6,
-      "difficulty": 7,
-      "days_given": 6,
-      "reward_gold": 540,
-      "reward_favor": 16
-    },
-    {
-      "id": "bounty_71081",
-      "target_enemy": "wraith",
-      "target_name": "Wraith",
-      "required": 3,
-      "difficulty": 6,
-      "days_given": 7,
-      "reward_gold": 231,
-      "reward_favor": 19
-    }
-  ],
-  "bounty_refresh_day_solmere": 8
+  "superboss_seed": 239414
 }

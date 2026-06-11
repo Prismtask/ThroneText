@@ -4,7 +4,7 @@ import random
 from resources.enemies import ENEMIES, ENEMY_RACES
 from resources.races_classes import ATTRIBUTES
 from inventory import use_consumable, get_total_equipment_mods
-from utils import get_difficulty_multiplier_from_time
+from utils import get_difficulty_multiplier_from_time, clear_screen
 from character import player_max_hp
 from combat.status_effects import (
     apply_poison, apply_curse,
@@ -147,6 +147,14 @@ def prune_dead(enemies):
     """Return a new list containing only enemies with hp > 0."""
     return [e for e in enemies if e["hp"] > 0]
 
+def print_superboss_header(player, floor, boss_name, extra_gimmick_line=""):
+    from utils import format_time
+    time_str = format_time(player.get("time_minutes", 0))
+    print(f"Dungeon Floor {floor} - Superboss: {boss_name} | Time: {time_str}")
+    if extra_gimmick_line:
+        print(extra_gimmick_line)
+    status_line = format_player_status_line(player)
+    print(f"\nYour HP: {player['current_hp']} {status_line}".rstrip())
 
 def enemy_attack(enemy, player, p_con, defending, extra_logic=None):
     """Execute one standard attack action for a single enemy.
@@ -255,6 +263,10 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         if is_dreaded(player) and random.random() < 0.40:
             print("Dread grips your weapon arm — your strike goes wide! (Miss)")
             return "continue", False
+        if player.get("blinded") and random.random() < 0.25:
+            print("You're blinded – your attack misses!")
+            return "continue", False
+    
         if len(enemies) > 1:
             try:
                 choice = int(input("Select target number: ")) - 1
@@ -422,6 +434,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
             if debuff["type"] == "slow":
                 effective_player_dex -= 3
 
+            if player.get("blinded"):
+                effective_player_dex -= 2
+                print("Your blindness makes escape harder!")
         max_enemy_dex = -999
         for e in enemies:
             eff_enemy_dex = e["dex_mod"]
@@ -554,27 +569,42 @@ def get_race_extra_logic(enemy):
                     return f"The {e['name']}'s arcane static disrupts your concentration!"
             return None
         return gnome_silence
+    
+    if race == "Elemental":
+        def elemental_blind(e, player, dmg):
+            if dmg > 0 and random.random() < 0.30:
+                from combat.status_effects import apply_blind
+                result = apply_blind(player, duration=2)
+                if result == "applied":
+                    return f"A burst of searing light from the {e['name']} blinds you!"
+                elif result == "refreshed":
+                    return f"The {e['name']}'s radiance deepens your blindness!"
+            return None
+        return elemental_blind
 
     # No special debuff for this race
     return None
 
 
-def combat(player, enemy_keys):
-    """Generic turn‑based battle. Returns 'victory', 'fled', or 'dead'."""
+def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
     enemies = [enemy_stats(k, player) for k in enemy_keys]
-
 
     print("\nEnemies approach!")
     for e in enemies:
         print(f"- A {e['name']} appears! (HP: {e['hp']})")
 
     while True:
-        p_str, p_con, p_dex = compute_player_stats(player)
+        # --- Print room header every turn if context is provided ---
+        if floor is not None and room_num is not None and total_rooms is not None:
+            from utils import format_time
+            header = f"Dungeon Floor {floor} - Room {room_num}/{total_rooms} | Time: {format_time(player.get('time_minutes', 0))}"
+            print(header)
 
+        p_str, p_con, p_dex = compute_player_stats(player)
         enemies = prune_dead(enemies)
         if not enemies:
             print("All enemies have been defeated!")
-            return "victory"
+            return "victor"
 
         result, defending = handle_player_turn(player, enemies, p_str, p_con, p_dex)
         if result == "retry":
@@ -591,6 +621,9 @@ def combat(player, enemy_keys):
             if outcome == "dead":
                 print("You have been slain.")
                 return "dead"
+            
+        input("\nPress Enter to continue...")
+        clear_screen()    
 
         # ----- END OF ROUND MAINTENANCE -----
         enemies = prune_dead(enemies)

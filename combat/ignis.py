@@ -4,12 +4,12 @@ import random
 from utils import clear_screen
 from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
-    enemy_attack, format_enemy_status_line,
+    enemy_attack, format_enemy_status_line, print_superboss_header
 )
 from character import player_max_hp
 from combat.status_effects import (
     apply_weaken, apply_bleed,
-    tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
+    tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs, format_player_status_line,
 )
 
 
@@ -81,7 +81,7 @@ def _heat_defense_reduction(heat_level):
 # Main combat function
 # ---------------------------------------------------------------------------
 
-def combat_ignis(player):
+def combat_ignis(player, floor=None):
     """
     Special combat for Ignis, the Melt-Forge Golem super boss.
 
@@ -197,10 +197,9 @@ def combat_ignis(player):
 
         # ── PLAYER TURN ──────────────────────────────────────────────────────
         clear_screen()
-        from combat.status_effects import format_player_status_line
         status_str = format_player_status_line(player)
         melt_warn = " 🔥 MELTDOWN" if player.get("meltdown") else ""
-        print(f"\nYour HP: {player['current_hp']}{melt_warn} {status_str}".rstrip())
+        print_superboss_header(player, floor, "Melt-Forge Golem Ignis", "")
         print(f"heat_level: {heat_level}  "
               f"(Ignis +{heat_level * 5}% dmg | armor at "
               f"{max(0, 100 - heat_level * 3)}%)")

@@ -4,7 +4,7 @@ import random
 from utils import clear_screen
 from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
-    format_enemy_status_line,
+    format_enemy_status_line, print_superboss_header
 )
 from combat.status_effects import (
     apply_poison, apply_curse,
@@ -13,7 +13,7 @@ from combat.status_effects import (
 )
 
 
-def combat_slitcurrent(player):
+def combat_slitcurrent(player, floor=None):
     boss_key = "dream_devouring_slitcurrent"
     boss = enemy_stats(boss_key, player)
     boss["max_hp"] = boss["hp"]
@@ -21,10 +21,14 @@ def combat_slitcurrent(player):
 
     p_str, p_con, p_dex = compute_player_stats(player)
 
-    print("\n" + "=" * 50)
-    print("The air ripples with distorted dreams... Dream-Devouring Slitcurrent rises from the abyss!")
-    print(f"{boss['name']} - HP: {boss['hp']}")
-    print("=" * 50)
+    print("\n" + "=" * 60)
+    print("Reality frays at the edges. Whispers that are not your own")
+    print("slither through your mind. A colossal, eel-like horror uncoils")
+    print("from the abyss, its glistening body covered in stolen faces")
+    print("and screaming mouths that move without sound.")
+    print(f"\nDream-Devouring Slitcurrent — HP: {boss['hp']}")
+    print("=" * 60)
+    input("\nPress Enter to face the Dream-Devourer...")
 
     # ----- State variables -----
     devour_focus_stacks = 0
@@ -113,8 +117,9 @@ def combat_slitcurrent(player):
             # Skip directly to enemy phase
         else:
             # Your normal input interface code here:
-            print(f"\nYour HP: {player['current_hp']}")
-            print("Enemies in the room:")
+            clear_screen()
+            print_superboss_header(player, floor, "Dream-Devouring Slitcurrent", "")
+            print("\nEnemies in the room:")
             for idx, e in enumerate(enemies):
                 extra = ""
                 if e.get("key") == "dream_devouring_slitcurrent":

@@ -149,9 +149,12 @@ def explore_dungeon(player):
     
     # ----- SUPER BOSS ENCOUNTER (every 10th floor) -----
     if floor % 10 == 0:
+        if "superboss_seed" not in player:
+            player["superboss_seed"] = random.randint(1, 999999)
         print("\n" + "="*50)
         print("⚠️  A dark, suffocating energy fills the air...")
-        tier = (floor // 10) % 3
+        rng = random.Random(player["superboss_seed"] + floor)
+        tier = rng.randint(0, 3)
         if tier == 0:
             print("The walls are covered in dense, toxic cobwebs.")
         elif tier == 1:
@@ -214,7 +217,7 @@ def explore_dungeon(player):
         while True:
             clear_screen()
             print(f"Dungeon Floor {floor} - Room {i+1}/{total_rooms} | Time: {format_time(player.get('time_minutes', 480))}")
-            result = combat(player, enemy_keys)
+            result = combat(player, enemy_keys, floor=floor, room_num=i+1, total_rooms=total_rooms)
 
             if result == "victory":
                 print("\n--- Room Victory Rewards ---")

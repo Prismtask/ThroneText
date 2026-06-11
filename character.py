@@ -1,6 +1,7 @@
 from resources.races_classes import RACES, CLASSES, ATTRIBUTES, TOTAL_POINTS
 from save_load import save_game, list_saves, get_next_free_slot
 from utils import clear_screen
+import random
 
 def player_max_hp(player_or_attrs):
     """Improved HP formula."""
@@ -142,6 +143,7 @@ def create_character():
         "gold": 100,
         "time_minutes": 8 * 60,  # Start at 08:00
         "location": "solmere",  # Start in first city
+        "superboss_seed": random.randint(1, 999999)
     }
 
     save_game(player)

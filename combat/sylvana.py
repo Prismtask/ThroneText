@@ -4,15 +4,14 @@ import random
 from utils import clear_screen
 from combat.generic import (
     enemy_stats, compute_player_stats, handle_player_turn,
-    format_enemy_status_line,
+    format_enemy_status_line, print_superboss_header
 )
 from character import player_max_hp
 from combat.status_effects import (
     apply_poison, apply_curse,
     tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
-    cure_curse, apply_weaken,
+    cure_curse, apply_weaken, format_player_status_line, apply_silence, apply_blind
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -46,43 +45,12 @@ def _make_fake_copy(boss):
 def _is_sylvana(e):
     return e.get("key") == "queen_of_mirrors_sylvana"
 
-
-def _apply_blind_to_player(player):
-    """Apply a 2-turn blind debuff to the player."""
-    # Reuse the silence-style approach: track as a plain active_debuff
-    for d in player.get("active_debuffs", []):
-        if d.get("type") == "blind":
-            d["remaining"] = 2
-            return "refreshed"
-    player.setdefault("active_debuffs", []).append({
-        "type": "blind",
-        "remaining": 2,
-    })
-    player["blinded"] = True
-    return "applied"
-
-
-def _tick_player_blind(player):
-    """Tick the player's blind debuff. Returns list of messages."""
-    messages = []
-    for d in player.get("active_debuffs", [])[:]:
-        if d.get("type") == "blind":
-            d["remaining"] -= 1
-            if d["remaining"] <= 0:
-                player["active_debuffs"].remove(d)
-                player["blinded"] = False
-                messages.append("The illusory haze lifts from your eyes.")
-    return messages
-
-
 def _nullify_player_buff(player):
     """
     Null ability – remove one random active buff from the player.
     Returns a message string, or None if no buffs to remove.
     """
     buffs = player.get("active_buffs", [])
-    # Filter out 'blessing' if you want to leave those untouched (optional).
-    # For now, everything is fair game.
     eligible = [b for b in buffs if b.get("type") != "blessing"]
     if not eligible:
         return None
@@ -90,7 +58,6 @@ def _nullify_player_buff(player):
     buffs.remove(target_buff)
     label = target_buff.get("stat") or target_buff.get("type") or "buff"
     return f"✨ Sylvana's Null shatters your {label}! The enchantment unravels."
-
 
 def _illusory_veil(boss, player):
     """
@@ -101,8 +68,7 @@ def _illusory_veil(boss, player):
     """
     if random.random() >= 0.25:
         return None
-    _apply_blind_to_player(player)
-    # Defense buff: reduces effective damage dealt to the boss for 1 round
+    apply_blind(player, duration=2)
     boss["veil_defense"] = boss.get("veil_defense", 0) + 3
     return (
         "🪞 Illusory Veil! Sylvana blurs into fractured reflections – "
@@ -114,7 +80,7 @@ def _illusory_veil(boss, player):
 # Main combat function
 # ---------------------------------------------------------------------------
 
-def combat_sylvana(player):
+def combat_sylvana(player, floor=None):
     """
     Special combat for Queen of Mirrors Sylvana super boss.
 
@@ -122,11 +88,12 @@ def combat_sylvana(player):
     ──────────────
     • Illusory Veil    – 25% chance each turn: blind player + boss gains temp DEF.
     • Mirror Reflection – triggered at ≤ 65% HP, then every 3 turns in Final Form:
-        Sylvana spawns 1 mirror copy (fake). Killing the fake = boss double-actions
-        for 2 turns; killing the real one is just correct play.
+        Sylvana spawns copies. Killing a fake = boss gains extra actions
+        (in Final Form this becomes TRIPLE action).
     • Null             – high chance to strip one player buff.
     • Final Form       – below 30% HP: permanent double action +
         Mirror Reflection spawns 2 fakes instead of 1.
+        Killing fakes in Final Form grants TRIPLE action for 2 turns.
 
     Returns 'victory', 'fled', or 'dead'.
     """
@@ -143,11 +110,13 @@ def combat_sylvana(player):
     input("Press Enter to face the Queen of Mirrors...")
 
     # Phase state
-    mirror_phase_triggered = False      # first Mirror Reflection (≤ 65%)
-    boss_double_actions = 0             # turns of double-action penalty
-    final_form = False                  # activated below 30% HP
-    reflection_turn_counter = 0         # used in final form for periodic re-splits
-    split_active = False                # True while mirror copies are on the field
+    mirror_phase_triggered = False
+    boss_extra_actions = 0          # renamed for clarity - turns of extra-action penalty
+    final_form = False
+    reflection_turn_counter = 0
+    split_active = False
+    extra_actions_granted_this_round = False
+
 
     while True:
         # Prune dead enemies
@@ -169,7 +138,6 @@ def combat_sylvana(player):
             input("Press Enter...")
 
         # ── MIRROR REFLECTION TRIGGER ────────────────────────────────────────
-        # First trigger at ≤ 65% HP; after final form triggers every 3 turns
         should_spawn_reflection = False
 
         if not mirror_phase_triggered and boss["hp"] <= int(boss["max_hp"] * 0.65):
@@ -187,7 +155,6 @@ def combat_sylvana(player):
             for _ in range(num_fakes):
                 fake = _make_fake_copy(boss)
                 enemies.append(fake)
-            # Shuffle so the real boss isn't always first
             random.shuffle(enemies)
             split_active = True
             fake_label = "two illusory copies" if num_fakes == 2 else "an illusory copy"
@@ -197,33 +164,44 @@ def combat_sylvana(player):
             input("Press Enter...")
 
         # ── PLAYER TURN ──────────────────────────────────────────────────────
-        # Custom HUD for Sylvana fight
         clear_screen()
-        from combat.status_effects import format_player_status_line
         status_str = format_player_status_line(player)
         blind_warn = " ⚠️ BLINDED" if player.get("blinded") else ""
-        print(f"\nYour HP: {player['current_hp']}{blind_warn} {status_str}".rstrip())
 
-        if boss_double_actions > 0:
-            print(f"⚡ PENALTY: Sylvana has double-actions for {boss_double_actions} more turn(s)!")
+        # Action status display
+        if final_form and boss_extra_actions > 0:
+            action_status = f"⚡ TRIPLE ACTION ({boss_extra_actions} turn(s) left)"
+        elif final_form:
+            action_status = "⚡ PERMANENT DOUBLE ACTION"
+        elif boss_extra_actions > 0:
+            action_status = f"⚡ DOUBLE ACTION PENALTY ({boss_extra_actions} turn(s) left)"
+        else:
+            action_status = "Normal actions"
+
+        print_superboss_header(player, floor, "Queen of Mirrors Sylvana", "")
+        print(f"└─ {action_status}")
+
+        if boss_extra_actions > 0:
+            print(f"⚡ PENALTY: Sylvana has extra actions for {boss_extra_actions} more turn(s)!")
 
         print("\nEnemies:")
         for idx, e in enumerate(enemies):
-            extra = " [REAL]" if not e.get("is_fake") and len(enemies) > 1 else ""
-            # Don't spoil it — only show [REAL] hint if player uses an item that reveals it
-            # (we remove the hint above in production; kept here as a dev reminder)
-            extra = ""  # Remove real-flag hint from display
+            extra = ""
             print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
 
         print("[A]ttack  [D]efend  [F]lee  [U]se item")
         action = input("Choose: ").strip().lower()
 
         def on_kill_sylvana(target, enemies):
-            nonlocal boss_double_actions, split_active
+            nonlocal boss_extra_actions, split_active, extra_actions_granted_this_round
             if target.get("is_fake"):
                 print("\n🪞 That was just a mirror! Sylvana laughs as you strike the illusion.")
-                print("Her rage crystalises — DOUBLE ACTIONS for 2 turns!")
-                boss_double_actions += 2
+                if final_form:
+                    print("Her rage surges — TRIPLE ACTIONS for 2 turns!")
+                else:
+                    print("Her rage crystalises — DOUBLE ACTIONS for 2 turns!")
+                boss_extra_actions += 2
+                extra_actions_granted_this_round = True   # ← add this
             else:
                 split_active = False
 
@@ -248,14 +226,14 @@ def combat_sylvana(player):
             if enemy["hp"] <= 0:
                 continue
 
-            # Fake copy: applies blind on hit, then vanishes after attacking once
+            # Fake copy logic
             if enemy.get("is_fake"):
                 block = p_con + (5 if defending else 0)
                 fake_dmg = max(0, random.randint(2, 6) + enemy["str_mod"] - block)
                 player["current_hp"] -= fake_dmg
                 if fake_dmg > 0:
                     print(f"\n🪞 {enemy['name']} flickers and strikes you for {fake_dmg} damage!")
-                    status = _apply_blind_to_player(player)
+                    status = apply_blind(player, duration=2)
                     if status == "applied":
                         print("The illusion's touch blinds you!")
                     else:
@@ -263,7 +241,7 @@ def combat_sylvana(player):
                 else:
                     print(f"\n🪞 {enemy['name']} flickers through you — you block the illusion!")
                 print(f"The copy shatters after attacking!")
-                enemy["hp"] = 0   # copies vanish after one attack
+                enemy["hp"] = 0
                 if player["current_hp"] <= 0:
                     print("You have been slain.")
                     return "dead"
@@ -271,70 +249,73 @@ def combat_sylvana(player):
 
             # Real Sylvana
             is_sylvana_real = _is_sylvana(enemy)
-            actions = 2 if (is_sylvana_real and (final_form or boss_double_actions > 0)) else 1
+
+            # Determine number of actions this turn
+            if final_form and boss_extra_actions > 0:
+                actions = 3
+            elif final_form or boss_extra_actions > 0:
+                actions = 2
+            else:
+                actions = 1
 
             for action_idx in range(actions):
                 if actions > 1:
-                    print(f"\n⚡ Sylvana acts with blinding speed — Action {action_idx + 1}/2!")
-
-                # ── Illusory Veil (25% per action) ──
+                    action_label = "TRIPLE" if actions == 3 else "DOUBLE"
+                    print(f"\n⚡ {action_label} ACTION — Sylvana moves ({action_idx + 1}/{actions})!")
+                
+                # Illusory Veil (25% per action)
                 veil_msg = _illusory_veil(enemy, player)
                 if veil_msg:
                     print(veil_msg)
-
-                # ── Null (70% chance) ──
+                
+                # Null (70% chance)
                 if random.random() < 0.70:
                     null_msg = _nullify_player_buff(player)
                     if null_msg:
                         print(null_msg)
-
-                # ── Normal attack ──
-                veil_def = enemy.pop("veil_defense", 0)  # consume this round's veil bonus
+                
+                # Normal attack
+                veil_def = enemy.pop("veil_defense", 0)
                 block = p_con + (5 if defending else 0) + veil_def
                 enemy_dmg = random.randint(3, 9) + enemy["str_mod"] - block
                 enemy_dmg = max(0, enemy_dmg)
                 player["current_hp"] -= enemy_dmg
-
+                
                 if enemy_dmg > 0:
                     print(f"The {enemy['name']} strikes you for {enemy_dmg} damage!")
                 else:
                     print(f"The {enemy['name']} attacks but you weather the blow!")
-
-                # ── Fey race passive: Silence on hit (25%) — inherited ──
+                
+                # Fey race passive: Silence on hit (25%)
                 if enemy_dmg > 0 and random.random() < 0.25:
                     from combat.status_effects import apply_silence
                     res = apply_silence(player, duration=2)
                     if res == "applied":
                         print("Sylvana's fey magic seals your pack shut for 2 turns!")
-
+                
                 if player["current_hp"] <= 0:
                     print("You have been slain by the Queen of Mirrors.")
                     return "dead"
 
-        # Decrement double-action penalty counter (only if the penalty was used)
-        if boss_double_actions > 0 and not final_form:
-            boss_double_actions -= 1
-            if boss_double_actions == 0:
-                print("\n✨ Sylvana's double-action fury subsides… for now.")
+        # Decrement extra-action counter AFTER the full enemy phase
+        if boss_extra_actions > 0 and not extra_actions_granted_this_round:
+            boss_extra_actions -= 1
+            if boss_extra_actions == 0:
+                print("\n✨ Sylvana's extra fury subsides...")
+        extra_actions_granted_this_round = False
 
         # Prune vanished copies
         enemies = [e for e in enemies if e["hp"] > 0]
         if all(e.get("is_fake") for e in enemies) and enemies:
-            # All remaining are fakes (shouldn't happen, but safety)
             enemies = []
         if not enemies:
             return "victory"
 
-        # Check if split is resolved (no fakes remain)
+        # Check if split is resolved
         if split_active and not any(e.get("is_fake") for e in enemies):
             split_active = False
 
         # ── END-OF-ROUND MAINTENANCE ─────────────────────────────────────────
-        # Player blind tick
-        for m in _tick_player_blind(player):
-            print(m)
-
-        # Player debuffs (poison, bleed, etc.)
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             print(m)
@@ -342,7 +323,6 @@ def combat_sylvana(player):
             print("You have been slain.")
             return "dead"
 
-        # Player buffs (HoT, etc.)
         for m in tick_player_buffs(player):
             print(m)
 
