@@ -110,7 +110,7 @@ def visit_city(player, city_id=None):
                     target = input(f"Enter floor to descend to (1-{player.get('max_floor', 1)}): ").strip()
                     chosen_floor = int(target)
                     if 1 <= chosen_floor <= player.get("max_floor", 1):
-                        player["floor"] = chosen_floor  # Set current position to their choice
+                        player["floor"] = chosen_floor
                         break
                     else:
                         print("Invalid floor tier.")
@@ -118,6 +118,7 @@ def visit_city(player, city_id=None):
                     print("Please enter a valid floor number.")
 
             player["dungeon_region"] = city.get("biome", "temperate")
+            player["origin_city"] = city_id
             player["location"] = "dungeon"
             return True
         elif choice == save_option:

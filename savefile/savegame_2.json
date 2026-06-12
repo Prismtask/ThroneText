@@ -1,0 +1,32 @@
+{
+  "name": "prism",
+  "race": "Human",
+  "class": "Rogue",
+  "attributes": {
+    "Strength": 6,
+    "Constitution": 3,
+    "Dexterity": 10,
+    "Wisdom": 1,
+    "Learning": 1,
+    "Charisma": 2
+  },
+  "floor": 1,
+  "max_floor": 1,
+  "current_hp": 24,
+  "level": 1,
+  "exp": 0,
+  "level_hp_bonus": 0,
+  "inventory": [],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 2,
+  "dungeon_time": 0,
+  "gold": 100,
+  "time_minutes": 480,
+  "location": "solmere",
+  "superboss_seed": 859381
+}
