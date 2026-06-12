@@ -56,8 +56,12 @@ def city_shop(player, city_id="solmere"):
     if stock_key not in player or player.get(day_key) != player.get("day", 1):
         player[stock_key] = []
         stock_size = shop_config.get("stock_size", 8)
+        
+        # Filter out unique items so they don't randomly show up in the shop stock
+        available_item_ids = [k for k, v in ITEMS.items() if not v.get("unique")]
+        
         for _ in range(stock_size):
-            item_id = random.choice(list(ITEMS.keys()))
+            item_id = random.choice(available_item_ids)
             if shop_config.get("rarity_bias") == "higher":
                 rarity = random.choices(["common", "uncommon", "rare", "epic"], weights=[30, 35, 25, 10])[0]
             else:

@@ -1,18 +1,8 @@
-# slitcurrent_combat.py – Dream-Devouring Slitcurrent super boss encounter
-
 import random
 from utils import clear_screen
-from combat.generic import (
-    enemy_stats, compute_player_stats, handle_player_turn,
-    format_enemy_status_line, print_superboss_header
-)
-from combat.status_effects import (
-    apply_poison, apply_curse,
-    tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
-    cure_curse,
-)
+from combat.generic import enemy_stats, print_superboss_header, format_enemy_status_line, superboss_combat_loop
+from combat.status_effects import apply_poison, apply_curse
 from resources.items import build_item
-
 
 def combat_slitcurrent(player, floor=None):
     boss_key = "dream_devouring_slitcurrent"
@@ -20,267 +10,166 @@ def combat_slitcurrent(player, floor=None):
     boss["max_hp"] = boss["hp"]
     enemies = [boss]
 
-    p_str, p_con, p_dex = compute_player_stats(player)
-
     print("\n" + "=" * 60)
-    print("Reality frays at the edges. Whispers that are not your own")
-    print("slither through your mind. A colossal, eel-like horror uncoils")
-    print("from the abyss, its glistening body covered in stolen faces")
-    print("and screaming mouths that move without sound.")
+    print("Reality frays at the edges. Whispers that are not your own...")
     print(f"\nDream-Devouring Slitcurrent — HP: {boss['hp']}")
     print("=" * 60)
     input("\nPress Enter to face the Dream-Devourer...")
 
-    # ----- State variables -----
-    devour_focus_stacks = 0
-    floatsam_spawned = False          # spawn only once at ≤80% HP
-    turn_counter = 0                  # for Nightmarish Tide
-    boss_stun_turns = 0               # 2-turn stun counter
-    failure_timer = 0                 # turns Floatsam have been alive without hitting 3 stacks
-    boss_buff_turns = 0               # temporary all-stats buff after failure
-    massive_attack_triggered = False  # prevent multiple failure triggers
-    player_stunned = False
+    context = {
+        "devour_focus_stacks": 0,
+        "floatsam_spawned": False,
+        "turn_counter": 0,
+        "boss_stun_turns": 0,
+        "failure_timer": 0,
+        "boss_buff_turns": 0,
+        "massive_attack_triggered": False,
+        "player_stunned": False,
+        "skip_player_turn": False
+    }
 
-    def on_kill_floatsam(target, enemies):
-        nonlocal devour_focus_stacks, failure_timer, boss_stun_turns
+    def on_kill_hook(target, elist, ctx):
         if target.get("key") == "dream_floatsam":
-            devour_focus_stacks += 1
-            print(f"[GIMMICK] Slitcurrent devours the remains! Devour Focus +1 ({devour_focus_stacks}/3)")
-            failure_timer = 0  # reset failure timer when a Floatsam dies
-            if devour_focus_stacks >= 3:
+            ctx["devour_focus_stacks"] += 1
+            print(f"[GIMMICK] Slitcurrent devours the remains! Devour Focus +1 ({ctx['devour_focus_stacks']}/3)")
+            ctx["failure_timer"] = 0 
+            if ctx["devour_focus_stacks"] >= 3:
                 print("\n[GIMMICK] NIGHTMARE OVERLOAD! Slitcurrent is stunned for 2 turns and takes +40% damage!")
-                boss_stun_turns = 3
-                boss["stunned"] = True      # immediate effect
-                devour_focus_stacks = 0
+                ctx["boss_stun_turns"] = 3
+                b = next((e for e in elist if e.get("key") == boss_key), None)
+                if b: b["stunned"] = True
+                ctx["devour_focus_stacks"] = 0
 
-    while True:
-        enemies = [e for e in enemies if e["hp"] > 0]
-        if not enemies:
-            print("Dream-Devouring Slitcurrent has been devoured by reality!")
-            # ── ABYSS FANG DROP ──────────────────────────────────────────────
-            print("\n" + "~" * 55)
-            print("As the Dream-Devourer dissolves, a blade crystallises")
-            print("from the void where its heart once beat. It hums with")
-            print("an eerie, hungry resonance — as if the abyss itself")
-            print("has been shaped into an edge.")
-            print("\n  ✦ You obtained: ABYSS FANG (Legendary) ✦")
-            print("~" * 55)
-            abyss_fang = build_item("abyss_fang", "legendary")
-            player.setdefault("inventory", []).append(abyss_fang)
-            input("\nPress Enter to continue...")
-            return "victory"
+    def pre_player_hook(ctx, elist):
+        b = next((e for e in elist if e.get("key") == boss_key), None)
         
-        p_str, p_con, p_dex = compute_player_stats(player)
-
-        # ----- FLOATSAM SPAWN (once at ≤80% HP) -----
-        if not floatsam_spawned and boss["hp"] <= boss["max_hp"] * 0.8:
+        # Floatsam Spawn
+        if b and not ctx["floatsam_spawned"] and b["hp"] <= b["max_hp"] * 0.8:
             print("\n[GIMMICK] Slitcurrent shrieks and spawns 3 Dream Floatsam from the abyss!")
             for _ in range(3):
                 m_stats = enemy_stats("dream_floatsam", player)
                 m_stats["key"] = "dream_floatsam"
                 m_stats["max_hp"] = m_stats["hp"]
-                enemies.append(m_stats)
-            floatsam_spawned = True
-            failure_timer = 0
+                elist.append(m_stats)
+            ctx["floatsam_spawned"] = True
+            ctx["failure_timer"] = 0
 
-        # ----- Check if any Floatsam are alive -----
-        floatsam_alive = any(e.get("key") == "dream_floatsam" for e in enemies)
+        floatsam_alive = any(e.get("key") == "dream_floatsam" for e in elist)
 
-        # ----- Failure timer (if Floatsam alive for 5+ turns without reaching 3 stacks) -----
-        if floatsam_alive and not massive_attack_triggered and devour_focus_stacks < 3:
-            failure_timer += 1
-            if failure_timer >= 5:
+        # Failure Timer
+        if floatsam_alive and not ctx["massive_attack_triggered"] and ctx["devour_focus_stacks"] < 3:
+            ctx["failure_timer"] += 1
+            if ctx["failure_timer"] >= 5:
                 print("\n[GIMMICK] The Floatsam fester too long! Slitcurrent explodes in rage!")
-                # Massive attack
-                massive_dmg = random.randint(15, 25) + boss["str_mod"] - p_con
-                massive_dmg = max(5, massive_dmg)
+                massive_dmg = max(5, random.randint(15, 25) + b["str_mod"] - player.get("attributes", {}).get("Constitution", 0))
                 player["current_hp"] -= massive_dmg
                 print(f"Slitcurrent unleashes DREAM SURGE for {massive_dmg} damage!")
-                if player["current_hp"] <= 0:
-                    print("You have been slain.")
-                    return "dead"
-                # Clear stacks and buff boss
-                devour_focus_stacks = 0
-                boss_buff_turns = 2
+                if player["current_hp"] <= 0: return "dead"
+                
+                ctx["devour_focus_stacks"] = 0
+                ctx["boss_buff_turns"] = 2
                 print("Slitcurrent gains TEMPORARY ALL-STATS BUFF for 2 turns!")
-                massive_attack_triggered = True
+                ctx["massive_attack_triggered"] = True
         elif not floatsam_alive:
-            failure_timer = 0           # reset if no Floatsam
-            massive_attack_triggered = False
+            ctx["failure_timer"] = 0
+            ctx["massive_attack_triggered"] = False
 
-        # ----- Apply temporary boss buff (stats increase) -----
-        if boss_buff_turns > 0:
-            # Increase damage output
-            boss["temp_str_bonus"] = 5
-            boss_buff_turns -= 1
-            if boss_buff_turns == 0:
-                boss.pop("temp_str_bonus", None)
+        # Apply Temporary Boss Buff
+        if ctx["boss_buff_turns"] > 0:
+            if b: b["temp_str_bonus"] = 5
+            ctx["boss_buff_turns"] -= 1
+            if ctx["boss_buff_turns"] == 0 and b:
+                b.pop("temp_str_bonus", None)
                 print("Slitcurrent's rage subsides.")
         else:
-            boss.pop("temp_str_bonus", None)
+            if b: b.pop("temp_str_bonus", None)
 
-        # ----- Player turn (custom HUD shows stacks & multi-turn stun counter) -----
-        if player_stunned:
+        # Player Stun Logic
+        if ctx["player_stunned"]:
             print("\nYou are STUNNED from the Nightmarish Tide and cannot act this turn!")
             input("Press Enter to yield your turn...")
-            player_stunned = False
-            defending = False
-            turn_counter += 1      # still counts as a turn
-            # Skip directly to enemy phase
-        else:
-            # Your normal input interface code here:
-            clear_screen()
-            print_superboss_header(player, floor, "Dream-Devouring Slitcurrent", "")
-            print("\nEnemies in the room:")
-            for idx, e in enumerate(enemies):
-                extra = ""
-                if e.get("key") == "dream_devouring_slitcurrent":
-                    extra = f" [Devour: {devour_focus_stacks}/3]"
-                    if boss_stun_turns > 0:
-                        extra += f" [Stunned: {boss_stun_turns} turns left]"
-                print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
-            print("[A]ttack  [D]efend  [F]lee  [U]se item")
-            action = input("Choose: ").strip().lower()
+            ctx["player_stunned"] = False
+            ctx["skip_player_turn"] = True
+            ctx["turn_counter"] += 1
 
-            result, defending = handle_player_turn(
-                player, enemies, p_str, p_con, p_dex,
-                on_kill=on_kill_floatsam,
-                _action_override=action,
-            )
-            if result == "retry":
-                continue
-            if result in ("fled", "victory", "dead"):
-                return result
-
-            # ----- ABYSS FANG TRIPLE ACTION (superboss) -----
-            triple_remaining = player.get("abyss_triple_actions", 0)
-            if triple_remaining > 0 and result == "continue":
-                for attack_num in range(2):
-                    live = [e for e in enemies if e["hp"] > 0]
-                    if not live:
-                        break
-                    print(f"\n⚔️  ABYSS TEMPO — extra action ({attack_num + 2}/3)!")
-                    clear_screen()
-                    print_superboss_header(player, floor, "Dream-Devouring Slitcurrent", "")
-                    print("\nEnemies in the room:")
-                    for idx, e in enumerate(live):
-                        extra = ""
-                        if e.get("key") == "dream_devouring_slitcurrent":
-                            extra = f" [Devour: {devour_focus_stacks}/3]"
-                        print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
-                    print("[A]ttack  [D]efend  [F]lee  [U]se item")
-                    sub_action = input("Choose: ").strip().lower()
-                    sub_result, _ = handle_player_turn(
-                        player, live, p_str, p_con, p_dex,
-                        on_kill=on_kill_floatsam,
-                        _action_override=sub_action,
-                    )
-                    enemies = live  # sync back
-                    if sub_result in ("fled", "victory", "dead"):
-                        return sub_result
-
-            turn_counter += 1
-
-        # ----- ENEMY TURN PHASE -----
-        for enemy in enemies[:]:
-            if enemy["hp"] <= 0:
-                continue
-
-            # Process debuffs (dot, blind) – same as original
-            msgs, died = tick_enemy_debuffs(enemy)
-            for m in msgs:
-                print(m)
-            if died:
-                continue
-
-            # ----- STUN HANDLING (multi-turn) -----
-            if enemy.get("key") == "dream_devouring_slitcurrent" and boss_stun_turns > 0:
-                print(f"The {enemy['name']} is stunned and cannot act! ({boss_stun_turns} turns remain)")
-                boss_stun_turns -= 1
-                if boss_stun_turns == 0:
-                    enemy["stunned"] = False
-                continue
-            elif enemy.get("stunned"):
-                print(f"The {enemy['name']} is stunned and cannot act!")
-                enemy["stunned"] = False
-                continue
-
-            # Determine attack power
-            is_empowered = floatsam_alive and enemy.get("key") == "dream_devouring_slitcurrent"
-            temp_bonus = enemy.get("temp_str_bonus", 0)
-
-            # ----- NIGHTMARISH TIDE (every 3 turns, high damage + stun) -----
-            if enemy.get("key") == "dream_devouring_slitcurrent" and turn_counter % 3 == 0:
-                print("\n🌊 The abyss churns – NIGHTMARISH TIDE!")
-                # High damage, ignores some block
-                tide_dmg = random.randint(12, 20) + enemy["str_mod"] + temp_bonus - p_con
-                tide_dmg = max(5, tide_dmg)
-                player["current_hp"] -= tide_dmg
-                print(f"Slitcurrent washes over you for {tide_dmg} damage!")
-                # Apply stun to player
-                player["stunned"] = True
-                print("You are STUNNED and will lose your next turn!")
-                player_stunned = True
-                if player["current_hp"] <= 0:
-                    print("You have been slain.")
-                    return "dead"
-                # Boss does not perform normal attack this turn
-                continue
-
-            # Normal or empowered attack
-            block = p_con + (5 if defending else 0)
-            base_dmg = random.randint(4, 9) if is_empowered else random.randint(2, 7)
-            enemy_dmg = base_dmg + enemy["str_mod"] + temp_bonus - block
-            enemy_dmg = max(0, enemy_dmg)
-
-            if is_empowered:
-                print(f"⚠️ {enemy['name']} channels abyssal power through its floatsam! (Empowered)")
-
-            player["current_hp"] -= enemy_dmg
-            if enemy_dmg > 0:
-                print(f"The {enemy['name']} hits you for {enemy_dmg} damage!")
-            else:
-                print(f"The {enemy['name']} attacks but you block all incoming damage!")
-
-            if player["current_hp"] <= 0:
-                print("You have been slain.")
-                return "dead"
-
-            # Curse / poison (unchanged)
-            if enemy.get("key") == "dream_devouring_slitcurrent" and random.random() < 0.4:
-                if random.random() < 0.5:
-                    poison_dmg = 5
-                    apply_poison(player, poison_dmg, 3)
-                    print(f"Nightmarish venom from {enemy['name']}!")
-                else:
-                    if apply_curse(player) == "applied":
-                        print(f"A dream curse grips you from the {enemy['name']}!")
-
-        # ----- END OF ROUND MAINTENANCE (unchanged from original) -----
-        enemies = [e for e in enemies if e["hp"] > 0]
-        if not enemies:
-            return "victory"
-
-        # Tick Abyss Fang cooldown and triple-action counter
-        if player.get("abyss_fang_cooldown", 0) > 0:
-            player["abyss_fang_cooldown"] -= 1
-            if player["abyss_fang_cooldown"] == 0:
-                print("⚔️  The Abyss Fang hums — its hunger is renewed.")
-        if player.get("abyss_triple_actions", 0) > 0:
-            player["abyss_triple_actions"] -= 1
-            if player["abyss_triple_actions"] == 0:
-                print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
-
-        # Player debuffs (poison, slow)
-        msgs, died = tick_player_debuffs(player)
-        for m in msgs:
-            print(m)
-        if died:
-            return "dead"
-
-        for m in tick_player_buffs(player):
-            print(m)
-
-        print("\n" + "-" * 40)
-        input("Press Enter to proceed to the next round...")
+    def custom_hud_hook(ctx, elist):
         clear_screen()
+        print_superboss_header(player, floor, "Dream-Devouring Slitcurrent", "")
+        print("\nEnemies in the room:")
+        for idx, e in enumerate(elist):
+            extra = ""
+            if e.get("key") == boss_key:
+                extra = f" [Devour: {ctx['devour_focus_stacks']}/3]"
+                if ctx["boss_stun_turns"] > 0:
+                    extra += f" [Stunned: {ctx['boss_stun_turns']} turns left]"
+            print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
+        print("[A]ttack  [D]efend  [F]lee  [U]se item")
+
+    def player_action_override(ctx):
+        action = input("Choose: ").strip().lower()
+        ctx["turn_counter"] += 1
+        return action
+
+    def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
+        if enemy.get("key") == boss_key and ctx["boss_stun_turns"] > 0:
+            print(f"The {enemy['name']} is stunned and cannot act! ({ctx['boss_stun_turns']} turns remain)")
+            ctx["boss_stun_turns"] -= 1
+            if ctx["boss_stun_turns"] == 0: enemy["stunned"] = False
+            return 0, True, None, 1.0, 0  # Skip attack entirely
+
+        temp_str = enemy.get("temp_str_bonus", 0)
+        
+        # Nightmarish Tide
+        if enemy.get("key") == boss_key and ctx["turn_counter"] % 3 == 0:
+            print("\n🌊 The abyss churns – NIGHTMARISH TIDE!")
+            tide_dmg = max(5, random.randint(12, 20) + enemy["str_mod"] + temp_str - p_con)
+            pl["current_hp"] -= tide_dmg
+            print(f"Slitcurrent washes over you for {tide_dmg} damage!")
+            pl["stunned"] = True
+            print("You are STUNNED and will lose your next turn!")
+            ctx["player_stunned"] = True
+            if pl["current_hp"] <= 0: return "dead"
+            return 0, True, None, 1.0, 0
+
+        floatsam_alive = any(e.get("key") == "dream_floatsam" for e in enemies) # from closure scope
+        is_empowered = floatsam_alive and enemy.get("key") == boss_key
+        
+        if is_empowered:
+            print(f"⚠️ {enemy['name']} channels abyssal power through its floatsam! (Empowered)")
+            temp_str += 2  # Offset to simulate Empowered's higher base damage roll in standard attack handler
+
+        extra = None
+        if enemy.get("key") == boss_key and random.random() < 0.4:
+            def devourer_ailment(e, p, dmg):
+                if random.random() < 0.5:
+                    apply_poison(p, 5, 3)
+                    return f"Nightmarish venom from {e['name']}!"
+                else:
+                    if apply_curse(p) == "applied": return f"A dream curse grips you from the {e['name']}!"
+                return None
+            extra = devourer_ailment
+
+        return 1, False, extra, 1.0, temp_str
+    
+    result = superboss_combat_loop(
+        player, enemies, floor, "Dream-Devouring Slitcurrent", context,
+        pre_player_hook=pre_player_hook,
+        custom_hud_hook=custom_hud_hook,
+        on_kill_hook=on_kill_hook,
+        player_action_override=player_action_override,
+        enemy_turn_hook=enemy_turn_hook
+    )
+
+    if result == "victory":
+        print("\n" + "~" * 55)
+        print("As the Dream-Devourer dissolves, a blade crystallises")
+        print("from the void where its heart once beat. It hums with")
+        print("an eerie, hungry resonance — as if the abyss itself")
+        print("has been shaped into an edge.")
+        print("\n  ✦ You obtained: ABYSS FANG (Legendary) ✦")
+        print("~" * 55)
+        abyss_fang = build_item("abyss_fang", "legendary")
+        player.setdefault("inventory", []).append(abyss_fang)
+        input("\nPress Enter to continue...")
+
+    return result

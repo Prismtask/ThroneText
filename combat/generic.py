@@ -154,40 +154,12 @@ def print_superboss_header(player, floor, boss_name, extra_gimmick_line=""):
     if extra_gimmick_line:
         print(extra_gimmick_line)
     status_line = format_player_status_line(player)
-    print(f"\nYour HP: {player['current_hp']} {status_line}".rstrip())
+    # Check for Abyssal Tempo without cluttering active player debuffs/buffs
+    tempo_str = " [Abyssal Tempo]" if player.get("abyss_triple_actions", 0) > 0 else ""
+    print(f"\nYour HP: {player['current_hp']} {status_line}{tempo_str}".rstrip())
 
-def enemy_attack(enemy, player, p_con, defending, extra_logic=None):
-    """Execute one standard attack action for a single enemy.
-
-    Handles the shared logic that every enemy attack must go through:
-
-    1. ``tick_enemy_debuffs`` — dot/blind tick; returns ``'died'`` immediately
-       if the enemy's HP drops to zero from status damage.
-    2. Stun check — clears the flag, prints the message, returns ``'stunned'``
-       without issuing an attack.
-    3. Damage roll, block calculation, player-HP mutation, hit/block message,
-       and player-death check (returns ``'dead'`` if ``player['current_hp']``
-       drops to zero).
-    4. ``extra_logic`` hook — called only after a successful hit resolves.
-
-    Parameters
-    ----------
-    enemy       : enemy dict, mutated in place (hp may change via debuff tick)
-    player      : player dict, mutated in place (current_hp reduced on hit)
-    p_con       : effective Constitution value used for the block calculation
-    defending   : bool — True when the player chose [D]efend this round
-    extra_logic : optional callable(enemy, player, enemy_dmg) -> str | None
-                  Boss-specific side-effects (poison, curse, flavour text, …).
-                  Return a non-empty string to have it printed; return None to
-                  suppress output.
-
-    Returns
-    -------
-    ``'died'``    enemy died from dot damage; caller should skip further logic
-    ``'stunned'`` attack skipped; stun flag consumed
-    ``'dead'``    attack resolved and player HP reached zero
-    ``'hit'``     attack resolved normally; player may or may not have taken dmg
-    """
+def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0):
+    """Execute one standard attack action for a single enemy with modifiers."""
     msgs, died = tick_enemy_debuffs(enemy)
     for m in msgs:
         print(m)
@@ -201,12 +173,16 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None):
 
     if enemy.get("frozen"):
         print(f"The {enemy['name']} is frozen solid and cannot act!")
-        # tick_enemy_debuffs handles countdown and thaw — don't clear frozen here
         return "stunned"
 
+    # Apply armor multiplier (e.g., 0.7 for 30% armor penetration)
     block = p_con + (5 if defending else 0)
-    enemy_dmg = random.randint(2, 7) + enemy["str_mod"] - block
+    block = int(block * armor_mult)
+    
+    # Apply temporary strength bonus for this specific attack
+    enemy_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus - block
     enemy_dmg = max(0, enemy_dmg)
+    
     player["current_hp"] -= enemy_dmg
 
     if enemy_dmg > 0:
@@ -224,11 +200,148 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None):
     return "hit"
 
 
+def superboss_combat_loop(player, enemies, floor, boss_name, context,
+                          pre_player_hook=None,
+                          custom_hud_hook=None,
+                          on_kill_hook=None,
+                          player_action_override=None,
+                          enemy_turn_hook=None,
+                          post_round_hook=None):
+    """
+    Centralized combat loop for all Superbosses.
+    Handles dead-pruning, Abyssal Tempo validation, generic enemy phases, and end-of-round ticks.
+    """
+    
+    while True:
+        if player.get("abyss_tempo_pending", 0) > 0:
+            pending = player.pop("abyss_tempo_pending")
+            player["abyss_triple_actions"] = pending
+            print(f"⚔️  The Abyss awakens! Triple actions for {pending} turns!")
+        # 1. Prune and Check Victory
+        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        if not enemies:
+            return "victory"
+
+        p_str, p_con, p_dex = compute_player_stats(player)
+
+        # 2. Pre-Player Gimmick Phase (Phase transitions, spawns)
+        if pre_player_hook:
+            result = pre_player_hook(context, enemies)
+            if result in ("dead", "victory"): return result
+
+        if context.get("skip_player_turn"):
+            context["skip_player_turn"] = False
+            continue # Skips straight to Step 4/5 (Enemy Phase)
+        # 3. Player Turn
+        if custom_hud_hook:
+            custom_hud_hook(context, enemies)
+        else:
+            clear_screen()
+            print_superboss_header(player, floor, boss_name, "")
+            print("\nEnemies:")
+            for idx, e in enumerate(enemies):
+                print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
+            print("[A]ttack  [D]efend  [F]lee  [U]se item")
+
+        action = player_action_override(context) if player_action_override else input("Choose: ").strip().lower()
+
+        result, defending = handle_player_turn(
+            player, enemies, p_str, p_con, p_dex,
+            on_kill=lambda target, elist: on_kill_hook(target, elist, context) if on_kill_hook else None,
+            _action_override=action
+        )
+
+        if result == "retry":
+            continue
+        if result in ("fled", "victory", "dead"):
+            return result
+
+        # 4. Standardized Abyss Tempo (Triple Actions)
+        def _hud_func():
+            clear_screen()
+            print_superboss_header(player, floor, boss_name, "")
+            print("\nEnemies:")
+            for idx, e in enumerate([e for e in enemies if e["hp"] > 0]):
+                print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
+            print("[A]ttack  [D]efend  [F]lee  [U]se item")
+
+        triple_result = superboss_triple_action_loop(
+            player, enemies, p_str, p_con, p_dex,
+            on_kill=lambda target, elist: on_kill_hook(target, elist, context) if on_kill_hook else None,
+            print_hud_func=_hud_func
+        )
+        if triple_result is not None:
+            return triple_result
+
+        # 5. Enemy Turn Phase
+        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        for enemy in enemies[:]:
+            if enemy["hp"] <= 0: continue
+            
+            actions = 1
+            skip_attack = False
+            extra_logic = None
+            armor_mult = 1.0
+            temp_str = 0
+
+            if enemy_turn_hook:
+                hook_res = enemy_turn_hook(enemy, context, player, p_con, defending)
+                if hook_res == "dead": return "dead"
+                if hook_res:
+                    actions, skip_attack, extra_logic, armor_mult, temp_str = hook_res
+
+            if not skip_attack:
+                for action_idx in range(actions):
+                    if actions > 1:
+                        print(f"\n⚡ FAST ACTION! {enemy['name']} unleashes Action {action_idx + 1}/{actions}!")
+                    
+                    outcome = enemy_attack(enemy, player, p_con, defending, 
+                                           extra_logic=extra_logic, 
+                                           armor_mult=armor_mult, 
+                                           temp_str_bonus=temp_str)
+                    if outcome == "dead":
+                        print("You have been slain.")
+                        return "dead"
+
+        # 6. Post-Round & Maintenance
+        if post_round_hook:
+            if post_round_hook(context, enemies) == "dead": return "dead"
+
+        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        if not enemies:
+            return "victory"
+
+        # Universal Abyss Fang Maintenance
+        if player.get("abyss_fang_cooldown", 0) > 0:
+            player["abyss_fang_cooldown"] -= 1
+            if player["abyss_fang_cooldown"] == 0:
+                print("⚔️  The Abyss Fang hums — its hunger is renewed.")
+        if player.get("abyss_triple_actions", 0) > 0:
+            player["abyss_triple_actions"] -= 1
+            if player["abyss_triple_actions"] == 0:
+                print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
+
+        msgs, died = tick_player_debuffs(player)
+        for m in msgs: print(m)
+        if died:
+            print("You have been slain.")
+            return "dead"
+
+        for m in tick_player_buffs(player): print(m)
+
+        print("\n" + "-" * 50)
+        input("Press Enter to continue...")
+
+
 def _player_has_abyss_fang(player):
-    """Return the Abyss Fang item dict if it's in the player's inventory, else None."""
-    for item in player.get("inventory", []):
-        if item.get("id") == "abyss_fang" or item.get("special") == "dream_devour":
-            return item
+    """Return the Abyss Fang item dict if it's in the player's inventory or equipped, else None."""
+    # Check currently equipped weapon slot
+    equipment = player.get("equipped", {})
+    if isinstance(equipment, dict):
+        weapon = equipment.get("weapon")
+        if weapon and weapon.get("special") == "dream_devour":
+            return weapon
+        
     return None
 
 
@@ -256,7 +369,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
     """
     if _action_override is None:
         status_str = format_player_status_line(player)
-        print(f"\nYour HP: {player['current_hp']} {status_str}".rstrip())
+        # Check for Abyssal Tempo without cluttering active player debuffs/buffs
+        tempo_str = " [Abyssal Tempo]" if player.get("abyss_triple_actions", 0) > 0 else ""
+        print(f"\nYour HP: {player['current_hp']} {status_str}{tempo_str}".rstrip())
         print("Enemies in the room:")
         for idx, e in enumerate(enemies):
             print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
@@ -479,16 +594,16 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         })
         print(f"⚔️  Abyss-Tempered: Strength +{str_bonus} for 4 turns!")
 
-        # --- Triple action: 4 turns ---
-        player["abyss_triple_actions"] = 4
-        print("⚔️  Nightmare Tempo: You act THREE TIMES each turn for 4 turns!")
+        # --- Triple action PENDING (activates next round) ---
+        player["abyss_tempo_pending"] = 4          # was: player["abyss_triple_actions"] = 4
+        print("⚔️  The Abyss stirs... its full fury will awaken next round!")
+        # (Do NOT give triple actions immediately)
 
         # --- Cooldown: 6 turns ---
         player["abyss_fang_cooldown"] = 6
         print("(The blade will recharge in 6 turns.)\n")
 
         return "continue", False
-
     # ----- FLEE -----
     elif action == "f":
         effective_player_dex = p_dex
@@ -521,6 +636,41 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
             return "continue", False
 
     return "retry", False
+
+def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex,
+                                 on_kill, print_hud_func):
+    """Handle Abyss Fang triple actions for any superboss.
+
+    Call this after a normal player turn returns 'continue'.  If triple actions
+    are active, it will run exactly two extra player turns (total three for the
+    round).  Returns:
+        None          – triple actions finished normally, continue the fight
+        'fled'        – player fled during extra action
+        'victory'     – all enemies died during extra action
+        'dead'        – player died during extra action
+    """
+    triple_remaining = player.get("abyss_triple_actions", 0)
+    if triple_remaining <= 0:
+        return None
+
+    for extra_num in range(2):
+        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        if not enemies:
+            return "victory"
+
+        print(f"\n⚔️  ABYSS TEMPO — extra action ({extra_num + 2}/3)!")
+        print_hud_func()
+
+        action = input("Choose: ").strip().lower()
+        result, _ = handle_player_turn(
+            player, enemies, p_str, p_con, p_dex,
+            on_kill=on_kill,
+            _action_override=action,
+        )
+        if result in ("fled", "victory", "dead"):
+            return result
+
+    return None
 
 
 def get_race_extra_logic(enemy):
@@ -649,49 +799,63 @@ def get_race_extra_logic(enemy):
 
 
 def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
-    enemies = [enemy_stats(k, player) for k in enemy_keys]
+    # Always clear per-battle triple-action state on entry
+    player["abyss_triple_actions"] = 0
 
+    enemies = [enemy_stats(k, player) for k in enemy_keys]
     print("\nEnemies approach!")
     for e in enemies:
         print(f"- A {e['name']} appears! (HP: {e['hp']})")
 
     while True:
-        # --- Print room header every turn if context is provided ---
+        # --- Print room header if context provided ---
         if floor is not None and room_num is not None and total_rooms is not None:
             from utils import format_time
             header = f"Dungeon Floor {floor} - Room {room_num}/{total_rooms} | Time: {format_time(player.get('time_minutes', 0))}"
             print(header)
 
+        # --- Convert pending triple actions (from Abyss Fang) into active triple actions ---
+        if player.get("abyss_tempo_pending", 0) > 0:
+            pending = player.pop("abyss_tempo_pending")
+            player["abyss_triple_actions"] = pending
+            print(f"⚔️  The Abyss awakens! Triple actions for {pending} turns!")
+
         p_str, p_con, p_dex = compute_player_stats(player)
         enemies = prune_dead(enemies)
         if not enemies:
             print("All enemies have been defeated!")
-            return "victor"
+            player["abyss_triple_actions"] = 0
+            return "victory"
 
+        # ----- NORMAL PLAYER ACTION (first action of the round) -----
         result, defending = handle_player_turn(player, enemies, p_str, p_con, p_dex)
         if result == "retry":
             continue
         if result in ("fled", "victory", "dead"):
+            player["abyss_triple_actions"] = 0
+            player["abyss_tempo_pending"] = 0
             return result
 
-        # ----- ABYSS FANG TRIPLE ACTION -----
+        # ----- TRIPLE ACTION BONUS (if Abyss Fang buff is active) -----
         triple_remaining = player.get("abyss_triple_actions", 0)
-        if triple_remaining > 0 and result == "continue":
-            extra_attacks = 2   # 3 total actions (1 already taken + 2 bonus)
-            for attack_num in range(extra_attacks):
+        if triple_remaining > 0:
+            # Two extra actions this round (total 3 actions)
+            for extra_num in range(1, 3):   # gives exactly 2 extra actions
                 enemies = prune_dead(enemies)
                 if not enemies:
                     break
-                print(f"\n⚔️  ABYSS TEMPO — extra action ({attack_num + 2}/3)!")
-                sub_result, _ = handle_player_turn(player, enemies, p_str, p_con, p_dex)
+                print(f"\n⚔️  ABYSS TEMPO — Extra Action {extra_num + 1}/3!")
+                sub_result, _ = handle_player_turn(
+                    player, enemies, p_str, p_con, p_dex,
+                    on_kill=None, _action_override=None
+                )
                 if sub_result in ("fled", "victory", "dead"):
+                    player["abyss_triple_actions"] = 0
+                    player["abyss_tempo_pending"] = 0
                     return sub_result
-            enemies = prune_dead(enemies)
-            if not enemies:
-                print("All enemies have been defeated!")
-                return "victory"
 
-        # ----- ENEMY TURN PHASE -----
+        # ----- ENEMY TURN -----
+        # (your existing enemy attack loop, unchanged)
         for enemy in enemies[:]:
             if enemy["hp"] <= 0:
                 continue
@@ -699,10 +863,11 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
             outcome = enemy_attack(enemy, player, p_con, defending, extra_logic=extra)
             if outcome == "dead":
                 print("You have been slain.")
+                player["abyss_triple_actions"] = 0
                 return "dead"
-            
+
         input("\nPress Enter to continue...")
-        clear_screen()    
+        clear_screen()
 
         # ----- END OF ROUND MAINTENANCE -----
         enemies = prune_dead(enemies)
@@ -720,11 +885,13 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
             if player["abyss_triple_actions"] == 0:
                 print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
 
+        # Tick player debuffs/buffs
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             print(m)
         if died:
             print("You have been slain.")
+            player["abyss_triple_actions"] = 0
             return "dead"
 
         for m in tick_player_buffs(player):

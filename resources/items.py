@@ -102,6 +102,11 @@ def build_item(item_id, rarity="common", enhance=0):
             stat: int(val * r["stat_mult"]) + enhance
             for stat, val in base_mods.items()
         }
+        
+        # Carry over custom properties (like special skills or unique flags)
+        for custom_key in ["special", "unique", "drop_source", "drop_rarity"]:
+            if custom_key in base:
+                item[custom_key] = base[custom_key]
     elif base["type"] == "consumable":
         # Safely use .get() so items without upfront power (like scrolls or armor buffs) don't crash
         item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
