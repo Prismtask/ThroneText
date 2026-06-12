@@ -60,23 +60,18 @@ def get_effective_attribute(player, attr_name):
     """Return effective attribute value after applying curse penalty.
     Works for Strength, Constitution, Dexterity, Charisma, Learning, Wisdom, etc.
     """
-    # Base from attributes
     base = player["attributes"].get(attr_name, 0)
-    # Equipment bonuses
     equip_mods = get_total_equipment_mods(player)
     total = base + equip_mods.get(attr_name, 0)
     
-    # Apply curse penalty if present
     for debuff in player.get("active_debuffs", []):
         if debuff.get("type") == "curse":
             penalty = debuff.get("penalty", 2)
             total -= penalty
 
-    # Apply weaken penalty to Strength only
     if attr_name == "Strength":
         total -= get_weaken_penalty(player)
     
-    # Apply buffs (if any)
     for buff in player.get("active_buffs", []):
         if buff.get("type") == "blessing" or buff.get("stat") == "all":
             total += buff.get("value", 0)
@@ -107,25 +102,6 @@ def compute_player_stats(player):
 
 
 def format_enemy_status_line(enemy, extra=""):
-    """Return one HUD line for a single enemy.
-
-    Collects the standard status flags (slowed / stunned / blinded) into a
-    parenthetical, then appends the caller-supplied ``extra`` string.  The
-    caller is responsible for the leading ``[N]`` index prefix and the
-    trailing newline.
-
-    Examples
-    --------
-    Basic call (standard combat)::
-
-        format_enemy_status_line(e)
-        # "Vileheart Spiderling - HP: 34 (Slowed)"
-
-    Boss call with extra data (superboss HUD)::
-
-        format_enemy_status_line(boss, extra=" [Devour: 2/3]")
-        # "Slitcurrent - HP: 88 (Stunned) [Devour: 2/3]"
-    """
     statuses = []
     if enemy.get("slowed"):
         statuses.append("Slowed")
@@ -144,7 +120,6 @@ def format_enemy_status_line(enemy, extra=""):
 
 
 def prune_dead(enemies):
-    """Return a new list containing only enemies with hp > 0."""
     return [e for e in enemies if e["hp"] > 0]
 
 def print_superboss_header(player, floor, boss_name, extra_gimmick_line=""):
@@ -154,12 +129,10 @@ def print_superboss_header(player, floor, boss_name, extra_gimmick_line=""):
     if extra_gimmick_line:
         print(extra_gimmick_line)
     status_line = format_player_status_line(player)
-    # Check for Abyssal Tempo without cluttering active player debuffs/buffs
     tempo_str = " [Abyssal Tempo]" if player.get("abyss_triple_actions", 0) > 0 else ""
     print(f"\nYour HP: {player['current_hp']} {status_line}{tempo_str}".rstrip())
 
 def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0):
-    """Execute one standard attack action for a single enemy with modifiers."""
     msgs, died = tick_enemy_debuffs(enemy)
     for m in msgs:
         print(m)
@@ -175,11 +148,9 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         print(f"The {enemy['name']} is frozen solid and cannot act!")
         return "stunned"
 
-    # Apply armor multiplier (e.g., 0.7 for 30% armor penetration)
     block = p_con + (5 if defending else 0)
     block = int(block * armor_mult)
     
-    # Apply temporary strength bonus for this specific attack
     enemy_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus - block
     enemy_dmg = max(0, enemy_dmg)
     
@@ -207,32 +178,24 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                           player_action_override=None,
                           enemy_turn_hook=None,
                           post_round_hook=None):
-    """
-    Centralized combat loop for all Superbosses.
-    Handles dead-pruning, Abyssal Tempo validation, generic enemy phases, and end-of-round ticks.
-    """
-    
     while True:
         if player.get("abyss_tempo_pending", 0) > 0:
             pending = player.pop("abyss_tempo_pending")
             player["abyss_triple_actions"] = pending
             print(f"⚔️  The Abyss awakens! Triple actions for {pending} turns!")
-        # 1. Prune and Check Victory
         enemies[:] = [e for e in enemies if e["hp"] > 0]
         if not enemies:
             return "victory"
 
         p_str, p_con, p_dex = compute_player_stats(player)
 
-        # 2. Pre-Player Gimmick Phase (Phase transitions, spawns)
         if pre_player_hook:
             result = pre_player_hook(context, enemies)
             if result in ("dead", "victory"): return result
 
         if context.get("skip_player_turn"):
             context["skip_player_turn"] = False
-            continue # Skips straight to Step 4/5 (Enemy Phase)
-        # 3. Player Turn
+            continue
         if custom_hud_hook:
             custom_hud_hook(context, enemies)
         else:
@@ -256,7 +219,6 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if result in ("fled", "victory", "dead"):
             return result
 
-        # 4. Standardized Abyss Tempo (Triple Actions)
         def _hud_func():
             clear_screen()
             print_superboss_header(player, floor, boss_name, "")
@@ -273,7 +235,6 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if triple_result is not None:
             return triple_result
 
-        # 5. Enemy Turn Phase
         enemies[:] = [e for e in enemies if e["hp"] > 0]
         for enemy in enemies[:]:
             if enemy["hp"] <= 0: continue
@@ -303,7 +264,6 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         print("You have been slain.")
                         return "dead"
 
-        # 6. Post-Round & Maintenance
         if post_round_hook:
             if post_round_hook(context, enemies) == "dead": return "dead"
 
@@ -311,7 +271,6 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if not enemies:
             return "victory"
 
-        # Universal Abyss Fang Maintenance
         if player.get("abyss_fang_cooldown", 0) > 0:
             player["abyss_fang_cooldown"] -= 1
             if player["abyss_fang_cooldown"] == 0:
@@ -334,8 +293,6 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
 
 def _player_has_abyss_fang(player):
-    """Return the Abyss Fang item dict if it's in the player's inventory or equipped, else None."""
-    # Check currently equipped weapon slot
     equipment = player.get("equipped", {})
     if isinstance(equipment, dict):
         weapon = equipment.get("weapon")
@@ -346,36 +303,13 @@ def _player_has_abyss_fang(player):
 
 
 def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _action_override=None):
-    """
-    Handle a single player turn: Attack, Defend, Use item, or Flee.
-
-    Parameters
-    ----------
-    player   : player dict (mutated in place)
-    enemies  : list of live enemy dicts (mutated in place)
-    p_str/p_con/p_dex : effective player stats for this combat
-    on_kill  : optional callable(target, enemies) called after a kill via [A]ttack.
-               Lets superboss encounters hook in gimmick logic (e.g. floatsam stacks).
-    _action_override : if the caller already read the action input (e.g. to render a
-               custom HUD first), pass it here to skip the built-in prompt.
-
-    Returns
-    -------
-    ('continue', defending)  – normal turn completed; defending=True if [D] was chosen
-    ('fled',     False)      – player successfully fled or used an escape item
-    ('victory',  False)      – all enemies dead after item use
-    ('dead',     False)      – player died during item use
-    ('retry',    False)      – invalid input; caller should re-prompt the same turn
-    """
     if _action_override is None:
         status_str = format_player_status_line(player)
-        # Check for Abyssal Tempo without cluttering active player debuffs/buffs
         tempo_str = " [Abyssal Tempo]" if player.get("abyss_triple_actions", 0) > 0 else ""
         print(f"\nYour HP: {player['current_hp']} {status_str}{tempo_str}".rstrip())
         print("Enemies in the room:")
         for idx, e in enumerate(enemies):
             print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
-        # Show Abyss Fang option if the player carries it and it is not on cooldown
         abyss_fang = _player_has_abyss_fang(player)
         abyss_cd = player.get("abyss_fang_cooldown", 0)
         if abyss_fang and abyss_cd <= 0:
@@ -388,9 +322,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
     else:
         action = _action_override
 
-    # ----- ATTACK -----
+    # ----- ATTACK ----- (Modified to scale based on weapon attribute rule)
     if action == "a":
-        # Dread: 40% chance the attack falters before target selection
         if is_dreaded(player) and random.random() < 0.40:
             print("Dread grips your weapon arm — your strike goes wide! (Miss)")
             return "continue", False
@@ -411,10 +344,29 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         else:
             target = enemies[0]
 
-        dmg = random.randint(4, 10) + p_str - target["con_mod"]
+        # Calculate dynamic weapon attribute scaling
+        equipped_weapon = player.get("equipped", {}).get("weapon")
+        scaling_stat = equipped_weapon.get("scaling_stat", "Strength") if equipped_weapon else "Strength"
+        
+        if scaling_stat == "Strength":
+            scaling_val = p_str
+        elif scaling_stat == "Dexterity":
+            scaling_val = p_dex
+        else:
+            scaling_val = get_effective_attribute(player, scaling_stat)
+
+        dmg = random.randint(4, 10) + scaling_val - target["con_mod"]
         dmg = max(0, dmg)
         target["hp"] -= dmg
-        print(f"You strike {target['name']} for {dmg} damage!")
+        
+        # dynamic flavor verbs based on scaling stat
+        verb = "strike"
+        if scaling_stat == "Dexterity":
+            verb = "shoot" if "bow" in equipped_weapon.get("id", "") else "pierce"
+        elif scaling_stat == "Learning":
+            verb = "blast"
+
+        print(f"You {verb} {target['name']} for {dmg} damage!")
         if target["hp"] <= 0:
             print(f"You defeated {target['name']}!")
             if on_kill:
@@ -501,7 +453,6 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
                 else:
                     msg += "You are not cursed. "
             if item.get("cure_poison"):
-                # Remove poison debuff from player
                 before = len([d for d in player.get("active_debuffs", []) if d["type"] == "poison"])
                 player["active_debuffs"] = [d for d in player.get("active_debuffs", []) if d["type"] != "poison"]
                 after = len([d for d in player.get("active_debuffs", []) if d["type"] == "poison"])
@@ -558,7 +509,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
 
         return "continue", False
 
-    # ----- WIELD THE ABYSS (Abyss Fang special) -----
+    # ----- WIELD THE ABYSS -----
     elif action == "w":
         abyss_fang = _player_has_abyss_fang(player)
         if not abyss_fang:
@@ -569,7 +520,6 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
             print(f"The Abyss Fang is still recharging. ({abyss_cd} turn(s) remaining)")
             return "retry", False
 
-        # --- Flavor text ---
         print("\n" + "≈" * 55)
         print("The Abyss Fang SCREAMS. A void tears open across your")
         print("vision — stolen faces from the Slitcurrent's body flash")
@@ -578,13 +528,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         print("≈" * 55)
         input("Press Enter to unleash it...")
 
-        # --- Cost: lose 40% of max HP ---
         max_hp = player_max_hp(player)
         hp_cost = int(max_hp * 0.40)
         player["current_hp"] = max(1, player["current_hp"] - hp_cost)
         print(f"\nThe blade drinks deep — you lose {hp_cost} HP ({player['current_hp']}/{max_hp} remaining).")
 
-        # --- Strength buff: +8 STR for 4 turns ---
         str_bonus = 8
         player.setdefault("active_buffs", []).append({
             "stat": "Strength",
@@ -594,16 +542,14 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         })
         print(f"⚔️  Abyss-Tempered: Strength +{str_bonus} for 4 turns!")
 
-        # --- Triple action PENDING (activates next round) ---
-        player["abyss_tempo_pending"] = 4          # was: player["abyss_triple_actions"] = 4
+        player["abyss_tempo_pending"] = 4
         print("⚔️  The Abyss stirs... its full fury will awaken next round!")
-        # (Do NOT give triple actions immediately)
 
-        # --- Cooldown: 6 turns ---
         player["abyss_fang_cooldown"] = 6
         print("(The blade will recharge in 6 turns.)\n")
 
         return "continue", False
+
     # ----- FLEE -----
     elif action == "f":
         effective_player_dex = p_dex
@@ -627,7 +573,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         roll = random.randint(1, 20) + effective_player_dex
         difficulty = 10 + max_enemy_dex
         if is_dreaded(player):
-            difficulty += 4   # dread makes it much harder to turn and run
+            difficulty += 4
         if roll >= difficulty:
             print("You successfully flee from battle!")
             return "fled", False
@@ -637,18 +583,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
 
     return "retry", False
 
-def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex,
-                                 on_kill, print_hud_func):
-    """Handle Abyss Fang triple actions for any superboss.
-
-    Call this after a normal player turn returns 'continue'.  If triple actions
-    are active, it will run exactly two extra player turns (total three for the
-    round).  Returns:
-        None          – triple actions finished normally, continue the fight
-        'fled'        – player fled during extra action
-        'victory'     – all enemies died during extra action
-        'dead'        – player died during extra action
-    """
+def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, on_kill, print_hud_func):
     triple_remaining = player.get("abyss_triple_actions", 0)
     if triple_remaining <= 0:
         return None
@@ -674,14 +609,8 @@ def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex,
 
 
 def get_race_extra_logic(enemy):
-    """Return an extra_logic callable for this enemy based on its race, or None.
-
-    Each function signature must match: extra_logic(enemy, player, dmg) -> str | None
-    Only fires when dmg > 0 (the hit landed).
-    """
     race = ENEMIES[enemy["key"]]["race"]
 
-    # ----- Beast: Bleed on hit (35% chance) -----
     if race == "Beast":
         def beast_bleed(e, player, dmg):
             if dmg > 0 and random.random() < 0.35:
@@ -694,7 +623,6 @@ def get_race_extra_logic(enemy):
             return None
         return beast_bleed
 
-    # ----- Undead: Curse on hit (20% chance) — existing effect, now race-driven -----
     if race == "Undead":
         def undead_curse(e, player, dmg):
             if dmg > 0 and random.random() < 0.20:
@@ -706,7 +634,6 @@ def get_race_extra_logic(enemy):
             return None
         return undead_curse
 
-    # ----- Shadow: Dread on hit (30% chance) -----
     if race == "Shadow":
         def shadow_dread(e, player, dmg):
             if dmg > 0 and random.random() < 0.30:
@@ -716,7 +643,6 @@ def get_race_extra_logic(enemy):
             return None
         return shadow_dread
 
-    # ----- Demon: Weaken on hit (25% chance) -----
     if race == "Demon":
         def demon_weaken(e, player, dmg):
             if dmg > 0 and random.random() < 0.25:
@@ -728,7 +654,6 @@ def get_race_extra_logic(enemy):
             return None
         return demon_weaken
 
-    # ----- Vampire: Drain on hit (always, steals dmg//2 HP) -----
     if race == "Vampire":
         def vampire_drain(e, player, dmg):
             if dmg > 0:
@@ -738,7 +663,6 @@ def get_race_extra_logic(enemy):
             return None
         return vampire_drain
 
-    # ----- Fey: Silence on hit (25% chance) -----
     if race == "Fey":
         def fey_silence(e, player, dmg):
             if dmg > 0 and random.random() < 0.25:
@@ -748,7 +672,6 @@ def get_race_extra_logic(enemy):
             return None
         return fey_silence
 
-    # ----- Abomination: Weaken on hit (35% chance, stronger penalty) -----
     if race == "Abomination":
         def abomination_weaken(e, player, dmg):
             if dmg > 0 and random.random() < 0.35:
@@ -760,7 +683,6 @@ def get_race_extra_logic(enemy):
             return None
         return abomination_weaken
 
-    # ----- Giant: Weaken on hit (30% chance, strongest penalty) -----
     if race == "Giant":
         def giant_weaken(e, player, dmg):
             if dmg > 0 and random.random() < 0.30:
@@ -772,7 +694,6 @@ def get_race_extra_logic(enemy):
             return None
         return giant_weaken
 
-    # ----- Gnome (casters): Silence on hit (20% chance) -----
     if race == "Gnome":
         def gnome_silence(e, player, dmg):
             if dmg > 0 and random.random() < 0.20:
@@ -794,12 +715,10 @@ def get_race_extra_logic(enemy):
             return None
         return elemental_blind
 
-    # No special debuff for this race
     return None
 
 
 def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
-    # Always clear per-battle triple-action state on entry
     player["abyss_triple_actions"] = 0
 
     enemies = [enemy_stats(k, player) for k in enemy_keys]
@@ -808,13 +727,11 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
         print(f"- A {e['name']} appears! (HP: {e['hp']})")
 
     while True:
-        # --- Print room header if context provided ---
         if floor is not None and room_num is not None and total_rooms is not None:
             from utils import format_time
             header = f"Dungeon Floor {floor} - Room {room_num}/{total_rooms} | Time: {format_time(player.get('time_minutes', 0))}"
             print(header)
 
-        # --- Convert pending triple actions (from Abyss Fang) into active triple actions ---
         if player.get("abyss_tempo_pending", 0) > 0:
             pending = player.pop("abyss_tempo_pending")
             player["abyss_triple_actions"] = pending
@@ -827,7 +744,6 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
             player["abyss_triple_actions"] = 0
             return "victory"
 
-        # ----- NORMAL PLAYER ACTION (first action of the round) -----
         result, defending = handle_player_turn(player, enemies, p_str, p_con, p_dex)
         if result == "retry":
             continue
@@ -836,11 +752,9 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
             player["abyss_tempo_pending"] = 0
             return result
 
-        # ----- TRIPLE ACTION BONUS (if Abyss Fang buff is active) -----
         triple_remaining = player.get("abyss_triple_actions", 0)
         if triple_remaining > 0:
-            # Two extra actions this round (total 3 actions)
-            for extra_num in range(1, 3):   # gives exactly 2 extra actions
+            for extra_num in range(1, 3):
                 enemies = prune_dead(enemies)
                 if not enemies:
                     break
@@ -854,8 +768,6 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
                     player["abyss_tempo_pending"] = 0
                     return sub_result
 
-        # ----- ENEMY TURN -----
-        # (your existing enemy attack loop, unchanged)
         for enemy in enemies[:]:
             if enemy["hp"] <= 0:
                 continue
@@ -869,13 +781,11 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
         input("\nPress Enter to continue...")
         clear_screen()
 
-        # ----- END OF ROUND MAINTENANCE -----
         enemies = prune_dead(enemies)
         if not enemies:
             print("All enemies have been defeated!")
             return "victory"
 
-        # Tick Abyss Fang cooldown and triple-action counter
         if player.get("abyss_fang_cooldown", 0) > 0:
             player["abyss_fang_cooldown"] -= 1
             if player["abyss_fang_cooldown"] == 0:
@@ -885,7 +795,6 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
             if player["abyss_triple_actions"] == 0:
                 print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
 
-        # Tick player debuffs/buffs
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             print(m)

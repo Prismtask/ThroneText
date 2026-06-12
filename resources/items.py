@@ -21,15 +21,15 @@ ITEMS = {
     "elixir_of_vitality":   {"name": "Elixir of Vitality", "type": "consumable", "temp_stat": "Constitution","base_power": 3, "duration": 4},
     "elixir_of_mind":       {"name": "Elixir of Mind",     "type": "consumable", "temp_stat": "Learning","base_power": 3, "duration": 4},
 
-    # === Weapons ===
-    "short_sword":  {"name": "Short Sword", "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2}},
-    "long_sword":   {"name": "Long Sword",  "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3}},
-    "battle_axe":   {"name": "Battle Axe",  "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4}},
-    "greatsword":   {"name": "Greatsword",  "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 5}},
-    "dagger":       {"name": "Dagger",      "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3}},
-    "war_bow":      {"name": "War Bow",     "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4}},
-    "arcane_staff": {"name": "Arcane Staff","type": "equipment", "slot": "weapon", "base_mods": {"Learning": 4}},
-    "mace":         {"name": "Mace",        "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2, "Wisdom": 1}},
+    # === Weapons === (Added "scaling_stat" property)
+    "short_sword":  {"name": "Short Sword", "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2}, "scaling_stat": "Strength"},
+    "long_sword":   {"name": "Long Sword",  "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3}, "scaling_stat": "Strength"},
+    "battle_axe":   {"name": "Battle Axe",  "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4}, "scaling_stat": "Strength"},
+    "greatsword":   {"name": "Greatsword",  "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 5}, "scaling_stat": "Strength"},
+    "dagger":       {"name": "Dagger",      "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3}, "scaling_stat": "Dexterity"},
+    "war_bow":      {"name": "War Bow",     "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4}, "scaling_stat": "Dexterity"},
+    "arcane_staff": {"name": "Arcane Staff","type": "equipment", "slot": "weapon", "base_mods": {"Learning": 4}, "scaling_stat": "Learning"},
+    "mace":         {"name": "Mace",        "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2, "Wisdom": 1}, "scaling_stat": "Strength"},
 
     "abyss_fang": {
         "name": "Abyss Fang",
@@ -40,6 +40,7 @@ ITEMS = {
         "special": "dream_devour",       # signals the combat system to show [W]ield the Abyss
         "drop_source": "dream_devouring_slitcurrent",
         "drop_rarity": "legendary",
+        "scaling_stat": "Strength",
     },
 
     # === Armor ===
@@ -103,23 +104,18 @@ def build_item(item_id, rarity="common", enhance=0):
             for stat, val in base_mods.items()
         }
         
-        # Carry over custom properties (like special skills or unique flags)
-        for custom_key in ["special", "unique", "drop_source", "drop_rarity"]:
+        # Carry over custom properties (Added "scaling_stat" to this checklist)
+        for custom_key in ["special", "unique", "drop_source", "drop_rarity", "scaling_stat"]:
             if custom_key in base:
                 item[custom_key] = base[custom_key]
     elif base["type"] == "consumable":
-        # Safely use .get() so items without upfront power (like scrolls or armor buffs) don't crash
         item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
-        
-        # Ensure all unique consumable mechanics carry over into the active item
         for k in ["temp_stat", "duration", "heal_over_time", "defense_buff", "cure_curse"]:
             if k in base:
                 item[k] = base[k]
                 
     elif base["type"] == "utility":
         item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
-        
-        # Ensure all unique utility/combat mechanics carry over into the active item
         for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce"]:
             if k in base:
                 item[k] = base[k]
@@ -130,16 +126,13 @@ def build_item(item_id, rarity="common", enhance=0):
     return item
 
 def random_equipment(rarity=None):
-    """Generate a random equipment item (weapon, armor, or accessory)."""
     if rarity is None:
         rarity = random.choices(
             ["common", "uncommon", "rare", "epic", "legendary"],
             weights=[50, 30, 15, 4, 1]
         )[0]
-    # Filter equipment items (those with a 'slot' key)
     equip_ids = [item_id for item_id, data in ITEMS.items() if data.get("slot")]
     if not equip_ids:
-        # Fallback: create a generic placeholder
         return {
             "name": "Mysterious Relic",
             "type": "equipment",
