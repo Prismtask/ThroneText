@@ -128,6 +128,11 @@ def play_game(player):
             print("Game saved. Returning to menu.")
             break
 
+        if result == "fled":
+            # Player fled back to city – do not advance floor, just loop to city
+            # player["location"] is already set to origin_city inside explore_dungeon
+            continue
+
         if not result:  # Player died
             input("Press Enter to return to main menu...")
             break
@@ -138,7 +143,7 @@ def play_game(player):
         if player["floor"] > player["max_floor"]:
             player["max_floor"] = player["floor"]
         player["current_hp"] = player_max_hp(player)   # full heal after floor
-        save_game(player)                              # auto-save floor progress
+        save_game(player)                              # auto-save floor progress                           # auto-save floor progress
 
         # Post‑floor menu
         while True:

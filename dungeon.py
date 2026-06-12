@@ -263,8 +263,13 @@ def explore_dungeon(player):
                 break
 
             elif result == "fled":
-                print("You retreat from the room. The enemies remain.")
-                continue
+                print("You flee from the dungeon and return to the city.")
+                input("Press Enter to continue...")
+                # Go back to the city you came from
+                origin = player.get("origin_city", "solmere")
+                player["location"] = origin
+                # Do not clear the floor; next descent will restart this floor
+                return "fled"
             elif result == "dead":
                 print("Your adventure ends here...")
                 return False

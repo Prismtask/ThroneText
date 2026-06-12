@@ -575,7 +575,6 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, on_kill=None, _acti
         if is_dreaded(player):
             difficulty += 4
         if roll >= difficulty:
-            print("You successfully flee from battle!")
             return "fled", False
         else:
             print("You fail to escape and expose yourself!")

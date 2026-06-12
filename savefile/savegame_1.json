@@ -1,18 +1,18 @@
 {
   "name": "prism",
-  "race": "Elf",
+  "race": "Human",
   "class": "Rogue",
   "attributes": {
-    "Strength": 2,
-    "Constitution": 2,
-    "Dexterity": 9,
-    "Wisdom": 5,
-    "Learning": 2,
-    "Charisma": 5
+    "Strength": 6,
+    "Constitution": 4,
+    "Dexterity": 8,
+    "Wisdom": 1,
+    "Learning": 1,
+    "Charisma": 3
   },
   "floor": 1,
   "max_floor": 1,
-  "current_hp": 21,
+  "current_hp": 27,
   "level": 1,
   "exp": 0,
   "level_hp_bonus": 0,
@@ -28,6 +28,5 @@
   "gold": 100,
   "time_minutes": 480,
   "location": "solmere",
-  "superboss_seed": 488799,
-  "day": 1
+  "superboss_seed": 561427
 }
