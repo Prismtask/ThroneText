@@ -4,7 +4,7 @@ from resources.items import ITEMS, ITEM_RARITY
 from resources.dialogues import BLACKSMITH_DIALOGUES
 from inventory import add_item_to_inventory, apply_scroll_to_item
 from utils import clear_screen, advance_time, format_time
-from combat.generic import get_effective_attribute
+from combat.stats import get_effective_attribute
 from city_dialogue import service_dialogue
 
 def blacksmith_greeting(dialogues):

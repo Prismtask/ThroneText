@@ -8,15 +8,51 @@
     "Dexterity": 2,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 4
+    "Charisma": 5
   },
   "floor": 1,
   "max_floor": 1,
-  "current_hp": 30,
-  "level": 1,
-  "exp": 0,
-  "level_hp_bonus": 0,
-  "inventory": [],
+  "current_hp": 4,
+  "level": 2,
+  "exp": 17,
+  "level_hp_bonus": 4,
+  "inventory": [
+    {
+      "id": "grimoire",
+      "name": "Common Grimoire",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 5
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "scepter",
+      "name": "Common Scepter",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 3,
+        "Charisma": 2
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "healing_salve",
+      "name": "Uncommon Healing Salve",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 52,
+      "duration": 3,
+      "heal_over_time": 3
+    }
+  ],
   "equipped": {
     "weapon": null,
     "armor": null,
@@ -25,8 +61,259 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 100,
-  "time_minutes": 480,
-  "location": "solmere",
-  "superboss_seed": 839343
+  "gold": 195,
+  "time_minutes": 1150,
+  "location": "veilholt",
+  "superboss_seed": 839343,
+  "day": 1,
+  "shop_stock_skylume": [
+    [
+      {
+        "id": "ring_of_wisdom",
+        "name": "Rare Ring of Wisdom",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Wisdom": 5
+        }
+      },
+      195
+    ],
+    [
+      {
+        "id": "padded_armor",
+        "name": "Common Padded Armor",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 2
+        }
+      },
+      65
+    ],
+    [
+      {
+        "id": "ring_of_grace",
+        "name": "Uncommon Ring of Grace",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 2
+        }
+      },
+      97
+    ],
+    [
+      {
+        "id": "ice_bomb",
+        "name": "Uncommon Ice Bomb",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 36,
+        "status": "slow"
+      },
+      97
+    ],
+    [
+      {
+        "id": "bards_lute",
+        "name": "Common Bard's Lute",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Charisma": 4,
+          "Learning": 1
+        },
+        "scaling_stat": "Charisma"
+      },
+      65
+    ],
+    [
+      {
+        "id": "arcane_staff",
+        "name": "Rare Arcane Staff",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Learning": 6
+        },
+        "scaling_stat": "Learning"
+      },
+      195
+    ],
+    [
+      {
+        "id": "holy_staff",
+        "name": "Uncommon Holy Staff",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Wisdom": 5,
+          "Constitution": 1
+        },
+        "scaling_stat": "Wisdom"
+      },
+      97
+    ],
+    [
+      {
+        "id": "dagger",
+        "name": "Common Dagger",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 3
+        },
+        "scaling_stat": "Dexterity"
+      },
+      65
+    ],
+    [
+      {
+        "id": "holy_staff",
+        "name": "Uncommon Holy Staff",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Wisdom": 5,
+          "Constitution": 1
+        },
+        "scaling_stat": "Wisdom"
+      },
+      97
+    ]
+  ],
+  "last_shop_day_skylume": 1,
+  "shop_stock_veilholt": [
+    [
+      {
+        "id": "talisman_of_warding",
+        "name": "Common Talisman of Warding",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 2,
+          "Wisdom": 1
+        }
+      },
+      48
+    ],
+    [
+      {
+        "id": "ring_of_power",
+        "name": "Common Ring of Power",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Strength": 2
+        }
+      },
+      48
+    ],
+    [
+      {
+        "id": "earring_of_insight",
+        "name": "Uncommon Earring of Insight",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Learning": 2,
+          "Charisma": 1
+        }
+      },
+      72
+    ],
+    [
+      {
+        "id": "dagger",
+        "name": "Rare Dagger",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 5
+        },
+        "scaling_stat": "Dexterity"
+      },
+      144
+    ],
+    [
+      {
+        "id": "dragonhide",
+        "name": "Uncommon Dragonhide Armor",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 5,
+          "Dexterity": 2
+        }
+      },
+      72
+    ],
+    [
+      {
+        "id": "epic_scroll",
+        "name": "Common Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "common",
+        "enhance": 0,
+        "target_rarity": "common"
+      },
+      48
+    ],
+    [
+      {
+        "id": "flash_powder",
+        "name": "Uncommon Flash Powder",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 12,
+        "blind_enemy": true
+      },
+      72
+    ],
+    [
+      {
+        "id": "epic_scroll",
+        "name": "Rare Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "rare",
+        "enhance": 0,
+        "target_rarity": "rare"
+      },
+      144
+    ]
+  ],
+  "last_shop_day_veilholt": 1,
+  "dungeon_region": "forest",
+  "origin_city": "veilholt",
+  "abyss_triple_actions": 0
 }

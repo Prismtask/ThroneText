@@ -2,10 +2,10 @@
 
 import random
 from utils import clear_screen
-from combat.generic import (
-    enemy_stats, compute_player_stats, handle_player_turn,
-    format_enemy_status_line, print_superboss_header, superboss_triple_action_loop, superboss_combat_loop
-)
+from combat.stats import enemy_stats, compute_player_stats
+from combat.player_actions import handle_player_turn
+from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_engine import superboss_triple_action_loop, superboss_combat_loop
 from character import player_max_hp
 from combat.status_effects import (
     apply_poison, apply_curse,

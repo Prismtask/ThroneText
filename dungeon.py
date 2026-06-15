@@ -2,7 +2,8 @@ import random
 from resources.enemies import ENEMIES, BIOME_RACES
 from resources.items import build_item, ITEMS, ITEM_RARITY
 from resources.cities import CITIES
-from combat.generic import combat, player_con_mod
+from combat.combat_engine import combat
+from combat.stats import player_con_mod
 from combat.broodmother import combat_broodmother 
 from combat.slitcurrent import combat_slitcurrent
 from combat.sylvana import combat_sylvana
@@ -203,7 +204,7 @@ def explore_dungeon(player):
     # ----- NORMAL FLOORS (non‑milestone) -----
     print(f"\n=== DESCENDING INTO {region.upper()} DUNGEON – FLOOR {floor} ===")
     input("Press Enter to begin...")
-
+    clear_screen()
     rooms = generate_floor(floor, region=region)
     total_rooms = len(rooms)
 

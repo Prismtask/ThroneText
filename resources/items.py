@@ -157,6 +157,7 @@ ITEMS = {
     "curse_cleansing_scroll": {"name": "Scroll of Cleansing", "type": "consumable", "cure_curse": True},
     "antidote": {"name": "Antidote", "type": "consumable", "base_power": 0, "cure_poison": True},
     "armor_shatter_flask": { "name": "Armour Shatter Flask", "type": "utility", "base_power": 0, "expose_armor": 2,},
+    "recalled_scroll": {"name": "Scroll of Recall", "type": "utility", "fixed_flee": True},
 
     # === Scrolls ===
     "common_scroll":     {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "common"},
@@ -198,7 +199,8 @@ def build_item(item_id, rarity="common", enhance=0):
                 
     elif base["type"] == "utility":
         item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
-        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce"]:
+        # ADDED "fixed_flee" to the list below:
+        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce", "fixed_flee"]:
             if k in base:
                 item[k] = base[k]
                 

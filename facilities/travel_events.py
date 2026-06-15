@@ -21,7 +21,8 @@ import random
 from utils import advance_time, get_difficulty_multiplier_from_time
 from resources.enemies import ENEMIES, BIOME_RACES
 from resources.items import ITEMS, ITEM_RARITY, build_item
-from combat.generic import combat, get_effective_attribute
+from combat.combat_engine import combat
+from combat.stats import get_effective_attribute
 from leveling import gain_exp
 from character import player_max_hp
 

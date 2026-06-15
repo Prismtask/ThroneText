@@ -4,7 +4,7 @@ from resources.items import ITEMS, build_item, ITEM_RARITY
 from resources.cities import CITIES
 from utils import clear_screen, advance_time, format_time
 from inventory import add_item_to_inventory, get_total_equipment_mods
-from combat.generic import get_effective_attribute
+from combat.stats import get_effective_attribute
 from inventory_ui import display_player_status
 from city_dialogue import service_dialogue   # changed import
 

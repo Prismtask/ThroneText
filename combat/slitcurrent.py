@@ -1,6 +1,9 @@
 import random
 from utils import clear_screen
-from combat.generic import enemy_stats, print_superboss_header, format_enemy_status_line, superboss_combat_loop
+from combat.stats import enemy_stats, compute_player_stats
+from combat.player_actions import handle_player_turn
+from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_engine import superboss_triple_action_loop, superboss_combat_loop
 from combat.status_effects import apply_poison, apply_curse
 from resources.items import build_item
 
