@@ -218,7 +218,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if not enemies:
             return "victory"
 
-        p_str, p_con, p_dex = compute_player_stats(player)
+        p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
         # ── Phase transitions / round-start gimmicks ─────────────────────────
         if pre_player_hook:
@@ -318,7 +318,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         else input("Choose: ").strip().lower()
                     )
                     result, new_def = handle_player_turn(
-                        player, live_enemies, p_str, p_con, p_dex,
+                        player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                         on_kill=on_kill_fn,
                         _action_override=action,
                     )
@@ -710,7 +710,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
     return "retry", False
 
-def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, on_kill, print_hud_func):
+def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill, print_hud_func):
     triple_remaining = player.get("abyss_triple_actions", 0)
     if triple_remaining <= 0:
         return None
@@ -725,7 +725,7 @@ def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, on_kill, 
 
         action = input("Choose: ").strip().lower()
         result, _ = handle_player_turn(
-            player, enemies, p_str, p_con, p_dex,
+            player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
             on_kill=on_kill,
             _action_override=action,
         )
@@ -935,7 +935,7 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
             player["abyss_triple_actions"] = 0
             return "victory"
 
-        p_str, p_con, p_dex = compute_player_stats(player)
+        p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
         # ── Round header ─────────────────────────────────────────────────────
         clear_screen()
