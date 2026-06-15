@@ -1010,7 +1010,7 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
                 # re-rolling initiative.
                 while True:
                     result, new_def = handle_player_turn(
-                        player, live_enemies, p_str, p_con, p_dex
+                        player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                     )
                     if result != "retry":
                         break
