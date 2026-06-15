@@ -48,6 +48,36 @@ STORMHOLD_SHOPKEEPER_DIALOGUE = {
     ],
 }
 
+STORMHOLD_INNKEEPER_DIALOGUE = {
+    "enter": [
+        "Welcome to the Gilded Hearth, traveler. Rest your feet by the fire.",
+        "Solmere's best ale and warmest beds. What'll it be?",
+        "You look like you've crossed the great plains. Come, sit.",
+        "The capital can be overwhelming. Let me offer you a moment of peace.",
+    ],
+    "rest": [
+        "There now, a quick rest puts the spark back in your step.",
+        "Just a short while off your feet works wonders, eh?",
+        "Feel that warmth returning? Good.",
+        "Take your time. The road can wait.",
+    ],
+    "sleep": [
+        "Sleep deep, traveler. The city guard keeps watch tonight.",
+        "Eight hours in a real bed. You'll wake renewed, I promise.",
+        "Dream of open skies and full purses, friend.",
+        "No monsters here. Only soft pillows and quiet.",
+    ],
+    "leave": [
+        "Come back anytime. The hearth is always lit for you.",
+        "Safe journey through the capital's streets.",
+        "May the roads lead you back to my door.",
+        "Take care out there. Solmere can be... political.",
+    ],
+    "early_sleep": [
+        "The innkeeper chuckles: 'The capital's lanterns are still bright, friend. Rest a few hours if you must, but full slumber comes later.'",
+    ],
+}
+
 STORMHOLD_PORTMASTER_DIALOGUE = {
     "enter": [
         "Stormhold Naval Port. Civilians stay clear.",
