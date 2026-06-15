@@ -78,7 +78,7 @@ def visit_city(player, city_id=None):
         print(f"{option_num}. Travel to Another City")
         travel_option = str(option_num)
         option_num += 1
-        print(f"{option_num}. Return to Dungeon")
+        print(f"{option_num}. Enter the Dungeon")
         dungeon_option = str(option_num)
         option_num += 1
         print(f"{option_num}. Save & Return to Main Menu")
