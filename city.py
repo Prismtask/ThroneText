@@ -108,7 +108,7 @@ def visit_city(player, city_id=None):
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 30)
             
-            print(f"\n=== Enter Dungeon (Max Unlocked: Floor {player.get('max_floor', 1)}) ===")
+            print(f"\n=== Entering {city.get('name', 'solmere')} Dungeon (Max Unlocked: Floor {player.get('max_floor', 1)}) ===")
             while True:
                 try:
                     target = input(f"Enter floor to descend to (1-{player.get('max_floor', 1)}): ").strip()
