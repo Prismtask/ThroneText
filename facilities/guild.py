@@ -52,37 +52,55 @@ def generate_bounties(player, city_id):
         reward_gold = int(kills_needed * base_gold_per_kill * favor_mult * tightness)
         reward_favor = int((5 + random.randint(0, 10)) * (0.8 + tightness * 0.5))
         
-        # ---------- Difficulty calculation (1–20) ----------
-        # Level difference (enemy - player), clamped and mapped to 1–10
+        # ---------- 1. Rank Calculation (Based on Absolute Enemy Level) ----------
+        if enemy_level <= 3:
+            rank_name = "Bronze"
+        elif enemy_level <= 6:
+            rank_name = "Silver"
+        elif enemy_level <= 9:
+            rank_name = "Gold"
+        else:
+            rank_name = "Platinum"
+        
+        # ---------- 2. Star Difficulty Calculation (Relative 1–5 Scale) ----------
         level_diff = enemy_level - player_level
-        # Clamp to [-5, +10]
-        clamped_diff = max(-5, min(10, level_diff))
-        # Map to 1–10: -5 → 1, 0 → 5, +10 → 10
-        level_factor = int(5 + (clamped_diff * 0.5))
-        level_factor = max(1, min(10, level_factor))
         
-        # Kills factor: kills_needed / 5, max 5
-        kills_factor = min(5, kills_needed / 5)
+        # Base rating determined by target level vs player level
+        if level_diff < -1:
+            base_stars = 1      # Trivial relative to player
+        elif level_diff <= 1:
+            base_stars = 2      # Even match
+        elif level_diff <= 3:
+            base_stars = 3      # Challenging
+        else:
+            base_stars = 4      # Dangerous
+            
+        # Modifiers for heavy hunting loads and intense time pressure
+        kill_modifier = 1 if kills_needed >= 8 else 0
+        time_modifier = 1 if deadline <= 2 else 0
         
-        # Deadline factor: inverse of deadline (1–7) → 5 down to 0
-        deadline_factor = max(0, 5 - deadline)
+        stars = clamp(base_stars + kill_modifier + time_modifier, 1, 5)
         
-        total = level_factor + kills_factor + deadline_factor
-        difficulty = int(max(1, min(20, round(total))))
-        # ---------------------------------------------------
+        # Compile into a scannable string expression (e.g., "Gold ★★★")
+        difficulty_display = f"{rank_name} " + ("★" * stars)
+        # -------------------------------------------------------------------------
         
         bounties.append({
             "id": f"bounty_{random.randint(10000, 99999)}",
             "target_enemy": target,
             "target_name": enemy_data["name"],
             "required": kills_needed,
-            "difficulty": difficulty,   # Now 1–20
+            "difficulty": difficulty_display,   # Store the formatted dynamic rank + stars
             "days_given": deadline,
             "reward_gold": reward_gold,
             "reward_favor": reward_favor
         })
     
     return bounties
+
+def clamp(value, min_val, max_val):
+    """Helper to keep difficulty strictly within boundaries."""
+    return max(min_val, min(max_val, value))
 
 def _get_floor_pool(floor, biome, boss=False):
     """

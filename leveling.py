@@ -1,3 +1,4 @@
+import random
 from resources.constants import BASE_EXP_FOR_NEXT_LEVEL, EXP_SCALING
 from character import player_max_hp
 
@@ -24,8 +25,8 @@ def gain_exp(player, amount):
             idx = int(input("Enter number: ").strip()) - 1
             chosen = attrs[idx]
         except:
-            chosen = "Strength"
-            print("Invalid choice, defaulting to Strength.")
+            chosen = random.choice(attrs)
+            print(f"Invalid choice, {chosen} was chosen.")
         
         player["attributes"][chosen] += 1
         print(f"{chosen} increased to {player['attributes'][chosen]}.")

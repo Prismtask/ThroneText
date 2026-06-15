@@ -219,7 +219,6 @@ def explore_dungeon(player):
 
         while True:
             clear_screen()
-            print(f"Dungeon Floor {floor} - Room {i+1}/{total_rooms} | Time: {format_time(player.get('time_minutes', 480))}")
             result = combat(player, enemy_keys, floor=floor, room_num=i+1, total_rooms=total_rooms)
 
             if result == "victory":

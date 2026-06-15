@@ -1,22 +1,47 @@
 {
   "name": "prism",
   "race": "Human",
-  "class": "Rogue",
+  "class": "Warrior",
   "attributes": {
-    "Strength": 6,
-    "Constitution": 4,
-    "Dexterity": 8,
+    "Strength": 10,
+    "Constitution": 6,
+    "Dexterity": 4,
     "Wisdom": 1,
     "Learning": 1,
-    "Charisma": 3
+    "Charisma": 4
   },
-  "floor": 1,
-  "max_floor": 1,
-  "current_hp": 27,
-  "level": 1,
-  "exp": 0,
-  "level_hp_bonus": 0,
-  "inventory": [],
+  "floor": 2,
+  "max_floor": 2,
+  "current_hp": 45,
+  "level": 4,
+  "exp": 84,
+  "level_hp_bonus": 12,
+  "inventory": [
+    {
+      "id": "talisman_of_warding",
+      "name": "Common Talisman of Warding",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Common Arcane Staff",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 4
+      },
+      "scaling_stat": "Learning"
+    }
+  ],
   "equipped": {
     "weapon": null,
     "armor": null,
@@ -25,8 +50,134 @@
   "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 100,
-  "time_minutes": 480,
-  "location": "solmere",
-  "superboss_seed": 561427
+  "gold": 698,
+  "time_minutes": 1080,
+  "location": "skylume",
+  "superboss_seed": 220348,
+  "day": 1,
+  "dungeon_region": "temperate",
+  "origin_city": "solmere",
+  "abyss_triple_actions": 0,
+  "shop_stock_skylume": [
+    [
+      {
+        "id": "flash_powder",
+        "name": "Epic Flash Powder",
+        "type": "utility",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 12,
+        "blind_enemy": true
+      },
+      360
+    ],
+    [
+      {
+        "id": "poison_flask",
+        "name": "Common Poison Flask",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 18,
+        "duration": 3
+      },
+      60
+    ],
+    [
+      {
+        "id": "talisman_of_warding",
+        "name": "Rare Talisman of Warding",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 3,
+          "Wisdom": 1
+        }
+      },
+      180
+    ],
+    [
+      {
+        "id": "flash_powder",
+        "name": "Epic Flash Powder",
+        "type": "utility",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 0,
+        "escape_bonus": 12,
+        "blind_enemy": true
+      },
+      360
+    ],
+    [
+      {
+        "id": "arcane_staff",
+        "name": "Common Arcane Staff",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Learning": 4
+        },
+        "scaling_stat": "Learning"
+      },
+      60
+    ],
+    [
+      {
+        "id": "ice_bomb",
+        "name": "Common Ice Bomb",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 28,
+        "status": "slow"
+      },
+      60
+    ],
+    [
+      {
+        "id": "leather_armor",
+        "name": "Common Leather Armor",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Dexterity": 2,
+          "Constitution": 1
+        }
+      },
+      60
+    ],
+    [
+      {
+        "id": "legendary_scroll",
+        "name": "Uncommon Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "target_rarity": "uncommon"
+      },
+      90
+    ],
+    [
+      {
+        "id": "healing_salve",
+        "name": "Common Healing Salve",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 40,
+        "duration": 3,
+        "heal_over_time": 3
+      },
+      20
+    ]
+  ],
+  "last_shop_day_skylume": 1
 }

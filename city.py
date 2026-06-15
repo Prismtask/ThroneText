@@ -89,7 +89,9 @@ def visit_city(player, city_id=None):
         if choice in menu_options:
             service = menu_options[choice]
             SERVICE_HANDLERS[service](player, city_id)
-            if player.get("location") != city_id:   # <-- ADD THIS LINE
+            if player.get("current_hp", 1) <= 0:
+                return False               # ← killed during a service (e.g. sea voyage)
+            if player.get("location") != city_id:
                 return True  
         elif choice == inv_option:
             advance_time(player, 30)
@@ -97,7 +99,9 @@ def visit_city(player, city_id=None):
             manage_inventory_menu(player)
         elif choice == travel_option:
             from facilities.travel import travel_to_city
-            travel_to_city(player, city_id)
+            result = travel_to_city(player, city_id)
+            if result == "dead":
+                return False                 # ← propagate death to game loop
             if player.get("location") != city_id:
                 return True
         elif choice == dungeon_option:
