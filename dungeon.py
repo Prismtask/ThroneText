@@ -16,27 +16,30 @@ from leveling import gain_exp
 
 
 def get_random_enemy_key(floor, boss=False, region=None):
-    """Pick a random enemy suitable for the current floor."""
+    """Pick a random enemy suitable for the current floor (1‑40)."""
     pool = []
     allowed_races = None
     if region and region in BIOME_RACES:
         allowed_races = set(BIOME_RACES[region])
+
     for key, data in ENEMIES.items():
-        # skip super bosses on non‑milestone floors
+        # Skip superbosses on non‑milestone floors
         if floor % 10 != 0 and data.get("super_boss", False):
             continue
-        if boss and not data.get("boss", False):
+        if boss != data.get("boss", False):
             continue
+
+        # Level constraints
         if boss:
-            # TWEAK HERE IF YOU WANT BOSSES TO BE MORE SPREAD OUT TOO
+            # Boss: 1–3 levels above current floor
             if not (data["level"] >= floor + 1 and data["level"] <= floor + 3):
                 continue
         else:
-            # TWEAK HERE: Changed 'floor - 1' to 'floor - 6' to allow lower levels on higher floors
-            if not (data["level"] >= max(1, floor - 4) and data["level"] <= floor + 3):
+            # Normal: 6 levels below up to 3 levels above, but never below 1 or above 40
+            if not (data["level"] >= max(1, floor - 6) and data["level"] <= min(40, floor + 3)):
                 continue
 
-        # region filter
+        # Region filter
         if allowed_races:
             enemy_race = data.get("race")
             if enemy_race not in allowed_races:
@@ -44,14 +47,23 @@ def get_random_enemy_key(floor, boss=False, region=None):
 
         pool.append(key)
 
+    # Fallback – ignore region but keep level and boss/superboss constraints
     if not pool:
-        # fallback – ignore region but keep level constraints
-        # TWEAK HERE: Changed 'floor - 2' to 'floor - 6' to match the new spread
-        pool = [k for k, d in ENEMIES.items()
-            if (d.get("boss", False) == boss)
-            and (d["level"] >= max(1, floor - 6))
-            and not (floor % 10 != 0 and d.get("super_boss", False))]
+        for key, data in ENEMIES.items():
+            if floor % 10 != 0 and data.get("super_boss", False):
+                continue
+            if boss != data.get("boss", False):
+                continue
+            if boss:
+                if not (data["level"] >= floor + 1 and data["level"] <= floor + 3):
+                    continue
+            else:
+                if not (data["level"] >= max(1, floor - 6) and data["level"] <= min(40, floor + 3)):
+                    continue
+            pool.append(key)
+
     if not pool:
+        # Ultimate fallback – any enemy of the right boss type (should never happen)
         pool = [k for k, d in ENEMIES.items() if d.get("boss", False) == boss]
 
     return random.choice(pool)
@@ -77,20 +89,21 @@ def generate_floor(floor, region=None):
 
 
 def roll_drop(enemy_level):
-    """Improved drop rate and better rarity distribution."""
-    if random.random() > 0.50:          # ← Increased from 0.3 to 50%
+    if random.random() > 0.50:
         return None
 
     rarities = ["common", "uncommon", "rare", "epic", "legendary"]
-    
-    if enemy_level <= 3:
-        weights = [0.50, 0.35, 0.12, 0.03, 0.00]
-    elif enemy_level <= 6:
-        weights = [0.35, 0.40, 0.18, 0.06, 0.01]
-    elif enemy_level <= 9:
-        weights = [0.20, 0.35, 0.30, 0.12, 0.03]
-    else:
-        weights = [0.10, 0.25, 0.35, 0.20, 0.10]
+
+    if enemy_level <= 5:
+        weights = [0.45, 0.35, 0.15, 0.05, 0.00]
+    elif enemy_level <= 10:
+        weights = [0.30, 0.35, 0.22, 0.10, 0.03]
+    elif enemy_level <= 20:
+        weights = [0.20, 0.30, 0.28, 0.15, 0.07]
+    elif enemy_level <= 30:
+        weights = [0.10, 0.25, 0.30, 0.20, 0.15]
+    else:  # 31–40
+        weights = [0.05, 0.20, 0.25, 0.30, 0.20]
 
     rarity = random.choices(rarities, weights=weights)[0]
     item_id = random.choice(list(ITEMS.keys()))
