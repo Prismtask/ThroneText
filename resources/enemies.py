@@ -1813,6 +1813,20 @@ ENEMIES = {
         "mods": {"Dexterity": 7, "Charisma": 5, "Constitution": 3, "Strength": 2},
         "boss": True, "super_boss": True
     },
+    "heaven_banished_dragon_yinglong": {
+        "name": "Yinglong, Heaven-Banished Dragon",
+        "race": "Dragonkin",
+        "level": 45,
+        "base_hp": 600,
+        "mods": {
+            "Strength": 9,
+            "Constitution": 8,
+            "Dexterity": 5,
+            "Learning": 2,
+        },
+        "boss": True,
+        "super_boss": True,
+    },
 
     # ----- SUPERBOSS MINIONS (never spawn alone) -----
     "dream_floatsam": {
@@ -1827,5 +1841,24 @@ ENEMIES = {
     "vileheart_spiderling": {
         "name": "Vileheart Spiderling", "race": "Beast", "level": 15, "base_hp": 45,
         "mods": {"Dexterity": 5, "Strength": 2}, "boss": False, "super_boss": False
+    },
+     "yinglong_heaven_pillar": {
+        "name": "Heaven Pillar",
+        "race": "Construct",
+        "level": 45,
+        "base_hp": 40,
+        "mods": {},
+        "boss": False,
+        "super_boss": False,
+    },
+    
+    "yinglong_heaven_pinning_wedge": {
+        "name": "Heaven Pinning Wedge",
+        "race": "Construct",
+        "level": 45,
+        "base_hp": 30,
+        "mods": {},
+        "boss": False,
+        "super_boss": False,
     },
 }

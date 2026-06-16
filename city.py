@@ -61,7 +61,11 @@ def visit_city(player, city_id=None):
             status_effects.append("Cursed")
         # Create the extra field string if any status is active
         status_field = f" | Status: {' & '.join(status_effects)}" if status_effects else ""
-        print(f"Adventurer: {player['name']} | Floor: {player['floor']} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{status_field}")
+        # Show floor progress specific to this city's dungeon
+        _cf     = player.get("city_floors", {}).get(city_id, {})
+        _cur_fl = _cf.get("floor", player.get("floor", 1))
+        _max_fl = _cf.get("max_floor", player.get("max_floor", 1))
+        print(f"Adventurer: {player['name']} | {city['name']} Dungeon: {_cur_fl}/{_max_fl} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{status_field}")
 
         print("\nAvailable Services:")
         menu_options = {}
@@ -107,23 +111,47 @@ def visit_city(player, city_id=None):
         elif choice == dungeon_option:
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 30)
-            
-            print(f"\n=== Entering {city.get('name', 'solmere')} Dungeon (Max Unlocked: Floor {player.get('max_floor', 1)}) ===")
+
+            # ── Per-city floor progress ──────────────────────────────────────
+            # Migrate old saves that only have the global floor/max_floor keys.
+            if "city_floors" not in player:
+                player["city_floors"] = {}
+            if city_id not in player["city_floors"]:
+                # Bootstrap from legacy global values when this looks like the
+                # city the old save was last in; otherwise start fresh at 1.
+                if player.get("origin_city") == city_id or player.get("location") == city_id:
+                    player["city_floors"][city_id] = {
+                        "floor":     player.get("floor", 1),
+                        "max_floor": player.get("max_floor", 1),
+                    }
+                else:
+                    player["city_floors"][city_id] = {"floor": 1, "max_floor": 1}
+
+            city_prog    = player["city_floors"][city_id]
+            max_unlocked = city_prog["max_floor"]
+
+            print(f"\n=== Entering {city.get('name', city_id)} Dungeon "
+                  f"(Max Unlocked: Floor {max_unlocked}) ===")
             while True:
                 try:
-                    target = input(f"Enter floor to descend to (1-{player.get('max_floor', 1)}): ").strip()
+                    target = input(
+                        f"Enter floor to descend to (1-{max_unlocked}): "
+                    ).strip()
                     chosen_floor = int(target)
-                    if 1 <= chosen_floor <= player.get("max_floor", 1):
-                        player["floor"] = chosen_floor
+                    if 1 <= chosen_floor <= max_unlocked:
+                        # Write into city record AND the transient cursor used
+                        # by explore_dungeon().
+                        city_prog["floor"] = chosen_floor
+                        player["floor"]    = chosen_floor
                         break
                     else:
-                        print("Invalid floor tier.")
+                        print(f"Invalid floor. Choose between 1 and {max_unlocked}.")
                 except ValueError:
                     print("Please enter a valid floor number.")
 
             player["dungeon_region"] = city.get("biome", "temperate")
-            player["origin_city"] = city_id
-            player["location"] = "dungeon"
+            player["origin_city"]    = city_id
+            player["location"]       = "dungeon"
             return True
         elif choice == save_option:
             player["location"] = city_id

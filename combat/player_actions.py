@@ -1,25 +1,13 @@
 # player_actions.py – handling player actions during combat
 import random
 from character import player_max_hp
-from combat.status_effects import (
-    cure_curse, apply_poison, is_silenced, is_dreaded
-)
+from combat.status_effects import cure_curse, apply_poison, is_silenced, is_dreaded, format_player_status_line
+from combat.combat_ui import format_enemy_status_line, _player_has_abyss_fang
 
 
-def _player_has_abyss_fang(player):
-    equipment = player.get("equipped", {})
-    if isinstance(equipment, dict):
-        weapon = equipment.get("weapon")
-        if weapon and weapon.get("special") == "dream_devour":
-            return weapon
-    return None
 
-
-def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
-                       on_kill=None, _action_override=None):
+def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None, _action_override=None):
     if _action_override is None:
-        from combat_ui import format_enemy_status_line
-        from combat.status_effects import format_player_status_line
 
         status_str = format_player_status_line(player)
         tempo_str = " [Abyssal Tempo]" if player.get("abyss_triple_actions", 0) > 0 else ""
@@ -102,13 +90,13 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
     # ----- DEFEND -----
     elif action == "d":
-        print(f"{player['name']} braces for impact, raising {player['possessive']} guard.")
+        print(f"{player['name']} braces for impact, raising {player['name']} guard.")
         return "continue", True
 
     # ----- USE ITEM -----
     elif action == "u":
         if is_silenced(player):
-            print(f"{player['name']} is silenced! {player['possessive']} hands cannot reach {player['object_pronoun']}.")
+            print(f"{player['name']} is silenced! {player['name']} hands cannot reach the bag.")
             return "retry", False
 
         combat_inventory = [

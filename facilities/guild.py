@@ -150,8 +150,7 @@ def _view_enemy_intelligence(player, city_id):
 
     bounty_targets = {b["target_enemy"] for b in player.get("active_bounties", [])}
 
-    # Discover the highest floor that has any pool at all (cap search at 20)
-    MAX_FLOOR = 20
+    MAX_FLOOR = 40
     valid_floors = []
     for f in range(1, MAX_FLOOR + 1):
         if _get_floor_pool(f, biome, boss=False) or _get_floor_pool(f, biome, boss=True):

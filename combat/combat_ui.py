@@ -2,6 +2,13 @@
 from utils import clear_screen, format_time
 from combat.status_effects import format_player_status_line
 
+def _player_has_abyss_fang(player):
+    equipment = player.get("equipped", {})
+    if isinstance(equipment, dict):
+        weapon = equipment.get("weapon")
+        if weapon and weapon.get("special") == "dream_devour":
+            return weapon
+    return None
 
 def format_enemy_status_line(enemy, extra=""):
     statuses = []
@@ -39,4 +46,13 @@ def print_player_mini_hud(player, enemies):
     print("Enemies:")
     for idx, e in enumerate(enemies):
         print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
-    print("[A]ttack  [D]efend  [F]lee  [U]se item")
+
+    # --- Abyss Fang prompt logic (mirrors normal combat) ---
+    abyss_fang = _player_has_abyss_fang(player)
+    abyss_cd = player.get("abyss_fang_cooldown", 0)
+    if abyss_fang and abyss_cd <= 0:
+        print("[A]ttack  [D]efend  [F]lee  [U]se item  [W]ield the Abyss")
+    elif abyss_fang and abyss_cd > 0:
+        print(f"[A]ttack  [D]efend  [F]lee  [U]se item  (Abyss Fang recharging: {abyss_cd} turn(s))")
+    else:
+        print("[A]ttack  [D]efend  [F]lee  [U]se item")

@@ -45,9 +45,16 @@ def main_menu():
                 continue
 
             print(f"\nLoaded {player['name']} - {player['race']} {player['class']}")
-            print(f"Dungeon Floor: {player['floor']}  HP: {player['current_hp']}/{player_max_hp_display(player)}")
+            # Show per-city floor progress on load screen
+            loc = player.get("location", "dungeon")
+            _cf_city = player.get("origin_city") or (loc if loc != "dungeon" else "solmere")
+            _cf = player.get("city_floors", {}).get(_cf_city, {})
+            _cur = _cf.get("floor", player.get("floor", 1))
+            _max = _cf.get("max_floor", player.get("max_floor", 1))
+            print(f"HP: {player['current_hp']}/{player_max_hp_display(player)} | "
+                  f"Floor: {_cur} (max {_max}) in {_cf_city.title()}")
             print(f"Time: {format_time(player.get('time_minutes', 480))}")
-            print(f"Location: {player.get('location', 'dungeon')}")
+            print(f"Location: {loc}")
             input("Press Enter to continue...")
 
             play_game(player)
@@ -138,17 +145,20 @@ def play_game(player):
             break
 
         # Floor cleared
-        print(f"\nYou have successfully cleared Floor {player['floor']}!\n")
-        player["floor"] += 1
-        if player["floor"] > player["max_floor"]:
-            player["max_floor"] = player["floor"]
-        player["current_hp"] = player_max_hp(player)   # full heal after floor
-        save_game(player)                              # auto-save floor progress                           # auto-save floor progress
+        # NOTE: explore_dungeon() already advanced player["floor"] and
+        # city_floors[city]["floor/max_floor"] before returning True,
+        # so we must NOT increment here again.
+        cleared_floor = player["floor"] - 1   # floor that was just beaten
+        print(f"\nYou have successfully cleared Floor {cleared_floor}!\n")
+        # Full heal already done inside explore_dungeon; save was also called.
+        # Re-save here as well in case post-floor logic drifts.
+        player["current_hp"] = player_max_hp(player)
+        save_game(player)
 
         # Post‑floor menu
         while True:
             clear_screen()
-            print(f"=== FLOOR {player['floor'] - 1} CLEARED ===")
+            print(f"=== FLOOR {cleared_floor} CLEARED ===")
             print(f"Now entering Floor {player['floor']}")
             print(f"HP: {player['current_hp']}/{player_max_hp(player)}")
             print(f"Gold: {player.get('gold', 0)}")
@@ -164,8 +174,10 @@ def play_game(player):
                 break
 
             elif choice == '2':
-                # Go to city
-                city_id = player.get("location") if player.get("location") not in ["dungeon", None] else "solmere"
+                # Go back to the city this dungeon belongs to
+                city_id = player.get("origin_city") or player.get("location")
+                if city_id in (None, "dungeon"):
+                    city_id = "solmere"
                 player["location"] = city_id
                 if not visit_city(player, city_id):
                     return   # player saved & quit from within city

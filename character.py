@@ -130,8 +130,15 @@ def create_character():
         "race": RACES[race_key]["name"],
         "class": CLASSES[class_key]["name"],
         "attributes": final_attrs,
+        # Per-city dungeon progress: { city_id: {"floor": N, "max_floor": N} }
+        # "floor" = the floor the player will descend to next in that city's dungeon.
+        # "max_floor" = the highest floor ever cleared (unlock ceiling for floor select).
+        "city_floors": {
+            "solmere": {"floor": 1, "max_floor": 1}
+        },
+        # "floor" is kept as a transient cursor while inside a dungeon run.
+        # It is always synced back to city_floors on exit.
         "floor": 1,
-        "max_floor": 1,
         "current_hp": player_max_hp(final_attrs),
         "level": 1,
         "exp": 0,

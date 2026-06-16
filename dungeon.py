@@ -8,6 +8,7 @@ from combat.broodmother import combat_broodmother
 from combat.slitcurrent import combat_slitcurrent
 from combat.sylvana import combat_sylvana
 from combat.ignis import combat_ignis
+from combat.yinglong import combat_yinglong
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
@@ -147,13 +148,33 @@ def add_gold_drop(player, enemy_key):
     print(f"You found {gold} gold on the enemy!")
 
 
+def _ensure_city_floors(player, city_id):
+    """Guarantee city_floors[city_id] exists, migrating legacy saves if needed."""
+    if "city_floors" not in player:
+        player["city_floors"] = {}
+    if city_id not in player["city_floors"]:
+        # Old save: inherit the global floor/max_floor for the origin city only.
+        if player.get("origin_city") == city_id or player.get("location") in (city_id, "dungeon"):
+            player["city_floors"][city_id] = {
+                "floor":     player.get("floor", 1),
+                "max_floor": player.get("max_floor", 1),
+            }
+        else:
+            player["city_floors"][city_id] = {"floor": 1, "max_floor": 1}
+
+
 def explore_dungeon(player):
     """Main dungeon loop. Clears one floor. Returns False if player dies."""
+    # ── Resolve origin city and ensure per-city progress record exists ─────
+    origin_city = player.get("origin_city", "solmere")
+    _ensure_city_floors(player, origin_city)
+    city_prog = player["city_floors"][origin_city]
+
+    # player["floor"] is the transient cursor set by city.py before entry;
+    # treat it as authoritative for this run.
     floor = player["floor"]
 
     # ----- Determine current dungeon region -----
-    # If we already have a region stored, use it (e.g. after loading)
-    # Otherwise, derive from the city the player is in (if any)
     if "dungeon_region" not in player or player["dungeon_region"] is None:
         current_city = player.get("location")
         if current_city and current_city != "dungeon":
@@ -166,12 +187,10 @@ def explore_dungeon(player):
     
     # ----- SUPER BOSS ENCOUNTER (every 10th floor) -----
     if floor % 10 == 0:
-        if "superboss_seed" not in player:
-            player["superboss_seed"] = random.randint(1, 999999)
         print("\n" + "="*50)
         print("⚠️  A dark, suffocating energy fills the air...")
         rng = random.Random(player["superboss_seed"] + floor)
-        tier = rng.randint(0, 3)
+        tier = rng.randint(0, 4)
         if tier == 0:
             print("The walls are covered in dense, toxic cobwebs.")
         elif tier == 1:
@@ -180,6 +199,8 @@ def explore_dungeon(player):
             print("Every surface becomes a mirror. You see a thousand versions of yourself — all afraid.")
         elif tier == 3:
             print("The air shimmers with heat haze. The stone floor has begun to glow.")
+        elif tier == 4:
+            print("The sky above the dungeon cracks open. Something vast descends.")
         print("You have stumbled directly into a SUPER BOSS ARENA!")
         print("="*50)
         input("Press Enter to face the horror...")
@@ -195,6 +216,8 @@ def explore_dungeon(player):
                 result = combat_sylvana(player)
             elif tier == 3:
                 result = combat_ignis(player)
+            elif tier == 4:                          # ← NEW
+                result = combat_yinglong(player)
             if result == "victory":
                 # Reward
                 super_boss_exp = 500 + (floor * 50)
@@ -202,11 +225,19 @@ def explore_dungeon(player):
                 player["gold"] = player.get("gold", 0) + super_boss_gold
                 print(f"\n Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
                 gain_exp(player, super_boss_exp)
-                
-                # Full heal and save (outer loop will increment floor and heal again, but that's fine)
+
+                # Sync per-city progress — superboss floor counts as cleared.
+                # main.py's play_game() will increment floor after we return True,
+                # so we advance max_floor here to reflect the upcoming floor+1.
+                next_floor = floor + 1
+                city_prog["floor"]     = next_floor
+                city_prog["max_floor"] = max(city_prog["max_floor"], next_floor)
+                player["floor"]        = next_floor
+
+                # Full heal and save
                 player["current_hp"] = player_max_hp(player)
                 save_game(player)
-                return True   # floor cleared, outer loop will handle floor+1 and full heal
+                return True   # floor cleared, outer loop will handle full heal
             elif result == "fled":
                 print("You cannot flee from a milestone Super Boss!")
                 input("Press Enter to continue the fight...")
@@ -300,9 +331,18 @@ def explore_dungeon(player):
             del player["training_buff"]
             print("\nYour barracks training exhaustion catches up to you. The strength buff has worn off.")
 
+    # ── Sync per-city floor progress ────────────────────────────────────────
+    # Advance the city record to the next floor.  main.py will also do
+    # player["floor"] += 1, but we mirror it here so city_prog stays in sync
+    # whether control returns through main.py or any other path.
+    next_floor = floor + 1
+    city_prog["floor"]     = next_floor
+    city_prog["max_floor"] = max(city_prog["max_floor"], next_floor)
+    player["floor"]        = next_floor
+
     # Advance time by 1 hour for floor completion
     current_time = advance_time(player, 60)
-    
+
     print(f"Current time: {current_time} | Gold: {player.get('gold', 0)}")
 
     player["current_hp"] = player_max_hp(player)
