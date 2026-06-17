@@ -1,0 +1,168 @@
+Vampire:
+  vampire_bat_swarm:
+    name: Bat Swarm
+    race: Vampire
+    level: 8
+    base_hp: 32
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  vampire_fledgling:
+    name: Vampire Fledgling
+    race: Vampire
+    level: 8
+    base_hp: 50
+    mods:
+      Dexterity: 2
+      Charisma: 1
+    boss: false
+    super_boss: false
+  vampire_spawn:
+    name: Vampire Spawn
+    race: Vampire
+    level: 8
+    base_hp: 45
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  blood_vampire:
+    name: Blood Vampire
+    race: Vampire
+    level: 9
+    base_hp: 52
+    mods:
+      Dexterity: 2
+      Charisma: 2
+    boss: false
+    super_boss: false
+  vampire_noble_brat:
+    name: Vampire Noble Brat
+    race: Vampire
+    level: 10
+    base_hp: 46
+    mods:
+      Dexterity: 2
+      Charisma: 1
+    boss: false
+    super_boss: false
+  vampire_bloodknight:
+    name: Vampire Bloodknight
+    race: Vampire
+    level: 11
+    base_hp: 62
+    mods:
+      Dexterity: 3
+      Strength: 1
+    boss: false
+    super_boss: false
+  ancient_vampire:
+    name: Ancient Vampire
+    race: Vampire
+    level: 12
+    base_hp: 75
+    mods:
+      Dexterity: 3
+      Charisma: 2
+    boss: false
+    super_boss: false
+  vampire_blood_scribe:
+    name: Blood Scribe
+    race: Vampire
+    level: 13
+    base_hp: 68
+    mods:
+      Learning: 2
+      Charisma: 1
+    boss: false
+    super_boss: false
+  vampire_mist_walker:
+    name: Mist Walker
+    race: Vampire
+    level: 14
+    base_hp: 72
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  vampire_lord:
+    name: Vampire Lord
+    race: Vampire
+    level: 15
+    base_hp: 102
+    mods:
+      Dexterity: 4
+      Charisma: 3
+    boss: true
+    super_boss: false
+  vampire_night_claw:
+    name: Night Claw
+    race: Vampire
+    level: 16
+    base_hp: 82
+    mods:
+      Dexterity: 3
+      Strength: 1
+    boss: false
+    super_boss: false
+  vampire_nosferatu_elder:
+    name: Nosferatu Elder
+    race: Vampire
+    level: 17
+    base_hp: 88
+    mods:
+      Dexterity: 3
+      Constitution: 2
+    boss: false
+    super_boss: false
+  vampire_dread_visor:
+    name: Dread Visor
+    race: Vampire
+    level: 19
+    base_hp: 98
+    mods:
+      Strength: 2
+      Charisma: 2
+    boss: false
+    super_boss: false
+  nosferatu_stalker:
+    name: Nosferatu Stalker
+    race: Vampire
+    level: 20
+    base_hp: 135
+    mods:
+      Dexterity: 5
+      Strength: 2
+    boss: false
+    super_boss: false
+  vampire_blood_duchess:
+    name: Blood Duchess
+    race: Vampire
+    level: 20
+    base_hp: 108
+    mods:
+      Charisma: 4
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  vampire_nocturnal_king:
+    name: Nocturnal King
+    race: Vampire
+    level: 20
+    base_hp: 145
+    mods:
+      Dexterity: 4
+      Charisma: 4
+    boss: true
+    super_boss: false
+  vampire_crimson_lord:
+    name: Crimson Lord
+    race: Vampire
+    level: 23
+    base_hp: 122
+    mods:
+      Strength: 3
+      Charisma: 3
+    boss: false
+    super_boss: false

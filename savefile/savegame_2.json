@@ -1,0 +1,36 @@
+{
+  "name": "prismtask",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 12,
+    "Constitution": 8,
+    "Dexterity": 1,
+    "Wisdom": 1,
+    "Learning": 1,
+    "Charisma": 0
+  },
+  "city_floors": {
+    "solmere": {
+      "floor": 1,
+      "max_floor": 1
+    }
+  },
+  "current_hp": 39,
+  "level": 1,
+  "exp": 0,
+  "level_hp_bonus": 0,
+  "inventory": [],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 2,
+  "dungeon_time": 0,
+  "gold": 100,
+  "time_minutes": 480,
+  "location": "solmere",
+  "superboss_seed": 219153
+}

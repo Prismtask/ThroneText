@@ -1,0 +1,265 @@
+Elemental:
+  elemental_spark:
+    name: Spark
+    race: Elemental
+    level: 1
+    base_hp: 11
+    mods:
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  magical_rune_dust:
+    name: Rune Dust
+    race: Elemental
+    level: 2
+    base_hp: 14
+    mods:
+      Learning: 2
+    boss: false
+    super_boss: false
+  elemental_pebble:
+    name: Pebble
+    race: Elemental
+    level: 3
+    base_hp: 18
+    mods:
+      Constitution: 2
+    boss: false
+    super_boss: false
+  elemental_sand_whirl:
+    name: Sand Whirl
+    race: Elemental
+    level: 3
+    base_hp: 16
+    mods:
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  elemental_mud_geyser:
+    name: Mud Geyser
+    race: Elemental
+    level: 4
+    base_hp: 24
+    mods:
+      Constitution: 2
+    boss: false
+    super_boss: false
+  fire_elemental:
+    name: Fire Elemental
+    race: Elemental
+    level: 5
+    base_hp: 37
+    mods:
+      Constitution: 2
+    boss: false
+    super_boss: false
+  ice_elemental:
+    name: Ice Elemental
+    race: Elemental
+    level: 5
+    base_hp: 35
+    mods:
+      Constitution: 3
+    boss: false
+    super_boss: false
+  tide_caller:
+    name: Tide Caller
+    race: Elemental
+    level: 5
+    base_hp: 26
+    mods:
+      Constitution: 2
+      Learning: 1
+    boss: true
+    super_boss: false
+  elemental_steam_vent:
+    name: Steam Vent
+    race: Elemental
+    level: 6
+    base_hp: 32
+    mods:
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  elemental_crystal_shard:
+    name: Crystal Shard
+    race: Elemental
+    level: 7
+    base_hp: 38
+    mods:
+      Learning: 2
+      Constitution: 1
+    boss: false
+    super_boss: false
+  wind_elemental:
+    name: Wind Elemental
+    race: Elemental
+    level: 7
+    base_hp: 55
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  earth_elemental:
+    name: Earth Elemental
+    race: Elemental
+    level: 8
+    base_hp: 75
+    mods:
+      Constitution: 4
+    boss: false
+    super_boss: false
+  flame_salamander:
+    name: Flame Salamander
+    race: Elemental
+    level: 8
+    base_hp: 56
+    mods:
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  thunder_elemental:
+    name: Thunder Elemental
+    race: Elemental
+    level: 9
+    base_hp: 60
+    mods:
+      Constitution: 2
+    boss: false
+    super_boss: false
+  arcane_elemental:
+    name: Arcane Elemental
+    race: Elemental
+    level: 10
+    base_hp: 68
+    mods:
+      Learning: 4
+    boss: false
+    super_boss: false
+  elemental_ash_wraith:
+    name: Ash Wraith
+    race: Elemental
+    level: 11
+    base_hp: 58
+    mods:
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  storm_elemental:
+    name: Storm Elemental
+    race: Elemental
+    level: 12
+    base_hp: 95
+    mods:
+      Learning: 3
+      Constitution: 2
+    boss: true
+    super_boss: false
+  magma_elemental:
+    name: Magma Elemental
+    race: Elemental
+    level: 13
+    base_hp: 82
+    mods:
+      Constitution: 4
+      Strength: 1
+    boss: false
+    super_boss: false
+  crystal_golem_elemental:
+    name: Crystal Golem
+    race: Elemental
+    level: 14
+    base_hp: 110
+    mods:
+      Constitution: 4
+    boss: false
+    super_boss: false
+  void_elemental:
+    name: Void Elemental
+    race: Elemental
+    level: 14
+    base_hp: 88
+    mods:
+      Constitution: 3
+      Learning: 3
+    boss: false
+    super_boss: false
+  elemental_cataclysm:
+    name: Elemental Cataclysm
+    race: Elemental
+    level: 15
+    base_hp: 100
+    mods:
+      Constitution: 4
+      Learning: 3
+    boss: true
+    super_boss: false
+  elemental_lightning_orb:
+    name: Lightning Orb
+    race: Elemental
+    level: 16
+    base_hp: 86
+    mods:
+      Dexterity: 3
+      Learning: 1
+    boss: false
+    super_boss: false
+  elemental_plasma_sphere:
+    name: Plasma Sphere
+    race: Elemental
+    level: 17
+    base_hp: 92
+    mods:
+      Constitution: 2
+      Learning: 2
+    boss: false
+    super_boss: false
+  primordial_elemental:
+    name: Primordial Elemental
+    race: Elemental
+    level: 17
+    base_hp: 130
+    mods:
+      Constitution: 5
+      Learning: 4
+    boss: true
+    super_boss: false
+  elemental_azure_whirl:
+    name: Azure Whirl
+    race: Elemental
+    level: 18
+    base_hp: 98
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  plasma_elemental:
+    name: Plasma Elemental
+    race: Elemental
+    level: 18
+    base_hp: 120
+    mods:
+      Constitution: 3
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  elemental_magma_behemoth:
+    name: Magma Behemoth
+    race: Elemental
+    level: 19
+    base_hp: 108
+    mods:
+      Constitution: 4
+      Strength: 1
+    boss: false
+    super_boss: false
+  void_walker:
+    name: Void Walker
+    race: Elemental
+    level: 20
+    base_hp: 130
+    mods:
+      Constitution: 4
+      Learning: 3
+    boss: false
+    super_boss: false

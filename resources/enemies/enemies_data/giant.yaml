@@ -1,0 +1,245 @@
+Giant:
+  giant_tiny_troll:
+    name: Tiny Troll
+    race: Giant
+    level: 1
+    base_hp: 20
+    mods:
+      Strength: 1
+    boss: false
+    super_boss: false
+  mountain_rock_thrower:
+    name: Rock Thrower
+    race: Giant
+    level: 4
+    base_hp: 34
+    mods:
+      Strength: 2
+    boss: false
+    super_boss: false
+  mountain_troll:
+    name: Mountain Troll
+    race: Giant
+    level: 5
+    base_hp: 38
+    mods:
+      Strength: 2
+      Constitution: 2
+    boss: true
+    super_boss: false
+  giant_ogre_thug:
+    name: Ogre Thug
+    race: Giant
+    level: 6
+    base_hp: 48
+    mods:
+      Strength: 2
+    boss: false
+    super_boss: false
+  troll_regenerator:
+    name: Troll Regenerator
+    race: Giant
+    level: 7
+    base_hp: 68
+    mods:
+      Constitution: 3
+    boss: false
+    super_boss: false
+  hill_giant:
+    name: Hill Giant
+    race: Giant
+    level: 8
+    base_hp: 75
+    mods:
+      Strength: 3
+    boss: false
+    super_boss: false
+  giant_cyclops:
+    name: Cyclops
+    race: Giant
+    level: 9
+    base_hp: 68
+    mods:
+      Strength: 3
+      Constitution: 1
+    boss: false
+    super_boss: false
+  giant_frost_giant_brute:
+    name: Frost Giant Brute
+    race: Giant
+    level: 10
+    base_hp: 78
+    mods:
+      Strength: 3
+      Constitution: 2
+    boss: false
+    super_boss: false
+  storm_giant:
+    name: Storm Giant
+    race: Giant
+    level: 11
+    base_hp: 98
+    mods:
+      Strength: 4
+      Constitution: 2
+    boss: false
+    super_boss: false
+  giant_fire_giant_forgemaster:
+    name: Fire Giant Forgemaster
+    race: Giant
+    level: 12
+    base_hp: 88
+    mods:
+      Strength: 4
+      Constitution: 1
+    boss: false
+    super_boss: false
+  mountain_giant:
+    name: Mountain Giant
+    race: Giant
+    level: 13
+    base_hp: 135
+    mods:
+      Strength: 5
+    boss: true
+    super_boss: false
+  giant_cloud_giant_thunderer:
+    name: Cloud Giant Thunderer
+    race: Giant
+    level: 14
+    base_hp: 102
+    mods:
+      Strength: 3
+      Constitution: 2
+    boss: false
+    super_boss: false
+  titanic_behemoth:
+    name: Titanic Behemoth
+    race: Giant
+    level: 15
+    base_hp: 120
+    mods:
+      Strength: 5
+      Constitution: 3
+    boss: false
+    super_boss: false
+  giant_mountain_behemoth:
+    name: Mountain Behemoth
+    race: Giant
+    level: 16
+    base_hp: 118
+    mods:
+      Strength: 4
+      Constitution: 3
+    boss: false
+    super_boss: false
+  giant_elder_cyclops:
+    name: Elder Cyclops
+    race: Giant
+    level: 17
+    base_hp: 112
+    mods:
+      Strength: 4
+      Constitution: 2
+    boss: false
+    super_boss: false
+  frost_giant:
+    name: Frost Giant
+    race: Giant
+    level: 19
+    base_hp: 170
+    mods:
+      Strength: 5
+      Constitution: 3
+    boss: false
+    super_boss: false
+  giant_crag_titan:
+    name: Crag Titan
+    race: Giant
+    level: 19
+    base_hp: 128
+    mods:
+      Strength: 5
+      Constitution: 2
+    boss: false
+    super_boss: false
+  giant_doom_giant:
+    name: Doom Giant
+    race: Giant
+    level: 22
+    base_hp: 145
+    mods:
+      Strength: 5
+      Constitution: 3
+    boss: false
+    super_boss: false
+  giant_king_of_the_peaks:
+    name: King of the Peaks
+    race: Giant
+    level: 22
+    base_hp: 210
+    mods:
+      Strength: 6
+      Constitution: 4
+    boss: true
+    super_boss: false
+  giant_thunder_titan:
+    name: Thunder Titan
+    race: Giant
+    level: 26
+    base_hp: 168
+    mods:
+      Strength: 5
+      Constitution: 3
+    boss: false
+    super_boss: false
+  fire_giant_forge_master:
+    name: Fire Giant Forge Master
+    race: Giant
+    level: 28
+    base_hp: 240
+    mods:
+      Strength: 6
+      Constitution: 5
+    boss: false
+    super_boss: false
+  giant_supreme_titan:
+    name: Supreme Titan
+    race: Giant
+    level: 32
+    base_hp: 240
+    mods:
+      Strength: 6
+      Constitution: 4
+    boss: false
+    super_boss: false
+  ancient_cyclops:
+    name: Ancient Cyclops
+    race: Giant
+    level: 35
+    base_hp: 310
+    mods:
+      Strength: 7
+      Constitution: 5
+    boss: false
+    super_boss: false
+  elder_titan:
+    name: Elder Titan
+    race: Giant
+    level: 36
+    base_hp: 260
+    mods:
+      Strength: 6
+      Constitution: 4
+    boss: false
+    super_boss: false
+  giant_world_carrier:
+    name: World Carrier
+    race: Giant
+    level: 38
+    base_hp: 310
+    mods:
+      Strength: 7
+      Constitution: 5
+    boss: false
+    super_boss: false

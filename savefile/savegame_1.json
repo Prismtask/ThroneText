@@ -1,0 +1,88 @@
+{
+  "name": "prisk",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 11,
+    "Constitution": 4,
+    "Dexterity": 3,
+    "Wisdom": 1,
+    "Learning": 3,
+    "Charisma": 5
+  },
+  "city_floors": {
+    "solmere": {
+      "floor": 2,
+      "max_floor": 2
+    }
+  },
+  "floor": 2,
+  "current_hp": 43,
+  "level": 5,
+  "exp": 11,
+  "level_hp_bonus": 16,
+  "inventory": [
+    {
+      "id": "superior_healing_potion",
+      "name": "Uncommon Superior Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 234
+    },
+    {
+      "id": "brooch_of_valor",
+      "name": "Uncommon Brooch of Valor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 2,
+        "Strength": 2
+      }
+    },
+    {
+      "id": "mace",
+      "name": "Rare Mace",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 3,
+        "Wisdom": 1
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "chainmail",
+      "name": "Uncommon Chainmail",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 3
+      }
+    }
+  ],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 1,
+  "dungeon_time": 0,
+  "gold": 744,
+  "time_minutes": 1050,
+  "location": "skylume",
+  "superboss_seed": 607193,
+  "day": 1,
+  "dungeon_region": "temperate",
+  "origin_city": "solmere",
+  "abyss_triple_actions": 0,
+  "active_debuffs": [],
+  "blinded": false
+}

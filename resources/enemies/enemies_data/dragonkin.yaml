@@ -1,0 +1,243 @@
+Dragonkin:
+  young_dragonkin:
+    name: Young Dragonkin
+    race: Dragonkin
+    level: 7
+    base_hp: 50
+    mods:
+      Strength: 3
+    boss: false
+    super_boss: false
+  elder_dragonkin:
+    name: Elder Dragonkin
+    race: Dragonkin
+    level: 9
+    base_hp: 68
+    mods:
+      Strength: 3
+      Constitution: 1
+    boss: false
+    super_boss: false
+  dragonkin_scorched_zealot:
+    name: Scorched Zealot
+    race: Dragonkin
+    level: 10
+    base_hp: 58
+    mods:
+      Strength: 2
+      Constitution: 2
+    boss: false
+    super_boss: false
+  dragonkin_scout:
+    name: Dragonkin Scout
+    race: Dragonkin
+    level: 11
+    base_hp: 68
+    mods:
+      Dexterity: 2
+      Strength: 2
+    boss: false
+    super_boss: false
+  mature_dragonkin:
+    name: Mature Dragonkin
+    race: Dragonkin
+    level: 11
+    base_hp: 82
+    mods:
+      Strength: 4
+      Constitution: 2
+    boss: false
+    super_boss: false
+  dragonkin_flame_weaver:
+    name: Flame Weaver
+    race: Dragonkin
+    level: 12
+    base_hp: 68
+    mods:
+      Learning: 2
+      Strength: 1
+    boss: false
+    super_boss: false
+  dragonkin_ancient_wyrm:
+    name: Dragonkin Ancient Wyrm
+    race: Dragonkin
+    level: 13
+    base_hp: 95
+    mods:
+      Strength: 4
+      Constitution: 2
+    boss: true
+    super_boss: false
+  ancient_dragonkin:
+    name: Ancient Dragonkin
+    race: Dragonkin
+    level: 14
+    base_hp: 105
+    mods:
+      Strength: 4
+      Constitution: 3
+    boss: true
+    super_boss: false
+  dragonkin_captain:
+    name: Dragonkin Captain
+    race: Dragonkin
+    level: 14
+    base_hp: 92
+    mods:
+      Strength: 3
+      Constitution: 2
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  dragonkin_storm_roarer:
+    name: Storm Roarer
+    race: Dragonkin
+    level: 15
+    base_hp: 84
+    mods:
+      Strength: 3
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  wyvern_rider:
+    name: Wyvern Rider
+    race: Dragonkin
+    level: 16
+    base_hp: 130
+    mods:
+      Dexterity: 3
+      Strength: 3
+    boss: false
+    super_boss: false
+  dragonkin_iron_scale:
+    name: Iron Scale
+    race: Dragonkin
+    level: 17
+    base_hp: 98
+    mods:
+      Constitution: 3
+      Strength: 2
+    boss: false
+    super_boss: false
+  dragonkin_flare_drake:
+    name: Flare Drake
+    race: Dragonkin
+    level: 18
+    base_hp: 102
+    mods:
+      Strength: 3
+      Constitution: 2
+    boss: false
+    super_boss: false
+  dragonkin_overlord:
+    name: Dragonkin Overlord
+    race: Dragonkin
+    level: 19
+    base_hp: 165
+    mods:
+      Strength: 6
+      Constitution: 4
+    boss: true
+    super_boss: false
+  dragonkin_ancient_guardian:
+    name: Ancient Guardian
+    race: Dragonkin
+    level: 20
+    base_hp: 118
+    mods:
+      Strength: 4
+      Constitution: 2
+    boss: false
+    super_boss: false
+  dragonkin_ice_claw:
+    name: Ice Claw
+    race: Dragonkin
+    level: 22
+    base_hp: 125
+    mods:
+      Strength: 3
+      Constitution: 2
+    boss: false
+    super_boss: false
+  draconic_vanguard:
+    name: Draconic Vanguard
+    race: Dragonkin
+    level: 24
+    base_hp: 155
+    mods:
+      Strength: 4
+      Constitution: 3
+    boss: false
+    super_boss: false
+  dragonkin_sky_terror:
+    name: Sky Terror
+    race: Dragonkin
+    level: 25
+    base_hp: 138
+    mods:
+      Strength: 4
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  dragonkin_storm_wing:
+    name: Storm Wing
+    race: Dragonkin
+    level: 27
+    base_hp: 148
+    mods:
+      Dexterity: 3
+      Strength: 2
+    boss: false
+    super_boss: false
+  dragon_knight_commander:
+    name: Dragon Knight Commander
+    race: Dragonkin
+    level: 28
+    base_hp: 240
+    mods:
+      Strength: 5
+      Charisma: 4
+    boss: false
+    super_boss: false
+  dragonkin_elder_wyrm:
+    name: Elder Wyrm
+    race: Dragonkin
+    level: 30
+    base_hp: 185
+    mods:
+      Strength: 5
+      Constitution: 3
+    boss: false
+    super_boss: false
+  dragonkin_abyssal_drake:
+    name: Abyssal Drake
+    race: Dragonkin
+    level: 32
+    base_hp: 180
+    mods:
+      Strength: 4
+      Constitution: 3
+    boss: false
+    super_boss: false
+  dragonkin_time_drake:
+    name: Time Drake
+    race: Dragonkin
+    level: 35
+    base_hp: 240
+    mods:
+      Learning: 4
+      Constitution: 3
+    boss: false
+    super_boss: false
+  heaven_banished_dragon_yinglong:
+    name: Yinglong, Heaven-Banished Dragon
+    race: Dragonkin
+    level: 45
+    base_hp: 600
+    mods:
+      Strength: 9
+      Constitution: 8
+      Dexterity: 5
+      Learning: 2
+    boss: true
+    super_boss: true

@@ -1,0 +1,64 @@
+Goblin:
+  goblin_ratcatcher:
+    name: Goblin Ratcatcher
+    race: Goblin
+    level: 1
+    base_hp: 11
+    mods:
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  goblin_scout:
+    name: Goblin Scout
+    race: Goblin
+    level: 1
+    base_hp: 13
+    mods:
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  goblin_thief:
+    name: Goblin Thief
+    race: Goblin
+    level: 1
+    base_hp: 11
+    mods:
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  goblin_archer:
+    name: Goblin Archer
+    race: Goblin
+    level: 2
+    base_hp: 15
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  goblin_knifer:
+    name: Goblin Knifer
+    race: Goblin
+    level: 2
+    base_hp: 17
+    mods:
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  goblin_shaman:
+    name: Goblin Shaman
+    race: Goblin
+    level: 2
+    base_hp: 14
+    mods:
+      Wisdom: 1
+    boss: false
+    super_boss: false
+  goblin_whisperer:
+    name: Goblin Whisperer
+    race: Goblin
+    level: 2
+    base_hp: 16
+    mods:
+      Charisma: 2
+    boss: false
+    super_boss: false

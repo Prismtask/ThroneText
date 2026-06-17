@@ -49,8 +49,8 @@ def main_menu():
             loc = player.get("location", "dungeon")
             _cf_city = player.get("origin_city") or (loc if loc != "dungeon" else "solmere")
             _cf = player.get("city_floors", {}).get(_cf_city, {})
-            _cur = _cf.get("floor", player.get("floor", 1))
-            _max = _cf.get("max_floor", player.get("max_floor", 1))
+            _cur = _cf.get("floor", 1)
+            _max = _cf.get("max_floor", 1)
             print(f"HP: {player['current_hp']}/{player_max_hp_display(player)} | "
                   f"Floor: {_cur} (max {_max}) in {_cf_city.title()}")
             print(f"Time: {format_time(player.get('time_minutes', 480))}")
@@ -145,11 +145,13 @@ def play_game(player):
             break
 
         # Floor cleared
-        # NOTE: explore_dungeon() already advanced player["floor"] and
-        # city_floors[city]["floor/max_floor"] before returning True,
-        # so we must NOT increment here again.
-        cleared_floor = player["floor"] - 1   # floor that was just beaten
+        # explore_dungeon() already advanced city_floors[city]["floor/max_floor"],
+        # so we read the cleared floor from there.
+        city_id = player.get("origin_city", "solmere")
+        city_prog = player["city_floors"].get(city_id, {"floor": 1})
+        cleared_floor = city_prog["floor"] - 1   # floor that was just beaten
         print(f"\nYou have successfully cleared Floor {cleared_floor}!\n")
+
         # Full heal already done inside explore_dungeon; save was also called.
         # Re-save here as well in case post-floor logic drifts.
         player["current_hp"] = player_max_hp(player)
@@ -159,7 +161,7 @@ def play_game(player):
         while True:
             clear_screen()
             print(f"=== FLOOR {cleared_floor} CLEARED ===")
-            print(f"Now entering Floor {player['floor']}")
+            print(f"Now entering Floor {city_prog['floor']}")
             print(f"HP: {player['current_hp']}/{player_max_hp(player)}")
             print(f"Gold: {player.get('gold', 0)}")
             print(f"Time: {format_time(player.get('time_minutes', 480))}\n")

@@ -1,0 +1,308 @@
+Undead:
+  undead_rotting_hand:
+    name: Rotting Hand
+    race: Undead
+    level: 1
+    base_hp: 12
+    mods:
+      Strength: -1
+    boss: false
+    super_boss: false
+  skeleton:
+    name: Skeleton
+    race: Undead
+    level: 2
+    base_hp: 18
+    mods: {}
+    boss: false
+    super_boss: false
+  rotten_carcass:
+    name: Rotten Carcass
+    race: Undead
+    level: 3
+    base_hp: 25
+    mods:
+      Constitution: 2
+    boss: false
+    super_boss: false
+  zombie_minion:
+    name: Zombie Minion
+    race: Undead
+    level: 3
+    base_hp: 22
+    mods:
+      Constitution: 1
+    boss: false
+    super_boss: false
+  zombie:
+    name: Zombie
+    race: Undead
+    level: 4
+    base_hp: 33
+    mods:
+      Strength: 1
+    boss: false
+    super_boss: false
+  undead_banshee_wailer:
+    name: Banshee Wailer
+    race: Undead
+    level: 5
+    base_hp: 26
+    mods:
+      Dexterity: 2
+      Charisma: -1
+    boss: false
+    super_boss: false
+  undead_corpse_swarm:
+    name: Corpse Swarm
+    race: Undead
+    level: 5
+    base_hp: 28
+    mods:
+      Constitution: 2
+    boss: false
+    super_boss: false
+  ghoul:
+    name: Ghoul
+    race: Undead
+    level: 6
+    base_hp: 38
+    mods:
+      Strength: 2
+    boss: false
+    super_boss: false
+  spectral_knight:
+    name: Spectral Knight
+    race: Undead
+    level: 6
+    base_hp: 40
+    mods:
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  wraith:
+    name: Wraith
+    race: Undead
+    level: 7
+    base_hp: 38
+    mods:
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  undead_festering_zombie:
+    name: Festering Zombie
+    race: Undead
+    level: 8
+    base_hp: 42
+    mods:
+      Constitution: 2
+      Strength: 1
+    boss: false
+    super_boss: false
+  bone_colossus:
+    name: Bone Colossus
+    race: Undead
+    level: 9
+    base_hp: 65
+    mods:
+      Constitution: 3
+    boss: false
+    super_boss: false
+  skeletal_mage:
+    name: Skeletal Mage
+    race: Undead
+    level: 9
+    base_hp: 50
+    mods:
+      Learning: 3
+    boss: false
+    super_boss: false
+  undead_war_behemoth:
+    name: Undead War Behemoth
+    race: Undead
+    level: 10
+    base_hp: 75
+    mods:
+      Strength: 3
+      Constitution: 2
+    boss: true
+    super_boss: false
+  death_knight:
+    name: Death Knight
+    race: Undead
+    level: 11
+    base_hp: 68
+    mods:
+      Strength: 2
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  lich:
+    name: Lich
+    race: Undead
+    level: 11
+    base_hp: 58
+    mods:
+      Learning: 4
+    boss: true
+    super_boss: false
+  undead_drowned_captain:
+    name: Drowned Captain
+    race: Undead
+    level: 12
+    base_hp: 58
+    mods:
+      Strength: 2
+      Constitution: 2
+    boss: false
+    super_boss: false
+  undead_phantom_archer:
+    name: Phantom Archer
+    race: Undead
+    level: 14
+    base_hp: 62
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  undead_crimson_knight:
+    name: Crimson Knight
+    race: Undead
+    level: 15
+    base_hp: 84
+    mods:
+      Strength: 2
+      Constitution: 2
+    boss: false
+    super_boss: false
+  undead_rotting_giant:
+    name: Rotting Giant
+    race: Undead
+    level: 16
+    base_hp: 88
+    mods:
+      Strength: 3
+      Constitution: 2
+    boss: false
+    super_boss: false
+  arch_lich:
+    name: Arch Lich
+    race: Undead
+    level: 17
+    base_hp: 125
+    mods:
+      Learning: 6
+      Constitution: 2
+    boss: true
+    super_boss: false
+  undead_lich_servitor:
+    name: Lich Servitor
+    race: Undead
+    level: 18
+    base_hp: 78
+    mods:
+      Learning: 3
+    boss: false
+    super_boss: false
+  undead_death_guard:
+    name: Death Guard
+    race: Undead
+    level: 20
+    base_hp: 90
+    mods:
+      Strength: 2
+      Constitution: 3
+    boss: false
+    super_boss: false
+  undead_void_lich:
+    name: Void Lich
+    race: Undead
+    level: 25
+    base_hp: 130
+    mods:
+      Learning: 5
+      Constitution: 1
+    boss: false
+    super_boss: false
+  bone_dragon:
+    name: Bone Dragon
+    race: Undead
+    level: 28
+    base_hp: 230
+    mods:
+      Strength: 5
+      Constitution: 4
+    boss: false
+    super_boss: false
+  undead_eternal_sentinel:
+    name: Eternal Sentinel
+    race: Undead
+    level: 28
+    base_hp: 150
+    mods:
+      Strength: 3
+      Constitution: 3
+    boss: false
+    super_boss: false
+  undead_dread_lich:
+    name: Dread Lich
+    race: Undead
+    level: 30
+    base_hp: 170
+    mods:
+      Learning: 5
+      Constitution: 2
+    boss: false
+    super_boss: false
+  undead_dread_emperor:
+    name: Undead Dread Emperor
+    race: Undead
+    level: 31
+    base_hp: 340
+    mods:
+      Strength: 4
+      Constitution: 5
+      Learning: 4
+    boss: true
+    super_boss: false
+  undead_spectral_dragon:
+    name: Spectral Dragon
+    race: Undead
+    level: 32
+    base_hp: 190
+    mods:
+      Strength: 4
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  undead_soul_reaper:
+    name: Soul Reaper
+    race: Undead
+    level: 33
+    base_hp: 185
+    mods:
+      Dexterity: 4
+      Strength: 2
+    boss: false
+    super_boss: false
+  death_bringer:
+    name: Death Bringer
+    race: Undead
+    level: 34
+    base_hp: 360
+    mods:
+      Strength: 6
+      Constitution: 6
+    boss: true
+    super_boss: false
+  undead_eternal_emperor:
+    name: Eternal Emperor
+    race: Undead
+    level: 38
+    base_hp: 230
+    mods:
+      Strength: 4
+      Constitution: 4
+      Learning: 3
+    boss: false
+    super_boss: false

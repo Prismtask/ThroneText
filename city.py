@@ -64,7 +64,7 @@ def visit_city(player, city_id=None):
         status_field = f" | Status: {' & '.join(status_effects)}" if status_effects else ""
         # Show floor progress specific to this city's dungeon
         _cf     = player.get("city_floors", {}).get(city_id, {})
-        _cur_fl = _cf.get("floor", player.get("floor", 1))
+        _cur_fl = _cf.get("floor", 1) 
         _max_fl = _cf.get("max_floor", player.get("max_floor", 1))
         print(f"Adventurer: {player['name']} | {city['name']} Dungeon: {_cur_fl}/{_max_fl} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{status_field}")
 
@@ -158,7 +158,6 @@ def visit_city(player, city_id=None):
                     chosen_floor = int(target)
                     if 1 <= chosen_floor <= max_unlocked:
                         city_prog["floor"] = chosen_floor
-                        player["floor"]    = chosen_floor
                         break
                     else:
                         print(f"Invalid floor. Choose between 1 and {max_unlocked}.")

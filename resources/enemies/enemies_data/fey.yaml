@@ -1,0 +1,231 @@
+Fey:
+  fey_glowmoth:
+    name: Glowmoth
+    race: Fey
+    level: 1
+    base_hp: 10
+    mods:
+      Dexterity: 1
+    boss: false
+    super_boss: false
+  pixie_trickster:
+    name: Pixie Trickster
+    race: Fey
+    level: 2
+    base_hp: 13
+    mods:
+      Dexterity: 3
+    boss: false
+    super_boss: false
+  fey_sprite:
+    name: Fey Sprite
+    race: Fey
+    level: 3
+    base_hp: 14
+    mods:
+      Dexterity: 2
+      Charisma: 1
+    boss: false
+    super_boss: false
+  fey_leaf_whisper:
+    name: Leaf Whisper
+    race: Fey
+    level: 4
+    base_hp: 18
+    mods:
+      Dexterity: 2
+    boss: false
+    super_boss: false
+  fey_moss_guardian:
+    name: Moss Guardian
+    race: Fey
+    level: 4
+    base_hp: 20
+    mods:
+      Constitution: 2
+    boss: false
+    super_boss: false
+  forest_spirit:
+    name: Forest Spirit
+    race: Fey
+    level: 5
+    base_hp: 22
+    mods:
+      Dexterity: 2
+      Charisma: 1
+    boss: true
+    super_boss: false
+  fey_wisp_trickster:
+    name: Wisp Trickster
+    race: Fey
+    level: 6
+    base_hp: 28
+    mods:
+      Dexterity: 2
+      Charisma: 1
+    boss: false
+    super_boss: false
+  fey_trickster_lord:
+    name: Fey Trickster Lord
+    race: Fey
+    level: 8
+    base_hp: 48
+    mods:
+      Dexterity: 3
+      Charisma: 3
+    boss: true
+    super_boss: false
+  fey_bramble_hulk:
+    name: Bramble Hulk
+    race: Fey
+    level: 9
+    base_hp: 44
+    mods:
+      Constitution: 2
+      Strength: 1
+    boss: false
+    super_boss: false
+  fey_moon_dancer:
+    name: Moon Dancer
+    race: Fey
+    level: 10
+    base_hp: 48
+    mods:
+      Dexterity: 3
+      Charisma: 2
+    boss: false
+    super_boss: false
+  fey_blossom_sentry:
+    name: Blossom Sentry
+    race: Fey
+    level: 11
+    base_hp: 52
+    mods:
+      Dexterity: 2
+      Charisma: 2
+    boss: false
+    super_boss: false
+  great_forest_guardian:
+    name: Great Forest Guardian
+    race: Fey
+    level: 12
+    base_hp: 70
+    mods:
+      Dexterity: 3
+      Charisma: 3
+    boss: false
+    super_boss: false
+  fey_lord:
+    name: Fey Lord
+    race: Fey
+    level: 13
+    base_hp: 82
+    mods:
+      Dexterity: 4
+      Charisma: 3
+    boss: true
+    super_boss: false
+  archfey_sentinel:
+    name: Archfey Sentinel
+    race: Fey
+    level: 14
+    base_hp: 75
+    mods:
+      Dexterity: 3
+      Charisma: 4
+    boss: false
+    super_boss: false
+  fey_ancient_dryad:
+    name: Ancient Dryad
+    race: Fey
+    level: 15
+    base_hp: 74
+    mods:
+      Wisdom: 3
+      Charisma: 2
+    boss: false
+    super_boss: false
+  fey_mist_phantom:
+    name: Mist Phantom
+    race: Fey
+    level: 16
+    base_hp: 78
+    mods:
+      Dexterity: 3
+      Charisma: 2
+    boss: false
+    super_boss: false
+  fey_winter_queen:
+    name: Winter Queen
+    race: Fey
+    level: 18
+    base_hp: 130
+    mods:
+      Charisma: 5
+      Dexterity: 3
+    boss: true
+    super_boss: false
+  fey_dream_weaver:
+    name: Dream Weaver
+    race: Fey
+    level: 19
+    base_hp: 92
+    mods:
+      Learning: 3
+      Charisma: 2
+    boss: false
+    super_boss: false
+  fey_wild_stalker:
+    name: Fey Wild Stalker
+    race: Fey
+    level: 19
+    base_hp: 105
+    mods:
+      Dexterity: 4
+    boss: false
+    super_boss: false
+  queen_of_mirrors_sylvana:
+    name: Queen of Mirrors Sylvana
+    race: Fey
+    level: 21
+    base_hp: 380
+    mods:
+      Dexterity: 7
+      Charisma: 5
+      Constitution: 3
+      Strength: 2
+    boss: true
+    super_boss: true
+  sylvana_mirror_copy:
+    name: Sylvana Mirror Copy
+    race: Fey
+    level: 21
+    base_hp: 1
+    mods:
+      Dexterity: 7
+      Charisma: 5
+      Constitution: 3
+      Strength: 2
+    boss: false
+    super_boss: false
+  fey_verdant_queen_guard:
+    name: Verdant Queen Guard
+    race: Fey
+    level: 22
+    base_hp: 108
+    mods:
+      Strength: 2
+      Constitution: 2
+      Charisma: 2
+    boss: false
+    super_boss: false
+  summer_court_knight:
+    name: Summer Court Knight
+    race: Fey
+    level: 22
+    base_hp: 140
+    mods:
+      Strength: 3
+      Charisma: 3
+    boss: false
+    super_boss: false

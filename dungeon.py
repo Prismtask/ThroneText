@@ -64,8 +64,19 @@ def get_random_enemy_key(floor, boss=False, region=None):
             pool.append(key)
 
     if not pool:
-        # Ultimate fallback – any enemy of the right boss type (should never happen)
+        # Ultimate fallback – any enemy of the right boss type
         pool = [k for k, d in ENEMIES.items() if d.get("boss", False) == boss]
+    
+    if not pool:
+        # Emergency fallback – any enemy at all
+        pool = list(ENEMIES.keys())
+    
+    if not pool:
+        # Critical error – no enemies loaded
+        raise RuntimeError(
+            f"No enemies found! ENEMIES has {len(ENEMIES)} entries. "
+            f"floor={floor}, boss={boss}, region={region}"
+        )
 
     return random.choice(pool)
 
@@ -172,7 +183,7 @@ def explore_dungeon(player):
 
     # player["floor"] is the transient cursor set by city.py before entry;
     # treat it as authoritative for this run.
-    floor = player["floor"]
+    floor = city_prog["floor"]
 
     # ----- Determine current dungeon region -----
     if "dungeon_region" not in player or player["dungeon_region"] is None:
@@ -232,7 +243,6 @@ def explore_dungeon(player):
                 next_floor = floor + 1
                 city_prog["floor"]     = next_floor
                 city_prog["max_floor"] = max(city_prog["max_floor"], next_floor)
-                player["floor"]        = next_floor
 
                 # Full heal and save
                 player["current_hp"] = player_max_hp(player)
@@ -338,7 +348,6 @@ def explore_dungeon(player):
     next_floor = floor + 1
     city_prog["floor"]     = next_floor
     city_prog["max_floor"] = max(city_prog["max_floor"], next_floor)
-    player["floor"]        = next_floor
 
     # Advance time by 1 hour for floor completion
     current_time = advance_time(player, 60)

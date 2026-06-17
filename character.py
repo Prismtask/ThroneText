@@ -138,7 +138,6 @@ def create_character():
         },
         # "floor" is kept as a transient cursor while inside a dungeon run.
         # It is always synced back to city_floors on exit.
-        "floor": 1,
         "current_hp": player_max_hp(final_attrs),
         "level": 1,
         "exp": 0,
