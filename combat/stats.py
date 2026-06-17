@@ -64,7 +64,7 @@ def get_effective_attribute(player, attr_name):
         total -= get_weaken_penalty(player)
 
     for buff in player.get("active_buffs", []):
-        if buff.get("type") == "blessing" or buff.get("stat") == "all":
+        if buff.get("type") in ("blessing", "well_rested") or buff.get("stat") == "all":
             total += buff.get("value", 0)
         elif buff.get("stat") == attr_name:
             total += buff.get("value", 0)

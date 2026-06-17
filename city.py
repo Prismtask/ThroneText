@@ -18,22 +18,24 @@ from facilities.herbalist import herbalist_service
 from facilities.arcane_tower import arcane_tower_service
 from facilities.black_market import black_market_service
 from facilities.guild import guild_service
+from facilities.house import house_menu
 
 # Map service names to handler functions
 SERVICE_HANDLERS = {
-    "shop": city_shop,
-    "inn": inn_menu,
-    "blacksmith": blacksmith_menu,
-    "port": port_service,
-    "shipyard": shipyard_service,
-    "trade_hall": trade_hall_service,
-    "temple": temple_menu,
-    "barracks": barracks_service,
-    "herbalist": herbalist_service,
-    "arcane_tower": arcane_tower_service,
-    "black_market": black_market_service,
-    "guild": guild_service
+    "shop":          city_shop,
+    "inn":           inn_menu,
+    "blacksmith":    blacksmith_menu,
+    "port":          port_service,
+    "shipyard":      shipyard_service,
+    "trade_hall":    trade_hall_service,
+    "temple":        temple_menu,
+    "barracks":      barracks_service,
+    "herbalist":     herbalist_service,
+    "arcane_tower":  arcane_tower_service,
+    "black_market":  black_market_service,
+    "guild":         guild_service,
 }
+
 
 def visit_city(player, city_id=None):
     if city_id is None:
@@ -59,7 +61,6 @@ def visit_city(player, city_id=None):
             status_effects.append("Blessed")
         if player.get("cursed"):
             status_effects.append("Cursed")
-        # Create the extra field string if any status is active
         status_field = f" | Status: {' & '.join(status_effects)}" if status_effects else ""
         # Show floor progress specific to this city's dungeon
         _cf     = player.get("city_floors", {}).get(city_id, {})
@@ -76,6 +77,20 @@ def visit_city(player, city_id=None):
                 print(f"{option_num}. {display_name}")
                 menu_options[str(option_num)] = service
                 option_num += 1
+
+        # ── House option (shown only when the player owns a house here) ───────
+        has_house = city_id in player.get("houses", {})
+        house_option = None
+        if has_house:
+            house_data  = player["houses"][city_id]
+            from facilities.house import HOUSE_LEVELS, _pending_income
+            lvl_name    = HOUSE_LEVELS[house_data["level"]]["name"]
+            pending_g   = _pending_income(player, city_id, house_data)
+            pending_str = f"  [{pending_g}g ready]" if pending_g > 0 else ""
+            print(f"{option_num}. Your House ({lvl_name}){pending_str}")
+            house_option = str(option_num)
+            option_num += 1
+
         print(f"{option_num}. View Stats / Inventory")
         inv_option = str(option_num)
         option_num += 1
@@ -94,31 +109,34 @@ def visit_city(player, city_id=None):
             service = menu_options[choice]
             SERVICE_HANDLERS[service](player, city_id)
             if player.get("current_hp", 1) <= 0:
-                return False               # ← killed during a service (e.g. sea voyage)
+                return False               # killed during a service (e.g. sea voyage)
             if player.get("location") != city_id:
-                return True  
+                return True
+
+        elif house_option and choice == house_option:
+            house_menu(player, city_id)
+
         elif choice == inv_option:
             advance_time(player, 30)
             from inventory_ui import manage_inventory_menu
             manage_inventory_menu(player)
+
         elif choice == travel_option:
             from facilities.travel import travel_to_city
             result = travel_to_city(player, city_id)
             if result == "dead":
-                return False                 # ← propagate death to game loop
+                return False                 # propagate death to game loop
             if player.get("location") != city_id:
                 return True
+
         elif choice == dungeon_option:
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 30)
 
             # ── Per-city floor progress ──────────────────────────────────────
-            # Migrate old saves that only have the global floor/max_floor keys.
             if "city_floors" not in player:
                 player["city_floors"] = {}
             if city_id not in player["city_floors"]:
-                # Bootstrap from legacy global values when this looks like the
-                # city the old save was last in; otherwise start fresh at 1.
                 if player.get("origin_city") == city_id or player.get("location") == city_id:
                     player["city_floors"][city_id] = {
                         "floor":     player.get("floor", 1),
@@ -139,8 +157,6 @@ def visit_city(player, city_id=None):
                     ).strip()
                     chosen_floor = int(target)
                     if 1 <= chosen_floor <= max_unlocked:
-                        # Write into city record AND the transient cursor used
-                        # by explore_dungeon().
                         city_prog["floor"] = chosen_floor
                         player["floor"]    = chosen_floor
                         break
@@ -153,11 +169,13 @@ def visit_city(player, city_id=None):
             player["origin_city"]    = city_id
             player["location"]       = "dungeon"
             return True
+
         elif choice == save_option:
             player["location"] = city_id
             save_game(player)
             print("Game saved. Returning to menu.")
             return False
+
         else:
             print("Invalid choice.")
             input("\nPress Enter to continue...")

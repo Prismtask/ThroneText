@@ -1,34 +1,3 @@
-ENEMY_RACES = {
-    "Human": {"mods": {}},
-    "Goblin": {"mods": {"Dexterity": 2, "Strength": -1, "Constitution": -1}},
-    "Orc": {"mods": {"Strength": 3, "Constitution": 1, "Charisma": -2}},
-    "Undead": {"mods": {"Constitution": 3, "Wisdom": -2, "Charisma": -3}},
-    "Beast": {"mods": {"Strength": 2, "Dexterity": 1, "Learning": -3}},
-    "Demon": {"mods": {"Strength": 2, "Charisma": 2, "Wisdom": -1}},
-    "Construct": {"mods": {"Strength": 2, "Constitution": 4, "Charisma": -5}},
-    "Dragonkin": {"mods": {"Strength": 3, "Constitution": 2, "Learning": -2}},
-    "Fey": {"mods": {"Dexterity": 3, "Charisma": 2, "Strength": -2}},
-    "Elemental": {"mods": {"Constitution": 3, "Learning": 2, "Dexterity": -1}},
-    "Giant": {"mods": {"Strength": 4, "Constitution": 2, "Dexterity": -3}},
-    "Vampire": {"mods": {"Dexterity": 3, "Charisma": 2, "Wisdom": -1, "Constitution": 1}},
-    "Lizardfolk": {"mods": {"Constitution": 2, "Strength": 1, "Learning": -1}},
-    "Gnome": {"mods": {"Learning": 2, "Dexterity": 1, "Strength": -2}},
-    "Shadow": {"mods": {"Dexterity": 3, "Wisdom": -1, "Constitution": -1}},
-    "Clockwork": {"mods": {"Constitution": 3, "Learning": 1, "Charisma": -4}},
-    "Abomination": {"mods": {"Strength": 4, "Constitution": 3, "Wisdom": -3, "Charisma": -4}},
-}
-
-BIOME_RACES = {
-    "temperate": ["Human", "Goblin", "Beast", "Undead", "Fey", "Gnome", "Lizardfolk", "Shadow", "Abomination", "Vampire"],
-    "coastal":   ["Human", "Lizardfolk", "Beast", "Elemental", "Undead", "Vampire", "Giant"],
-    "forest":    ["Beast", "Fey", "Goblin", "Human", "Gnome", "Elemental", "Dragonkin"],
-    "swamp":     ["Undead", "Lizardfolk", "Abomination", "Beast", "Shadow", "Vampire"],
-    "mountain":  ["Orc", "Giant", "Dragonkin", "Construct", "Human", "Elemental"],
-    "desert":    ["Human", "Undead", "Lizardfolk", "Elemental", "Gnome", "Beast"],
-    "volcanic":  ["Demon", "Elemental", "Dragonkin", "Construct", "Giant"],
-    "magical":   ["Fey", "Construct", "Clockwork", "Elemental", "Gnome", "Shadow", "Abomination"],
-}
-
 ENEMIES = {
     # ----- LOW LEVEL (1–3) -----
     "bandit": {
@@ -71,10 +40,6 @@ ENEMIES = {
         "name": "Goblin Archer", "race": "Goblin", "level": 2, "base_hp": 15,
         "mods": {"Dexterity": 3}, "boss": False, "super_boss": False
     },
-    "goblin_girl": {
-        "name": "Goblin Girl", "race": "Goblin", "level": 2, "base_hp": 14,
-        "mods": {"Dexterity": 2, "Charisma": 1}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "goblin_knifer": {
         "name": "Goblin Knifer", "race": "Goblin", "level": 2, "base_hp": 17,
         "mods": {"Dexterity": 2}, "boss": False, "super_boss": False
@@ -279,10 +244,6 @@ ENEMIES = {
         "name": "Gnome Illusionist", "race": "Gnome", "level": 5, "base_hp": 24,
         "mods": {"Learning": 2, "Charisma": 1}, "boss": False, "super_boss": False
     },
-    "harpy_scout": {
-        "name": "Harpy Scout", "race": "Beast", "level": 5, "base_hp": 27,
-        "mods": {"Dexterity": 3, "Charisma": 1}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "ice_elemental": {
         "name": "Ice Elemental", "race": "Elemental", "level": 5, "base_hp": 35,
         "mods": {"Constitution": 3}, "boss": False, "super_boss": False
@@ -735,10 +696,6 @@ ENEMIES = {
         "name": "Abomination Brute", "race": "Abomination", "level": 9, "base_hp": 72,
         "mods": {"Strength": 3, "Constitution": 2}, "boss": False, "super_boss": False
     },
-    "alraune_fledger": {
-        "name": "Alraune Fledger", "race": "Fey", "level": 7, "base_hp": 40,
-        "mods": {"Charisma": 3, "Learning": 1}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "arcane_clockwork": {
         "name": "Arcane Clockwork", "race": "Clockwork", "level": 9, "base_hp": 52,
         "mods": {"Learning": 3}, "boss": False, "super_boss": False
@@ -869,10 +826,6 @@ ENEMIES = {
         "name": "Archfey Sentinel", "race": "Fey", "level": 14, "base_hp": 75,
         "mods": {"Dexterity": 3, "Charisma": 4}, "boss": False, "super_boss": False
     },
-    "centaur_scout": {
-        "name": "Centaur Scout", "race": "Beast", "level": 11, "base_hp": 64,
-        "mods": {"Strength": 2, "Dexterity": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "clockwork_executor": {
         "name": "Clockwork Executor", "race": "Clockwork", "level": 13, "base_hp": 78,
         "mods": {"Strength": 3, "Constitution": 2}, "boss": False, "super_boss": False
@@ -929,10 +882,6 @@ ENEMIES = {
         "name": "Infernal Priest", "race": "Demon", "level": 11, "base_hp": 60,
         "mods": {"Learning": 3, "Charisma": 2}, "boss": False, "super_boss": False
     },
-    "lamia_constrictor": {
-        "name": "Lamia Constrictor", "race": "Lizardfolk", "level": 13, "base_hp": 76,
-        "mods": {"Strength": 2, "Dexterity": 3}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "lizardfolk_ancient_one": {
         "name": "Lizardfolk Ancient One", "race": "Lizardfolk", "level": 15, "base_hp": 98,
         "mods": {"Strength": 3, "Constitution": 3, "Learning": 2}, "boss": False, "super_boss": False
@@ -973,10 +922,6 @@ ENEMIES = {
         "name": "Shadow Reaver", "race": "Shadow", "level": 10, "base_hp": 52,
         "mods": {"Dexterity": 4}, "boss": False, "super_boss": False
     },
-    "slime_girl": {
-        "name": "Slime Girl", "race": "Elemental", "level": 12, "base_hp": 88,
-        "mods": {"Constitution": 4, "Dexterity": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "storm_giant": {
         "name": "Storm Giant", "race": "Giant", "level": 11, "base_hp": 98,
         "mods": {"Strength": 4, "Constitution": 2}, "boss": False, "super_boss": False
@@ -1233,10 +1178,6 @@ ENEMIES = {
     },
 
     # ----- EPIC LEVEL (17–30) -----
-    "arachne_weaver": {
-        "name": "Arachne Weaver", "race": "Beast", "level": 19, "base_hp": 110,
-        "mods": {"Dexterity": 4, "Strength": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "abyssal_stalker": {
         "name": "Abyssal Stalker", "race": "Shadow", "level": 22, "base_hp": 118,
         "mods": {"Dexterity": 5, "Wisdom": 2}, "boss": False, "super_boss": False
@@ -1249,22 +1190,6 @@ ENEMIES = {
         "name": "Draconic Vanguard", "race": "Dragonkin", "level": 24, "base_hp": 155,
         "mods": {"Strength": 4, "Constitution": 3}, "boss": False, "super_boss": False
     },
-    "neko_ninja": {
-        "name": "Neko Ninja", "race": "Beast", "level": 18, "base_hp": 92,
-        "mods": {"Dexterity": 5, "Strength": 1}, "boss": False, "super_boss": False
-    }, # Monster Girl
-    "scylla_wrecker": {
-        "name": "Scylla Wrecker", "race": "Abomination", "level": 26, "base_hp": 180,
-        "mods": {"Strength": 5, "Constitution": 4}, "boss": False, "super_boss": False
-    }, # Monster Girl
-    "succubus_seductress": {
-        "name": "Succubus Seductress", "race": "Demon", "level": 21, "base_hp": 120,
-        "mods": {"Charisma": 5, "Dexterity": 3}, "boss": False, "super_boss": False
-    }, # Monster Girl
-    "vampire_matriarch": {
-        "name": "Vampire Matriarch", "race": "Vampire", "level": 25, "base_hp": 140,
-        "mods": {"Dexterity": 4, "Charisma": 4, "Constitution": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "void_walker": {
         "name": "Void Walker", "race": "Elemental", "level": 20, "base_hp": 130,
         "mods": {"Constitution": 4, "Learning": 3}, "boss": False, "super_boss": False
@@ -1275,26 +1200,14 @@ ENEMIES = {
         "name": "Cosmic Abomination", "race": "Abomination", "level": 38, "base_hp": 270,
         "mods": {"Strength": 6, "Constitution": 5}, "boss": False, "super_boss": False
     },
-    "draconic_valkyrie": {
-        "name": "Draconic Valkyrie", "race": "Dragonkin", "level": 33, "base_hp": 225,
-        "mods": {"Strength": 5, "Constitution": 4, "Charisma": 3}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "elder_titan": {
         "name": "Elder Titan", "race": "Giant", "level": 36, "base_hp": 260,
         "mods": {"Strength": 6, "Constitution": 4}, "boss": False, "super_boss": False
     },
-    "lich_queen_avatar": {
-        "name": "Lich Queen Avatar", "race": "Undead", "level": 35, "base_hp": 195,
-        "mods": {"Learning": 6, "Charisma": 3}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "planar_behemoth": {
         "name": "Planar Behemoth", "race": "Abomination", "level": 32, "base_hp": 240,
         "mods": {"Strength": 5, "Constitution": 5}, "boss": False, "super_boss": False
     },
-    "sphinx_riddler": {
-        "name": "Sphinx Riddler", "race": "Beast", "level": 34, "base_hp": 210,
-        "mods": {"Learning": 5, "Wisdom": 4, "Dexterity": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
 
     # ===== MORE EPIC/MYTHIC ENEMIES =====
     "undead_dread_lich": {
@@ -1427,10 +1340,6 @@ ENEMIES = {
         "name": "Demon Lord", "race": "Demon", "level": 15, "base_hp": 115,
         "mods": {"Strength": 4, "Charisma": 3}, "boss": True, "super_boss": False
     },
-    "dragon_goddess_avatar": {
-        "name": "Dragon Goddess Avatar", "race": "Dragonkin", "level": 37, "base_hp": 440,
-        "mods": {"Strength": 6, "Constitution": 5, "Charisma": 5}, "boss": True, "super_boss": False
-    }, # Monster Girl
     "dragonkin_ancient_wyrm": {
         "name": "Dragonkin Ancient Wyrm", "race": "Dragonkin", "level": 13, "base_hp": 95,
         "mods": {"Strength": 4, "Constitution": 2}, "boss": True, "super_boss": False
@@ -1471,10 +1380,6 @@ ENEMIES = {
         "name": "Infernal Commander", "race": "Demon", "level": 9, "base_hp": 60,
         "mods": {"Strength": 2, "Charisma": 2}, "boss": True, "super_boss": False
     },
-    "infernal_empress": {
-        "name": "Infernal Empress", "race": "Demon", "level": 26, "base_hp": 290,
-        "mods": {"Strength": 5, "Charisma": 6, "Dexterity": 3}, "boss": True, "super_boss": False
-    }, # Monster Girl
     "lich": {
         "name": "Lich", "race": "Undead", "level": 11, "base_hp": 58,
         "mods": {"Learning": 4}, "boss": True, "super_boss": False
@@ -1507,10 +1412,6 @@ ENEMIES = {
         "name": "Shadow Phantom King", "race": "Shadow", "level": 12, "base_hp": 65,
         "mods": {"Dexterity": 4, "Charisma": 2}, "boss": True, "super_boss": False
     },
-    "siren_empress": {
-        "name": "Siren Empress", "race": "Fey", "level": 23, "base_hp": 220,
-        "mods": {"Charisma": 6, "Dexterity": 4}, "boss": True, "super_boss": False
-    }, # Monster Girl
     "storm_elemental": {
         "name": "Storm Elemental", "race": "Elemental", "level": 12, "base_hp": 95,
         "mods": {"Learning": 3, "Constitution": 2}, "boss": True, "super_boss": False
@@ -1625,20 +1526,8 @@ ENEMIES = {
         "name": "Lizardfolk Gladiator", "race": "Lizardfolk", "level": 12, "base_hp": 88,
         "mods": {"Strength": 3, "Constitution": 2}, "boss": False, "super_boss": False
     },
-    "lizard_queen": {
-        "name": "Lizard Queen", "race": "Lizardfolk", "level": 14, "base_hp": 130,
-        "mods": {"Charisma": 3, "Constitution": 3}, "boss": True, "super_boss": False
-    }, # Monster Girl
 
     # -- Fey (Level 2-23) --
-    "dryad_protector": {
-        "name": "Dryad Protector", "race": "Fey", "level": 9, "base_hp": 50,
-        "mods": {"Charisma": 2, "Wisdom": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
-    "winter_fairy": {
-        "name": "Winter Fairy", "race": "Fey", "level": 14, "base_hp": 70,
-        "mods": {"Dexterity": 3, "Charisma": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "fey_wild_stalker": {
         "name": "Fey Wild Stalker", "race": "Fey", "level": 19, "base_hp": 105,
         "mods": {"Dexterity": 4}, "boss": False, "super_boss": False
@@ -1671,10 +1560,6 @@ ENEMIES = {
         "name": "Shadow Fiend", "race": "Shadow", "level": 5, "base_hp": 30,
         "mods": {"Dexterity": 3}, "boss": False, "super_boss": False
     },
-    "umbral_weaver": {
-        "name": "Umbral Weaver", "race": "Shadow", "level": 14, "base_hp": 85,
-        "mods": {"Dexterity": 3, "Wisdom": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "eclipse_knight": {
         "name": "Eclipse Knight", "race": "Shadow", "level": 19, "base_hp": 130,
         "mods": {"Dexterity": 4, "Strength": 2}, "boss": False, "super_boss": False
@@ -1693,10 +1578,6 @@ ENEMIES = {
         "name": "Chaos Fiend", "race": "Demon", "level": 19, "base_hp": 140,
         "mods": {"Strength": 4, "Dexterity": 3}, "boss": False, "super_boss": False
     },
-    "demon_whip_master": {
-        "name": "Demon Whip Master", "race": "Demon", "level": 24, "base_hp": 170,
-        "mods": {"Dexterity": 5, "Charisma": 3}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "abyssal_juggernaut": {
         "name": "Abyssal Juggernaut", "race": "Demon", "level": 25, "base_hp": 210,
         "mods": {"Strength": 6, "Constitution": 5}, "boss": False, "super_boss": False
@@ -1707,18 +1588,10 @@ ENEMIES = {
         "name": "Vampire Fledgling", "race": "Vampire", "level": 8, "base_hp": 50,
         "mods": {"Dexterity": 2, "Charisma": 1}, "boss": False, "super_boss": False
     },
-    "vampire_seductress": {
-        "name": "Vampire Seductress", "race": "Vampire", "level": 16, "base_hp": 100,
-        "mods": {"Charisma": 5, "Dexterity": 3}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "nosferatu_stalker": {
         "name": "Nosferatu Stalker", "race": "Vampire", "level": 20, "base_hp": 135,
         "mods": {"Dexterity": 5, "Strength": 2}, "boss": False, "super_boss": False
     },
-    "crimson_countess": {
-        "name": "Crimson Countess", "race": "Vampire", "level": 24, "base_hp": 230,
-        "mods": {"Charisma": 6, "Dexterity": 4}, "boss": True, "super_boss": False
-    }, # Monster Girl
 
     # -- Beast (Level 1-34) --
     "mutated_bear": {
@@ -1733,20 +1606,12 @@ ENEMIES = {
         "name": "Chimera Alpha", "race": "Beast", "level": 24, "base_hp": 190,
         "mods": {"Strength": 4, "Dexterity": 4}, "boss": False, "super_boss": False
     },
-    "ninetales_fox": {
-        "name": "Ninetales Fox", "race": "Beast", "level": 30, "base_hp": 220,
-        "mods": {"Charisma": 6, "Wisdom": 5}, "boss": False, "super_boss": False
-    }, # Monster Girl
 
     # -- Undead (Level 2-35) --
     "skeletal_mage": {
         "name": "Skeletal Mage", "race": "Undead", "level": 9, "base_hp": 50,
         "mods": {"Learning": 3}, "boss": False, "super_boss": False
     },
-    "banshee_wailer": {
-        "name": "Banshee Wailer", "race": "Undead", "level": 18, "base_hp": 110,
-        "mods": {"Charisma": 4, "Dexterity": 2}, "boss": False, "super_boss": False
-    }, # Monster Girl
     "bone_dragon": {
         "name": "Bone Dragon", "race": "Undead", "level": 28, "base_hp": 230,
         "mods": {"Strength": 5, "Constitution": 4}, "boss": False, "super_boss": False

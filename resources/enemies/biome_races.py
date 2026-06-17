@@ -1,0 +1,10 @@
+BIOME_RACES = {
+    "temperate": ["Human", "Goblin", "Beast", "Undead", "Fey", "Gnome", "Lizardfolk", "Shadow", "Abomination", "Vampire"],
+    "coastal":   ["Human", "Lizardfolk", "Beast", "Elemental", "Undead", "Vampire", "Giant"],
+    "forest":    ["Beast", "Fey", "Goblin", "Human", "Gnome", "Elemental", "Dragonkin"],
+    "swamp":     ["Undead", "Lizardfolk", "Abomination", "Beast", "Shadow", "Vampire"],
+    "mountain":  ["Orc", "Giant", "Dragonkin", "Construct", "Human", "Elemental"],
+    "desert":    ["Human", "Undead", "Lizardfolk", "Elemental", "Gnome", "Beast"],
+    "volcanic":  ["Demon", "Elemental", "Dragonkin", "Construct", "Giant"],
+    "magical":   ["Fey", "Construct", "Clockwork", "Elemental", "Gnome", "Shadow", "Abomination"],
+}
