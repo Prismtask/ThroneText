@@ -158,6 +158,13 @@ ITEMS = {
     "antidote": {"name": "Antidote", "type": "consumable", "base_power": 0, "cure_poison": True},
     "armor_shatter_flask": { "name": "Armour Shatter Flask", "type": "utility", "base_power": 0, "expose_armor": 2,},
     "recalled_scroll": {"name": "Scroll of Recall", "type": "utility", "fixed_flee": True},
+    "capture_net": {
+    "name": "Capture Net",
+    "type": "utility",
+    "base_power": 0,
+    "capture_net": True,
+    "rarity_mult_bonus": 25
+    },
 
     # === Scrolls ===
     "common_scroll":     {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "common"},

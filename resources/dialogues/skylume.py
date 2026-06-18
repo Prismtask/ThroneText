@@ -98,3 +98,30 @@ SKYLUME_ARCANE_TOWER_DIALOGUE = {
         "The Spire of Seven Secrets will remember your visit.",
     ],
 }
+
+SKYLUME_GIFT_SHOP_DIALOGUE = {
+    "enter": [
+        "Welcome to the Arcane Curiosities Emporium. Rare wonders await.",
+        "Enchanted trinkets, glowing crystals, and mystical souvenirs. How may I enchant you?",
+        "The floating towers bless this shop with the rarest gifts in Aeralis.",
+        "Seeker of beauty and magic — you've found the perfect place.",
+    ],
+    "success": [
+        "A magnificent choice. This item hums with latent magic.",
+        "May this gift carry the light of the ley lines to your loved one.",
+        "Wrapped in starlight silk. The recipient will be amazed.",
+        "Well chosen. Some items here remember their owners forever.",
+    ],
+    "fail": [
+        "Even the simplest arcane trinket requires proper coin.",
+        "Your gold is insufficient for items touched by the ley lines.",
+        "Magic has a price. Come back when your purse matches your ambition.",
+        "The crystals reject your offer. Try again when you're wealthier.",
+    ],
+    "leave": [
+        "May the arcane guide your gifts safely home.",
+        "Return when the stars align and new curios arrive.",
+        "Farewell, seeker. May your gifts spark wonder.",
+        "The Emporium will remember your visit.",
+    ],
+}

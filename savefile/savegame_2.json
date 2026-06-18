@@ -3,23 +3,23 @@
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 12,
-    "Constitution": 8,
-    "Dexterity": 1,
-    "Wisdom": 1,
-    "Learning": 1,
-    "Charisma": 0
+    "Strength": 60,
+    "Constitution": 63,
+    "Dexterity": 19,
+    "Wisdom": 2,
+    "Learning": 3,
+    "Charisma": 102
   },
   "city_floors": {
     "solmere": {
-      "floor": 1,
-      "max_floor": 1
+      "floor": 31,
+      "max_floor": 100
     }
   },
-  "current_hp": 39,
-  "level": 1,
-  "exp": 0,
-  "level_hp_bonus": 0,
+  "current_hp": 280,
+  "level": 20,
+  "exp": 85,
+  "level_hp_bonus": 76,
   "inventory": [],
   "equipped": {
     "weapon": null,
@@ -29,8 +29,135 @@
   "active_buffs": [],
   "save_slot": 2,
   "dungeon_time": 0,
-  "gold": 100,
-  "time_minutes": 480,
+  "gold": 3400,
+  "time_minutes": 810,
   "location": "solmere",
-  "superboss_seed": 219153
+  "superboss_seed": 219153,
+  "day": 1,
+  "dungeon_region": "temperate",
+  "origin_city": "solmere",
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "silver_tongue_dagger",
+        "name": "Rare Silver-Tongue Dagger",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Charisma": 5,
+          "Dexterity": 3
+        },
+        "scaling_stat": "Charisma"
+      },
+      135
+    ],
+    [
+      {
+        "id": "gauntlets_of_power",
+        "name": "Uncommon Gauntlets of Power",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Strength": 2,
+          "Dexterity": 1
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "iron_skin_potion",
+        "name": "Common Iron Skin Potion",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "duration": 3,
+        "defense_buff": 4
+      },
+      15
+    ],
+    [
+      {
+        "id": "arcane_vestments",
+        "name": "Uncommon Arcane Vestments",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Learning": 5,
+          "Constitution": 1
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "holy_staff",
+        "name": "Rare Holy Staff",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Wisdom": 6,
+          "Constitution": 1
+        },
+        "scaling_stat": "Wisdom"
+      },
+      135
+    ],
+    [
+      {
+        "id": "spear",
+        "name": "Common Spear",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 3,
+          "Dexterity": 1
+        },
+        "scaling_stat": "Strength"
+      },
+      45
+    ],
+    [
+      {
+        "id": "scale_armor",
+        "name": "Common Scale Armor",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 3,
+          "Strength": 1
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "endurance_ring",
+        "name": "Rare Endurance Ring",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 3,
+          "Dexterity": 1
+        }
+      },
+      135
+    ]
+  ],
+  "last_shop_day_solmere": 1
 }

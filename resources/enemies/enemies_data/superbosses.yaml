@@ -1,0 +1,58 @@
+Superbosses:
+  broodmother_vileheart:
+    name: Broodmother Vileheart
+    race: Beast
+    level: 20
+    base_hp: 350
+    mods:
+      Strength: 6
+      Constitution: 6
+      Dexterity: 4
+    boss: true
+    super_boss: true
+  dream_devouring_slitcurrent:
+    name: Dream-Devouring Slitcurrent
+    race: Abomination
+    level: 21
+    base_hp: 420
+    mods:
+      Strength: 5
+      Constitution: 7
+      Dexterity: 6
+    boss: true
+    super_boss: true
+  melt_forge_golem_ignis:
+    name: Ignis, the Melt-Forge Golem
+    race: Construct
+    level: 21
+    base_hp: 400
+    mods:
+      Strength: 6
+      Constitution: 8
+      Dexterity: 1
+    boss: true
+    super_boss: true
+  queen_of_mirrors_sylvana:
+    name: Queen of Mirrors Sylvana
+    race: Fey
+    level: 21
+    base_hp: 380
+    mods:
+      Dexterity: 7
+      Charisma: 5
+      Constitution: 3
+      Strength: 2
+    boss: true
+    super_boss: true
+  heaven_banished_dragon_yinglong:
+    name: Yinglong, Heaven-Banished Dragon
+    race: Dragonkin
+    level: 45
+    base_hp: 600
+    mods:
+      Strength: 9
+      Constitution: 8
+      Dexterity: 5
+      Learning: 2
+    boss: true
+    super_boss: true

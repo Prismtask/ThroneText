@@ -24,22 +24,21 @@
 #   • Same 60% damage resistance unless Shattered Heaven buff is
 #     active (carried over / refreshed from Phase 1 if still ticking).
 #
-# Phase 4  "Immortal Rage" (≤20% HP, once)
-#   • Yinglong becomes Immortal: cannot be reduced below 1 HP by
-#     normal attacks.
+# Phase 4  "Immortal Rage" (≤20% HP)
+#   • Yinglong becomes Immortal: completely immune to normal attacks
+#     while Wedge is alive.
 #   • +30% damage bonus on all attacks.
 #   • Summons 1 Heaven Pinning Wedge entity (always acts last).
-#     – Player must hit the Wedge; on death it bounces to Yinglong
-#       for 7% of Yinglong's MAX HP as true damage.
+#     – Player must destroy the Wedge; on death it bounces 7% of
+#       Yinglong's MAX HP as true damage.
 #     – Until the Wedge is destroyed Yinglong remains Immortal.
-#     – After the bounce Yinglong loses Immortality.
 
 import random
 from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import format_enemy_status_line, print_superboss_header
-from combat.combat_engine import superboss_combat_loop
+from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_weaken, format_player_status_line
 from character import player_max_hp
 
@@ -52,8 +51,6 @@ BOSS_KEY = "heaven_banished_dragon_yinglong"
 PILLAR_KEY = "yinglong_heaven_pillar"
 WEDGE_KEY = "yinglong_heaven_pinning_wedge"
 
-# Dragon-type minion keys used inside the belly. These all exist in
-# enemies.py as Dragonkin entries.
 DRAGON_MINION_POOL = [
     "dragonkin_sky_terror",
     "dragonkin_storm_wing",
@@ -62,11 +59,11 @@ DRAGON_MINION_POOL = [
     "dragonkin_elder_wyrm",
 ]
 
-DAMAGE_RESIST     = 0.60   # player damage reduced by this fraction
-INNER_STAT_MULT   = 1.40   # dragonkin inside the belly
-WEDGE_HP_DMG_PCT  = 0.20   # 20% max HP pure damage from wedge at turn-end
-WEDGE_BOUNCE_PCT  = 0.07   # 7% boss max HP on wedge-kill bounce
-IMMORTAL_DMG_MULT = 1.30   # boss damage in immortal phase
+DAMAGE_RESIST     = 0.60
+INNER_STAT_MULT   = 1.40
+WEDGE_HP_DMG_PCT  = 0.20
+WEDGE_BOUNCE_PCT  = 0.07
+IMMORTAL_DMG_MULT = 1.30
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -83,7 +80,6 @@ def _is_wedge(e):
     return e.get("key") == WEDGE_KEY
 
 def _apply_shattered_heaven(player, turns=3):
-    """Grant the 'Shattered Heaven' buff: full damage vs Yinglong for N turns."""
     for b in player.get("active_buffs", []):
         if b.get("source") == "shattered_heaven":
             b["remaining"] = max(b["remaining"], turns)
@@ -92,7 +88,7 @@ def _apply_shattered_heaven(player, turns=3):
         "type":   "shattered_heaven",
         "source": "shattered_heaven",
         "remaining": turns,
-        "value":  0,   # cosmetic placeholder so tick_player_buffs won't choke
+        "value":  0,
     })
     return "applied"
 
@@ -100,7 +96,6 @@ def _has_shattered_heaven(player):
     return any(b.get("source") == "shattered_heaven" for b in player.get("active_buffs", []))
 
 def _tick_shattered_heaven(player):
-    """Decrement the buff; return True if it just expired."""
     for b in player.get("active_buffs", [])[:]:
         if b.get("source") == "shattered_heaven":
             b["remaining"] -= 1
@@ -111,15 +106,14 @@ def _tick_shattered_heaven(player):
 
 
 def _make_pillar():
-    """Fabricate a Heaven Pillar enemy dict (not in enemies.py — purely synthetic)."""
     return {
         "key":     PILLAR_KEY,
         "name":    "Heaven Pillar",
         "hp":      40,
         "max_hp":  40,
         "str_mod": 0,
-        "con_mod": 0,          # no armour — everything lands
-        "dex_mod": -10,        # always loses initiative to the player
+        "con_mod": 0,
+        "dex_mod": -10,
         "level":   45,
         "multiplier": 1.0,
         "active_debuffs": [],
@@ -127,7 +121,6 @@ def _make_pillar():
 
 
 def _make_wedge():
-    """Fabricate the Heaven Pinning Wedge enemy dict (Phase 4 only)."""
     return {
         "key":     WEDGE_KEY,
         "name":    "Heaven Pinning Wedge",
@@ -135,7 +128,7 @@ def _make_wedge():
         "max_hp":  30,
         "str_mod": 0,
         "con_mod": 0,
-        "dex_mod": -20,        # always acts LAST (special override in hook too)
+        "dex_mod": -20,
         "level":   45,
         "multiplier": 1.0,
         "active_debuffs": [],
@@ -143,7 +136,6 @@ def _make_wedge():
 
 
 def _make_dragonkin_minion(player, stat_mult):
-    """Pick a random dragon minion and scale its stats by stat_mult."""
     key = random.choice(DRAGON_MINION_POOL)
     base = enemy_stats(key, player)
     base["str_mod"]  = int(base["str_mod"]  * stat_mult)
@@ -152,23 +144,15 @@ def _make_dragonkin_minion(player, stat_mult):
     scaled_hp        = int(base["hp"]       * stat_mult)
     base["hp"]       = scaled_hp
     base["max_hp"]   = scaled_hp
-    # Give each minion a unique display name tag so the player can tell them apart
     base["name"]    += f" [Belly {random.randint(10,99)}]"
     return base
 
 
 # ═══════════════════════════════════════════════════════════════════
-# INNER-DRAGON BELLY COMBAT  (Phase 2 sub-fight)
+# INNER-DRAGON BELLY COMBAT
 # ═══════════════════════════════════════════════════════════════════
 
 def _inner_dragon_combat(player):
-    """
-    Run the belly sub-fight.  Exits with 'victory' or 'dead'.
-
-    Heaven Pinning Wedge fires at TURN-END on turns 3 and 6 (twice
-    total, tracked by wedge_activations).  The player's 'defending'
-    flag for that round is checked before dealing damage.
-    """
     print("\n" + "☁" * 60)
     print("The world goes dark.  You have been SWALLOWED.")
     print("Inside the Dragon's belly — a warped skyscape of crushing")
@@ -183,10 +167,9 @@ def _inner_dragon_combat(player):
         "turn_counter":       0,
         "wedge_activations":  0,
         "defending_this_turn": False,
-        "bonus_dmg_next_turn": False,   # 20%-HP bonus from blocking the wedge
+        "bonus_dmg_next_turn": False,
     }
 
-    # ── Inner HUD ──────────────────────────────────────────────────
     def inner_hud(ctx, elist):
         clear_screen()
         status_str = format_player_status_line(player)
@@ -204,16 +187,13 @@ def _inner_dragon_combat(player):
             print(f"  [{idx+1}] {format_enemy_status_line(e)}")
         print("[A]ttack  [D]efend  [F]lee (escape impossible)  [U]se item")
 
-    # ── Inner player action handler ─────────────────────────────────
     def inner_action_override(ctx):
         action = input("Choose: ").strip().lower()
         ctx["defending_this_turn"] = (action == "d")
         ctx["turn_counter"] += 1
         return action
 
-    # ── Heaven Pinning Wedge — end-of-turn pulse ────────────────────
     def inner_post_round(ctx, elist):
-        # Fires on turn 3 and 6 (activations 0 and 1)
         next_trigger = 3 * (ctx["wedge_activations"] + 1)
         if ctx["wedge_activations"] < 2 and ctx["turn_counter"] >= next_trigger:
             ctx["wedge_activations"] += 1
@@ -221,19 +201,12 @@ def _inner_dragon_combat(player):
             print("\n" + "✦" * 55)
             print(f"☁ HEAVEN PINNING WEDGE activates! ({ctx['wedge_activations']}/2)")
 
-            # ── Damage all Dragonkin minions ──
-            enemy_dmg_msgs = []
             for e in elist:
                 if e["hp"] > 0:
                     enemy_dmg = int(e["max_hp"] * WEDGE_HP_DMG_PCT)
                     e["hp"] = max(0, e["hp"] - enemy_dmg)
-                    enemy_dmg_msgs.append(f"{e['name']} takes {enemy_dmg} damage!")
-            if enemy_dmg_msgs:
-                print("The Wedge's force lashes out at all inside the belly!")
-                for msg in enemy_dmg_msgs:
-                    print(f"  {msg}")
+                    print(f"  {e['name']} takes {enemy_dmg} damage!")
 
-            # ── Damage the player (with defend check) ──
             if ctx["defending_this_turn"]:
                 print("You DEFENDED — the Wedge's energy is deflected from you!")
                 print(f"The energy redirects — you gain +20% max HP on your next attack!")
@@ -249,18 +222,12 @@ def _inner_dragon_combat(player):
             print("✦" * 55)
             ctx["defending_this_turn"] = False
 
-    # ── Inner on-kill hook (bonus dmg applies if flag set) ──────────
     def inner_on_kill(target, elist, ctx):
-        pass   # nothing special per-kill inside
+        pass
 
-    # ── Enemy turn hook (minions just do normal attacks) ────────────
     def inner_enemy_hook(enemy, ctx, pl, p_con, defending):
-        # The bonus-dmg buff is consumed on the player's next attack,
-        # not here — we just pass through normal attack for minions.
         return 1, False, None, 1.0, 0
 
-    # ── Run the inner fight ─────────────────────────────────────────
-    # We use superboss_combat_loop but with lightweight hooks.
     result = superboss_combat_loop(
         player, minions, floor=None, boss_name="Inside Yinglong",
         context=inner_ctx,
@@ -273,11 +240,10 @@ def _inner_dragon_combat(player):
     )
 
     if result == "fled":
-        # Cannot flee; treat as a continue (loop returns to outer combat)
         print("There is no escape from within! You are still trapped!")
-        return "victory"   # caller handles what happens next
+        return "victory"
 
-    return result   # "victory" or "dead"
+    return result
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -300,37 +266,37 @@ def combat_yinglong(player, floor=None):
     input("Press Enter to face the Heaven-Banished Dragon...")
 
     context = {
-        # Phase tracking
-        "phase":                1,     # 1, 2 (belly), 3, 4 (immortal)
+        "phase":                1,
         "devour_triggered":     False,
         "immortal_triggered":   False,
-
-        # Pillar
         "pillar_turn_counter":  0,
         "pillar_active":        False,
-
-        # Inner belly (populated on enter)
         "belly_complete":       False,
-
-        # Immortal wedge (Phase 4)
         "wedge_active":         False,
         "immortal":             False,
-
-        # Cosmetics / per-round state
         "defending_this_turn":  False,
         "bonus_dmg_next_turn":  False,
-        "shattered_turns_left": 0,
     }
+
+    # ── Player Hit Hook (Immortality) ───────────────────────────────
+    def on_player_hit_hook(target, elist, ctx):
+        """Phase 4: Yinglong is completely immune to normal attacks while Wedge is active."""
+        if not _is_boss(target):
+            return
+        if ctx.get("immortal") and ctx.get("wedge_active"):
+            # Removed the target["hp"] reset line
+            print("\n✦ Yinglong's divine immortality holds firm — it takes no damage!")
+            return
 
     # ── Pre-player hook ─────────────────────────────────────────────
     def pre_player_hook(ctx, elist):
         b = next((e for e in elist if _is_boss(e)), None)
+        if not b: return
 
-        # ── Phase 2 trigger: 75% HP ─────────────────────────────────
+        # Phase 2
         if b and not ctx["devour_triggered"] and b["hp"] <= int(b["max_hp"] * 0.75):
             ctx["devour_triggered"] = True
             ctx["phase"] = 2
-
             print("\n" + "☁" * 60)
             print("Yinglong OPENS ITS MAWS WIDE —")
             print("A gravity-less vortex tears you off your feet!")
@@ -342,28 +308,25 @@ def combat_yinglong(player, floor=None):
             if inner_result == "dead":
                 return "dead"
 
-            # Player survived — dragon resumes at 35% HP
             ctx["belly_complete"] = True
             ctx["phase"] = 3
-
             print("\n" + "☁" * 60)
             print("You claw your way OUT through the Dragon's side.")
             print("Yinglong ROARS in agony — but it is still alive.")
-            print("It reforms, battered, at the edge of its limits...")
             resume_hp = int(b["max_hp"] * 0.35)
             b["hp"] = resume_hp
             print(f"Yinglong's remaining HP: {resume_hp}")
             print("☁" * 60)
             input("Press Enter to continue the battle...")
 
-            # Remove pillar if it somehow lingered
             elist[:] = [e for e in elist if not _is_pillar(e)]
             ctx["pillar_active"] = False
             return
 
-        # ── Phase 4 trigger: ≤20% HP ────────────────────────────────
-        if b and ctx["phase"] == 3 and not ctx["immortal_triggered"] and b["hp"] <= int(b["max_hp"] * 0.20):
-            ctx["immortal_triggered"] = True
+        # Phase 4 (can re-trigger after wedge bounce)
+        if b and ctx["phase"] >= 3 and b["hp"] <= int(b["max_hp"] * 0.20) and not ctx.get("wedge_active"):
+            if not ctx["immortal_triggered"]:
+                ctx["immortal_triggered"] = True
             ctx["phase"] = 4
             ctx["immortal"] = True
             b["str_mod"] = int(b["base_str_mod"] * IMMORTAL_DMG_MULT)
@@ -371,8 +334,8 @@ def combat_yinglong(player, floor=None):
             print("\n" + "!" * 60)
             print("[IMMORTAL RAGE]  Yinglong REFUSES to die.")
             print("Crackling divine light seals its wounds shut — IMMORTAL!")
-            print(f"+30% damage. A Heaven Pinning Wedge descends — destroy it")
-            print(f"to strip away Yinglong's immortality and end this!")
+            print("A Heaven Pinning Wedge descends — destroy it to")
+            print("force 7% MAX HP true damage!")
             print("!" * 60)
             input("Press Enter...")
 
@@ -380,7 +343,7 @@ def combat_yinglong(player, floor=None):
             elist.append(wedge)
             ctx["wedge_active"] = True
 
-        # ── Phase 1: Pillar summoning (every 3 player turns) ────────
+        # Phase 1 Pillar
         if ctx["phase"] == 1 and not ctx["pillar_active"]:
             ctx["pillar_turn_counter"] += 1
             if ctx["pillar_turn_counter"] >= 3:
@@ -417,9 +380,9 @@ def combat_yinglong(player, floor=None):
         print("\nEnemies:")
         for idx, e in enumerate(elist):
             if _is_boss(e):
-                extra = f"{resist_note}"
-                if ctx["immortal"] and not ctx["wedge_active"] is False:
-                    extra += " [IMMORTAL — destroy Wedge!]" if ctx.get("wedge_active") else ""
+                extra = resist_note
+                if ctx["immortal"] and ctx.get("wedge_active"):
+                    extra += " [IMMORTAL — destroy Wedge!]"
             elif _is_pillar(e):
                 extra = " ← DESTROY to break Yinglong's scales!"
             elif _is_wedge(e):
@@ -429,13 +392,11 @@ def combat_yinglong(player, floor=None):
             print(f"  [{idx+1}] {format_enemy_status_line(e, extra)}")
         print("[A]ttack  [D]efend  [F]lee  [U]se item")
 
-    # ── Player action override ───────────────────────────────────────
     def player_action_override(ctx):
         action = input("Choose: ").strip().lower()
         ctx["defending_this_turn"] = (action == "d")
         return action
 
-    # ── On-kill hook ─────────────────────────────────────────────────
     def on_kill_hook(target, elist, ctx):
         if _is_pillar(target):
             ctx["pillar_active"] = False
@@ -447,39 +408,28 @@ def combat_yinglong(player, floor=None):
                 print("SHATTERED HEAVEN refreshed — full damage for 3 more turns!")
 
         elif _is_wedge(target):
-            # Bounce 7% of boss MAX HP as true damage
             b = next((e for e in elist if _is_boss(e)), None)
             if b:
                 bounce_dmg = int(b["max_hp"] * WEDGE_BOUNCE_PCT)
                 b["hp"] = max(0, b["hp"] - bounce_dmg)
                 ctx["immortal"] = False
                 ctx["wedge_active"] = False
-                # Restore base str_mod
                 b["str_mod"] = b["base_str_mod"]
                 print("\n" + "✦" * 55)
                 print(f"The Heaven Pinning Wedge DETONATES against Yinglong!")
                 print(f"⚡ {bounce_dmg} TRUE DAMAGE ricochets into the Dragon!")
-                print("Yinglong's immortality SHATTERS — it can now be slain!")
+                print("Yinglong's immortality SHATTERS!")
                 print("✦" * 55)
 
-    # ── Enemy turn hook ───────────────────────────────────────────────
     def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
-        # --- Pillar: does NOT attack, just exists to be targeted ---
         if _is_pillar(enemy):
             print(f"  (The Heaven Pillar pulses — it does not attack.)")
             return 0, True, None, 1.0, 0
 
-        # --- Wedge: acts last but does NOT do a standard attack ---
-        # Its punishment happens in post_round_hook below.
         if _is_wedge(enemy):
             print(f"  (The Heaven Pinning Wedge hums ominously at turn-end...)")
             return 0, True, None, 1.0, 0
 
-        # --- Yinglong: normal attack with damage resistance applied
-        #     via damage reduction on the BOSS side (we can't intercept
-        #     player → boss damage here, but we enforce resist in
-        #     post-round by checking for an intercept flag — see note).
-        # Immortal rage: +30% damage
         immortal_bonus = int(enemy["str_mod"] * (IMMORTAL_DMG_MULT - 1.0)) if ctx["immortal"] else 0
 
         def dragon_extra(e, p, dmg):
@@ -491,15 +441,12 @@ def combat_yinglong(player, floor=None):
 
         return 1, False, dragon_extra, 1.0, immortal_bonus
 
-    # ── Post-round hook ───────────────────────────────────────────────
     def post_round_hook(ctx, elist):
-        # Tick Shattered Heaven buff
         if _has_shattered_heaven(player):
             expired = _tick_shattered_heaven(player)
             if expired:
                 print("\n✦ Shattered Heaven fades — Yinglong's divine scales reassert!")
 
-        # Phase 4 Wedge: turn-end pulse against player if wedge is alive
         wedge = next((e for e in elist if _is_wedge(e) and e["hp"] > 0), None)
         if wedge:
             max_hp = player_max_hp(player)
@@ -520,35 +467,27 @@ def combat_yinglong(player, floor=None):
             print("✦" * 55)
             ctx["defending_this_turn"] = False
 
-        # Consume bonus-dmg flag on the round after it's been set
-        # (it persists one round so the player can use it next turn)
-
-    # ── Player damage intercept  ─────────────────────────────────────
-    # We cannot hook mid-attack in handle_player_turn, so we apply
-    # the 60% resistance by wrapping the boss's con_mod upward.
-    # Before each player turn we inflate con_mod to simulate resistance,
-    # and after the round we restore it.  This mirrors how Ignis handles
-    # heat defense.
+    # Resistance handling
     original_con = boss["con_mod"]
 
     def _set_boss_resistance(ctx, elist):
         b = next((e for e in elist if _is_boss(e)), None)
-        if not b:
+        if not b: return
+        
+        # ADD THIS BLOCK FOR IMMORTALITY:
+        if ctx.get("immortal") and ctx.get("wedge_active"):
+            b["con_mod"] = 9999
             return
-        # Shattered Heaven: player deals full damage → no resist buff
+
+        # Original logic remains below:
         if _has_shattered_heaven(player) or ctx["bonus_dmg_next_turn"]:
             b["con_mod"] = original_con
             if ctx["bonus_dmg_next_turn"]:
                 ctx["bonus_dmg_next_turn"] = False
                 print(f"\n⚡ Deflected Wedge energy surges through your weapon! Full damage + bonus!")
         else:
-            # Inflate con_mod so that incoming damage is ~60% reduced.
-            # Typical player damage is randint(4,10)+scaling; we add a
-            # large flat con to absorb most of it.  A value of 12 reduces
-            # a typical 15-dmg hit to ~3, approximating 60% resistance.
             b["con_mod"] = original_con + 12
 
-    # Wrap pre_player_hook to inject resistance update
     _original_pre = pre_player_hook
     def pre_player_hook_wrapped(ctx, elist):
         _set_boss_resistance(ctx, elist)
@@ -560,12 +499,12 @@ def combat_yinglong(player, floor=None):
         pre_player_hook=pre_player_hook_wrapped,
         custom_hud_hook=custom_hud,
         on_kill_hook=on_kill_hook,
+        on_player_hit_hook=on_player_hit_hook,
         player_action_override=player_action_override,
         enemy_turn_hook=enemy_turn_hook,
         post_round_hook=post_round_hook,
     )
 
-    # ── Restore boss con_mod in case it's cached anywhere ────────────
     boss["con_mod"] = original_con
 
     if result == "victory":

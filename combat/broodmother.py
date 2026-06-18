@@ -3,10 +3,13 @@ from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import format_enemy_status_line, print_superboss_header
-from combat.combat_engine import superboss_triple_action_loop, superboss_combat_loop
+from combat.superboss_common import superboss_triple_action_loop, superboss_combat_loop
 from combat.status_effects import apply_poison
 
 def combat_broodmother(player, floor=None):
+    if floor is None:
+        loc = player.get("location", "")
+        floor = player.get("city_floors", {}).get(loc, {}).get("floor")
     boss_key = "broodmother_vileheart"
     boss = enemy_stats(boss_key, player)
     boss["max_hp"] = boss["hp"]
@@ -25,6 +28,7 @@ def combat_broodmother(player, floor=None):
     context = {
         "boss_escaped_data": None,
         "minion_phase_active": False,
+        "minion_phase_triggered": False,
         "minion_timer": 0,
         "boss_enraged_turns": 0
     }
@@ -37,7 +41,9 @@ def combat_broodmother(player, floor=None):
         return None
 
     def pre_player_hook(ctx, elist):
-        if not ctx["minion_phase_active"] and ctx["boss_escaped_data"] is None:
+        if (not ctx["minion_phase_active"]
+                and ctx["boss_escaped_data"] is None
+                and not ctx["minion_phase_triggered"]):
             for e in elist[:]:
                 if e.get("key") == "broodmother_vileheart" and e["hp"] <= int(e["max_hp"] * 0.75):
                     print(f"\n[GIMMICK] {e['name']} screeches and retreats into the shadows!")
@@ -50,6 +56,7 @@ def combat_broodmother(player, floor=None):
                         m_stats["max_hp"] = m_stats["hp"]
                         elist.append(m_stats)
                     ctx["minion_phase_active"] = True
+                    ctx["minion_phase_triggered"] = True
                     ctx["minion_timer"] = 3
                     break
 
@@ -80,7 +87,10 @@ def combat_broodmother(player, floor=None):
 
     def post_round_hook(ctx, elist):
         if ctx["minion_phase_active"]:
-            spiderlings_alive = any(e.get("key") == "vileheart_spiderling" for e in elist)
+            spiderlings_alive = any(
+                e.get("key") == "vileheart_spiderling" and e["hp"] > 0
+                for e in elist
+            )
             if not spiderlings_alive:
                 print("\n[GIMMICK] You slaughtered all spiderlings!")
                 print("Broodmother Vileheart descends again, enraged by your defiance.")

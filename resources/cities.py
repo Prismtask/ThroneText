@@ -40,6 +40,7 @@ from .dialogues import (
     SKYLUME_SHOPKEEPER_DIALOGUE,
     SKYLUME_INNKEEPER_DIALOGUE,
     SKYLUME_ARCANE_TOWER_DIALOGUE,
+    SKYLUME_GIFT_SHOP_DIALOGUE,
 
     # Ashkara
     ASHKARA_RECEPTIONIST_DIALOGUE,
@@ -80,6 +81,7 @@ from .dialogues import (
     STORMHOLD_SHOPKEEPER_DIALOGUE,
     STORMHOLD_INNKEEPER_DIALOGUE,
     STORMHOLD_BARRACKS_DIALOGUE,
+    STORMHOLD_GIFT_SHOP_DIALOGUE,
 
     # Coralhaven  (tropical island — sea access only)
     CORALHAVEN_RECEPTIONIST_DIALOGUE,
@@ -88,6 +90,7 @@ from .dialogues import (
     CORALHAVEN_PORTMASTER_DIALOGUE,
     CORALHAVEN_HERBALIST_DIALOGUE,
     CORALHAVEN_TEMPLE_DIALOGUE,
+    CORALHAVEN_GIFT_SHOP_DIALOGUE,
 
     # Blackwake  (hidden pirate cove — sea access only)
     BLACKWAKE_RECEPTIONIST_DIALOGUE,
@@ -150,12 +153,13 @@ CITIES = {
         "name": "Stormhold",
         "biome": "tundra",
         "description": "A bleak northern fortress carved into a glacier ridge. No harbour, no port — the sea here is frozen six months of the year.",
-        "services": ["shop", "inn", "barracks"],
+        "services": ["shop", "inn", "barracks", "gift_shop"],
         "dialogues": {
             "receptionist": STORMHOLD_RECEPTIONIST_DIALOGUE,
             "shop": STORMHOLD_SHOPKEEPER_DIALOGUE,
             "inn": STORMHOLD_INNKEEPER_DIALOGUE,
             "barracks": STORMHOLD_BARRACKS_DIALOGUE,
+            "gift_shop": SKYLUME_GIFT_SHOP_DIALOGUE,
         },
         "travel": {
             "connections": [
@@ -292,12 +296,13 @@ CITIES = {
         "name": "Skylume",
         "biome": "magical",
         "description": "Towers of crystallised leyline energy pierce the clouds above this arcane city. Magic items trade for a premium.",
-        "services": ["shop", "inn", "arcane_tower"],
+        "services": ["shop", "inn", "arcane_tower", "gift_shop"],
         "dialogues": {
             "receptionist": SKYLUME_RECEPTIONIST_DIALOGUE,
             "shop": SKYLUME_SHOPKEEPER_DIALOGUE,
             "inn": SKYLUME_INNKEEPER_DIALOGUE,
             "arcane_tower": SKYLUME_ARCANE_TOWER_DIALOGUE,
+            "gift_shop": SKYLUME_GIFT_SHOP_DIALOGUE,
         },
         "travel": {
             "connections": [
@@ -530,7 +535,7 @@ CITIES = {
         "name": "Coralhaven",
         "biome": "tropical",
         "description": "A jewel of the southern seas built across a reef archipelago. Reachable only by water. Blessed by three temples and surrounded by beauty.",
-        "services": ["shop", "inn", "port", "herbalist", "temple", "guild"],
+        "services": ["shop", "inn", "port", "herbalist", "temple", "guild", "gift_shop"],
         "dialogues": {
             "receptionist": CORALHAVEN_RECEPTIONIST_DIALOGUE,
             "shop": CORALHAVEN_SHOPKEEPER_DIALOGUE,
@@ -538,6 +543,7 @@ CITIES = {
             "port": CORALHAVEN_PORTMASTER_DIALOGUE,
             "herbalist": CORALHAVEN_HERBALIST_DIALOGUE,
             "temple": CORALHAVEN_TEMPLE_DIALOGUE,
+            "gift_shop": CORALHAVEN_GIFT_SHOP_DIALOGUE,
         },
         "travel": {
             "connections": [

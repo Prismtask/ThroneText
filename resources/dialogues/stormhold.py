@@ -76,48 +76,6 @@ STORMHOLD_INNKEEPER_DIALOGUE = {
     ],
 }
 
-STORMHOLD_PORTMASTER_DIALOGUE = {
-    "enter": [
-        "Stormhold Naval Port. Civilians stay clear.",
-        "If you need passage on a military vessel, state your business.",
-        "The port is under martial law. What do you want?",
-        "Portmaster's office. Speak quickly.",
-    ],
-    "buy_ticket": [
-        "Passage booked on a supply ship. Don't cause trouble.",
-        "Fair warning – the captain is strict.",
-        "One voyage, paid. Follow all orders.",
-        "You're on the manifest. No complaints.",
-    ],
-    "leave": [
-        "The port is always guarded. Return anytime.",
-        "May your voyage be uneventful.",
-        "Farewell. Don't steal from the navy.",
-        "Come back when you need to sail again.",
-    ],
-}
-
-STORMHOLD_SHIPYARD_DIALOGUE = {
-    "enter": [
-        "Stormhold Naval Shipyard. We build warships.",
-        "Need a military vessel? You'll need the commander's approval.",
-        "The best warships on the coast. Not for sale to civilians.",
-        "Welcome to the Hammer and Anchor. We don't do pleasure boats.",
-    ],
-    "buy_ship": [
-        "A fine warship. Use it well.",
-        "She's yours. May she strike fear into your enemies.",
-        "That vessel has sunk three pirate ships. Keep the streak.",
-        "The navy approves this sale. Don't embarrass us.",
-    ],
-    "leave": [
-        "Come back when you need more firepower.",
-        "The yard is always busy. Return anytime.",
-        "Farewell. Keep the cannons clean.",
-        "May your new ship bring you glory.",
-    ],
-}
-
 STORMHOLD_BARRACKS_DIALOGUE = {
     "enter": [
         "Stormhold Garrison. State your name and allegiance.",
@@ -136,5 +94,32 @@ STORMHOLD_BARRACKS_DIALOGUE = {
         "May your sword never falter.",
         "Farewell. Train harder next time.",
         "The barracks doors close. The north waits.",
+    ],
+}
+
+STORMHOLD_GIFT_SHOP_DIALOGUE = {
+    "enter": [
+        "Welcome to the Stormhold Souvenir & Gift Hall. What memory are you taking home?",
+        "Gifts from the fortress! Perfect for loved ones back home.",
+        "Looking for something sturdy and meaningful? You've come to the right place.",
+        "Naval memorabilia, storm charms, and military keepsakes. Browse freely.",
+    ],
+    "success": [
+        "Excellent choice. That will remind them of the northern winds.",
+        "Wrapped with care. Safe travels with your new treasure.",
+        "A fine gift. The recipient will cherish it.",
+        "Paid in full. May it bring good memories of Stormhold.",
+    ],
+    "fail": [
+        "Not enough coin for that one, I'm afraid.",
+        "The fortress doesn't give away its mementos for free.",
+        "Come back when your purse is heavier, traveler.",
+        "That one's a bit too valuable for your current funds.",
+    ],
+    "leave": [
+        "Come back anytime. We have new stock after every voyage.",
+        "Safe journey. Don't forget those you left behind.",
+        "Farewell. May your gifts bring joy.",
+        "The gift hall will be here when you return.",
     ],
 }

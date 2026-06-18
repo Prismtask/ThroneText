@@ -26,6 +26,8 @@ get_effective_attribute() in stats.py picks it up automatically.
 
 from utils import clear_screen, advance_time
 from character import player_max_hp
+import random
+from resources.enemies import AFFECTION_GIFTS
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,12 @@ HOUSE_LEVELS = {
     1: {"name": "Hovel",   "storage_cap": 10, "income_per_day": 8,  "rest_minutes": 90,  "upgrade_cost": 600,  "bed_buff_value": 1, "bed_buff_floors": 1},
     2: {"name": "Cottage", "storage_cap": 20, "income_per_day": 18, "rest_minutes": 70,  "upgrade_cost": 1500, "bed_buff_value": 2, "bed_buff_floors": 2},
     3: {"name": "Manor",   "storage_cap": 35, "income_per_day": 35, "rest_minutes": 50,  "upgrade_cost": None, "bed_buff_value": 3, "bed_buff_floors": 3},
+}
+
+HOUSE_MONSTER_GIRL_LIMITS = {
+    1: 2,   # Hovel: max 2 girls
+    2: 4,   # Cottage: max 4 girls
+    3: 8    # Manor: max 8 girls
 }
 
 # Multiplier on income per day based on a city's wealth (derived from inn cost).
@@ -250,17 +258,84 @@ def _house_upgrade(player, city_id, house):
 
 
 def _house_lounge(player, city_id, house):
-    """Lounge — reserved for the ally system. Placeholder."""
-    print("╔══════════════════════════════╗")
-    print("║         THE LOUNGE           ║")
-    print("╠══════════════════════════════╣")
-    print("║  [Coming soon]               ║")
-    print("║                              ║")
-    print("║  Once you have companions,   ║")
-    print("║  they can gather here to     ║")
-    print("║  plan, rest, and bond.       ║")
-    print("╚══════════════════════════════╝")
+    clear_screen()
+    lvl_data = _house_level_data(house)
+    girls = house.get("monster_girls", [])
+    max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house["level"], 2)
+
+    print(f"=== {lvl_data['name'].upper()} LOUNGE ===")
+    print(f"Monster Girls: {len(girls)}/{max_girls}\n")
+
+    if not girls:
+        print("The lounge is quiet... no companions yet.")
+    else:
+        for i, girl in enumerate(girls):
+            aff = girl.get("affection", 30)
+            status = "💖" if aff >= 80 else "❤️" if aff >= 50 else "😐"
+            print(f"  {i+1}. {girl['name']} (Lv {girl['level']}) — {status} Affection: {aff}/100")
+
+    print("\nOptions:")
+    print("1. Talk to a girl")
+    print("2. Give a gift")
+    print("3. Back")
+
+    choice = input("\nChoice: ").strip()
+
+    if choice == "1" and girls:
+        try:
+            idx = int(input("Which girl? ")) - 1
+            if 0 <= idx < len(girls):
+                girl = girls[idx]
+                gain = random.randint(8, 18)
+                girl["affection"] = min(100, girl.get("affection", 30) + gain)
+                print(f"You spent quality time with {girl['name']}. Affection +{gain}!")
+        except:
+            pass
+
+    elif choice == "2" and girls:
+        # Gift giving
+        gifts = [it for it in player.get("inventory", []) if it.get("type") == "gift"]
+        if not gifts:
+            print("You have no gifts.")
+            input("Press Enter...")
+            return
+
+        print("\nYour Gifts:")
+        for i, g in enumerate(gifts):
+            print(f"{i+1}. {g['name']}")
+
+        try:
+            gidx = int(input("Choose gift: ")) - 1
+            gift = gifts[gidx]
+            gidx_real = player["inventory"].index(gift)
+
+            print("\nGive to which girl?")
+            for i, girl in enumerate(girls):
+                print(f"{i+1}. {girl['name']}")
+
+            gidx_girl = int(input("Choice: ")) - 1
+            girl = girls[gidx_girl]
+
+            gift_type = gift.get("gift_type")
+            reaction = get_gift_reaction(girl.get("key"), gift_type)
+
+            girl["affection"] = max(0, min(100, girl["affection"] + reaction))
+            print(f"You gave {gift['name']} to {girl['name']}.")
+            print(f"Reaction: {reaction:+} affection!")
+
+            player["inventory"].pop(gidx_real)
+        except:
+            print("Gift giving cancelled.")
+
     input("\nPress Enter...")
+
+def get_gift_reaction(girl_key, gift_type):
+    """Load personalized gift reactions from monster_girls.yaml"""
+    try:
+        reactions = AFFECTION_GIFTS.get(girl_key, {})
+        return reactions.get(gift_type, random.randint(-15, 25))
+    except:
+        return random.randint(-10, 30)
 
 
 # ── Main house menu ───────────────────────────────────────────────────────────

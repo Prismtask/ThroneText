@@ -1,11 +1,10 @@
 # sylvana.py – Queen of Mirrors Sylvana super boss encounter
-
 import random
 from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import format_enemy_status_line, print_superboss_header
-from combat.combat_engine import superboss_triple_action_loop, superboss_combat_loop
+from combat.superboss_common import superboss_triple_action_loop, superboss_combat_loop
 from character import player_max_hp
 from combat.status_effects import (
     apply_poison, apply_curse,
@@ -103,16 +102,29 @@ def combat_sylvana(player, floor=None):
     }
 
     def on_kill_hook(target, elist, ctx):
+        """Fallback — if something else kills a clone."""
         if target.get("is_fake"):
-            print("\n🪞 That was just a mirror! Sylvana laughs as you strike the illusion.")
-            if ctx["final_form"]:
-                print("Her rage surges — TRIPLE ACTIONS for 2 turns!")
-            else:
-                print("Her rage crystalises — DOUBLE ACTIONS for 2 turns!")
-            ctx["boss_extra_actions"] += 2
-            ctx["extra_actions_granted_this_round"] = True
+            # Rage is already triggered by on_player_hit_hook,
+            # so just print a message and clear the split flag.
+            print(f"\n🪞 The mirror copy of {target['name']} shatters!")
+            ctx["split_active"] = False
         else:
             ctx["split_active"] = False
+
+    def _trigger_mirror_rage(ctx, is_kill=False):
+        """Centralized rage trigger for hitting/killing clones."""
+        print("\n🪞 That was just a mirror! Sylvana laughs as you strike the illusion.")
+        if ctx["final_form"]:
+            print("Her rage surges — TRIPLE ACTIONS for 2 turns!")
+        else:
+            print("Her rage crystalises — DOUBLE ACTIONS for 2 turns!")
+        ctx["boss_extra_actions"] += 2
+        ctx["extra_actions_granted_this_round"] = True
+
+    def on_player_hit_hook(target, elist, ctx):
+        """NEW: Trigger on any hit against a clone (main fix)."""
+        if target.get("is_fake"):
+            _trigger_mirror_rage(ctx, is_kill=False)
 
     def pre_player_hook(ctx, elist):
         b = next((e for e in elist if not e.get("is_fake")), None)
@@ -161,9 +173,9 @@ def combat_sylvana(player, floor=None):
             action_status = "Normal actions"
 
         print_superboss_header(player, floor, "Queen of Mirrors Sylvana", "")
-        print(f"└─ {action_status}")
-        if ctx["boss_extra_actions"] > 0:
-            print(f"⚡ PENALTY: Sylvana has extra actions for {ctx['boss_extra_actions']} more turn(s)!")
+        print(f"{action_status}")
+        
+        # We removed the extra penalty printout here!
 
         print("\nEnemies:")
         for idx, e in enumerate(elist):
@@ -222,12 +234,13 @@ def combat_sylvana(player, floor=None):
             ctx["split_active"] = False
 
     result = superboss_combat_loop(
-        player, enemies, floor, "Queen of Mirrors Sylvana", context,
-        pre_player_hook=pre_player_hook,
-        custom_hud_hook=custom_hud_hook,
-        on_kill_hook=on_kill_hook,
-        enemy_turn_hook=enemy_turn_hook,
-        post_round_hook=post_round_hook
+    player, enemies, floor, "Queen of Mirrors Sylvana", context,
+    pre_player_hook=pre_player_hook,
+    custom_hud_hook=custom_hud_hook,
+    on_kill_hook=on_kill_hook,
+    on_player_hit_hook=on_player_hit_hook,
+    enemy_turn_hook=enemy_turn_hook,
+    post_round_hook=post_round_hook
     )
 
     if result == "victory":

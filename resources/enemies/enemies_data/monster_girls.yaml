@@ -8,6 +8,7 @@ goblin_girl:
     Charisma: 1
   boss: false
   super_boss: false
+  monster_girl: true
 harpy_scout:
   name: Harpy Scout
   race: Beast
@@ -18,6 +19,7 @@ harpy_scout:
     Charisma: 1
   boss: false
   super_boss: false
+  monster_girl: true
 alraune_fledger:
   name: Alraune Fledger
   race: Fey
@@ -28,6 +30,7 @@ alraune_fledger:
     Learning: 1
   boss: false
   super_boss: false
+  monster_girl: true
 kobold_tinkerer:
   name: Kobold Tinkerer
   race: Dragonkin
@@ -38,6 +41,7 @@ kobold_tinkerer:
     Learning: 2
   boss: false
   super_boss: false
+  monster_girl: true
 dryad_protector:
   name: Dryad Protector
   race: Fey
@@ -48,6 +52,7 @@ dryad_protector:
     Wisdom: 2
   boss: false
   super_boss: false
+  monster_girl: true
 ghost_maid:
   name: Ghost Maid
   race: Shadow
@@ -58,6 +63,7 @@ ghost_maid:
     Charisma: 3
   boss: false
   super_boss: false
+  monster_girl: true
 centaur_scout:
   name: Centaur Scout
   race: Beast
@@ -68,6 +74,7 @@ centaur_scout:
     Dexterity: 2
   boss: false
   super_boss: false
+  monster_girl: true
 moth_girl_flutterer:
   name: Moth Girl Flutterer
   race: Fey
@@ -78,6 +85,7 @@ moth_girl_flutterer:
     Charisma: 2
   boss: false
   super_boss: false
+  monster_girl: true
 slime_girl:
   name: Slime Girl
   race: Elemental
@@ -88,6 +96,7 @@ slime_girl:
     Dexterity: 2
   boss: false
   super_boss: false
+  monster_girl: true
 lamia_constrictor:
   name: Lamia Constrictor
   race: Lizardfolk
@@ -98,6 +107,7 @@ lamia_constrictor:
     Dexterity: 3
   boss: false
   super_boss: false
+  monster_girl: true
 lizard_queen:
   name: Lizard Queen
   race: Lizardfolk
@@ -108,6 +118,7 @@ lizard_queen:
     Constitution: 3
   boss: true
   super_boss: false
+  monster_girl: true
 mimic_girl:
   name: Mimic Girl
   race: Abomination
@@ -118,6 +129,7 @@ mimic_girl:
     Dexterity: 4
   boss: false
   super_boss: false
+  monster_girl: true
 umbral_weaver:
   name: Umbral Weaver
   race: Shadow
@@ -128,6 +140,7 @@ umbral_weaver:
     Wisdom: 2
   boss: false
   super_boss: false
+  monster_girl: true
 winter_fairy:
   name: Winter Fairy
   race: Fey
@@ -138,6 +151,7 @@ winter_fairy:
     Charisma: 2
   boss: false
   super_boss: false
+  monster_girl: true
 holstaur_brawler:
   name: Holstaur Brawler
   race: Beast
@@ -149,6 +163,7 @@ holstaur_brawler:
     Charisma: 1
   boss: false
   super_boss: false
+  monster_girl: true
 gargoyle_watcher:
   name: Gargoyle Watcher
   race: Construct
@@ -159,6 +174,7 @@ gargoyle_watcher:
     Strength: 3
   boss: false
   super_boss: false
+  monster_girl: true
 vampire_seductress:
   name: Vampire Seductress
   race: Vampire
@@ -169,6 +185,7 @@ vampire_seductress:
     Dexterity: 3
   boss: false
   super_boss: false
+  monster_girl: true
 yuki_onna:
   name: Yuki-onna
   race: Elemental
@@ -180,6 +197,7 @@ yuki_onna:
     Wisdom: 2
   boss: false
   super_boss: false
+  monster_girl: true
 amazon_warrior:
   name: Amazon Warrior
   race: Human
@@ -191,6 +209,7 @@ amazon_warrior:
     Charisma: 2
   boss: false
   super_boss: false
+  monster_girl: true
 banshee_wailer:
   name: Banshee Wailer
   race: Undead
@@ -201,6 +220,7 @@ banshee_wailer:
     Dexterity: 2
   boss: false
   super_boss: false
+  monster_girl: true
 neko_ninja:
   name: Neko Ninja
   race: Beast
@@ -211,6 +231,7 @@ neko_ninja:
     Strength: 1
   boss: false
   super_boss: false
+  monster_girl: true
 arachne_weaver:
   name: Arachne Weaver
   race: Beast
@@ -221,6 +242,7 @@ arachne_weaver:
     Strength: 2
   boss: false
   super_boss: false
+  monster_girl: true
 mummy_princess:
   name: Mummy Princess
   race: Undead
@@ -232,6 +254,7 @@ mummy_princess:
     Learning: 2
   boss: false
   super_boss: false
+  monster_girl: true
 oni_bruiser:
   name: Oni Bruiser
   race: Demon
@@ -242,6 +265,7 @@ oni_bruiser:
     Constitution: 4
   boss: false
   super_boss: false
+  monster_girl: true
 salamander_dancer:
   name: Salamander Dancer
   race: Elemental
@@ -253,6 +277,7 @@ salamander_dancer:
     Strength: 2
   boss: false
   super_boss: false
+  monster_girl: true
 succubus_seductress:
   name: Succubus Seductress
   race: Demon
@@ -263,6 +288,7 @@ succubus_seductress:
     Dexterity: 3
   boss: false
   super_boss: false
+  monster_girl: true
 dullahan_knight:
   name: Dullahan Knight
   race: Undead
@@ -274,6 +300,7 @@ dullahan_knight:
     Charisma: 2
   boss: false
   super_boss: false
+  monster_girl: true
 kitsune_miko:
   name: Kitsune Miko
   race: Beast
@@ -285,6 +312,7 @@ kitsune_miko:
     Learning: 2
   boss: false
   super_boss: false
+  monster_girl: true
 siren_empress:
   name: Siren Empress
   race: Fey
@@ -295,6 +323,7 @@ siren_empress:
     Dexterity: 4
   boss: true
   super_boss: false
+  monster_girl: true
 crimson_countess:
   name: Crimson Countess
   race: Vampire
@@ -305,6 +334,7 @@ crimson_countess:
     Dexterity: 4
   boss: true
   super_boss: false
+  monster_girl: true
 demon_whip_master:
   name: Demon Whip Master
   race: Demon
@@ -315,6 +345,7 @@ demon_whip_master:
     Charisma: 3
   boss: false
   super_boss: false
+  monster_girl: true
 minotaur_gladiator:
   name: Minotaur Gladiator
   race: Giant
@@ -326,6 +357,7 @@ minotaur_gladiator:
     Dexterity: 1
   boss: false
   super_boss: false
+  monster_girl: true
 vampire_matriarch:
   name: Vampire Matriarch
   race: Vampire
@@ -337,6 +369,7 @@ vampire_matriarch:
     Constitution: 2
   boss: false
   super_boss: false
+  monster_girl: true
 centaur_champion:
   name: Centaur Champion
   race: Beast
@@ -348,6 +381,7 @@ centaur_champion:
     Charisma: 3
   boss: false
   super_boss: false
+  monster_girl: true
 infernal_empress:
   name: Infernal Empress
   race: Demon
@@ -359,6 +393,7 @@ infernal_empress:
     Dexterity: 3
   boss: true
   super_boss: false
+  monster_girl: true
 scylla_wrecker:
   name: Scylla Wrecker
   race: Abomination
@@ -369,6 +404,7 @@ scylla_wrecker:
     Constitution: 4
   boss: false
   super_boss: false
+  monster_girl: true
 gorgon_petrifier:
   name: Gorgon Petrifier
   race: Lizardfolk
@@ -380,6 +416,7 @@ gorgon_petrifier:
     Wisdom: 3
   boss: false
   super_boss: false
+  monster_girl: true
 ninetales_fox:
   name: Ninetales Fox
   race: Beast
@@ -390,6 +427,7 @@ ninetales_fox:
     Wisdom: 5
   boss: false
   super_boss: false
+  monster_girl: true
 mermaid_siren_queen:
   name: Mermaid Siren Queen
   race: Fey
@@ -401,6 +439,7 @@ mermaid_siren_queen:
     Learning: 3
   boss: true
   super_boss: false
+  monster_girl: true
 draconic_valkyrie:
   name: Draconic Valkyrie
   race: Dragonkin
@@ -412,6 +451,7 @@ draconic_valkyrie:
     Charisma: 3
   boss: false
   super_boss: false
+  monster_girl: true
 sphinx_riddler:
   name: Sphinx Riddler
   race: Beast
@@ -423,6 +463,7 @@ sphinx_riddler:
     Dexterity: 2
   boss: false
   super_boss: false
+  monster_girl: true
 lich_queen_avatar:
   name: Lich Queen Avatar
   race: Undead
@@ -433,6 +474,7 @@ lich_queen_avatar:
     Charisma: 3
   boss: false
   super_boss: false
+  monster_girl: true
 valkyrie_commander:
   name: Valkyrie Commander
   race: Human
@@ -444,6 +486,7 @@ valkyrie_commander:
     Charisma: 4
   boss: true
   super_boss: false
+  monster_girl: true
 dragon_goddess_avatar:
   name: Dragon Goddess Avatar
   race: Dragonkin
@@ -455,6 +498,7 @@ dragon_goddess_avatar:
     Charisma: 5
   boss: true
   super_boss: false
+  monster_girl: true
 arachne_brood_queen:
   name: Arachne Brood Queen
   race: Beast
@@ -466,6 +510,7 @@ arachne_brood_queen:
     Constitution: 5
   boss: true
   super_boss: false
+  monster_girl: true
 cosmic_slime_empress:
   name: Cosmic Slime Empress
   race: Elemental
@@ -477,3 +522,61 @@ cosmic_slime_empress:
     Charisma: 5
   boss: true
   super_boss: true
+
+capture_messages:
+  goblin_girl: "The {name} blushes deeply and shyly steps into your arms..."
+  succubus_seductress: "The {name} licks her lips seductively... 'Master~ I'll be good~'"
+  kitsune_miko: "The {name} tilts her head with a mischievous smile. 'Hehe, caught me~'"
+  mermaid_siren_queen: "The {name} sings a soft melody as she allows herself to be captured."
+  valkyrie_commander: "The proud {name} kneels with respect. 'You have bested me... I yield.'"
+
+affection_gifts:
+  goblin_girl:
+    flowers: 25
+    jewelry: -10
+    weapon: 15
+    candy: 30
+    book: -5
+
+  succubus_seductress:
+    jewelry: 40
+    flowers: 20
+    weapon: -15
+    candy: 35
+    book: 10
+
+  kitsune_miko:
+    book: 35
+    flowers: 25
+    jewelry: 15
+    candy: -5
+    weapon: 10
+
+  valkyrie_commander:
+    weapon: 40
+    flowers: 10
+    jewelry: -10
+    candy: -20
+    book: 15
+
+#TBA
+# bond_message_first_tier:
+
+# bond_message_seond_tier:
+
+# bond_message_third tier
+
+# bond_marriage:
+
+# bond_message_fourth_tier:
+
+# bond_kiss:
+
+# bond_fight_1
+
+# bond_fight_2
+
+# bond_fight_3
+
+# bond_buff:
+

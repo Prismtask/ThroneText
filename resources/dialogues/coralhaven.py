@@ -140,3 +140,30 @@ CORALHAVEN_TEMPLE_DIALOGUE = {
         "Farewell. Listen to the waves.",
     ],
 }
+
+CORALHAVEN_GIFT_SHOP_DIALOGUE = {
+    "enter": [
+        "Welcome to the Reef Treasures Gift Shop! Beautiful things from the sea.",
+        "Pearls, coral jewelry, seashell crafts — perfect gifts from Coralhaven.",
+        "Ah, looking for something special? The ocean provides the finest souvenirs.",
+        "Come in, come in! Every piece here carries the spirit of the reef.",
+    ],
+    "success": [
+        "Beautiful choice! This pearl will shine for years.",
+        "They'll love this. Nothing says 'I was in Coralhaven' like reef treasure.",
+        "Wrapped with dried sea lavender. Safe travels with your gift.",
+        "The sea approves. A wonderful memento of our shores.",
+    ],
+    "fail": [
+        "Not enough coin for that treasure, I'm afraid.",
+        "The ocean's gifts aren't free, traveler.",
+        "Come back when your pockets are as full as a fisherman's net.",
+        "That one's a bit too precious for your current gold.",
+    ],
+    "leave": [
+        "Come back anytime. The tides bring new treasures daily.",
+        "Safe journey, and may your gifts bring joy to those waiting.",
+        "Farewell. Let the sea guide you home.",
+        "The Reef Treasures will be here when you return.",
+    ],
+}

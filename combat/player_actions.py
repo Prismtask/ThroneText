@@ -1,31 +1,28 @@
-# player_actions.py – handling player actions during combat
 import random
 from character import player_max_hp
 from combat.status_effects import cure_curse, apply_poison, is_silenced, is_dreaded, format_player_status_line
-from combat.combat_ui import format_enemy_status_line, _player_has_abyss_fang
+from combat.combat_ui import print_combat_hud, format_enemy_status_line   # removed _player_has_abyss_fang
+from combat.helpers import _player_has_abyss_fang      # <-- new import
+from combat.action_menu import get_action_menu
+from combat.capture import is_monster_girl, attempt_capture
 
 
-
-def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None, _action_override=None):
+def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None, on_hit=None, _action_override=None):
     if _action_override is None:
-
-        status_str = format_player_status_line(player)
-        tempo_str = " [Abyssal Tempo]" if player.get("abyss_triple_actions", 0) > 0 else ""
-        print(f"\n{player['name']}: {player['current_hp']} {status_str}{tempo_str}".rstrip())
-        print("Enemies in the room:")
-        for idx, e in enumerate(enemies):
-            print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
-        abyss_fang = _player_has_abyss_fang(player)
-        abyss_cd = player.get("abyss_fang_cooldown", 0)
-        if abyss_fang and abyss_cd <= 0:
-            print("[A]ttack  [D]efend  [F]lee  [U]se item  [W]ield the Abyss")
-        elif abyss_fang and abyss_cd > 0:
-            print(f"[A]ttack  [D]efend  [F]lee  [U]se item  (Abyss Fang recharging: {abyss_cd} turn(s))")
-        else:
-            print("[A]ttack  [D]efend  [F]lee  [U]se item")
+        # Normal player input
+        print_combat_hud(player, enemies)
+        menu_str, valid_actions = get_action_menu(player, enemies)
         action = input("Choose: ").strip().lower()
+        while action not in valid_actions:
+            print(f"Invalid choice. Available: {', '.join(valid_actions)}")
+            action = input("Choose: ").strip().lower()
     else:
+        # Override from superboss loop
         action = _action_override
+        _, valid_actions = get_action_menu(player, enemies)
+        if action not in valid_actions:
+            print(f"Internal error: override action '{action}' is not available.")
+            return "retry", False
 
     # ----- ATTACK -----
     if action == "a":
@@ -73,6 +70,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
         dmg = random.randint(4, 10) + scaling_val - target["con_mod"]
         dmg = max(0, dmg)
+        if on_hit:
+            on_hit(target, enemies) 
         target["hp"] -= dmg
 
         verb = "strike"
@@ -184,6 +183,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     msg += f"(ignores {item['armor_pierce']} armor) "
                 final_dmg = max(1, dmg - armor)
                 target["hp"] -= final_dmg
+                # REMOVE the is_fake block entirely
                 msg += f"You deal {final_dmg} damage to the {target['name']}! "
             if "poison_damage" in item:
                 apply_poison(target, item["poison_damage"], item.get("poison_duration", 3))
@@ -308,6 +308,31 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             return "fled", False
         else:
             print("You fail to escape and expose yourself!")
+            return "continue", False
+        
+    elif action == "c":
+        mg_targets = [e for e in enemies if is_monster_girl(e) and e["hp"] > 0]
+        if not mg_targets:
+            print("No monster girls present.")
+            return "retry", False
+
+        # Pick target
+        if len(mg_targets) > 1:
+            print("Select target to capture:")
+            for i, e in enumerate(mg_targets):
+                print(f"{i+1}. {e['name']}")
+            try:
+                idx = int(input("Choice: ")) - 1
+                target = mg_targets[idx]
+            except:
+                return "retry", False
+        else:
+            target = mg_targets[0]
+
+        if attempt_capture(player, target):
+            enemies.remove(target)  # remove from combat
+            return "continue", False
+        else:
             return "continue", False
 
     return "retry", False
