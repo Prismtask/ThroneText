@@ -8,18 +8,18 @@
     "Dexterity": 19,
     "Wisdom": 2,
     "Learning": 3,
-    "Charisma": 102
+    "Charisma": 103
   },
   "city_floors": {
     "solmere": {
-      "floor": 31,
+      "floor": 11,
       "max_floor": 100
     }
   },
-  "current_hp": 280,
-  "level": 20,
-  "exp": 85,
-  "level_hp_bonus": 76,
+  "current_hp": 284,
+  "level": 21,
+  "exp": 163,
+  "level_hp_bonus": 80,
   "inventory": [],
   "equipped": {
     "weapon": null,
@@ -29,9 +29,9 @@
   "active_buffs": [],
   "save_slot": 2,
   "dungeon_time": 0,
-  "gold": 3400,
-  "time_minutes": 810,
-  "location": "solmere",
+  "gold": 4000,
+  "time_minutes": 900,
+  "location": "dungeon",
   "superboss_seed": 219153,
   "day": 1,
   "dungeon_region": "temperate",

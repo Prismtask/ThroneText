@@ -1,0 +1,254 @@
+{
+  "name": "monster fucker",
+  "race": "Human",
+  "class": "Warrior",
+  "attributes": {
+    "Strength": 14,
+    "Constitution": 5,
+    "Dexterity": 5,
+    "Wisdom": 2,
+    "Learning": 1,
+    "Charisma": 4
+  },
+  "city_floors": {
+    "solmere": {
+      "floor": 3,
+      "max_floor": 3
+    }
+  },
+  "current_hp": 62,
+  "level": 9,
+  "exp": 48,
+  "level_hp_bonus": 32,
+  "inventory": [
+    {
+      "id": "ice_bomb",
+      "name": "Uncommon Ice Bomb",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 36,
+      "status": "slow"
+    },
+    {
+      "id": "battle_harness",
+      "name": "Common Battle Harness",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Strength": 2,
+        "Constitution": 2
+      }
+    },
+    {
+      "id": "padded_armor",
+      "name": "Rare Padded Armor",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "dragonhide",
+      "name": "Uncommon Dragonhide Armor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 5,
+        "Dexterity": 2
+      }
+    },
+    {
+      "id": "silver_tongue_dagger",
+      "name": "Common Silver-Tongue Dagger",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Charisma": 3,
+        "Dexterity": 2
+      },
+      "scaling_stat": "Charisma"
+    },
+    {
+      "id": "bards_lute",
+      "name": "Common Bard's Lute",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Charisma": 4,
+        "Learning": 1
+      },
+      "scaling_stat": "Charisma"
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Common Arcane Staff",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 4
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "rare_scroll",
+      "name": "Common Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "common",
+      "enhance": 0,
+      "target_rarity": "common"
+    }
+  ],
+  "equipped": {
+    "weapon": null,
+    "armor": null,
+    "accessory": null
+  },
+  "active_buffs": [],
+  "save_slot": 3,
+  "dungeon_time": 0,
+  "gold": 1250,
+  "time_minutes": 1260,
+  "location": "dungeon",
+  "superboss_seed": 559041,
+  "day": 1,
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "holy_staff",
+        "name": "Common Holy Staff",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Wisdom": 4,
+          "Constitution": 1
+        },
+        "scaling_stat": "Wisdom"
+      },
+      45
+    ],
+    [
+      {
+        "id": "ring_of_wisdom",
+        "name": "Uncommon Ring of Wisdom",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Wisdom": 3
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "halberd",
+        "name": "Uncommon Halberd",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 5,
+          "Dexterity": 2
+        },
+        "scaling_stat": "Strength"
+      },
+      67
+    ],
+    [
+      {
+        "id": "recalled_scroll",
+        "name": "Common Scroll of Recall",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0,
+        "fixed_flee": true
+      },
+      45
+    ],
+    [
+      {
+        "id": "boots_of_swiftness",
+        "name": "Rare Boots of Swiftness",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Dexterity": 5
+        }
+      },
+      135
+    ],
+    [
+      {
+        "id": "minor_healing_potion",
+        "name": "Common Minor Healing Potion",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 25
+      },
+      15
+    ],
+    [
+      {
+        "id": "bracers_of_strength",
+        "name": "Common Bracers of Strength",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Strength": 3
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "ring_of_charisma",
+        "name": "Rare Ring of Charisma",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Charisma": 5
+        }
+      },
+      135
+    ]
+  ],
+  "last_shop_day_solmere": 1,
+  "dungeon_region": "temperate",
+  "origin_city": "solmere",
+  "abyss_triple_actions": 0,
+  "dreaded": false,
+  "active_debuffs": [
+    {
+      "type": "curse",
+      "remaining": -1,
+      "penalty": 2
+    }
+  ],
+  "cursed": true
+}

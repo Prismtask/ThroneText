@@ -91,14 +91,16 @@ def generate_floor(floor, region=None):
                         for _ in range(num_enemies)]
         rooms.append(room_enemies)
 
-    boss_room = [get_random_enemy_key(floor, boss=True, region=region)]
+    # Every 5th floor gets a True Boss. Otherwise, pick a normal enemy to act as the floor boss
+    is_true_boss_floor = (floor % 5 == 0)
+    boss_room = [get_random_enemy_key(floor, boss=is_true_boss_floor, region=region)]
+    
     num_minions = random.randint(0, min(4, floor - 1))
     for _ in range(num_minions):
         boss_room.append(get_random_enemy_key(floor, boss=False, region=region))
     rooms.append(boss_room)
 
     return rooms
-
 
 def roll_drop(enemy_level):
     if random.random() > 0.50:
@@ -200,8 +202,19 @@ def explore_dungeon(player):
     if floor % 10 == 0:
         print("\n" + "="*50)
         print("⚠️  A dark, suffocating energy fills the air...")
-        rng = random.Random(player["superboss_seed"] + floor)
-        tier = rng.randint(0, 4)
+        
+        # 1. Initialize or refill the superboss pool if it's empty or missing
+        if not player.get("superboss_pool"):
+            pool = [0, 1, 2, 3, 4]
+            # Use seed + floor to keep the shuffle consistent per run/floor 
+            # but fall back to a random seed if missing to prevent crashes
+            rng = random.Random(player.get("superboss_seed", random.randint(1, 99999)) + floor)
+            rng.shuffle(pool)
+            player["superboss_pool"] = pool
+            
+        # 2. Peek at the next boss in the pool (do not remove until defeated!)
+        tier = player["superboss_pool"][0]
+        
         if tier == 0:
             print("The walls are covered in dense, toxic cobwebs.")
         elif tier == 1:
@@ -227,9 +240,13 @@ def explore_dungeon(player):
                 result = combat_sylvana(player)
             elif tier == 3:
                 result = combat_ignis(player)
-            elif tier == 4:                          # ← NEW
+            elif tier == 4:
                 result = combat_yinglong(player)
+                
             if result == "victory":
+                # 3. Remove the defeated boss from the pool so it won't spawn again until reshuffled
+                player["superboss_pool"].pop(0)
+                
                 # Reward
                 super_boss_exp = 500 + (floor * 50)
                 super_boss_gold = 300 + (floor * 30)
@@ -237,9 +254,7 @@ def explore_dungeon(player):
                 print(f"\n Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
                 gain_exp(player, super_boss_exp)
 
-                # Sync per-city progress — superboss floor counts as cleared.
-                # main.py's play_game() will increment floor after we return True,
-                # so we advance max_floor here to reflect the upcoming floor+1.
+                # Sync per-city progress
                 next_floor = floor + 1
                 city_prog["floor"]     = next_floor
                 city_prog["max_floor"] = max(city_prog["max_floor"], next_floor)

@@ -199,7 +199,7 @@ def _inner_dragon_combat(player):
             ctx["wedge_activations"] += 1
             max_hp_player = player_max_hp(player)
             print("\n" + "✦" * 55)
-            print(f"☁ HEAVEN PINNING WEDGE activates! ({ctx['wedge_activations']}/2)")
+            print(f"☁ HEAVEN PINNING WEDGE activates!")
 
             for e in elist:
                 if e["hp"] > 0:

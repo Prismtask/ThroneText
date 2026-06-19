@@ -362,7 +362,7 @@ def house_menu(player, city_id):
         print("1. Rest (free heal)")
         print("2. Storage chest")
         print("3. Collect income")
-        print("4. Lounge  [Coming soon — Ally System]")
+        print("4. Lounge")
         if house["level"] < 3:
             print("5. Upgrade house")
             print("6. Leave")

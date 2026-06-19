@@ -49,6 +49,19 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
     player["abyss_triple_actions"] = 0
     enemies = [enemy_stats(k, player) for k in enemy_keys]
 
+    # --- NEW: Buff the normal enemy acting as the Floor Boss ---
+    if floor is not None and room_num is not None and total_rooms is not None:
+        # If it's the final room, and NOT a true boss floor (every 5th)
+        if room_num == total_rooms and floor % 5 != 0 and enemies:
+            main_enemy = enemies[0]
+            main_enemy["name"] = f"Empowered {main_enemy['name']}" # Visual flair
+            main_enemy["max_hp"] = int(main_enemy["max_hp"] * 1.30)
+            main_enemy["hp"] = main_enemy["max_hp"]
+            main_enemy["str_mod"] = int(main_enemy["str_mod"] * 1.20)
+            main_enemy["con_mod"] = int(main_enemy["con_mod"] * 1.20)
+            main_enemy["dex_mod"] = int(main_enemy["dex_mod"] * 1.20)
+    # -----------------------------------------------------------
+
     print("\nEnemies approach!")
     for e in enemies:
         print(f"- A {e['name']} appears! (HP: {e['hp']})")
