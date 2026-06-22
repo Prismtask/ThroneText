@@ -45,7 +45,8 @@ def enemy_stats(enemy_key, player=None):
         "con_mod": scaled_con,
         "dex_mod": scaled_dex,
         "level": template["level"],
-        "multiplier": round(multiplier, 2)
+        "multiplier": round(multiplier, 2),
+        "monster_girl": template.get("monster_girl", False)
     }
 
 

@@ -150,7 +150,8 @@ def create_character():
         "gold": 100,
         "time_minutes": 8 * 60,  # Start at 08:00
         "location": "solmere",  # Start in first city
-        "superboss_seed": random.randint(1, 999999)
+        "superboss_seed": random.randint(1, 999999),
+        "allies": [],  # Active combat companions (max 3)
     }
 
     save_game(player)

@@ -113,6 +113,14 @@ def _house_rest(player, city_id, house):
     player["current_hp"] = max_hp
     healed               = max_hp - old_hp
 
+    # Heal allies too
+    for ally in player.get("allies", []):
+        if ally.get("current_hp", 0) > 0:
+            ally_old = ally["current_hp"]
+            ally["current_hp"] = ally["max_hp"]
+            ally_healed = ally["max_hp"] - ally_old
+            print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
+
     # Remove any existing well-rested buff before applying a fresh one
     player.setdefault("active_buffs", [])
     player["active_buffs"] = [
@@ -126,6 +134,18 @@ def _house_rest(player, city_id, house):
         "value":     buff_val,
         "remaining": buff_floors,
     })
+
+    # Also apply well-rested buff to allies
+    for ally in player.get("allies", []):
+        if ally.get("current_hp", 0) > 0:
+            ally.setdefault("active_buffs", [])
+            ally["active_buffs"] = [b for b in ally["active_buffs"] if b.get("type") != "well_rested"]
+            ally["active_buffs"].append({
+                "type":      "well_rested",
+                "stat":      "all",
+                "value":     buff_val,
+                "remaining": buff_floors,
+            })
 
     advance_time(player, rest_mins)
 
@@ -262,22 +282,35 @@ def _house_lounge(player, city_id, house):
     lvl_data = _house_level_data(house)
     girls = house.get("monster_girls", [])
     max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house["level"], 2)
+    allies = player.get("allies", [])
 
     print(f"=== {lvl_data['name'].upper()} LOUNGE ===")
-    print(f"Monster Girls: {len(girls)}/{max_girls}\n")
+    print(f"Monster Girls: {len(girls)}/{max_girls}")
+    if allies:
+        print(f"Active Party: {len(allies)}/3 allies")
+    print()
 
-    if not girls:
+    if not girls and not allies:
         print("The lounge is quiet... no companions yet.")
-    else:
+    elif girls:
         for i, girl in enumerate(girls):
             aff = girl.get("affection", 30)
             status = "💖" if aff >= 80 else "❤️" if aff >= 50 else "😐"
             print(f"  {i+1}. {girl['name']} (Lv {girl['level']}) — {status} Affection: {aff}/100")
 
+    if allies:
+        print("\n--- Active Allies ---")
+        for a in allies:
+            print(f"  • {a['name']} (Lv {a['level']}) HP: {a['current_hp']}/{a['max_hp']}")
+
     print("\nOptions:")
     print("1. Talk to a girl")
     print("2. Give a gift")
-    print("3. Back")
+    if girls:
+        print("3. Recruit to party")
+    if allies:
+        print("4. Dismiss all allies back to house")
+    print("5. Back")
 
     choice = input("\nChoice: ").strip()
 
@@ -326,6 +359,25 @@ def _house_lounge(player, city_id, house):
             player["inventory"].pop(gidx_real)
         except:
             print("Gift giving cancelled.")
+
+    elif choice == "3" and girls:
+        try:
+            idx = int(input("Recruit which girl? ")) - 1
+            if 0 <= idx < len(girls):
+                from combat.ally import recruit_ally_from_house
+                ally, msg = recruit_ally_from_house(player, girls[idx], house)
+                print(msg)
+                if ally:
+                    print(f"{ally['name']}'s stats:")
+                    print(f"  HP: {ally['max_hp']}")
+                    print(f"  STR: {ally['attributes']['Strength']}  CON: {ally['attributes']['Constitution']}  DEX: {ally['attributes']['Dexterity']}")
+        except:
+            pass
+
+    elif choice == "4" and allies:
+        from combat.ally import dismiss_allies_back_to_house
+        dismiss_allies_back_to_house(player)
+        print("All allies have returned to the house.")
 
     input("\nPress Enter...")
 

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive World Map</title>
+<!-- Added Tabler Icons for the facility badges -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+/* Added missing CSS variables for colors and routing lines */
+:root {
+  --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f8f9fa;
+  --color-border-secondary: #ced4da;
+  --color-border-tertiary: #e9ecef;
+  --color-text-primary: #212529;
+  --color-text-secondary: #495057;
+  --color-text-tertiary: #adb5bd;
+  --color-background-info: #e6f1fb;
+  --color-text-info: #0c447c;
+  --color-border-info: #378add;
+  --border-radius-lg: 12px;
+}
+
+h2.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans,sans-serif); padding: 20px; background: var(--color-background-primary);}
+.map-wrap{position:relative;width:100%; max-width: 800px; margin: 0 auto; user-select:none}
+svg.worldmap{width:100%;display:block}
+.city-node{cursor:pointer;transition:filter .15s}
+.city-node:hover{filter:brightness(1.08)}
+.city-node.selected .city-box{stroke-width:2.5!important}
+.panel{position:absolute;top:0;right:0;width:240px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg,12px);padding:14px 16px;font-size:13px;color:var(--color-text-primary);box-shadow: 0 4px 12px rgba(0,0,0,0.1);transition:opacity .18s;opacity:0;pointer-events:none;z-index:10}
+.panel.visible{opacity:1;pointer-events:auto}
+.panel-name{font-size:15px;font-weight:500;margin-bottom:2px}
+.panel-biome{font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;text-transform:capitalize}
+.panel-desc{font-size:12px;color:var(--color-text-secondary);line-height:1.55;margin-bottom:10px;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:10px}
+.fac-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.fac-badge{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 7px;border-radius:6px;border:0.5px solid transparent;font-weight:400}
+.fac-shop{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.fac-inn{background:#E1F5EE;color:#085041;border-color:#5DCAA5}
+.fac-blacksmith{background:#FAEEDA;color:#633806;border-color:#EF9F27}
+.fac-trade_hall{background:#EEEDFE;color:#3C3489;border-color:#7F77DD}
+.fac-temple{background:#FBEAF0;color:#72243E;border-color:#D4537E}
+.fac-port{background:#E6F1FB;color:#0C447C;border-color:#378ADD}
+.fac-shipyard{background:#EAF3DE;color:#27500A;border-color:#639922}
+.fac-herbalist{background:#E1F5EE;color:#085041;border-color:#1D9E75}
+.fac-barracks{background:#FCEBEB;color:#791F1F;border-color:#E24B4A}
+.fac-black_market{background:#F1EFE8;color:#2C2C2A;border-color:#888780}
+.fac-arcane_tower{background:#EEEDFE;color:#26215C;border-color:#534AB7}
+.fac-gift_shop{background:#FBEAF0;color:#4B1528;border-color:#ED93B1}
+.fac-guild{background:#FAECE7;color:#4A1B0C;border-color:#D85A30}
+.panel-close{position:absolute;top:10px;right:10px;cursor:pointer;color:var(--color-text-secondary);font-size:16px;line-height:1;background:none;border:none;padding:0}
+.legend{display:flex;flex-wrap:wrap;gap:5px;padding:8px 0 0}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--color-text-secondary)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+@media(prefers-color-scheme:dark){
+  :root {
+    --color-background-primary: #121212;
+    --color-background-secondary: #1e1e1e;
+    --color-border-secondary: #333333;
+    --color-border-tertiary: #2a2a2a;
+    --color-text-primary: #e0e0e0;
+    --color-text-secondary: #a0a0a0;
+    --color-text-tertiary: #666666;
+  }
+  .fac-inn{background:#04342C;color:#9FE1CB;border-color:#0F6E56}
+  .fac-blacksmith{background:#412402;color:#FAC775;border-color:#BA7517}
+  .fac-trade_hall{background:#26215C;color:#CECBF6;border-color:#534AB7}
+  .fac-temple{background:#4B1528;color:#F4C0D1;border-color:#993556}
+  .fac-port{background:#042C53;color:#B5D4F4;border-color:#185FA5}
+  .fac-shipyard{background:#173404;color:#C0DD97;border-color:#3B6D11}
+  .fac-herbalist{background:#04342C;color:#5DCAA5;border-color:#0F6E56}
+  .fac-barracks{background:#501313;color:#F7C1C1;border-color:#A32D2D}
+  .fac-black_market{background:#2C2C2A;color:#D3D1C7;border-color:#5F5E5A}
+  .fac-arcane_tower{background:#26215C;color:#AFA9EC;border-color:#7F77DD}
+  .fac-gift_shop{background:#4B1528;color:#F4C0D1;border-color:#D4537E}
+  .fac-guild{background:#4A1B0C;color:#F0997B;border-color:#993C1D}
+}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">Interactive world map showing city connections and available facilities in each city</h2>
+<div class="map-wrap" id="mapwrap">
+
+<svg class="worldmap" viewBox="0 0 680 1000" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+  <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<!-- Region backgrounds -->
+<rect x="18" y="18" width="300" height="195" rx="12" fill="var(--color-background-secondary)" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+<text x="30" y="38" style="font-size:10px;fill:var(--color-text-tertiary);letter-spacing:.08em;font-weight:500">NORTH</text>
+
+<rect x="370" y="60" width="292" height="270" rx="12" fill="var(--color-background-secondary)" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+<text x="382" y="80" style="font-size:10px;fill:var(--color-text-tertiary);letter-spacing:.08em;font-weight:500">EAST</text>
+
+<rect x="138" y="225" width="232" height="168" rx="12" fill="var(--color-background-secondary)" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+<text x="150" y="242" style="font-size:10px;fill:var(--color-text-tertiary);letter-spacing:.08em;font-weight:500">CENTRAL</text>
+
+<rect x="18" y="560" width="320" height="330" rx="12" fill="var(--color-background-secondary)" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+<text x="30" y="580" style="font-size:10px;fill:var(--color-text-tertiary);letter-spacing:.08em;font-weight:500">FAR REACHES &amp; ISLANDS</text>
+
+<!-- LAND ROUTES -->
+<!-- Stormhold–Thornwall -->
+<line x1="108" y1="120" x2="222" y2="130" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Thornwall–Solmere -->
+<line x1="240" y1="148" x2="308" y2="248" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Thornwall–Greyharbor -->
+<line x1="222" y1="148" x2="196" y2="278" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Solmere–Greyharbor -->
+<line x1="302" y1="262" x2="210" y2="282" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Solmere–Elderfen -->
+<line x1="310" y1="280" x2="286" y2="348" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Greyharbor–Elderfen -->
+<line x1="210" y1="290" x2="270" y2="348" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Solmere–Irondeep -->
+<line x1="322" y1="262" x2="440" y2="188" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Solmere–Skylume -->
+<line x1="330" y1="254" x2="522" y2="148" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Solmere–Sunreach -->
+<line x1="316" y1="278" x2="316" y2="420" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Irondeep–Skylume -->
+<line x1="462" y1="180" x2="524" y2="148" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Irondeep–Cinderpeak -->
+<line x1="468" y1="196" x2="558" y2="248" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Skylume–Veilholt -->
+<line x1="548" y1="162" x2="588" y2="248" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Cinderpeak–Veilholt -->
+<line x1="580" y1="258" x2="596" y2="258" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Sunreach–Brinewatch -->
+<line x1="304" y1="438" x2="212" y2="490" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Sunreach–Ashkara -->
+<line x1="330" y1="438" x2="430" y2="478" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Brinewatch–Mirefall -->
+<line x1="198" y1="488" x2="172" y2="410" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Elderfen–Mirefall -->
+<line x1="272" y1="364" x2="188" y2="402" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Stormhold–Mirefall -->
+<line x1="106" y1="128" x2="162" y2="398" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Ashkara–Dunemar -->
+<line x1="446" y1="494" x2="468" y2="546" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+<!-- Brinewatch–Saltmarsh (land) -->
+<line x1="196" y1="506" x2="168" y2="554" stroke="var(--color-border-secondary)" stroke-width="1.2" fill="none"/>
+
+<!-- SEA ROUTES (dashed) -->
+<!-- Brinewatch–Tidebreak -->
+<line x1="200" y1="508" x2="242" y2="650" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+<!-- Saltmarsh–Blackwake -->
+<line x1="162" y1="560" x2="114" y2="668" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+<!-- Saltmarsh–Tidebreak -->
+<line x1="178" y1="572" x2="238" y2="646" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+<!-- Dunemar–Coralhaven -->
+<line x1="472" y1="562" x2="390" y2="678" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+<!-- Tidebreak–Blackwake -->
+<line x1="248" y1="668" x2="122" y2="680" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+<!-- Tidebreak–Coralhaven -->
+<line x1="272" y1="666" x2="366" y2="682" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+<!-- Tidebreak–Isle of Glass -->
+<line x1="260" y1="674" x2="334" y2="832" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+<!-- Coralhaven–Isle of Glass -->
+<line x1="392" y1="698" x2="340" y2="832" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="5 4" fill="none"/>
+
+<!-- ===== CITY NODES ===== -->
+<!-- Stormhold tundra=blue -->
+<g class="city-node" id="cn-stormhold" onclick="showCity('stormhold')">
+  <rect class="city-box" x="42" y="98" width="94" height="42" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="89" y="114" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#0C447C">Stormhold</text>
+  <text x="89" y="130" text-anchor="middle" style="font-size:10px;fill:#185FA5">tundra</text>
+</g>
+<!-- Thornwall temperate=green -->
+<g class="city-node" id="cn-thornwall" onclick="showCity('thornwall')">
+  <rect class="city-box" x="192" y="108" width="94" height="42" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+  <text x="239" y="124" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#27500A">Thornwall</text>
+  <text x="239" y="140" text-anchor="middle" style="font-size:10px;fill:#3B6D11">temperate</text>
+</g>
+<!-- Greyharbor temperate=green -->
+<g class="city-node" id="cn-greyharbor" onclick="showCity('greyharbor')">
+  <rect class="city-box" x="152" y="260" width="98" height="42" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+  <text x="201" y="276" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#27500A">Greyharbor</text>
+  <text x="201" y="292" text-anchor="middle" style="font-size:10px;fill:#3B6D11">temperate</text>
+</g>
+<!-- Solmere temperate=green (starting city star) -->
+<g class="city-node" id="cn-solmere" onclick="showCity('solmere')">
+  <rect class="city-box" x="272" y="240" width="98" height="42" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="2"/>
+  <text x="321" y="256" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#27500A">Solmere ★</text>
+  <text x="321" y="272" text-anchor="middle" style="font-size:10px;fill:#3B6D11">temperate</text>
+</g>
+<!-- Elderfen swamp=teal -->
+<g class="city-node" id="cn-elderfen" onclick="showCity('elderfen')">
+  <rect class="city-box" x="248" y="330" width="82" height="42" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="289" y="346" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#085041">Elderfen</text>
+  <text x="289" y="362" text-anchor="middle" style="font-size:10px;fill:#0F6E56">swamp</text>
+</g>
+<!-- Mirefall swamp=teal -->
+<g class="city-node" id="cn-mirefall" onclick="showCity('mirefall')">
+  <rect class="city-box" x="130" y="382" width="82" height="42" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="171" y="398" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#085041">Mirefall</text>
+  <text x="171" y="414" text-anchor="middle" style="font-size:10px;fill:#0F6E56">swamp</text>
+</g>
+<!-- Irondeep mountain=gray -->
+<g class="city-node" id="cn-irondeep" onclick="showCity('irondeep')">
+  <rect class="city-box" x="414" y="166" width="90" height="42" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+  <text x="459" y="182" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#2C2C2A">Irondeep</text>
+  <text x="459" y="198" text-anchor="middle" style="font-size:10px;fill:#5F5E5A">mountain</text>
+</g>
+<!-- Skylume magical=purple -->
+<g class="city-node" id="cn-skylume" onclick="showCity('skylume')">
+  <rect class="city-box" x="496" y="116" width="84" height="42" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+  <text x="538" y="132" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#3C3489">Skylume</text>
+  <text x="538" y="148" text-anchor="middle" style="font-size:10px;fill:#534AB7">magical</text>
+</g>
+<!-- Cinderpeak volcanic=coral -->
+<g class="city-node" id="cn-cinderpeak" onclick="showCity('cinderpeak')">
+  <rect class="city-box" x="534" y="228" width="100" height="42" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="1"/>
+  <text x="584" y="244" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#712B13">Cinderpeak</text>
+  <text x="584" y="260" text-anchor="middle" style="font-size:10px;fill:#993C1D">volcanic</text>
+</g>
+<!-- Veilholt forest=green (Fixed the duplicated intersecting rect here) -->
+<g class="city-node" id="cn-veilholt" onclick="showCity('veilholt')">
+  <rect class="city-box" x="554" y="270" width="84" height="42" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+  <text x="596" y="286" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#27500A">Veilholt</text>
+  <text x="596" y="302" text-anchor="middle" style="font-size:10px;fill:#3B6D11">forest</text>
+</g>
+<!-- Sunreach savanna=amber -->
+<g class="city-node" id="cn-sunreach" onclick="showCity('sunreach')">
+  <rect class="city-box" x="278" y="412" width="90" height="42" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
+  <text x="323" y="428" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#633806">Sunreach</text>
+  <text x="323" y="444" text-anchor="middle" style="font-size:10px;fill:#854F0B">savanna</text>
+</g>
+<!-- Ashkara desert=amber -->
+<g class="city-node" id="cn-ashkara" onclick="showCity('ashkara')">
+  <rect class="city-box" x="398" y="458" width="86" height="42" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
+  <text x="441" y="474" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#633806">Ashkara</text>
+  <text x="441" y="490" text-anchor="middle" style="font-size:10px;fill:#854F0B">desert</text>
+</g>
+<!-- Dunemar desert=amber -->
+<g class="city-node" id="cn-dunemar" onclick="showCity('dunemar')">
+  <rect class="city-box" x="424" y="530" width="86" height="42" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
+  <text x="467" y="546" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#633806">Dunemar</text>
+  <text x="467" y="562" text-anchor="middle" style="font-size:10px;fill:#854F0B">desert</text>
+</g>
+<!-- Brinewatch coastal=blue, port -->
+<g class="city-node" id="cn-brinewatch" onclick="showCity('brinewatch')">
+  <rect class="city-box" x="160" y="466" width="96" height="42" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="208" y="482" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#0C447C">Brinewatch ⚓</text>
+  <text x="208" y="498" text-anchor="middle" style="font-size:10px;fill:#185FA5">coastal</text>
+</g>
+<!-- Saltmarsh coastal=blue, port -->
+<g class="city-node" id="cn-saltmarsh" onclick="showCity('saltmarsh')">
+  <rect class="city-box" x="120" y="532" width="90" height="42" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="165" y="548" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#0C447C">Saltmarsh ⚓</text>
+  <text x="165" y="564" text-anchor="middle" style="font-size:10px;fill:#185FA5">coastal</text>
+</g>
+<!-- Tidebreak coastal=blue, port -->
+<g class="city-node" id="cn-tidebreak" onclick="showCity('tidebreak')">
+  <rect class="city-box" x="220" y="634" width="100" height="42" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="270" y="650" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#0C447C">Tidebreak ⚓</text>
+  <text x="270" y="666" text-anchor="middle" style="font-size:10px;fill:#185FA5">coastal</text>
+</g>
+<!-- Blackwake coastal=gray -->
+<g class="city-node" id="cn-blackwake" onclick="showCity('blackwake')">
+  <rect class="city-box" x="60" y="654" width="96" height="42" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="1"/>
+  <text x="108" y="670" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#2C2C2A">Blackwake</text>
+  <text x="108" y="686" text-anchor="middle" style="font-size:10px;fill:#5F5E5A">coastal</text>
+</g>
+<!-- Coralhaven tropical=teal -->
+<g class="city-node" id="cn-coralhaven" onclick="showCity('coralhaven')">
+  <rect class="city-box" x="344" y="658" width="108" height="42" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="398" y="674" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#085041">Coralhaven ⚓</text>
+  <text x="398" y="690" text-anchor="middle" style="font-size:10px;fill:#0F6E56">tropical island</text>
+</g>
+<!-- Isle of Glass magical=purple -->
+<g class="city-node" id="cn-isle_of_glass" onclick="showCity('isle_of_glass')">
+  <rect class="city-box" x="280" y="832" width="108" height="42" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+  <text x="334" y="848" text-anchor="middle" style="font-size:12px;font-weight:500;fill:#3C3489">Isle of Glass</text>
+  <text x="334" y="864" text-anchor="middle" style="font-size:10px;fill:#534AB7">magical island</text>
+</g>
+
+<!-- LEGEND (expanded) -->
+<rect x="388" y="748" width="280" height="234" rx="8" fill="var(--color-background-secondary)" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+<text x="400" y="767" style="font-size:10px;fill:var(--color-text-tertiary);letter-spacing:.06em;font-weight:500">LEGEND</text>
+<line x1="400" y1="781" x2="430" y2="781" stroke="var(--color-border-secondary)" stroke-width="1.5"/>
+<text x="436" y="784" style="font-size:10px;fill:var(--color-text-secondary)">Land route</text>
+<line x1="400" y1="797" x2="430" y2="797" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="436" y="800" style="font-size:10px;fill:var(--color-text-secondary)">Sea route</text>
+<text x="400" y="816" style="font-size:12px;fill:#185FA5">⚓</text>
+<text x="418" y="816" style="font-size:10px;fill:var(--color-text-secondary)">Port city</text>
+<text x="401" y="832" style="font-size:11px;fill:#27500A">★</text>
+<text x="418" y="832" style="font-size:10px;fill:var(--color-text-secondary)">Starting city</text>
+<text x="400" y="851" style="font-size:10px;fill:var(--color-text-tertiary);letter-spacing:.06em;font-weight:500">BIOMES</text>
+<rect x="400" y="858" width="10" height="10" rx="2" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.8"/>
+<text x="414" y="867" style="font-size:10px;fill:var(--color-text-secondary)">Temperate / savanna</text>
+<rect x="400" y="874" width="10" height="10" rx="2" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+<text x="414" y="883" style="font-size:10px;fill:var(--color-text-secondary)">Swamp / tropical</text>
+<rect x="400" y="890" width="10" height="10" rx="2" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.8"/>
+<text x="414" y="899" style="font-size:10px;fill:var(--color-text-secondary)">Desert</text>
+<rect x="400" y="906" width="10" height="10" rx="2" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.8"/>
+<text x="414" y="915" style="font-size:10px;fill:var(--color-text-secondary)">Coastal / tundra</text>
+<rect x="400" y="922" width="10" height="10" rx="2" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.8"/>
+<text x="414" y="931" style="font-size:10px;fill:var(--color-text-secondary)">Mountain</text>
+<rect x="400" y="938" width="10" height="10" rx="2" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+<text x="414" y="947" style="font-size:10px;fill:var(--color-text-secondary)">Magical</text>
+<rect x="400" y="954" width="10" height="10" rx="2" fill="#FAECE7" stroke="#993C1D" stroke-width="0.8"/>
+<text x="414" y="963" style="font-size:10px;fill:var(--color-text-secondary)">Volcanic</text>
+</svg>
+
+<!-- INFO PANEL -->
+<div class="panel" id="infopanel">
+  <button class="panel-close" onclick="closePanel()" aria-label="Close">×</button>
+  <div class="panel-name" id="p-name"></div>
+  <div class="panel-biome" id="p-biome"></div>
+  <div class="panel-desc" id="p-desc"></div>
+  <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;letter-spacing:.04em">FACILITIES</div>
+  <div class="fac-grid" id="p-facs"></div>
+</div>
+
+</div>
+
+<script>
+const CITIES = {
+  stormhold:{name:"Stormhold",biome:"tundra",desc:"A bleak northern fortress carved into a glacier ridge. No harbour — the sea here freezes six months of the year.",services:["shop","inn","barracks","gift_shop"]},
+  thornwall:{name:"Thornwall",biome:"temperate",desc:"A walled garrison town on the northern road. Soldiers outnumber merchants three to one.",services:["shop","inn","barracks"]},
+  greyharbor:{name:"Greyharbor",biome:"temperate",desc:"A prosperous river town where three tributaries meet. The 'harbour' is a canal dock — no sea access.",services:["shop","inn","trade_hall","guild"]},
+  solmere:{name:"Solmere ★",biome:"temperate (starting city)",desc:"The crossroads of the known world. Merchants, sellswords, and pilgrims pass through its broad stone gates.",services:["shop","inn","blacksmith","trade_hall","temple","guild"]},
+  elderfen:{name:"Elderfen",biome:"swamp",desc:"Half the buildings stand on stilts above brackish water. Herbalists and hedge-witches thrive here.",services:["shop","inn","herbalist"]},
+  mirefall:{name:"Mirefall",biome:"swamp",desc:"A sunken settlement at the edge of the Ashen Mire. Its people are resilient — and deeply suspicious of outsiders.",services:["shop","inn","herbalist","black_market"]},
+  irondeep:{name:"Irondeep",biome:"mountain",desc:"A dwarven-founded mining city deep in the Iron Crags. The forges never go cold.",services:["shop","inn","blacksmith","barracks","guild"]},
+  skylume:{name:"Skylume",biome:"magical",desc:"Towers of crystallised leyline energy pierce the clouds. Magic items trade for a premium here.",services:["shop","inn","arcane_tower","gift_shop"]},
+  cinderpeak:{name:"Cinderpeak",biome:"volcanic",desc:"Built in the caldera of a dormant volcano. Rare ores flow down from the crater rim.",services:["shop","inn","blacksmith","arcane_tower"]},
+  veilholt:{name:"Veilholt",biome:"forest",desc:"An ancient city grown into the Forest of Veils. Elven architecture merges seamlessly with the canopy.",services:["shop","inn","herbalist","arcane_tower","guild"]},
+  sunreach:{name:"Sunreach",biome:"savanna",desc:"A sun-baked trading city on the southern plains. The great temple channels the Radiant God's own light.",services:["shop","inn","temple","trade_hall"]},
+  ashkara:{name:"Ashkara",biome:"desert",desc:"A desert city built over a buried oasis. The black market rivals the trade hall — and far exceeds it for danger.",services:["shop","inn","black_market","blacksmith","guild"]},
+  dunemar:{name:"Dunemar",biome:"desert",desc:"A fortified desert trade post at the end of the Amber Road. Caravans converge from three directions.",services:["shop","inn","trade_hall","black_market"]},
+  brinewatch:{name:"Brinewatch",biome:"coastal",desc:"The western seaport. A working harbour city of fishermen, merchants, and naval conscripts.",services:["shop","inn","blacksmith","port","shipyard","trade_hall"]},
+  saltmarsh:{name:"Saltmarsh",biome:"coastal",desc:"A small fishing village turned minor port. The smell of brine and smoked fish is inescapable.",services:["shop","inn","port"]},
+  tidebreak:{name:"Tidebreak",biome:"coastal",desc:"The great southern port. A sprawling city of three harbours and twice as many taverns.",services:["shop","inn","port","shipyard","trade_hall"]},
+  blackwake:{name:"Blackwake",biome:"coastal",desc:"A lawless sea-cove known only to sailors and criminals. No roads lead here — just whispered directions.",services:["inn","port","black_market"]},
+  coralhaven:{name:"Coralhaven",biome:"tropical island",desc:"A jewel of the southern seas across a reef archipelago. Reachable only by water. Blessed by three temples.",services:["shop","inn","port","herbalist","temple","guild","gift_shop"]},
+  isle_of_glass:{name:"Isle of Glass",biome:"magical island",desc:"A crystalline island not on any mundane map. Mages and scholars make pilgrimage here; most never leave.",services:["arcane_tower"]}
+};
+const FAC_LABEL = {shop:"Shop",inn:"Inn",blacksmith:"Blacksmith",trade_hall:"Trade Hall",temple:"Temple",port:"Port",shipyard:"Shipyard",herbalist:"Herbalist",barracks:"Barracks",black_market:"Black Market",arcane_tower:"Arcane Tower",gift_shop:"Gift Shop",guild:"Guild"};
+const FAC_ICON = {shop:"ti-shopping-bag",inn:"ti-bed",blacksmith:"ti-hammer",trade_hall:"ti-building-store",temple:"ti-building-community",port:"ti-anchor",shipyard:"ti-ship",herbalist:"ti-leaf",barracks:"ti-shield",black_market:"ti-eye-off",arcane_tower:"ti-wand",gift_shop:"ti-gift",guild:"ti-users"};
+let selected=null;
+
+function showCity(id){
+  if(selected){document.getElementById('cn-'+selected)?.classList.remove('selected')}
+  selected=id;
+  document.getElementById('cn-'+id)?.classList.add('selected');
+  const c=CITIES[id];
+  document.getElementById('p-name').textContent=c.name;
+  document.getElementById('p-biome').textContent=c.biome;
+  document.getElementById('p-desc').textContent=c.desc;
+  const g=document.getElementById('p-facs');
+  g.innerHTML=c.services.map(s=>`<span class="fac-badge fac-${s}"><i class="ti ${FAC_ICON[s]||'ti-circle'}" aria-hidden="true" style="font-size:13px"></i>${FAC_LABEL[s]||s}</span>`).join('');
+  document.getElementById('infopanel').classList.add('visible');
+}
+
+function closePanel(){
+  document.getElementById('infopanel').classList.remove('visible');
+  if(selected){document.getElementById('cn-'+selected)?.classList.remove('selected');selected=null}
+}
+</script>
+</body>
+</html>

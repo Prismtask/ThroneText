@@ -18,6 +18,9 @@ def inn_menu(player, city_id="solmere"):
         choice = input("\nChoice: ").strip()
         if choice == "1":
             player["current_hp"] = player_max_hp(player)
+            # Heal allies too
+            for ally in player.get("allies", []):
+                ally["current_hp"] = ally["max_hp"]
             service_dialogue(city_id, "inn", "rest")
             advance_time(player, 30)
             input("\nPress Enter to return...")
@@ -27,6 +30,9 @@ def inn_menu(player, city_id="solmere"):
             sleep_hour = inn_config.get("sleep_after_hour")
             if current_hour >= sleep_hour or current_hour < 4:
                 player["current_hp"] = player_max_hp(player)
+                # Heal allies too
+                for ally in player.get("allies", []):
+                    ally["current_hp"] = ally["max_hp"]
                 service_dialogue(city_id, "inn", "sleep")
                 advance_time(player, 480)
                 input("\nYou wake up refreshed the next morning...")

@@ -2,6 +2,7 @@ from inventory import equip_item, unequip_slot, use_consumable, get_total_equipm
 from character import player_max_hp
 from resources.races_classes import ATTRIBUTES
 from utils import clear_screen, format_time
+from combat.ally import get_alive_allies, format_ally_status_line
 
 def display_player_status(player):
     """Show player name, level, HP, attributes (with equipment and buff bonuses), and equipped items."""
@@ -41,6 +42,18 @@ def display_player_status(player):
             print(f"  {slot.title()}: {item['name']} ({item.get('rarity','common')})")
         else:
             print(f"  {slot.title()}: empty")
+
+    # Show allies
+    allies = get_alive_allies(player)
+    if allies:
+        print("\n--- Allies ---")
+        for i, ally in enumerate(allies):
+            print(f"  {ally['name']} (Lv {ally['level']}) HP: {ally['current_hp']}/{ally['max_hp']}")
+            eq = ally.get("equipped", {})
+            eq_items = [eq[s]["name"] for s in ["weapon", "armor", "accessory"] if eq.get(s)]
+            if eq_items:
+                print(f"    Equipped: {', '.join(eq_items)}")
+
     display_active_bounties(player)
 
 def display_active_bounties(player):
@@ -57,7 +70,7 @@ def display_active_bounties(player):
 def display_inventory_menu_options():
     """Print the main inventory menu choices."""
     print("\nOptions:")
-    print("1. Manage Equipment (equip/unequip)")
+    print("1. Manage Equipment (equip/unequip - you & allies)")
     print("2. View Bag (use/drop items)")
     print("3. Back to game")
 
@@ -92,13 +105,17 @@ def manage_inventory_menu(player):
     return None
 
 def manage_equipment_submenu(player):
-    """Submenu for equipping/unequipping items."""
+    """Submenu for equipping/unequipping items on player and allies."""
+    from combat.ally import get_alive_allies, equip_ally_item, unequip_ally_slot
+
     while True:
         clear_screen()
         print("Equipment management:")
-        print("1. Equip from inventory")
-        print("2. Unequip a slot")
-        print("3. Back")
+        print("1. Equip on yourself")
+        print("2. Unequip your slot")
+        print("3. Equip on ally")
+        print("4. Unequip ally slot")
+        print("5. Back")
         sub = input("Choice: ")
         if sub == "1":
             equip_items = [i for i in player.get("inventory", []) if i["type"] == "equipment"]
@@ -126,6 +143,62 @@ def manage_equipment_submenu(player):
                 print("Invalid slot.")
             input("Press Enter...")
         elif sub == "3":
+            allies = get_alive_allies(player)
+            if not allies:
+                print("No allies in your party.")
+                input("Press Enter...")
+                continue
+            equip_items = [i for i in player.get("inventory", []) if i["type"] == "equipment"]
+            if not equip_items:
+                print("No equipment in bag.")
+                input("Press Enter...")
+                continue
+            print("\nChoose ally:")
+            for i, a in enumerate(allies):
+                print(f"{i+1}. {a['name']}")
+            try:
+                a_idx = int(input("Ally: ")) - 1
+                if 0 <= a_idx < len(allies):
+                    ally = allies[a_idx]
+                    print(f"\nEquipping {ally['name']}:")
+                    for idx, itm in enumerate(equip_items):
+                        print(f"{idx+1}. {itm['name']} (slot: {itm['slot']})")
+                    i_idx = int(input("Equip which? (0 cancel): ")) - 1
+                    if i_idx >= 0:
+                        item = equip_items[i_idx]
+                        print(equip_ally_item(ally, item, player))
+            except:
+                pass
+            input("Press Enter...")
+        elif sub == "4":
+            allies = get_alive_allies(player)
+            if not allies:
+                print("No allies in your party.")
+                input("Press Enter...")
+                continue
+            print("\nChoose ally:")
+            for i, a in enumerate(allies):
+                print(f"{i+1}. {a['name']}")
+            try:
+                a_idx = int(input("Ally: ")) - 1
+                if 0 <= a_idx < len(allies):
+                    ally = allies[a_idx]
+                    print(f"\n{ally['name']}'s equipment:")
+                    for slot in ["weapon", "armor", "accessory"]:
+                        item = ally.get("equipped", {}).get(slot)
+                        if item:
+                            print(f"  {slot.title()}: {item['name']}")
+                        else:
+                            print(f"  {slot.title()}: empty")
+                    slot = input("Slot to unequip: ").strip().lower()
+                    if slot in ["weapon", "armor", "accessory"]:
+                        print(unequip_ally_slot(ally, slot, player))
+                    else:
+                        print("Invalid slot.")
+            except:
+                pass
+            input("Press Enter...")
+        elif sub == "5":
             break
 
 def manage_bag_submenu(player):

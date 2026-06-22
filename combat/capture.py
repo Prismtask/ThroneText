@@ -28,24 +28,27 @@ def get_capture_message(enemy, player):
     return f"{enemy.get('name', 'The creature')} is captured and gently bound by your net!"
 
 
-def attempt_capture(player, target):
+def attempt_capture(player, target, net=None):
     """Main capture logic using the monster_girl flag."""
     if not is_monster_girl(target):
         print("This enemy cannot be captured.")
         return False
 
-    # Find capture net
-    net_idx = None
-    net = None
-    for i, item in enumerate(player.get("inventory", [])):
-        if item.get("capture_net"):
-            net_idx = i
-            net = item
-            break
+    if net is None:
+        # Find capture net in inventory
+        net_idx = None
+        for i, item in enumerate(player.get("inventory", [])):
+            if item.get("capture_net"):
+                net_idx = i
+                net = item
+                break
 
-    if not net:
-        print("You need a Capture Net to attempt this!")
-        return False
+        if not net:
+            print("You need a Capture Net to attempt this!")
+            return False
+        # Consume net from inventory
+        player["inventory"].pop(net_idx)
+    # else: net was already provided/consumed by caller (e.g., battle item use)
 
     # Success calculation
     cha = get_effective_attribute(player, "Charisma")
@@ -58,34 +61,37 @@ def attempt_capture(player, target):
     roll = (cha + dex) * 0.8 + (rarity_mult * 25) - difficulty
     success_chance = max(5, min(95, roll))
 
-    # Consume net
-    player["inventory"].pop(net_idx)
-
     if random.uniform(0, 100) < success_chance:
         print("\n" + "✨" * 20)
         print(get_capture_message(target, player))
         print("✨" * 20)
 
         store_captured_girl(player, target)
+        target["captured"] = True
         return True
     else:
         print(f"The {target.get('name')} slips through your net and escapes!")
         return False
 
 
+from facilities.house import HOUSE_MONSTER_GIRL_LIMITS
+
 def store_captured_girl(player, mg):
-    """Store captured monster girl in house storage."""
-    total_tamed = sum(len(h.get("monster_girls", [])) for h in player.get("houses", {}).values())
-    if total_tamed >= 5:
-        print("Your houses are already full (max 5 monster girls).")
+    """Store captured monster girl in the player's house."""
+    houses = player.get("houses", {})
+    if not houses:
+        print("You need a house to keep her!")
         return False
 
-    city_id = player.get("location") or player.get("origin_city", "solmere")
-    if city_id not in player.setdefault("houses", {}):
-        print(f"You need a house in {city_id} to keep her!")
+    # Only one house allowed — use the player's home regardless of location
+    house_city, house = next(iter(houses.items()))
+
+    max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house.get("level", 1), 2)
+    current_girls = len(house.get("monster_girls", []))
+    if current_girls >= max_girls:
+        print(f"Your house is already full (max {max_girls} monster girls).")
         return False
 
-    house = player["houses"][city_id]
     house.setdefault("monster_girls", []).append({
         "key": mg.get("key"),
         "name": mg.get("name"),
@@ -93,5 +99,5 @@ def store_captured_girl(player, mg):
         "affection": 30,
         "captured_on": player.get("day", 1)
     })
-    print(f"💕 {mg.get('name')} has been added to your house in {city_id}!")
+    print(f"💕 {mg.get('name')} has been added to your house in {house_city}!")
     return True

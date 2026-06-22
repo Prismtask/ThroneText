@@ -10,14 +10,14 @@ def black_market_service(player, city_id):
     print("A shadowy figure whispers about forbidden wares.")
 
     print("\nAvailable goods:")
-    print("1. Buy mysterious relic (150 gold) – random rare item")
-    print("2. Buy Capture Net (guaranteed stock, max 3) - 280 gold each (inflated black market price)")
+    print("1. Buy mysterious relic (450 gold) – random rare item")
+    print("2. Buy Capture Net - 950 gold")
     print("3. Leave")
 
     choice = input("\nChoice: ").strip()
 
     if choice == "1":
-        cost = 150
+        cost = 450
         if player.get("gold", 0) >= cost:
             player["gold"] -= cost
             item = random_equipment(rarity="rare")
@@ -33,11 +33,11 @@ def black_market_service(player, city_id):
         if current_nets >= 3:
             print("The dealer smirks. 'You've already bought the maximum I can risk selling you (3 total).'")
         else:
-            cost = 280  # Inflated black market price
+            cost = 950
             if player.get("gold", 0) >= cost:
                 player["gold"] -= cost
                 # Random rarity (common/uncommon/rare) via build_item
-                rarity = random.choice(["common", "uncommon", "rare"])
+                rarity = random.choice(["common", "uncommon", "rare", "epic", "legendary"])
                 net = build_item("capture_net", rarity=rarity)
                 add_item_to_inventory(player, net)
                 print(f"You acquire: {net['name']} (x1)")

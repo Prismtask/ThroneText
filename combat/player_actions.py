@@ -132,6 +132,27 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 else:
                     target = enemies[0]
 
+            if item.get("capture_net"):
+                mg_targets = [e for e in enemies if is_monster_girl(e) and e["hp"] > 0]
+                if not mg_targets:
+                    print("No monster girls present.")
+                    return "retry", False
+                if len(mg_targets) > 1:
+                    print("Select target to capture:")
+                    for i, e in enumerate(mg_targets):
+                        print(f"{i+1}. {e['name']}")
+                    try:
+                        idx = int(input("Choice: ")) - 1
+                        target = mg_targets[idx]
+                    except:
+                        return "retry", False
+                else:
+                    target = mg_targets[0]
+                player["inventory"].pop(true_idx)
+                if attempt_capture(player, target, net=item):
+                    enemies.remove(target)
+                return "continue", False
+
             if "power" in item:
                 old_hp = player["current_hp"]
                 new_hp = min(old_hp + item["power"], player_max_hp(player))

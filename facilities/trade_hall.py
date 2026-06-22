@@ -37,6 +37,11 @@ def _sell_house_deed(player):
 
     player.setdefault("houses", {})
 
+    if len(player.get("houses", {})) >= 1:
+        print("You already own a house. You may only have one house.")
+        input("\nPress Enter...")
+        return
+
     # Build the list of cities where the player can place a deed.
     eligible = [
         (city_id, data)
@@ -45,7 +50,7 @@ def _sell_house_deed(player):
     ]
 
     print("\n=== Choose a City for Your New Home ===")
-    print("(You may own one house per city.)\n")
+    print("(You may only own one house. It will be your home anywhere in the world.)\n")
 
     for i, (city_id, data) in enumerate(eligible, 1):
         owned = "✓ Owned" if city_id in player["houses"] else ""

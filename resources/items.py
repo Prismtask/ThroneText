@@ -207,7 +207,7 @@ def build_item(item_id, rarity="common", enhance=0):
     elif base["type"] == "utility":
         item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
         # ADDED "fixed_flee" to the list below:
-        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce", "fixed_flee"]:
+        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce", "fixed_flee", "capture_net", "rarity_mult_bonus"]:
             if k in base:
                 item[k] = base[k]
                 

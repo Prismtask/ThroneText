@@ -102,12 +102,16 @@ def generate_floor(floor, region=None):
 
     return rooms
 
+_EXCLUDED_ITEM_IDS = frozenset(
+    k for k, v in ITEMS.items()
+    if v.get("unique") or v.get("type") == "scroll"
+)
+
 def roll_drop(enemy_level):
     if random.random() > 0.50:
         return None
 
     rarities = ["common", "uncommon", "rare", "epic", "legendary"]
-
     if enemy_level <= 5:
         weights = [0.45, 0.35, 0.15, 0.05, 0.00]
     elif enemy_level <= 10:
@@ -116,11 +120,15 @@ def roll_drop(enemy_level):
         weights = [0.20, 0.30, 0.28, 0.15, 0.07]
     elif enemy_level <= 30:
         weights = [0.10, 0.25, 0.30, 0.20, 0.15]
-    else:  # 31–40
+    else:
         weights = [0.05, 0.20, 0.25, 0.30, 0.20]
 
     rarity = random.choices(rarities, weights=weights)[0]
-    item_id = random.choice(list(ITEMS.keys()))
+    
+    # Exclude unique / scroll items from general loot pool
+    valid_ids = [k for k in ITEMS if k not in _EXCLUDED_ITEM_IDS]
+    item_id = random.choice(valid_ids) if valid_ids else "minor_healing_potion"
+    
     return (item_id, rarity)
 
 def roll_gold_drop(enemy_key, is_boss=False):
@@ -315,6 +323,13 @@ def explore_dungeon(player):
                 )
                 print(f"\nYou catch your breath and recover {heal} HP.")
 
+                # Heal allies too
+                for ally in player.get("allies", []):
+                    if ally.get("current_hp", 0) > 0:
+                        ally_heal = random.randint(1, 3) + ally["attributes"].get("Constitution", 0)
+                        ally["current_hp"] = min(ally["current_hp"] + ally_heal, ally["max_hp"])
+                        print(f"  {ally['name']} recovers {ally_heal} HP.")
+
                 while True:
                     print("\n[Enter] to continue  [I]nventory/Stats  [S]ave and quit")
                     cmd = input().strip().lower()
@@ -370,5 +385,10 @@ def explore_dungeon(player):
     print(f"Current time: {current_time} | Gold: {player.get('gold', 0)}")
 
     player["current_hp"] = player_max_hp(player)
+
+    # Fully heal all allies on floor clear
+    for ally in player.get("allies", []):
+        ally["current_hp"] = ally["max_hp"]
+
     save_game(player)
     return True

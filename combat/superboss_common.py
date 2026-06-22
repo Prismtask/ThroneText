@@ -52,7 +52,7 @@ def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, p_ler, p_
         return None
 
     for extra_num in range(2):
-        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
             return "victory"
 
@@ -101,7 +101,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             player["abyss_triple_actions"] = pending
             print(f"⚔️  The Abyss awakens! Triple actions for {pending} turns!")
 
-        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
             return "victory"
 
@@ -112,7 +112,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             if result in ("dead", "victory"):
                 return result
 
-        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
             return "victory"
 
@@ -153,7 +153,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         defending = False
 
         for step_idx, combatant in enumerate(turn_order):
-            live_enemies = [e for e in enemies if e["hp"] > 0]
+            live_enemies = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
             if not live_enemies:
                 break
 
@@ -203,6 +203,9 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 if enemy["hp"] <= 0:
                     print(f"  ({enemy['name']} is already defeated.)")
                     continue
+                if enemy.get("captured"):
+                    print(f"  ({enemy['name']} is captured and cannot act.)")
+                    continue
 
                 actions = 1
                 skip_atk = False
@@ -235,7 +238,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             if post_round_hook(context, enemies) == "dead":
                 return "dead"
 
-        enemies[:] = [e for e in enemies if e["hp"] > 0]
+        enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
             return "victory"
 

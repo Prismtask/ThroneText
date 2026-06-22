@@ -1,59 +1,357 @@
 {
-  "name": "prisk",
+  "name": "prism",
   "race": "Human",
   "class": "Warrior",
   "attributes": {
-    "Strength": 11,
-    "Constitution": 4,
-    "Dexterity": 3,
+    "Strength": 22,
+    "Constitution": 9,
+    "Dexterity": 6,
     "Wisdom": 1,
-    "Learning": 3,
-    "Charisma": 5
+    "Learning": 7,
+    "Charisma": 2
   },
   "city_floors": {
     "solmere": {
+      "floor": 6,
+      "max_floor": 11
+    },
+    "irondeep": {
       "floor": 2,
       "max_floor": 2
+    },
+    "ashkara": {
+      "floor": 6,
+      "max_floor": 6
+    },
+    "skylume": {
+      "floor": 5,
+      "max_floor": 5
     }
   },
-  "floor": 2,
-  "current_hp": 43,
-  "level": 5,
-  "exp": 11,
-  "level_hp_bonus": 16,
+  "current_hp": 138,
+  "level": 25,
+  "exp": 1536,
+  "level_hp_bonus": 96,
   "inventory": [
     {
-      "id": "superior_healing_potion",
-      "name": "Uncommon Superior Healing Potion",
+      "id": "tome_of_knowledge",
+      "name": "Common Tome of Knowledge",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 3
+      }
+    },
+    {
+      "id": "antidote",
+      "name": "Common Antidote",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 0
+    },
+    {
+      "id": "scepter",
+      "name": "Epic Scepter",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 7,
+        "Charisma": 4
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "nimble_gloves",
+      "name": "Rare Nimble Gloves",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 3,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "sacred_mace",
+      "name": "Common Sacred Mace",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 4,
+        "Strength": 1
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "crown_of_intellect",
+      "name": "Epic Crown of Intellect",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 9,
+        "Wisdom": 4
+      }
+    },
+    {
+      "id": "arcane_vestments",
+      "name": "Uncommon Arcane Vestments",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Learning": 5,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "plate_armor",
+      "name": "Common Plate Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 5,
+        "Dexterity": -1
+      }
+    },
+    {
+      "id": "grimoire",
+      "name": "Epic Grimoire",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 12
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "sacred_mace",
+      "name": "Uncommon Sacred Mace",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 5,
+        "Strength": 1
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "long_sword",
+      "name": "Common Long Sword",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 3
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "shadow_wraps",
+      "name": "Common Shadow Wraps",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 4,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "iron_heart_locket",
+      "name": "Common Iron Heart Locket",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3,
+        "Strength": 1
+      }
+    },
+    {
+      "id": "minor_healing_potion",
+      "name": "Uncommon Minor Healing Potion",
       "type": "consumable",
       "rarity": "uncommon",
       "enhance": 0,
-      "power": 234
+      "power": 32
     },
     {
-      "id": "brooch_of_valor",
-      "name": "Uncommon Brooch of Valor",
+      "id": "rare_scroll",
+      "name": "Common Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "common",
+      "enhance": 0,
+      "target_rarity": "common"
+    },
+    {
+      "id": "scepter",
+      "name": "Common Scepter",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 3,
+        "Charisma": 2
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "recalled_scroll",
+      "name": "Uncommon Scroll of Recall",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 0,
+      "fixed_flee": true
+    },
+    {
+      "id": "war_band",
+      "name": "Uncommon War Band",
       "type": "equipment",
       "rarity": "uncommon",
       "enhance": 0,
       "slot": "accessory",
       "mods": {
-        "Charisma": 2,
-        "Strength": 2
+        "Strength": 2,
+        "Wisdom": 1
       }
     },
     {
-      "id": "mace",
-      "name": "Rare Mace",
+      "id": "hand_crossbow",
+      "name": "Uncommon Hand Crossbow",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 2
+      },
+      "scaling_stat": "Dexterity"
+    },
+    {
+      "id": "banded_mail",
+      "name": "Common Banded Mail",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 4,
+        "Dexterity": -1
+      }
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Uncommon Arcane Staff",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 5
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "talisman_of_warding",
+      "name": "Uncommon Talisman of Warding",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "wand",
+      "name": "Common Wand",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 2,
+        "Wisdom": 1
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "spear",
+      "name": "Rare Spear",
       "type": "equipment",
       "rarity": "rare",
       "enhance": 0,
       "slot": "weapon",
       "mods": {
-        "Strength": 3,
-        "Wisdom": 1
+        "Strength": 5,
+        "Dexterity": 1
       },
       "scaling_stat": "Strength"
+    },
+    {
+      "id": "healing_salve",
+      "name": "Common Healing Salve",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 40,
+      "duration": 3,
+      "heal_over_time": 3
+    },
+    {
+      "id": "epic_scroll",
+      "name": "Epic Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "epic",
+      "enhance": 0,
+      "target_rarity": "epic"
+    },
+    {
+      "id": "talisman_of_warding",
+      "name": "Common Talisman of Warding",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "hand_crossbow",
+      "name": "Epic Hand Crossbow",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 4
+      },
+      "scaling_stat": "Dexterity"
     },
     {
       "id": "chainmail",
@@ -65,24 +363,1658 @@
       "mods": {
         "Constitution": 3
       }
+    },
+    {
+      "id": "stun_bomb",
+      "name": "Common Stun Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 12,
+      "stun_chance": 0.6
+    },
+    {
+      "id": "brooch_of_valor",
+      "name": "Common Brooch of Valor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 2,
+        "Strength": 2
+      }
+    },
+    {
+      "id": "talisman_of_warding",
+      "name": "Common Talisman of Warding",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "epic_scroll",
+      "name": "Epic Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "epic",
+      "enhance": 0,
+      "target_rarity": "epic"
+    },
+    {
+      "id": "bards_lute",
+      "name": "Rare Bard's Lute",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Charisma": 6,
+        "Learning": 1
+      },
+      "scaling_stat": "Charisma"
+    },
+    {
+      "id": "cloak_of_shadows",
+      "name": "Common Cloak of Shadows",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "wind_anklet",
+      "name": "Common Wind Anklet",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 3,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "greater_healing_potion",
+      "name": "Epic Greater Healing Potion",
+      "type": "consumable",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 264
+    },
+    {
+      "id": "ring_of_power",
+      "name": "Common Ring of Power",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 2
+      }
+    },
+    {
+      "id": "flash_powder",
+      "name": "Epic Flash Powder",
+      "type": "utility",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 0,
+      "escape_bonus": 12,
+      "blind_enemy": true
+    },
+    {
+      "id": "oracle_eye",
+      "name": "Common Oracle Eye",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Wisdom": 3,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "endurance_ring",
+      "name": "Uncommon Endurance Ring",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 2,
+        "Dexterity": 1
+      }
+    },
+    {
+      "id": "belt_of_giants",
+      "name": "Uncommon Belt of Giants",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 3,
+        "Constitution": 2
+      }
+    },
+    {
+      "id": "cloak_of_shadows",
+      "name": "Rare Cloak of Shadows",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 3,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "ring_of_power",
+      "name": "Rare Ring of Power",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 3
+      }
+    },
+    {
+      "id": "elixir_of_strength",
+      "name": "Common Elixir of Strength",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Strength",
+      "duration": 4
+    },
+    {
+      "id": "rare_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "curse_cleansing_scroll",
+      "name": "Epic Scroll of Cleansing",
+      "type": "consumable",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 0,
+      "cure_curse": true
+    },
+    {
+      "id": "plate_armor",
+      "name": "Common Plate Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 5,
+        "Dexterity": -1
+      }
+    },
+    {
+      "id": "iron_heart_locket",
+      "name": "Common Iron Heart Locket",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3,
+        "Strength": 1
+      }
+    },
+    {
+      "id": "scepter",
+      "name": "Common Scepter",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 3,
+        "Charisma": 2
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "runic_dagger",
+      "name": "Uncommon Runic Dagger",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 2,
+        "Learning": 2
+      },
+      "scaling_stat": "Dexterity"
+    },
+    {
+      "id": "scepter",
+      "name": "Uncommon Scepter",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 3,
+        "Charisma": 2
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "mace",
+      "name": "Common Mace",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 2,
+        "Wisdom": 1
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "battle_drink",
+      "name": "Uncommon Battle Drink",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 6,
+      "temp_stat": "Strength",
+      "duration": 3
+    },
+    {
+      "id": "elven_mail",
+      "name": "Uncommon Elven Mail",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 3,
+        "Learning": 1
+      }
+    },
+    {
+      "id": "elven_mail",
+      "name": "Common Elven Mail",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 3,
+        "Learning": 1
+      }
+    },
+    {
+      "id": "superior_healing_potion",
+      "name": "Common Superior Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 180
+    },
+    {
+      "id": "short_sword",
+      "name": "Uncommon Short Sword",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 2
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "acid_flask",
+      "name": "Uncommon Acid Flask",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 41
+    },
+    {
+      "id": "elixir_of_vitality",
+      "name": "Uncommon Elixir of Vitality",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Constitution",
+      "duration": 4
+    },
+    {
+      "id": "signet_of_authority",
+      "name": "Uncommon Signet of Authority",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 5
+      }
+    },
+    {
+      "id": "ring_of_wisdom",
+      "name": "Common Ring of Wisdom",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Wisdom": 3
+      }
+    },
+    {
+      "id": "superior_healing_potion",
+      "name": "Uncommon Superior Healing Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 234
+    },
+    {
+      "id": "curse_cleansing_scroll",
+      "name": "Common Scroll of Cleansing",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 0,
+      "cure_curse": true
+    },
+    {
+      "id": "scepter",
+      "name": "Common Scepter",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 3,
+        "Charisma": 2
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "antidote",
+      "name": "Rare Antidote",
+      "type": "consumable",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 0
+    },
+    {
+      "id": "arcane_vestments",
+      "name": "Common Arcane Vestments",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Learning": 4,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "signet_of_authority",
+      "name": "Uncommon Signet of Authority",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 5
+      }
+    },
+    {
+      "id": "boots_of_swiftness",
+      "name": "Rare Boots of Swiftness",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 5
+      }
+    },
+    {
+      "id": "uncommon_scroll",
+      "name": "Uncommon Scroll of Fusion",
+      "type": "scroll",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "target_rarity": "uncommon"
+    },
+    {
+      "id": "curse_cleansing_scroll",
+      "name": "Common Scroll of Cleansing",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 0,
+      "cure_curse": true
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Uncommon Arcane Staff",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 5
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "arcane_vestments",
+      "name": "Uncommon Arcane Vestments",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Learning": 5,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "short_sword",
+      "name": "Uncommon Short Sword",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 2
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "fur_mantle",
+      "name": "Common Fur Mantle",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "ring_of_charisma",
+      "name": "Uncommon Ring of Charisma",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 3
+      }
+    },
+    {
+      "id": "signet_of_authority",
+      "name": "Uncommon Signet of Authority",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 5
+      }
+    },
+    {
+      "id": "belt_of_giants",
+      "name": "Rare Belt of Giants",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 5,
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "greater_healing_potion",
+      "name": "Common Greater Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 110
+    },
+    {
+      "id": "wind_anklet",
+      "name": "Uncommon Wind Anklet",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 3,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "ring_of_charisma",
+      "name": "Epic Ring of Charisma",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 7
+      }
+    },
+    {
+      "id": "runic_orb",
+      "name": "Uncommon Runic Orb",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 3,
+        "Charisma": 1
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "earring_of_insight",
+      "name": "Epic Earring of Insight",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 4,
+        "Charisma": 2
+      }
+    },
+    {
+      "id": "stun_bomb",
+      "name": "Common Stun Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 12,
+      "stun_chance": 0.6
+    },
+    {
+      "id": "silver_tongue_ring",
+      "name": "Common Silver Tongue Ring",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "armor_shatter_flask",
+      "name": "Uncommon Armour Shatter Flask",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 0
+    },
+    {
+      "id": "silver_tongue_ring",
+      "name": "Epic Silver Tongue Ring",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 4,
+        "Wisdom": 2
+      }
+    },
+    {
+      "id": "flail",
+      "name": "Uncommon Flail",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 3,
+        "Constitution": 1
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "iron_heart_locket",
+      "name": "Common Iron Heart Locket",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3,
+        "Strength": 1
+      }
+    },
+    {
+      "id": "war_hammer",
+      "name": "Common War Hammer",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "halberd",
+      "name": "Uncommon Halberd",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5,
+        "Dexterity": 2
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "stun_bomb",
+      "name": "Common Stun Bomb",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 12,
+      "stun_chance": 0.6
+    },
+    {
+      "id": "healing_potion",
+      "name": "Common Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 55
+    },
+    {
+      "id": "pendant_of_wisdom",
+      "name": "Common Pendant of Wisdom",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Wisdom": 2,
+        "Learning": 1
+      }
+    },
+    {
+      "id": "halberd",
+      "name": "Uncommon Halberd",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5,
+        "Dexterity": 2
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "battle_axe",
+      "name": "Uncommon Battle Axe",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "elixir_of_mind",
+      "name": "Uncommon Elixir of Mind",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Learning",
+      "duration": 4
+    },
+    {
+      "id": "crossbow",
+      "name": "Rare Crossbow",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 5,
+        "Learning": 1
+      },
+      "scaling_stat": "Dexterity"
+    },
+    {
+      "id": "halberd",
+      "name": "Rare Halberd",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 6,
+        "Dexterity": 3
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "crown_of_intellect",
+      "name": "Uncommon Crown of Intellect",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 5,
+        "Wisdom": 2
+      }
+    },
+    {
+      "id": "spear",
+      "name": "Rare Spear",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5,
+        "Dexterity": 1
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "earring_of_insight",
+      "name": "Uncommon Earring of Insight",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 2,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "acid_flask",
+      "name": "Common Acid Flask",
+      "type": "utility",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 32
+    },
+    {
+      "id": "amulet_of_vigor",
+      "name": "Common Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "silver_tongue_ring",
+      "name": "Uncommon Silver Tongue Ring",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "belt_of_giants",
+      "name": "Common Belt of Giants",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 3,
+        "Constitution": 2
+      }
+    },
+    {
+      "id": "halberd",
+      "name": "Uncommon Halberd",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 5,
+        "Dexterity": 2
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "ring_of_charisma",
+      "name": "Common Ring of Charisma",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 3
+      }
+    },
+    {
+      "id": "capture_net",
+      "name": "Rare Capture Net",
+      "type": "utility",
+      "rarity": "rare",
+      "enhance": 0,
+      "power": 0,
+      "capture_net": true,
+      "rarity_mult_bonus": 25
+    },
+    {
+      "id": "capture_net",
+      "name": "Uncommon Capture Net",
+      "type": "utility",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 0,
+      "capture_net": true,
+      "rarity_mult_bonus": 25
+    },
+    {
+      "id": "arcane_staff",
+      "name": "Common Arcane Staff",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 4
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "tome_blade",
+      "name": "Uncommon Tome Blade",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Learning": 3,
+        "Wisdom": 2
+      },
+      "scaling_stat": "Learning"
+    },
+    {
+      "id": "ring_of_power",
+      "name": "Common Ring of Power",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Strength": 2
+      }
+    },
+    {
+      "id": "silver_sword",
+      "name": "Uncommon Silver Sword",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 3,
+        "Wisdom": 2
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "crown_of_intellect",
+      "name": "Uncommon Crown of Intellect",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 5,
+        "Wisdom": 2
+      }
+    },
+    {
+      "id": "elixir_of_vitality",
+      "name": "Uncommon Elixir of Vitality",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 3,
+      "temp_stat": "Constitution",
+      "duration": 4
+    },
+    {
+      "id": "amulet_of_vigor",
+      "name": "Rare Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 5
+      }
+    },
+    {
+      "id": "iron_heart_locket",
+      "name": "Common Iron Heart Locket",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3,
+        "Strength": 1
+      }
+    },
+    {
+      "id": "leather_armor",
+      "name": "Common Leather Armor",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Dexterity": 2,
+        "Constitution": 1
+      }
+    },
+    {
+      "id": "healing_salve",
+      "name": "Common Healing Salve",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 40,
+      "duration": 3,
+      "heal_over_time": 3
+    },
+    {
+      "id": "holy_staff",
+      "name": "Rare Holy Staff",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 6,
+        "Constitution": 1
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "chainmail",
+      "name": "Rare Chainmail",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 5
+      }
+    },
+    {
+      "id": "silver_tongue_ring",
+      "name": "Uncommon Silver Tongue Ring",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Charisma": 2,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "hand_crossbow",
+      "name": "Common Hand Crossbow",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 2
+      },
+      "scaling_stat": "Dexterity"
+    },
+    {
+      "id": "silver_tongue_dagger",
+      "name": "Common Silver-Tongue Dagger",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Charisma": 3,
+        "Dexterity": 2
+      },
+      "scaling_stat": "Charisma"
+    },
+    {
+      "id": "crown_of_intellect",
+      "name": "Uncommon Crown of Intellect",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 5,
+        "Wisdom": 2
+      }
+    },
+    {
+      "id": "boots_of_swiftness",
+      "name": "Uncommon Boots of Swiftness",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 3
+      }
+    },
+    {
+      "id": "ring_of_wisdom",
+      "name": "Rare Ring of Wisdom",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Wisdom": 5
+      }
+    },
+    {
+      "id": "scholars_monocle",
+      "name": "Rare Scholar's Monocle",
+      "type": "equipment",
+      "rarity": "rare",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Learning": 3,
+        "Wisdom": 1
+      }
+    },
+    {
+      "id": "dagger",
+      "name": "Common Dagger",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 3
+      },
+      "scaling_stat": "Dexterity"
+    },
+    {
+      "id": "battle_drink",
+      "name": "Uncommon Battle Drink",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "power": 6,
+      "temp_stat": "Strength",
+      "duration": 3
+    },
+    {
+      "id": "amulet_of_vigor",
+      "name": "Uncommon Amulet of Vigor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Constitution": 3
+      }
+    },
+    {
+      "id": "padded_armor",
+      "name": "Uncommon Padded Armor",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 2
+      }
     }
   ],
   "equipped": {
-    "weapon": null,
-    "armor": null,
-    "accessory": null
+    "weapon": {
+      "id": "abyss_fang",
+      "name": "Epic Abyss Fang +2",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 2,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 16,
+        "Dexterity": 9
+      },
+      "special": "dream_devour",
+      "unique": true,
+      "drop_source": "dream_devouring_slitcurrent",
+      "drop_rarity": "legendary",
+      "scaling_stat": [
+        "Strength",
+        "Dexterity"
+      ]
+    },
+    "armor": {
+      "id": "fur_mantle",
+      "name": "Epic Fur Mantle",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "armor",
+      "mods": {
+        "Constitution": 4,
+        "Wisdom": 2
+      }
+    },
+    "accessory": {
+      "id": "boots_of_swiftness",
+      "name": "Epic Boots of Swiftness",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 7
+      }
+    }
   },
-  "active_buffs": [],
+  "active_buffs": [
+    {
+      "stat": "Strength",
+      "value": 8,
+      "remaining": 1,
+      "source": "abyss_fang"
+    }
+  ],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 744,
-  "time_minutes": 1050,
+  "gold": 6220,
+  "time_minutes": 1190,
   "location": "skylume",
-  "superboss_seed": 607193,
-  "day": 1,
-  "dungeon_region": "temperate",
-  "origin_city": "solmere",
+  "superboss_seed": 867592,
+  "allies": [
+    {
+      "name": "Alraune Fledger",
+      "key": "alraune_fledger",
+      "level": 7,
+      "attributes": {
+        "Strength": 1,
+        "Constitution": 1,
+        "Dexterity": 2,
+        "Wisdom": 1,
+        "Learning": 1,
+        "Charisma": 3
+      },
+      "equipped": {
+        "weapon": {
+          "id": "runic_dagger",
+          "name": "Epic Runic Dagger",
+          "type": "equipment",
+          "rarity": "epic",
+          "enhance": 0,
+          "slot": "weapon",
+          "mods": {
+            "Dexterity": 4,
+            "Learning": 4
+          },
+          "scaling_stat": "Dexterity"
+        },
+        "armor": {
+          "id": "elven_mail",
+          "name": "Rare Elven Mail",
+          "type": "equipment",
+          "rarity": "rare",
+          "enhance": 0,
+          "slot": "armor",
+          "mods": {
+            "Dexterity": 5,
+            "Learning": 1
+          }
+        },
+        "accessory": null
+      },
+      "active_buffs": [],
+      "active_debuffs": [],
+      "blinded": false,
+      "slowed": false,
+      "stunned": false,
+      "frozen": false,
+      "is_ally": true,
+      "affection": 100,
+      "max_hp": 32,
+      "current_hp": 32
+    }
+  ],
+  "day": 10,
+  "dungeon_region": "magical",
+  "origin_city": "skylume",
   "abyss_triple_actions": 0,
+  "shop_stock_irondeep": [
+    [
+      {
+        "id": "silver_sword",
+        "name": "Rare Silver Sword",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 5,
+          "Wisdom": 3
+        },
+        "scaling_stat": "Strength"
+      },
+      150
+    ],
+    [
+      {
+        "id": "silk_garb",
+        "name": "Common Silk Garb",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Charisma": 3,
+          "Dexterity": 1
+        }
+      },
+      50
+    ],
+    [
+      {
+        "id": "tome_blade",
+        "name": "Epic Tome Blade",
+        "type": "equipment",
+        "rarity": "epic",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Learning": 7,
+          "Wisdom": 4
+        },
+        "scaling_stat": "Learning"
+      },
+      300
+    ],
+    [
+      {
+        "id": "robes",
+        "name": "Rare Robes",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Learning": 5,
+          "Wisdom": 1
+        }
+      },
+      150
+    ],
+    [
+      {
+        "id": "silver_tongue_dagger",
+        "name": "Common Silver-Tongue Dagger",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Charisma": 3,
+          "Dexterity": 2
+        },
+        "scaling_stat": "Charisma"
+      },
+      50
+    ],
+    [
+      {
+        "id": "war_hammer",
+        "name": "Uncommon War Hammer",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Strength": 6
+        },
+        "scaling_stat": "Strength"
+      },
+      75
+    ],
+    [
+      {
+        "id": "sacred_mace",
+        "name": "Uncommon Sacred Mace",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Wisdom": 5,
+          "Strength": 1
+        },
+        "scaling_stat": "Wisdom"
+      },
+      75
+    ],
+    [
+      {
+        "id": "dragonhide",
+        "name": "Common Dragonhide Armor",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 4,
+          "Dexterity": 2
+        }
+      },
+      50
+    ]
+  ],
+  "last_shop_day_irondeep": 1,
+  "shop_stock_solmere": [
+    [
+      {
+        "id": "uncommon_scroll",
+        "name": "Common Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "common",
+        "enhance": 0,
+        "target_rarity": "common"
+      },
+      45
+    ],
+    [
+      {
+        "id": "ring_of_power",
+        "name": "Uncommon Ring of Power",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Strength": 2
+        }
+      },
+      67
+    ],
+    [
+      {
+        "id": "ring_of_charisma",
+        "name": "Common Ring of Charisma",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Charisma": 3
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "endurance_ring",
+        "name": "Common Endurance Ring",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Constitution": 2,
+          "Dexterity": 1
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "silver_tongue_ring",
+        "name": "Common Silver Tongue Ring",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Charisma": 2,
+          "Wisdom": 1
+        }
+      },
+      45
+    ],
+    [
+      {
+        "id": "elixir_of_vitality",
+        "name": "Uncommon Elixir of Vitality",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 3,
+        "temp_stat": "Constitution",
+        "duration": 4
+      },
+      22
+    ],
+    [
+      {
+        "id": "rapier",
+        "name": "Uncommon Rapier",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 5,
+          "Charisma": 1
+        },
+        "scaling_stat": "Dexterity"
+      },
+      67
+    ]
+  ],
+  "last_shop_day_solmere": 2,
   "active_debuffs": [],
-  "blinded": false
+  "blinded": false,
+  "cursed": false,
+  "silenced": false,
+  "houses": {
+    "skylume": {
+      "level": 2,
+      "storage": [],
+      "last_income_day": 10,
+      "monster_girls": []
+    }
+  },
+  "shop_stock_skylume": [
+    [
+      {
+        "id": "hand_crossbow",
+        "name": "Common Hand Crossbow",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 2
+        },
+        "scaling_stat": "Dexterity"
+      },
+      65
+    ],
+    [
+      {
+        "id": "tome_blade",
+        "name": "Uncommon Tome Blade",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Learning": 3,
+          "Wisdom": 2
+        },
+        "scaling_stat": "Learning"
+      },
+      97
+    ],
+    [
+      {
+        "id": "elixir_of_speed",
+        "name": "Common Elixir of Speed",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 3,
+        "temp_stat": "Dexterity",
+        "duration": 4
+      },
+      20
+    ],
+    [
+      {
+        "id": "arcane_vestments",
+        "name": "Uncommon Arcane Vestments",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Learning": 5,
+          "Constitution": 1
+        }
+      },
+      97
+    ],
+    [
+      {
+        "id": "capture_net",
+        "name": "Rare Capture Net",
+        "type": "utility",
+        "rarity": "rare",
+        "enhance": 0,
+        "power": 0,
+        "capture_net": true,
+        "rarity_mult_bonus": 25
+      },
+      195
+    ],
+    [
+      {
+        "id": "armor_shatter_flask",
+        "name": "Common Armour Shatter Flask",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 0
+      },
+      65
+    ],
+    [
+      {
+        "id": "holy_water",
+        "name": "Uncommon Holy Water",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 52,
+        "bonus_vs": "Undead"
+      },
+      97
+    ],
+    [
+      {
+        "id": "ring_of_charisma",
+        "name": "Rare Ring of Charisma",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Charisma": 5
+        }
+      },
+      195
+    ],
+    [
+      {
+        "id": "arcane_vestments",
+        "name": "Uncommon Arcane Vestments",
+        "type": "equipment",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Learning": 5,
+          "Constitution": 1
+        }
+      },
+      97
+    ]
+  ],
+  "last_shop_day_skylume": 6,
+  "abyss_fang_cooldown": 3,
+  "superboss_pool": [
+    2,
+    3,
+    1,
+    4
+  ]
 }

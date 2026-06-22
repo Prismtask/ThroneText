@@ -45,14 +45,17 @@ def main_menu():
                 continue
 
             print(f"\nLoaded {player['name']} - {player['race']} {player['class']}")
-            # Show per-city floor progress on load screen
+            # Show per-city floor progress on load screen only when in dungeon
             loc = player.get("location", "dungeon")
-            _cf_city = player.get("origin_city") or (loc if loc != "dungeon" else "solmere")
-            _cf = player.get("city_floors", {}).get(_cf_city, {})
-            _cur = _cf.get("floor", 1)
-            _max = _cf.get("max_floor", 1)
-            print(f"HP: {player['current_hp']}/{player_max_hp_display(player)} | "
-                  f"Floor: {_cur} (max {_max}) in {_cf_city.title()}")
+            if loc == "dungeon":
+                _cf_city = player.get("origin_city") or "solmere"
+                _cf = player.get("city_floors", {}).get(_cf_city, {})
+                _cur = _cf.get("floor", 1)
+                _max = _cf.get("max_floor", 1)
+                print(f"HP: {player['current_hp']}/{player_max_hp_display(player)} | "
+                      f"City: {_cf_city.title()} | Floor: {_cur} (max {_max})")
+            else:
+                print(f"HP: {player['current_hp']}/{player_max_hp_display(player)}")
             print(f"Time: {format_time(player.get('time_minutes', 480))}")
             print(f"Location: {loc}")
             input("Press Enter to continue...")
