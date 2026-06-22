@@ -16,8 +16,8 @@
       "max_floor": 11
     },
     "irondeep": {
-      "floor": 2,
-      "max_floor": 2
+      "floor": 3,
+      "max_floor": 3
     },
     "ashkara": {
       "floor": 6,
@@ -30,7 +30,7 @@
   },
   "current_hp": 156,
   "level": 28,
-  "exp": 1059,
+  "exp": 2439,
   "level_hp_bonus": 108,
   "inventory": [
     {
@@ -320,14 +320,6 @@
       "power": 40,
       "duration": 3,
       "heal_over_time": 3
-    },
-    {
-      "id": "epic_scroll",
-      "name": "Epic Scroll of Fusion",
-      "type": "scroll",
-      "rarity": "epic",
-      "enhance": 0,
-      "target_rarity": "epic"
     },
     {
       "id": "talisman_of_warding",
@@ -1814,6 +1806,53 @@
       "enhance": 0,
       "power": 0,
       "fixed_flee": true
+    },
+    {
+      "id": "greater_healing_potion",
+      "name": "Common Greater Healing Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 110
+    },
+    {
+      "id": "sacred_mace",
+      "name": "Epic Sacred Mace",
+      "type": "equipment",
+      "rarity": "epic",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Wisdom": 9,
+        "Strength": 2
+      },
+      "scaling_stat": "Wisdom"
+    },
+    {
+      "id": "halberd",
+      "name": "Common Halberd",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 4,
+        "Dexterity": 2
+      },
+      "scaling_stat": "Strength"
+    },
+    {
+      "id": "flail",
+      "name": "Common Flail",
+      "type": "equipment",
+      "rarity": "common",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Strength": 3,
+        "Constitution": 1
+      },
+      "scaling_stat": "Strength"
     }
   ],
   "equipped": {
@@ -1861,25 +1900,44 @@
       }
     }
   },
-  "active_buffs": [],
+  "active_buffs": [
+    {
+      "stat": "Strength",
+      "value": 8,
+      "remaining": 1,
+      "source": "abyss_fang"
+    },
+    {
+      "stat": "Strength",
+      "value": 2,
+      "remaining": 1,
+      "source": "battle_cry"
+    },
+    {
+      "stat": "Constitution",
+      "value": 2,
+      "remaining": 1,
+      "source": "battle_cry"
+    }
+  ],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 10282,
-  "time_minutes": 795,
-  "location": "irondeep",
+  "gold": 11118,
+  "time_minutes": 250,
+  "location": "skylume",
   "superboss_seed": 867592,
   "allies": [
     {
       "name": "Alraune Fledger",
       "key": "alraune_fledger",
-      "level": 16,
+      "level": 18,
       "attributes": {
         "Strength": 4,
-        "Constitution": 4,
+        "Constitution": 5,
         "Dexterity": 4,
         "Wisdom": 1,
         "Learning": 1,
-        "Charisma": 4
+        "Charisma": 5
       },
       "equipped": {
         "weapon": {
@@ -1917,19 +1975,19 @@
       "frozen": false,
       "is_ally": true,
       "affection": 100,
-      "max_hp": 95,
-      "current_hp": 89,
+      "max_hp": 110,
+      "current_hp": 100,
       "dreaded": false,
-      "exp": 36,
-      "level_hp_bonus": 36
+      "exp": 296,
+      "level_hp_bonus": 44
     },
     {
       "name": "Dryad Protector",
       "key": "dryad_protector",
-      "level": 16,
+      "level": 18,
       "attributes": {
-        "Strength": 4,
-        "Constitution": 2,
+        "Strength": 5,
+        "Constitution": 3,
         "Dexterity": 2,
         "Wisdom": 2,
         "Learning": 2,
@@ -1949,17 +2007,17 @@
       "is_ally": true,
       "affection": 58,
       "monster_girl": true,
-      "max_hp": 81,
-      "current_hp": 77,
+      "max_hp": 96,
+      "current_hp": 83,
       "dreaded": false,
-      "exp": 325,
-      "level_hp_bonus": 28
+      "exp": 585,
+      "level_hp_bonus": 36
     }
   ],
-  "day": 12,
+  "day": 13,
   "dungeon_region": "magical",
   "origin_city": "skylume",
-  "abyss_triple_actions": 0,
+  "abyss_triple_actions": 2,
   "shop_stock_irondeep": [
     [
       {
@@ -2188,7 +2246,13 @@
     ]
   ],
   "last_shop_day_solmere": 2,
-  "active_debuffs": [],
+  "active_debuffs": [
+    {
+      "type": "bleed",
+      "damage": 2,
+      "remaining": 2
+    }
+  ],
   "blinded": false,
   "cursed": false,
   "silenced": false,
@@ -2327,9 +2391,8 @@
     ]
   ],
   "last_shop_day_skylume": 12,
-  "abyss_fang_cooldown": 0,
+  "abyss_fang_cooldown": 3,
   "superboss_pool": [
-    3,
     1,
     4
   ],
@@ -2342,16 +2405,117 @@
     "war_shield_slam"
   ],
   "skill_cooldowns": {
-    "war_bladestorm": 2,
-    "war_cleave": 3,
-    "war_execute": 4
+    "war_cleave": 1,
+    "war_execute": 2,
+    "war_bladestorm": 6,
+    "war_battlecry": 5
   },
   "skill_mastery": {
     "war_cleave": 4,
     "war_execute": 3,
-    "war_bladestorm": 1
+    "war_bladestorm": 2
   },
   "passive_unlocked": true,
   "berserk_turns": 0,
-  "bloodlust_turns": 0
+  "bloodlust_turns": 0,
+  "shop_stock_cinderpeak": [
+    [
+      {
+        "id": "arcane_vestments",
+        "name": "Epic Arcane Vestments",
+        "type": "equipment",
+        "rarity": "epic",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Learning": 9,
+          "Constitution": 2
+        }
+      },
+      360
+    ],
+    [
+      {
+        "id": "elixir_of_mind",
+        "name": "Epic Elixir of Mind",
+        "type": "consumable",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 7,
+        "temp_stat": "Learning",
+        "duration": 4
+      },
+      108
+    ],
+    [
+      {
+        "id": "runic_plate",
+        "name": "Epic Runic Plate",
+        "type": "equipment",
+        "rarity": "epic",
+        "enhance": 0,
+        "slot": "armor",
+        "mods": {
+          "Constitution": 9,
+          "Learning": 4
+        }
+      },
+      360
+    ],
+    [
+      {
+        "id": "acid_flask",
+        "name": "Common Acid Flask",
+        "type": "utility",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 32
+      },
+      60
+    ],
+    [
+      {
+        "id": "war_band",
+        "name": "Common War Band",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Strength": 2,
+          "Wisdom": 1
+        }
+      },
+      60
+    ],
+    [
+      {
+        "id": "throwing_knife",
+        "name": "Epic Throwing Knife",
+        "type": "utility",
+        "rarity": "epic",
+        "enhance": 0,
+        "power": 52,
+        "armor_pierce": 2
+      },
+      360
+    ],
+    [
+      {
+        "id": "gauntlets_of_power",
+        "name": "Common Gauntlets of Power",
+        "type": "equipment",
+        "rarity": "common",
+        "enhance": 0,
+        "slot": "accessory",
+        "mods": {
+          "Strength": 2,
+          "Dexterity": 1
+        }
+      },
+      60
+    ]
+  ],
+  "last_shop_day_cinderpeak": 12,
+  "meltdown": true
 }

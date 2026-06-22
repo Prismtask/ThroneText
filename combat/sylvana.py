@@ -162,7 +162,6 @@ def combat_sylvana(player, floor=None):
             input("Press Enter...")
 
     def custom_hud_hook(ctx, elist):
-        clear_screen()
         if ctx["final_form"] and ctx["boss_extra_actions"] > 0:
             action_status = f"⚡ TRIPLE ACTION ({ctx['boss_extra_actions']} turn(s) left)"
         elif ctx["final_form"]:

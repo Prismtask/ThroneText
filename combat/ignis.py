@@ -133,7 +133,6 @@ def combat_ignis(player, floor=None):
             if player["current_hp"] <= 0: return "dead"
 
     def custom_hud(ctx, elist):
-        clear_screen()
         hl = ctx["heat_level"]
         print(f"  Heat Level: {hl} (Ignis +{hl * 5}% damage | armor at {max(0, 100 - hl * 3)}%)")
         print_combat_hud(player, elist, header="Superboss: Melt-Forge Golem Ignis")

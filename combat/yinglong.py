@@ -171,7 +171,6 @@ def _inner_dragon_combat(player):
     }
 
     def inner_hud(ctx, elist):
-        clear_screen()
         wedge_warn = ""
         next_wedge_turn = 3 * (ctx["wedge_activations"] + 1)
         turns_left = next_wedge_turn - ctx["turn_counter"]
@@ -354,7 +353,6 @@ def combat_yinglong(player, floor=None):
 
     # ── Custom HUD ──────────────────────────────────────────────────
     def custom_hud(ctx, elist):
-        clear_screen()
         phase_label = {1: "I — Dragon Descends", 2: "II — Devoured",
                        3: "III — Resurgent", 4: "IV — Immortal Rage"}.get(ctx["phase"], "")
         gimmick = f"Phase {phase_label}"

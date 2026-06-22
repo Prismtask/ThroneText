@@ -96,7 +96,6 @@ def combat_slitcurrent(player, floor=None):
             ctx["turn_counter"] += 1
 
     def custom_hud_hook(ctx, elist):
-        clear_screen()
         b = next((e for e in elist if e.get("key") == boss_key), None)
         if b:
             print(f"  Slitcurrent: Devour {ctx['devour_focus_stacks']}/3", end="")

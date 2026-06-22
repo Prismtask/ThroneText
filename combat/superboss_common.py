@@ -125,6 +125,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
         p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
+        clear_screen()
+
         if pre_player_hook:
             result = pre_player_hook(context, enemies)
             if result in ("dead", "victory"):
@@ -137,7 +139,6 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if custom_hud_hook:
             custom_hud_hook(context, enemies)
         else:
-            clear_screen()
             print_combat_hud(player, enemies, header=f"Superboss: {boss_name}")
 
         print("\nInitiative Phase\nRolling speeds...")
