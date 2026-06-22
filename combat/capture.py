@@ -87,8 +87,8 @@ def store_captured_girl(player, mg):
     house_city, house = next(iter(houses.items()))
 
     max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house.get("level", 1), 2)
-    current_girls = len(house.get("monster_girls", []))
-    if current_girls >= max_girls:
+    total_girls = len(house.get("monster_girls", [])) + len(player.get("allies", []))
+    if total_girls >= max_girls:
         print(f"Your house is already full (max {max_girls} monster girls).")
         return False
 
@@ -96,8 +96,10 @@ def store_captured_girl(player, mg):
         "key": mg.get("key"),
         "name": mg.get("name"),
         "level": mg.get("level"),
-        "affection": 30,
-        "captured_on": player.get("day", 1)
+        "affection": 20,
+        "captured_on": player.get("day", 1),
+        "exp": 0,
+        "level_hp_bonus": 0,
     })
     print(f"💕 {mg.get('name')} has been added to your house in {house_city}!")
     return True

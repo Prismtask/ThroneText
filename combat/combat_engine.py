@@ -139,6 +139,20 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
                         "extra_turn": extra_num + 1,
                     })
 
+        # Berserk: add one extra player turn
+        if player.get("berserk_turns", 0) > 0:
+            first_p_idx = next((i for i, c in enumerate(turn_order)
+                                if c["type"] == "player"), None)
+            if first_p_idx is not None:
+                base_speed = turn_order[first_p_idx]["speed"]
+                turn_order.insert(first_p_idx + 1, {
+                    "type": "player",
+                    "speed": base_speed,
+                    "label": "You (Berserk)",
+                    "entity": player,
+                    "extra_turn": "berserk",
+                })
+
         print_turn_order(turn_order)
         input("\n  Press Enter to start the round...")
 
@@ -295,6 +309,32 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
             player["abyss_triple_actions"] -= 1
             if player["abyss_triple_actions"] == 0:
                 print("  ⚔️  Nightmare Tempo fades. The triple-action fury ends.")
+
+        # Tick skill cooldowns
+        from combat.skills import tick_skill_cooldowns
+        tick_skill_cooldowns(player)
+
+        # Tick Berserk (Barbarian skill)
+        if player.get("berserk_turns", 0) > 0:
+            player["berserk_turns"] -= 1
+            if player["berserk_turns"] == 0:
+                dmg = random.randint(1, 6)
+                player["current_hp"] = max(1, player["current_hp"] - dmg)
+                print(f"  Your berserk rage subsides. You take {dmg} exhaustion damage.")
+            else:
+                print(f"  Berserk active — {player['berserk_turns']} turn(s) remaining.")
+
+        # Tick Bloodlust (Barbarian skill)
+        if player.get("bloodlust_turns", 0) > 0:
+            player["bloodlust_turns"] -= 1
+            if player["bloodlust_turns"] == 0:
+                print("  Your bloodlust fades. The thirst for blood subsides.")
+            else:
+                print(f"  Bloodlust active — {player['bloodlust_turns']} turn(s) remaining.")
+
+        # Clear smoke bomb flee guarantee if it wasn't used this round
+        if player.pop("smoke_bomb_flee", False):
+            pass  # It was already consumed during the round if used
 
         msgs, died = tick_player_debuffs(player)
         for m in msgs:

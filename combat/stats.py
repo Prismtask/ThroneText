@@ -51,10 +51,22 @@ def enemy_stats(enemy_key, player=None):
 
 
 def get_effective_attribute(player, attr_name):
-    """Return effective attribute value after curse/weaken/buffs."""
+    """Return effective attribute value after curse/weaken/buffs/equipment/passive."""
     base = player["attributes"].get(attr_name, 0)
     equip_mods = get_total_equipment_mods(player)
     total = base + equip_mods.get(attr_name, 0)
+
+    # Apply passive skill bonuses
+    from combat.skills import get_passive_skill
+    passive = get_passive_skill(player)
+    if passive and player.get("passive_unlocked", True):
+        effect = passive.get("effect", {})
+        if effect.get("stat") == "all":
+            affected = effect.get("stats", [])
+            if attr_name in affected:
+                total += effect.get("value", 0)
+        elif effect.get("stat") == attr_name:
+            total += effect.get("value", 0)
 
     for debuff in player.get("active_debuffs", []):
         if debuff.get("type") == "curse":

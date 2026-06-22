@@ -1,10 +1,11 @@
 import random
 from character import player_max_hp
 from combat.status_effects import cure_curse, apply_poison, is_silenced, is_dreaded, format_player_status_line
-from combat.combat_ui import print_combat_hud, format_enemy_status_line   # removed _player_has_abyss_fang
-from combat.helpers import _player_has_abyss_fang      # <-- new import
+from combat.combat_ui import print_combat_hud, format_enemy_status_line
+from combat.helpers import _player_has_abyss_fang
 from combat.action_menu import get_action_menu
 from combat.capture import is_monster_girl, attempt_capture
+from combat.skills import get_available_skills, execute_skill, set_skill_cooldown, format_mastery_label
 
 
 def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None, on_hit=None, _action_override=None):
@@ -23,6 +24,33 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if action not in valid_actions:
             print(f"Internal error: override action '{action}' is not available.")
             return "retry", False
+
+    # ----- SKILLS (numbered 1-9) -----
+    if action.isdigit():
+        skill_idx = int(action) - 1
+        available_skills = get_available_skills(player)
+        if skill_idx < 0 or skill_idx >= len(available_skills):
+            print("Invalid skill choice.")
+            return "retry", False
+        skill_id, skill_def = available_skills[skill_idx]
+        print(f"\n>>> {skill_def['name']}: {skill_def['description']}")
+        mastery_label = format_mastery_label(skill_id, player)
+        if mastery_label:
+            print(f"    Mastery: {mastery_label}")
+        input("Press Enter to use it...")
+
+        from combat.ally import get_alive_allies
+        allies = get_alive_allies(player)
+        msg, victory = execute_skill(
+            player, skill_id, enemies,
+            p_str, p_con, p_dex, p_ler, p_wis, p_cha,
+            allies=allies
+        )
+        print(msg)
+        set_skill_cooldown(player, skill_id)
+        if victory:
+            return "victory", False
+        return "continue", False
 
     # ----- ATTACK -----
     if action == "a":
@@ -304,6 +332,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
     # ----- FLEE -----
     elif action == "f":
+        # Smoke Bomb guarantee
+        if player.pop("smoke_bomb_flee", False):
+            print("You vanish effortlessly through the smoke! Escape successful!")
+            return "fled", False
+
         effective_player_dex = p_dex
         for debuff in player.get("active_debuffs", []):
             if debuff["type"] == "slow":

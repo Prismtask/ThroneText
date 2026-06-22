@@ -1,4 +1,4 @@
-from character import create_character, player_max_hp
+from character import create_character, player_max_hp, ensure_player_fields
 from dungeon import explore_dungeon
 from save_load import list_saves, load_game, save_game, delete_save  # Added delete_save
 from city import visit_city
@@ -19,6 +19,7 @@ def main_menu():
 
         if choice == "1":
             player = create_character()
+            ensure_player_fields(player)
             play_game(player)
 
         elif choice == "2":
@@ -45,6 +46,7 @@ def main_menu():
                 continue
 
             print(f"\nLoaded {player['name']} - {player['race']} {player['class']}")
+            ensure_player_fields(player)
             # Show per-city floor progress on load screen only when in dungeon
             loc = player.get("location", "dungeon")
             if loc == "dungeon":

@@ -96,6 +96,9 @@ def visit_city(player, city_id=None):
         print(f"{option_num}. View Stats / Inventory")
         inv_option = str(option_num)
         option_num += 1
+        print(f"{option_num}. Skill Book")
+        skill_option = str(option_num)
+        option_num += 1
         print(f"{option_num}. Travel to Another City")
         travel_option = str(option_num)
         option_num += 1
@@ -122,6 +125,10 @@ def visit_city(player, city_id=None):
             advance_time(player, 30)
             from inventory_ui import manage_inventory_menu
             manage_inventory_menu(player)
+
+        elif choice == skill_option:
+            from facilities.skill_book import skill_book_menu
+            skill_book_menu(player)
 
         elif choice == travel_option:
             from facilities.travel import travel_to_city

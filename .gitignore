@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────────────────────────
+# TerminalRPG .gitignore
+# Covers Python build artifacts, game save files, secrets & IDE droppings
+# ─────────────────────────────────────────────────────────────
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ── Byte-compiled / optimised / DLL files ────────────────────
+*.pyc
+*.pyo
+
+# ── Virtual environments ─────────────────────────────────────
+venv/
+ENV/
+env/
+.venv/
+
+# ── Game Save Files ──────────────────────────────────────────
+savefile/
+savefiles/
+saves/
+save/
+*.sav
+*.save
+*.dat
+playerdata/
+
+# ── Sensitive / Secrets / Config ─────────────────────────────
+.env
+.env.local
+.env.*.local
+secrets.json
+config.json
+credentials.json
+*.key
+*.pem
+*.crt
+token.json
+
+# ── IDE / Editor ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+
+# ── OS generated files ───────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Logs & Databases ─────────────────────────────────────────
+*.log
+*.sql
+*.sqlite
+*.sqlite3
+logs/
+log/
+
+# ── Test / Coverage ──────────────────────────────────────────
+.tox/
+.coverage
+.pytest_cache/
+htmlcov/
+.nox/
+
+# ── MyPy / Type checking ─────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ── Jupyter (if used for prototyping) ────────────────────────
+.ipynb_checkpoints/
+
+# ── Local temporary files ────────────────────────────────────
+tmp/
+temp/
+*.tmp
+
+# ── Game-specific (uncomment if needed) ──────────────────────
+# maps/backups/
+# assets/raw/

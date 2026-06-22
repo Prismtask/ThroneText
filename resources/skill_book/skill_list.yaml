@@ -1,0 +1,467 @@
+passive_skills:
+  Warrior:
+    id: war_passive
+    name: Iron Will
+    description: Your Constitution is permanently increased by 2.
+    effect:
+      stat: Constitution
+      value: 2
+  Mage:
+    id: mage_passive
+    name: Arcane Intellect
+    description: Your Learning is permanently increased by 2.
+    effect:
+      stat: Learning
+      value: 2
+  Rogue:
+    id: rog_passive
+    name: Sneak Attack
+    description: Deal +25% damage to slowed or stunned enemies.
+    effect:
+      type: vulnerable_bonus
+      value: 0.25
+  Cleric:
+    id: clr_passive
+    name: Holy Favor
+    description: All healing you perform is 20% more effective.
+    effect:
+      type: heal_bonus
+      value: 0.2
+  Ranger:
+    id: rng_passive
+    name: Keen Eye
+    description: Your Dexterity is permanently increased by 2.
+    effect:
+      stat: Dexterity
+      value: 2
+  Paladin:
+    id: pal_passive
+    name: Aura of Courage
+    description: Your Strength and Charisma are permanently increased by 1.
+    effect:
+      stat: all
+      value: 1
+      stats:
+      - Strength
+      - Charisma
+  Warlock:
+    id: lck_passive
+    name: Soul Siphon
+    description: Heal for 10% of all damage you deal.
+    effect:
+      type: life_steal
+      value: 0.1
+  Barbarian:
+    id: bar_passive
+    name: Thick Skin
+    description: Take 15% less damage from all attacks.
+    effect:
+      type: damage_reduction
+      value: 0.15
+class_skills:
+  Warrior:
+    war_cleave:
+      name: Cleave
+      description: Swing your weapon in a wide arc, damaging all enemies.
+      unlock_level: 3
+      cooldown: 3
+      target: enemies
+      power_type: str
+      base_power: 6
+    war_battlecry:
+      name: Battle Cry
+      description: Roar with fury, gaining +2 Strength and +2 Constitution for 3 turns.
+      unlock_level: 5
+      cooldown: 5
+      target: self
+    war_execute:
+      name: Execute
+      description: Deal devastating damage to a weakened enemy. 3x damage if target
+        is below 30% HP.
+      unlock_level: 8
+      cooldown: 4
+      target: enemy
+      power_type: str
+      base_power: 10
+    war_shield_slam:
+      name: Shield Slam
+      description: Slam your shield into an enemy, dealing damage and stunning it.
+      unlock_level: 10
+      cooldown: 4
+      target: enemy
+      power_type: con
+      base_power: 12
+      stun_chance: 0.75
+    war_second_wind:
+      name: Second Wind
+      description: Recover 25% of your maximum HP instantly.
+      unlock_level: 12
+      cooldown: 6
+      target: self
+      heal_percent: 0.25
+    war_bladestorm:
+      name: Bladestorm
+      description: Become a whirlwind of steel, striking all enemies 3 times.
+      unlock_level: 15
+      cooldown: 6
+      target: enemies
+      power_type: str
+      base_power: 6
+      hits: 3
+  Mage:
+    mage_fireball:
+      name: Fireball
+      description: Hurl a massive fireball at a single enemy.
+      unlock_level: 3
+      cooldown: 3
+      target: enemy
+      power_type: ler
+      base_power: 16
+    mage_frostnova:
+      name: Frost Nova
+      description: Unleash a blast of freezing energy that damages and slows all enemies.
+      unlock_level: 5
+      cooldown: 5
+      target: enemies
+      power_type: ler
+      base_power: 10
+    mage_arcane:
+      name: Arcane Barrage
+      description: Unleash 3 arcane missiles that strike random enemies.
+      unlock_level: 8
+      cooldown: 4
+      target: enemies
+      power_type: ler
+      base_power: 8
+      hits: 3
+    mage_meteor:
+      name: Meteor
+      description: Call down a meteor that deals massive fire damage to all enemies.
+      unlock_level: 10
+      cooldown: 5
+      target: enemies
+      power_type: ler
+      base_power: 22
+    mage_timewarp:
+      name: Time Warp
+      description: Bend time to reduce all your skill cooldowns by 2 turns.
+      unlock_level: 12
+      cooldown: 7
+      target: self
+      cooldown_reduction: 2
+    mage_overload:
+      name: Mana Overload
+      description: Deal devastating damage to a single enemy. Take 10% max HP as recoil.
+      unlock_level: 15
+      cooldown: 5
+      target: enemy
+      power_type: ler
+      base_power: 35
+      recoil_percent: 0.1
+  Rogue:
+    rog_backstab:
+      name: Backstab
+      description: Strike a vital point. Double damage if the target is slowed or
+        stunned.
+      unlock_level: 3
+      cooldown: 2
+      target: enemy
+      power_type: dex
+      base_power: 10
+    rog_smoke:
+      name: Smoke Bomb
+      description: Blind all enemies and guarantee a successful escape on your next
+        flee attempt.
+      unlock_level: 5
+      cooldown: 5
+      target: enemies
+    rog_assassinate:
+      name: Assassinate
+      description: Attempt to instantly kill a target below 15% HP. Otherwise deals
+        heavy damage.
+      unlock_level: 8
+      cooldown: 5
+      target: enemy
+      power_type: dex
+      base_power: 14
+    rog_shadow_strike:
+      name: Shadow Strike
+      description: Strike from the shadows for guaranteed double damage.
+      unlock_level: 10
+      cooldown: 4
+      target: enemy
+      power_type: dex
+      base_power: 10
+      guaranteed_crit: true
+    rog_venom:
+      name: Venomous Blade
+      description: Coat your blade in poison. The target takes damage over 5 turns.
+      unlock_level: 12
+      cooldown: 4
+      target: enemy
+      power_type: dex
+      base_power: 8
+      poison_damage: 5
+      poison_duration: 5
+    rog_death_dance:
+      name: Death Dance
+      description: Unleash a flurry of strikes on 3 random enemies.
+      unlock_level: 15
+      cooldown: 5
+      target: enemies
+      power_type: dex
+      base_power: 12
+      hits: 3
+  Cleric:
+    clr_heal:
+      name: Heal
+      description: Restore health to yourself or an ally.
+      unlock_level: 3
+      cooldown: 3
+      target: ally_or_self
+      power_type: wis
+      base_power: 20
+    clr_shield:
+      name: Divine Shield
+      description: Become immune to all damage for 2 turns.
+      unlock_level: 5
+      cooldown: 6
+      target: self
+    clr_smite:
+      name: Holy Smite
+      description: Smite an enemy with divine light and heal yourself for half the
+        damage dealt.
+      unlock_level: 8
+      cooldown: 4
+      target: enemy
+      power_type: wis
+      base_power: 14
+    clr_mass_heal:
+      name: Mass Heal
+      description: Restore health to all party members.
+      unlock_level: 10
+      cooldown: 5
+      target: all_allies
+      power_type: wis
+      base_power: 15
+    clr_resurrection:
+      name: Resurrection
+      description: Revive a fallen ally with 50% of their max HP.
+      unlock_level: 12
+      cooldown: 8
+      target: dead_ally
+      revive_percent: 0.5
+    clr_divine_wrath:
+      name: Divine Wrath
+      description: Smite all enemies with holy fire. Heal the party for total damage
+        dealt.
+      unlock_level: 15
+      cooldown: 6
+      target: enemies
+      power_type: wis
+      base_power: 18
+      party_heal: true
+  Ranger:
+    rng_pierce:
+      name: Piercing Shot
+      description: Fire a shot that ignores enemy armor.
+      unlock_level: 3
+      cooldown: 2
+      target: enemy
+      power_type: dex
+      base_power: 12
+      ignore_armor: true
+    rng_mark:
+      name: Hunter's Mark
+      description: Mark an enemy. All your attacks against it deal +50% damage for
+        3 turns.
+      unlock_level: 5
+      cooldown: 4
+      target: enemy
+    rng_rain:
+      name: Rain of Arrows
+      description: Fire a volley of arrows, damaging all enemies.
+      unlock_level: 8
+      cooldown: 4
+      target: enemies
+      power_type: dex
+      base_power: 10
+    rng_rapid:
+      name: Rapid Fire
+      description: Fire 3 quick shots at a single target.
+      unlock_level: 10
+      cooldown: 3
+      target: enemy
+      power_type: dex
+      base_power: 8
+      hits: 3
+    rng_trueshot:
+      name: Trueshot
+      description: A perfectly aimed shot that ignores armor and deals triple damage.
+      unlock_level: 12
+      cooldown: 5
+      target: enemy
+      power_type: dex
+      base_power: 10
+      ignore_armor: true
+      guaranteed_crit: true
+    rng_nature:
+      name: Nature's Grasp
+      description: Entangle all enemies in vines, damaging and slowing them for 3
+        turns.
+      unlock_level: 15
+      cooldown: 5
+      target: enemies
+      power_type: wis
+      base_power: 12
+      apply_slow: true
+  Paladin:
+    pal_strike:
+      name: Holy Strike
+      description: Strike with divine power. 50% chance to stun the target.
+      unlock_level: 3
+      cooldown: 3
+      target: enemy
+      power_type: str
+      base_power: 10
+      stun_chance: 0.5
+    pal_layhands:
+      name: Lay on Hands
+      description: Fully restore your own HP or an ally's HP.
+      unlock_level: 5
+      cooldown: 6
+      target: ally_or_self
+    pal_judgment:
+      name: Divine Judgment
+      description: Deal massive damage to an enemy. 2x damage if it is stunned.
+      unlock_level: 8
+      cooldown: 4
+      target: enemy
+      power_type: str
+      base_power: 18
+    pal_consecrate:
+      name: Consecrate
+      description: Consecrate the ground, damaging all enemies and weakening them.
+      unlock_level: 10
+      cooldown: 4
+      target: enemies
+      power_type: str
+      base_power: 14
+      apply_weaken: true
+    pal_bastion:
+      name: Bastion of Light
+      description: You and all allies gain a defense buff for 3 turns.
+      unlock_level: 12
+      cooldown: 6
+      target: all_allies
+      defense_buff: 3
+      buff_duration: 3
+    pal_avenging:
+      name: Avenging Wrath
+      description: Deal holy damage to all enemies. Heal yourself for the total damage
+        dealt.
+      unlock_level: 15
+      cooldown: 6
+      target: enemies
+      power_type: str
+      base_power: 16
+      self_heal_damage: true
+  Warlock:
+    lck_drain:
+      name: Drain Life
+      description: Drain life from an enemy, healing yourself for the damage dealt.
+      unlock_level: 3
+      cooldown: 3
+      target: enemy
+      power_type: ler
+      base_power: 10
+    lck_curse:
+      name: Dark Curse
+      description: Curse an enemy, reducing its Strength and Constitution by 2 for
+        3 turns.
+      unlock_level: 5
+      cooldown: 4
+      target: enemy
+    lck_pact:
+      name: Demonic Pact
+      description: Sacrifice 20% of your max HP to deal devastating damage to an enemy.
+      unlock_level: 8
+      cooldown: 5
+      target: enemy
+      power_type: cha
+      base_power: 30
+    lck_fear:
+      name: Soul Fear
+      description: Terrorize all enemies, reducing their damage by 20% for 3 turns.
+      unlock_level: 10
+      cooldown: 5
+      target: enemies
+      apply_fear: true
+      fear_value: 0.2
+      fear_duration: 3
+    lck_empower:
+      name: Dark Empowerment
+      description: Gain +3 Learning and +3 Charisma for 3 turns.
+      unlock_level: 12
+      cooldown: 5
+      target: self
+    lck_soul_fire:
+      name: Soul Fire
+      description: Burn an enemy's soul for massive damage and apply a burning debuff.
+      unlock_level: 15
+      cooldown: 5
+      target: enemy
+      power_type: ler
+      base_power: 25
+      burn_damage: 6
+      burn_duration: 3
+  Barbarian:
+    bar_rage:
+      name: Feral Rage
+      description: Enter a rage. +3 Strength but take 20% more damage for 3 turns.
+      unlock_level: 3
+      cooldown: 4
+      target: self
+    bar_whirl:
+      name: Whirlwind
+      description: Spin wildly, striking all enemies around you.
+      unlock_level: 5
+      cooldown: 3
+      target: enemies
+      power_type: str
+      base_power: 8
+    bar_berserk:
+      name: Berserk
+      description: Attack twice per turn for 3 turns. Take 1d6 damage after it ends.
+      unlock_level: 8
+      cooldown: 6
+      target: self
+    bar_sunder:
+      name: Sunder Armor
+      description: Smash an enemy's armor, dealing damage and reducing its defense
+        for 3 turns.
+      unlock_level: 10
+      cooldown: 4
+      target: enemy
+      power_type: str
+      base_power: 12
+      apply_sunder: true
+      sunder_value: 3
+      sunder_duration: 3
+    bar_bloodlust:
+      name: Bloodlust
+      description: Heal for 50% of damage dealt for 3 turns.
+      unlock_level: 12
+      cooldown: 5
+      target: self
+      bloodlust_duration: 3
+    bar_earth_shatter:
+      name: Earth Shatter
+      description: Slam the ground, dealing massive damage to all enemies and stunning
+        them.
+      unlock_level: 15
+      cooldown: 6
+      target: enemies
+      power_type: str
+      base_power: 18
+      stun_chance: 0.5

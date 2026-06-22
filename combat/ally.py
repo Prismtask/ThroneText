@@ -11,10 +11,11 @@ ALLY_HP_MULTIPLIER = 0.70    # Allies have 70% of original enemy HP
 
 
 def ally_max_hp(ally):
-    """Compute ally max HP based on Constitution and level."""
+    """Compute ally max HP based on Constitution, level, and level-up bonuses."""
     con = ally["attributes"]["Constitution"]
     level = ally.get("level", 1)
-    return int(15 + con * 3 + level * 2)
+    bonus = ally.get("level_hp_bonus", 0)
+    return int(15 + con * 3 + bonus)
 
 
 def create_ally_from_girl(girl):
@@ -42,7 +43,9 @@ def create_ally_from_girl(girl):
             "stunned": False,
             "frozen": False,
             "is_ally": True,
-            "affection": girl.get("affection", 30),
+            "affection": girl.get("affection", 20),
+            "exp": girl.get("exp", 0),
+            "level_hp_bonus": girl.get("level_hp_bonus", 0),
         }
 
     attrs = compute_enemy_attributes(enemy_key)
@@ -73,6 +76,9 @@ def create_ally_from_girl(girl):
         "frozen": False,
         "is_ally": True,
         "affection": girl.get("affection", 30),
+        "monster_girl": template.get("monster_girl", True),
+        "exp": girl.get("exp", 0),
+        "level_hp_bonus": girl.get("level_hp_bonus", 0),
     }
 
     # Compute HP based on scaled Constitution + level
@@ -117,9 +123,15 @@ def compute_ally_stats(ally):
 
 
 def format_ally_status_line(ally, idx=None, is_active=False):
-    """Format a compact status line for an ally."""
+    """Format a compact name/HP line for an ally."""
     prefix = f"[{idx}]" if idx is not None else "   "
     active_mark = " >" if is_active else ""
+    mg_symbol = " ♀" if ally.get("monster_girl") else ""
+    return f"{prefix} {ally['name'][:12]:<12} {ally['current_hp']:>3}/{ally['max_hp']:<3}{mg_symbol}{active_mark}"
+
+
+def format_ally_buff_line(ally):
+    """Format a compact buff/debuff tag line for an ally."""
     statuses = []
     if ally.get("stunned"):
         statuses.append("STN")
@@ -132,11 +144,10 @@ def format_ally_status_line(ally, idx=None, is_active=False):
     if any(d["type"] == "poison" for d in ally.get("active_debuffs", [])):
         statuses.append("PSN")
     if any(d["type"] == "bleed" for d in ally.get("active_debuffs", [])):
-        statuses.append("BLD")
+        statuses.append("BLE")
     if any(d["type"] == "burn" for d in ally.get("active_debuffs", [])):
         statuses.append("BRN")
-    status_str = f" [{' '.join(statuses)}]" if statuses else ""
-    return f"{prefix} {ally['name'][:12]:<12} {ally['current_hp']:>3}/{ally['max_hp']:<3}{status_str}{active_mark}"
+    return f" [{' '.join(statuses)}]" if statuses else ""
 
 
 def _hp_bar(current, max_hp, width=10):
@@ -222,6 +233,8 @@ def dismiss_allies_back_to_house(player):
                 "name": ally["name"],
                 "level": ally["level"],
                 "affection": ally.get("affection", 30),
+                "exp": ally.get("exp", 0),
+                "level_hp_bonus": ally.get("level_hp_bonus", 0),
             })
 
 

@@ -9,6 +9,10 @@ goblin_girl:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} shuffles back nervously, clutching her hands. 'U-um... I don't really know you that well yet... Can we talk more first?'"
+    recruit_accepted: "The {name}'s eyes light up as she grabs your sleeve. 'Really? You'll take me with you? I'll try my best, I promise!'"
+
 harpy_scout:
   name: Harpy Scout
   race: Beast
@@ -20,6 +24,10 @@ harpy_scout:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} ruffles her feathers and turns her head away. 'Hmph. A sky-rider like me doesn't follow just anyone. Prove yourself first.'"
+    recruit_accepted: "The {name} spreads her wings with a sharp cry. 'A worthy wind-mate! I'll scout the skies for you — none shall sneak past!'"
+
 alraune_fledger:
   name: Alraune Fledger
   race: Fey
@@ -31,6 +39,10 @@ alraune_fledger:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} tilts her flower-crown curiously, petals closing slightly. 'The soil between us is still thin... Water it more, traveller.'"
+    recruit_accepted: "The {name} blooms radiantly, sweet pollen drifting around you. 'Our roots have intertwined. I shall bloom beside you, always.'"
+
 kobold_tinkerer:
   name: Kobold Tinkerer
   race: Dragonkin
@@ -42,6 +54,10 @@ kobold_tinkerer:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} hides a small gadget behind her back, tail flicking. 'Wh-what? No. I barely know you. You might break my stuff!'"
+    recruit_accepted: "The {name} pulls out a tiny device and presses it into your palm. 'Here! My best prototype. Now we can tinker together — partners!'"
+
 dryad_protector:
   name: Dryad Protector
   race: Fey
@@ -53,6 +69,10 @@ dryad_protector:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} steps behind a tree, leaves rustling. 'You are but a stranger passing through my grove. The forest does not trust lightly.'"
+    recruit_accepted: "The {name} takes your hand, bark-soft skin warm against yours. 'The ancient trees whisper your name with favor. I will guard you as I guard them.'"
+
 ghost_maid:
   name: Ghost Maid
   race: Shadow
@@ -64,6 +84,10 @@ ghost_maid:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} flickers like a candle, her voice an echo. 'I have served masters before... and they all left. Why should you be different?'"
+    recruit_accepted: "The {name} solidifies, curtsying with spectral grace. 'My spirit finds... warmth in your presence. Allow me to serve once more — happily.'"
+
 centaur_scout:
   name: Centaur Scout
   race: Beast
@@ -75,6 +99,10 @@ centaur_scout:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} stamps her hoof, crossing her arms. 'I charge with no herd I do not trust. Earn your place among us, two-legs.'"
+    recruit_accepted: "The {name} extends a calloused hand. 'You have the heart of a stallion. Ride with me — we shall thunder across every battlefield!'"
+
 moth_girl_flutterer:
   name: Moth Girl Flutterer
   race: Fey
@@ -86,6 +114,10 @@ moth_girl_flutterer:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} flutters her wings, keeping her distance. 'You are not... bright enough for me yet. I need to know you are the light I seek.'"
+    recruit_accepted: "The {name} drifts closer, wing-dust shimmering like starlight. 'Your warmth calls to me. I will follow your flame anywhere, even into darkness.'"
+
 slime_girl:
   name: Slime Girl
   race: Elemental
@@ -97,6 +129,10 @@ slime_girl:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} bounces uncertainly, shape shifting. 'Bloop... You're not squishy-familiar yet. More play first? Bloop-bloop?'"
+    recruit_accepted: "The {name} surges forward, wrapping around your arm in a cool, gelatinous hug. 'Bloop! You feel like home! Let's go together, go together!'"
+
 lamia_constrictor:
   name: Lamia Constrictor
   race: Lizardfolk
@@ -108,6 +144,10 @@ lamia_constrictor:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} coils her tail, tilting her head with a sly smile. 'Mmm, you are interesting... but I prefer to coil around someone I truly know, darling.'"
+    recruit_accepted: "The {name} slithers close, wrapping her tail around your waist — warm, secure, almost possessive. 'You are mine now. And I am yours. Don't forget it.'"
+
 lizard_queen:
   name: Lizard Queen
   race: Lizardfolk
@@ -119,6 +159,10 @@ lizard_queen:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} reclines on her tail, unimpressed. 'A queen does not serve a commoner. Show me you are a ruler worth kneeling beside.'"
+    recruit_accepted: "The {name} rises with regal poise, offering a clawed hand. 'You have proven yourself a worthy sovereign. I shall lend you my scales and my crown.'"
+
 mimic_girl:
   name: Mimic Girl
   race: Abomination
@@ -130,6 +174,10 @@ mimic_girl:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} grins, revealing rows of sharp teeth. 'Hehe~ You're not interesting enough to open my lid for. Try again later, maybe~'"
+    recruit_accepted: "The {name}'s tongue lolls out as she pounces into your arms. 'Jackpot! You're the best treasure I've ever found. Don't go hiding from me~'"
+
 umbral_weaver:
   name: Umbral Weaver
   race: Shadow
@@ -141,6 +189,10 @@ umbral_weaver:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} melts into the shadows, her voice drifting from the darkness. 'You are not yet woven into my web. Come closer... if you dare.'"
+    recruit_accepted: "The {name} steps from the gloom, shadow-threads binding your hands together. 'You have become the thread I cannot cut. We are bound, little moth.'"
+
 winter_fairy:
   name: Winter Fairy
   race: Fey
@@ -152,6 +204,10 @@ winter_fairy:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} flits away, leaving a trail of frost. 'Too warm, too fast. I need time to thaw... or you'll just melt my heart too quickly.'"
+    recruit_accepted: "The {name} lands on your shoulder, her breath frosting your cheek. 'You melt the ice without breaking it. That is rare. I will stay... for now.'"
+
 holstaur_brawler:
   name: Holstaur Brawler
   race: Beast
@@ -164,6 +220,10 @@ holstaur_brawler:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} flexes her muscles, snorting. 'You look scrawny. I don't throw hooves for someone I could bench-press. Show me some grit!'"
+    recruit_accepted: "The {name} slaps your back with enough force to stagger you, laughing heartily. 'Haha! You got spirit! Let's crack some skulls together, partner!'"
+
 gargoyle_watcher:
   name: Gargoyle Watcher
   race: Construct
@@ -175,6 +235,10 @@ gargoyle_watcher:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} folds her stone wings, immovable. 'I have watched a thousand seasons. You are but a flicker. Why should I leave my perch?'"
+    recruit_accepted: "The {name} cracks her stone knuckles, eyes gleaming with ancient life. 'You have earned the gaze of the eternal. I shall guard you as I guard the spires.'"
+
 vampire_seductress:
   name: Vampire Seductress
   race: Vampire
@@ -186,6 +250,10 @@ vampire_seductress:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} fans herself with a lace glove, amused. 'A mere mortal asking a lady of the night to serve? Adorable. Come back when you're... tastier.'"
+    recruit_accepted: "The {name} draws close, fangs glinting with playful menace. 'Mmm, you have bite. I think I'll keep you. Let's see how deep this bond runs, my pet.'"
+
 yuki_onna:
   name: Yuki-onna
   race: Elemental
@@ -198,6 +266,10 @@ yuki_onna:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} gazes through you, her beauty cold and distant. 'I have buried wanderers in snow for less. Leave me before I forget your warmth.'"
+    recruit_accepted: "The {name}'s frozen lips curve into a fragile smile. 'You are the first ember I did not extinguish. Walk with me... but do not melt away.'"
+
 amazon_warrior:
   name: Amazon Warrior
   race: Human
@@ -210,6 +282,10 @@ amazon_warrior:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} plants her spear in the ground, arms crossed. 'I follow no war-leader who has not bled beside me. Earn your shield, stranger.'"
+    recruit_accepted: "The {name} raises her spear to the sky with a fierce war cry. 'You fight with honor! I will stand in your shield-wall — sisters in battle!'"
+
 banshee_wailer:
   name: Banshee Wailer
   race: Undead
@@ -221,6 +297,10 @@ banshee_wailer:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} covers her mouth, eyes wet with sorrow. 'I only wail for the dead... and you are not yet my reason to mourn. Go.'"
+    recruit_accepted: "The {name} takes your hand, her voice soft for the first time. 'You have silenced my grief. I will sing songs of life for you instead... until the end.'"
+
 neko_ninja:
   name: Neko Ninja
   race: Beast
@@ -232,6 +312,10 @@ neko_ninja:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} poofs into smoke, reappearing behind you. 'Nyahaha~ Too slow to catch this cat! Try being more interesting, nya~'"
+    recruit_accepted: "The {name} rubs her cheek against your shoulder, purring softly. 'You've got the best lap for napping, and the best fights for stalking. I'm yours, nya~'"
+
 arachne_weaver:
   name: Arachne Weaver
   race: Beast
@@ -243,6 +327,10 @@ arachne_weaver:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} clicks her fangs, spinning a thread between her fingers. 'My silk is for prey, not strangers. Wrap yourself in trust first, little fly.'"
+    recruit_accepted: "The {name} weaves a delicate bracelet of silk around your wrist, unbreakable. 'You are the first thread I did not cut. I will never let you unravel.'"
+
 mummy_princess:
   name: Mummy Princess
   race: Undead
@@ -255,6 +343,10 @@ mummy_princess:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} adjusts her golden headdress, unimpressed. 'I ruled dynasties before your ancestors were born. A pharaoh kneels for no peasant.'"
+    recruit_accepted: "The {name} unwraps a strip of linen, pressing it into your palm like a sacred relic. 'You have found the heart beneath the bandages. Rule beside me, my king.'"
+
 oni_bruiser:
   name: Oni Bruiser
   race: Demon
@@ -266,6 +358,10 @@ oni_bruiser:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} cracks her knuckles, horns gleaming. 'Hah! You want an oni? Fight me first. If you survive, we'll talk. If not... well, that's funny too.'"
+    recruit_accepted: "The {name} lifts you effortlessly, spinning with a roar of laughter. 'You got GUTS! I like guts! Let's smash everything together, hahaha!'"
+
 salamander_dancer:
   name: Salamander Dancer
   race: Elemental
@@ -278,6 +374,10 @@ salamander_dancer:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} twirls, flames licking at her fingertips. 'You are still cold ash. I dance with only the hottest flames, darling. Warm up first.'"
+    recruit_accepted: "The {name} pulls you into a burning waltz, her heat somehow gentle. 'You match my fire without burning. Dance with me forever — our flames will never die.'"
+
 succubus_seductress:
   name: Succubus Seductress
   race: Demon
@@ -289,6 +389,10 @@ succubus_seductress:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} lounges on thin air, tail swishing lazily. 'Mmm, you're cute... but I don't do 'casual binding.' Seduce me properly, or don't bother~'"
+    recruit_accepted: "The {name} wraps her tail around your waist, pulling you close with a wicked grin. 'You got under my skin. That's rare. Let's see how deep you can go, Master~'"
+
 dullahan_knight:
   name: Dullahan Knight
   race: Undead
@@ -301,6 +405,10 @@ dullahan_knight:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} holds her severed head under one arm, both sets of eyes staring coldly. 'A knight without a heart fears no one. You have not earned my blade.'"
+    recruit_accepted: "The {name} places her head upon her neck, the gap sealing with a faint glow. 'You found where my heart hides. My sword is yours — guard it well, for I have none left.'"
+
 kitsune_miko:
   name: Kitsune Miko
   race: Beast
@@ -313,6 +421,10 @@ kitsune_miko:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} hides her smile behind a fan, tails swishing. 'Fufu~ A fox does not give her tails to just anyone. You must earn each one, little mortal~'"
+    recruit_accepted: "The {name} wraps all nine tails around you in a warm, fluffy embrace. 'You have passed every trial, even the ones I never told you about. My shrine is wherever you are.'"
+
 siren_empress:
   name: Siren Empress
   race: Fey
@@ -324,6 +436,10 @@ siren_empress:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} sings a single, piercing note that makes the air shiver. 'You are a quiet tune in a sea of noise. Come back when your song moves me.'"
+    recruit_accepted: "The {name} descends from her coral throne, crown gleaming. 'Your melody has drowned out all others. I will sing victory into your name, my conductor.'"
+
 crimson_countess:
   name: Crimson Countess
   race: Vampire
@@ -335,6 +451,10 @@ crimson_countess:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} sips from a crystal goblet, barely looking up. 'Countless mortals have begged at my feet. You are merely the latest whisper in the dark.'"
+    recruit_accepted: "The {name} sets down her goblet, rising with predatory grace. 'You are the first to make my undead heart race. I shall make you my eternal consort — and my shield.'"
+
 demon_whip_master:
   name: Demon Whip Master
   race: Demon
@@ -346,6 +466,10 @@ demon_whip_master:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} cracks her whip, the sound echoing like thunder. 'Kneel, worm. You are not worthy to hold my leash. Crawl back when you learn respect.'"
+    recruit_accepted: "The {name} coils her whip around your wrist — not to bind, but to tether. 'You are the first I would kneel beside. Command me... and I shall obey with pleasure.'"
+
 minotaur_gladiator:
   name: Minotaur Gladiator
   race: Giant
@@ -358,6 +482,10 @@ minotaur_gladiator:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} snorts, horns gleaming in the arena lights. 'I've crushed champions in the dust. What makes you think you can lead a gladiator?'"
+    recruit_accepted: "The {name} slams her fist to her chest, a salute of blood and iron. 'You fight like a legend. I will be your shield-wall — no one passes while I draw breath!'"
+
 vampire_matriarch:
   name: Vampire Matriarch
   race: Vampire
@@ -370,6 +498,10 @@ vampire_matriarch:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} cradles a porcelain doll, her gaze ancient and unreadable. 'My children are many. What makes you think I need one more? Prove your worth, fledgling.'"
+    recruit_accepted: "The {name} opens her arms, maternal and terrifying all at once. 'Come, my new child. I shall give you the dark gift of my fangs — and my eternal protection.'"
+
 centaur_champion:
   name: Centaur Champion
   race: Beast
@@ -382,6 +514,10 @@ centaur_champion:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} adjusts her armor, eyes fierce. 'I am a champion of my people. I will not follow a leader who cannot keep pace with my hooves.'"
+    recruit_accepted: "The {name} bows her head, mane flowing like silk. 'You run with the heart of a champion. I will charge at your side — through fire, through storm, through oblivion.'"
+
 infernal_empress:
   name: Infernal Empress
   race: Demon
@@ -394,6 +530,10 @@ infernal_empress:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} sits on a throne of molten bone, eyes burning. 'Mortals are ash. Demons are smoke. Why should I bind myself to either? Amuse me, or burn.'"
+    recruit_accepted: "The {name} rises, hellfire curling around her like a gown. 'You are the spark that did not die in my furnace. Rule the abyss with me — I am tired of ruling alone.'"
+
 scylla_wrecker:
   name: Scylla Wrecker
   race: Abomination
@@ -405,6 +545,10 @@ scylla_wrecker:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name}'s many tentacles writhe restlessly, eyes gleaming from the depths. 'I am the deep. You are the surface. We do not mix, little bubble.'"
+    recruit_accepted: "The {name} wraps a tentacle gently around your ankle, pulling you closer to her cold embrace. 'You dived where others drowned. I shall drag your enemies to the abyss.'"
+
 gorgon_petrifier:
   name: Gorgon Petrifier
   race: Lizardfolk
@@ -417,6 +561,10 @@ gorgon_petrifier:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} adjusts her veil, snakes hissing a warning. 'One look and you are stone. One word and you are dust. Why would I trade solitude for a fragile mortal?'"
+    recruit_accepted: "The {name} lifts her veil, and for the first time her eyes hold no threat — only wonder. 'You did not turn to stone. You are my first... my only... safe place.'"
+
 ninetales_fox:
   name: Ninetales Fox
   race: Beast
@@ -428,6 +576,10 @@ ninetales_fox:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} swishes her nine tails, flames dancing between them. 'I have lived a thousand years. You are but a blink. Return when you have become a story worth telling.'"
+    recruit_accepted: "The {name} bows her head, all nine tails fanning out like a crown of fire. 'You are the chapter I never expected. I will guard your tale until the last page turns.'"
+
 mermaid_siren_queen:
   name: Mermaid Siren Queen
   race: Fey
@@ -440,6 +592,10 @@ mermaid_siren_queen:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} sinks beneath the waves, her voice rising like a warning. 'The tide does not answer to shore-dwellers. Learn the language of the deep, or drown trying.'"
+    recruit_accepted: "The {name} rises from the water, taking your hand in her webbed fingers. 'You are the current I would follow to any shore. My song is yours — my ocean, my heart.'"
+
 draconic_valkyrie:
   name: Draconic Valkyrie
   race: Dragonkin
@@ -452,6 +608,10 @@ draconic_valkyrie:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} spreads her wings, scales gleaming like armor. 'I am dragon and valkyrie both. I choose who lives and dies. You have not earned my judgment yet.'"
+    recruit_accepted: "The {name} beats her wings in a thunderclap of approval, landing before you. 'You are worthy of the halls of glory! I will carry you to victory on dragon-wings!'"
+
 sphinx_riddler:
   name: Sphinx Riddler
   race: Beast
@@ -464,6 +624,10 @@ sphinx_riddler:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} taps her chin, tail flicking. 'Riddle me this: what walks on your hopes but has no weight? You. You are too light to carry my loyalty. Try again.'"
+    recruit_accepted: "The {name}'s eyes shine with delight, purring like a satisfied cat. 'You answered the riddle of my heart. I will be the wisdom at your side — ask, and I shall know.'"
+
 lich_queen_avatar:
   name: Lich Queen Avatar
   race: Undead
@@ -475,6 +639,10 @@ lich_queen_avatar:
   boss: false
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} turns a page in a tome that writes itself, not looking up. 'I have outlived empires. You are a footnote. Return when you are a chapter worth studying.'"
+    recruit_accepted: "The {name} closes her book, phylactery glowing between her ribs. 'You are the only variable my equations cannot solve. Fascinating. I will follow you... to compute your destiny.'"
+
 valkyrie_commander:
   name: Valkyrie Commander
   race: Human
@@ -487,6 +655,10 @@ valkyrie_commander:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} grips her spear, eyes hard as tempered steel. 'I have escorted the bravest to Valhalla. You are not yet among them. Fight harder. Live bolder.'"
+    recruit_accepted: "The {name} kneels with her spear across her lap, a warrior's deepest vow. 'You are the legend I would sing of in the halls of the slain. I will follow you to Ragnarok and back.'"
+
 dragon_goddess_avatar:
   name: Dragon Goddess Avatar
   race: Dragonkin
@@ -499,6 +671,10 @@ dragon_goddess_avatar:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} exhales a breath of starfire, indifferent. 'I am the breath of creation. You are a spark in the void. Do not waste my time with mortal whims.'"
+    recruit_accepted: "The {name} lowers her massive head, starlight pooling in her eyes. 'You are the ember that refuses to die. I will burn the world for you — and build it anew from the ashes.'"
+
 arachne_brood_queen:
   name: Arachne Brood Queen
   race: Beast
@@ -511,6 +687,10 @@ arachne_brood_queen:
   boss: true
   super_boss: false
   monster_girl: true
+  dialogue:
+    recruit_denied: "The {name} tends to a cocoon of writhing silk, not sparing you a glance. 'My brood is countless. My patience is not. You are not yet worthy to walk my web.'"
+    recruit_accepted: "The {name} cradles your face in her many hands, silk soft as a mother's touch. 'You are the egg I never laid, the thread I never cut. I will weave victory around you.'"
+
 cosmic_slime_empress:
   name: Cosmic Slime Empress
   race: Elemental
@@ -522,6 +702,9 @@ cosmic_slime_empress:
     Charisma: 5
   boss: true
   super_boss: true
+  dialogue:
+    recruit_denied: "The {name} ripples with the colors of distant galaxies, indifferent. 'I am the space between stars. You are a grain on a speck. Return when you are a constellation.'"
+    recruit_accepted: "The {name} envelops you in a cosmic embrace — cool, infinite, and warm all at once. 'You are the gravity I did not expect. I will orbit you until the universe ends... and after.'"
 
 capture_messages:
   goblin_girl: "The {name} blushes deeply and shyly steps into your arms..."
@@ -579,4 +762,3 @@ affection_gifts:
 # bond_fight_3
 
 # bond_buff:
-

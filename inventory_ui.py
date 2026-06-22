@@ -1,3 +1,4 @@
+from combat.skills import get_passive_skill, get_all_unlocked_skills
 from inventory import equip_item, unequip_slot, use_consumable, get_total_equipment_mods
 from character import player_max_hp
 from resources.races_classes import ATTRIBUTES
@@ -48,11 +49,54 @@ def display_player_status(player):
     if allies:
         print("\n--- Allies ---")
         for i, ally in enumerate(allies):
-            print(f"  {ally['name']} (Lv {ally['level']}) HP: {ally['current_hp']}/{ally['max_hp']}")
-            eq = ally.get("equipped", {})
-            eq_items = [eq[s]["name"] for s in ["weapon", "armor", "accessory"] if eq.get(s)]
-            if eq_items:
-                print(f"    Equipped: {', '.join(eq_items)}")
+            print(f"\n  === {ally['name']} (Level {ally.get('level', 1)}) ===")
+            print(f"  HP: {ally['current_hp']}/{ally['max_hp']}")
+
+            # Calculate equipment and buff bonuses for ally
+            ally_eq_mods = get_total_equipment_mods(ally)
+            ally_buff_mods = {}
+            for buff in ally.get("active_buffs", []):
+                if buff.get("stat") == "all" or buff.get("type") == "blessing":
+                    for attr in ATTRIBUTES:
+                        ally_buff_mods[attr] = ally_buff_mods.get(attr, 0) + buff["value"]
+                elif buff.get("stat") in ATTRIBUTES:
+                    attr = buff["stat"]
+                    ally_buff_mods[attr] = ally_buff_mods.get(attr, 0) + buff["value"]
+
+            print("  Attributes (base + equipment + buffs):")
+            for attr in ATTRIBUTES:
+                base = ally["attributes"][attr]
+                eq_bonus = ally_eq_mods.get(attr, 0)
+                bf_bonus = ally_buff_mods.get(attr, 0)
+                total_bonus = eq_bonus + bf_bonus
+                if bf_bonus > 0:
+                    print(f"    {attr}: {base} + {eq_bonus}(eq) + {bf_bonus}(buff) = {base + total_bonus}")
+                else:
+                    print(f"    {attr}: {base} + {eq_bonus} = {base + total_bonus}")
+
+            print("  Equipment:")
+            for slot in ["weapon", "armor", "accessory"]:
+                item = ally.get("equipped", {}).get(slot)
+                if item:
+                    print(f"    {slot.title()}: {item['name']} ({item.get('rarity', 'common')})")
+                else:
+                    print(f"    {slot.title()}: empty")
+
+    # Show passive skill
+    passive = get_passive_skill(player)
+    if passive:
+        print(f"\n--- Passive Skill ---")
+        print(f"  {passive['name']}: {passive['description']}")
+
+    # Show active skills
+    unlocked_skills = get_all_unlocked_skills(player)
+    if unlocked_skills:
+        print(f"\n--- Active Skills ({len(unlocked_skills)} unlocked) ---")
+        cooldowns = player.get("skill_cooldowns", {})
+        for sid, sdef in unlocked_skills:
+            cd = cooldowns.get(sid, 0)
+            cd_str = f" [CD: {cd}]" if cd > 0 else ""
+            print(f"  {sdef['name']}{cd_str} - Lv.{sdef['unlock_level']}")
 
     display_active_bounties(player)
 
@@ -72,7 +116,8 @@ def display_inventory_menu_options():
     print("\nOptions:")
     print("1. Manage Equipment (equip/unequip - you & allies)")
     print("2. View Bag (use/drop items)")
-    print("3. Back to game")
+    print("3. Skill Book")
+    print("4. Back to game")
 
 def handle_inventory_choice(player, choice):
     """
@@ -84,6 +129,9 @@ def handle_inventory_choice(player, choice):
     elif choice == "2":
         manage_bag_submenu(player)
     elif choice == "3":
+        from facilities.skill_book import skill_book_menu
+        skill_book_menu(player)
+    elif choice == "4":
         return "back"
     else:
         print("Invalid choice.")

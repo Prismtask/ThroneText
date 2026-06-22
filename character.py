@@ -3,6 +3,28 @@ from save_load import save_game, list_saves, get_next_free_slot
 from utils import clear_screen
 import random
 
+def ensure_player_fields(player):
+    """Ensure loaded saves have all required fields for new systems."""
+    player.setdefault("skills", [])
+    player.setdefault("skill_cooldowns", {})
+    player.setdefault("skill_mastery", {})
+    player.setdefault("passive_unlocked", True)
+    player.setdefault("berserk_turns", 0)
+    player.setdefault("bloodlust_turns", 0)
+    from combat.skills import unlock_skills_for_level
+    unlock_skills_for_level(player)
+
+    # Ensure ally and house girl fields for leveling system
+    for ally in player.get("allies", []):
+        ally.setdefault("exp", 0)
+        ally.setdefault("level_hp_bonus", 0)
+
+    for house in player.get("houses", {}).values():
+        for girl in house.get("monster_girls", []):
+            girl.setdefault("exp", 0)
+            girl.setdefault("level_hp_bonus", 0)
+
+
 def player_max_hp(player_or_attrs):
     """Improved HP formula."""
     if isinstance(player_or_attrs, dict) and "attributes" in player_or_attrs:
@@ -152,6 +174,10 @@ def create_character():
         "location": "solmere",  # Start in first city
         "superboss_seed": random.randint(1, 999999),
         "allies": [],  # Active combat companions (max 3)
+        "skills": [],
+        "skill_cooldowns": {},
+        "skill_mastery": {},
+        "passive_unlocked": True,
     }
 
     save_game(player)

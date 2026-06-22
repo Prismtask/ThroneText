@@ -3,7 +3,8 @@ from utils import clear_screen, format_time
 from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
 from combat.helpers import _player_has_abyss_fang
-from combat.ally import get_alive_allies, format_ally_status_line
+from combat.ally import get_alive_allies, format_ally_status_line, format_ally_buff_line, _ally_action_menu
+from combat.skills import get_all_unlocked_skills
 
 
 def format_enemy_status_line(enemy, extra=""):
@@ -54,10 +55,96 @@ def _center_text(text, width):
     return " " * left + text + " " * right
 
 
+def _get_entity_buff_tags(entity):
+    """Return a short buff/debuff tag string for any entity (player, ally, enemy)."""
+    statuses = []
+    # Flag-based debuffs
+    if entity.get("stunned"):
+        statuses.append("STN")
+    if entity.get("slowed"):
+        statuses.append("SLW")
+    if entity.get("blinded"):
+        statuses.append("BLD")
+    if entity.get("frozen"):
+        statuses.append("FRZ")
+    if entity.get("silenced"):
+        statuses.append("SIL")
+    if entity.get("dreaded"):
+        statuses.append("DRD")
+    if entity.get("cursed"):
+        statuses.append("CRS")
+
+    # Debuff types from active_debuffs
+    debuff_map = {
+        "poison": "PSN",
+        "bleed": "BLE",
+        "burn": "BRN",
+        "slow": "SLW",
+        "weaken": "WKN",
+        "silence": "SIL",
+        "dread": "DRD",
+        "blind": "BLD",
+        "curse": "CRS",
+    }
+    for d in entity.get("active_debuffs", []):
+        tag = debuff_map.get(d["type"])
+        if tag and tag not in statuses:
+            statuses.append(tag)
+
+    # Expose stacks (enemy only)
+    expose = entity.get("expose_stacks", 0)
+    if expose > 0:
+        statuses.append(f"EXP×{expose}")
+
+    # Buffs from active_buffs
+    for b in entity.get("active_buffs", []):
+        btype = b.get("type")
+        if btype == "hot":
+            tag = "REG"
+        elif btype == "defense":
+            tag = "DEF"
+        elif btype == "blessing":
+            tag = "BLS"
+        elif btype == "well_rested":
+            tag = "RST"
+        elif b.get("stat"):
+            stat = b["stat"]
+            if stat == "all":
+                tag = "ALL+"
+            else:
+                tag = f"+{stat[:3].upper()}"
+        else:
+            continue
+        if tag not in statuses:
+            statuses.append(tag)
+
+    return f" [{' '.join(statuses)}]" if statuses else ""
+
+
+def _wrap_menu_lines(menu_str, max_width=66):
+    """Split menu string into lines that fit within max_width."""
+    if len(menu_str) <= max_width:
+        return [menu_str]
+    parts = menu_str.split('  ')
+    lines = []
+    current = ""
+    for part in parts:
+        if not current:
+            current = part
+        elif len(current) + 2 + len(part) <= max_width:
+            current += "  " + part
+        else:
+            lines.append(current)
+            current = part
+    if current:
+        lines.append(current)
+    return lines
+
+
 def print_combat_hud(player, enemies, active_ally=None):
     """Print the main combat HUD with a perfectly aligned party vs enemies layout."""
     allies = get_alive_allies(player)
-    
+
     # Grid Dimensions (Total inner width = 68 characters)
     LEFT_COL_WIDTH = 31
     RIGHT_COL_WIDTH = 33
@@ -80,61 +167,74 @@ def print_combat_hud(player, enemies, active_ally=None):
     print(f"| {left_header:<{LEFT_COL_WIDTH}}| {right_header:<{RIGHT_COL_WIDTH}} |")
     print(f"| " + "-" * (LEFT_COL_WIDTH - 1) + "| " + "-" * (RIGHT_COL_WIDTH) + "|")
 
-    # 3. Gather Party Lines
-    party_lines = []
+    # 3. Gather Party Rows (2 rows per entity)
+    party_rows = []
     _max_hp = 15 + player["attributes"]["Constitution"] * 3 + player.get("level_hp_bonus", 0)
     player_active = " >" if active_ally is None else ""
-    
-    # Clean Player Status Formatting
+
+    # Player row 1: name + hp
     player_hp_str = f"{player['current_hp']}/{_max_hp}"
-    party_lines.append(f"* You{player_active:<2} {player_hp_str:>12}")
+    party_rows.append(f"* You{player_active:<2} {player_hp_str:>12}")
+    # Player row 2: buffs
+    party_rows.append(_get_entity_buff_tags(player))
 
     for i, ally in enumerate(allies):
         is_active = (ally is active_ally)
-        # Note: Ensure format_ally_status_line doesn't exceed LEFT_COL_WIDTH - 2
-        party_lines.append(format_ally_status_line(ally, idx=i+2, is_active=is_active))
+        # Ally row 1: name + hp + ♀
+        party_rows.append(format_ally_status_line(ally, idx=i+2, is_active=is_active))
+        # Ally row 2: buffs
+        party_rows.append(format_ally_buff_line(ally))
 
-    while len(party_lines) < 5:  # Match standard enemy padding heights
-        party_lines.append("")
-
-    # 4. Gather Enemy Lines
-    enemy_lines = []
+    # 4. Gather Enemy Rows (2 rows per entity)
+    enemy_rows = []
     for idx, e in enumerate(enemies):
-        statuses = []
-        for cond, tag in [("stunned", "STN"), ("slowed", "SLW"), ("blinded", "BLD"), ("frozen", "FRZ")]:
-            if e.get(cond): statuses.append(tag)
-        if any(d["type"] == "burn" for d in e.get("active_debuffs", [])):
-            statuses.append("BRN")
-            
-        status_str_en = f" [{' '.join(statuses)}]" if statuses else ""
-        name = e['name'][:12]  # Slightly truncated to guarantee safety margin
+        # Enemy row 1: name + hp + ♀
+        name = e['name'][:12]
         hp_str = f"{e['hp']}/{e['max_hp']}"
         mg_symbol = " ♀" if e.get("monster_girl") else ""
-        
-        enemy_lines.append(f"[{idx+1}] {name:<12} {hp_str:>8}{status_str_en}{mg_symbol}")
+        enemy_rows.append(f"[{idx+1}] {name:<12} {hp_str:>8}{mg_symbol}")
+        # Enemy row 2: buffs
+        enemy_rows.append(_get_entity_buff_tags(e))
 
-    while len(enemy_lines) < 5:
-        enemy_lines.append("")
+    # 5. Pad both sides to the same height
+    max_rows = max(len(party_rows), len(enemy_rows), 4)
+    while len(party_rows) < max_rows:
+        party_rows.append("")
+    while len(enemy_rows) < max_rows:
+        enemy_rows.append("")
 
-    # 5. Print Side-by-Side Content Columns safely
-    for pl, el in zip(party_lines, enemy_lines):
-        # Truncate string pieces if they somehow overflow internal boundaries
+    # 6. Print Side-by-Side Content Columns
+    for pl, el in zip(party_rows, enemy_rows):
         safe_pl = pl[:LEFT_COL_WIDTH - 1]
         safe_el = el[:RIGHT_COL_WIDTH]
         print(f"| {safe_pl:<{LEFT_COL_WIDTH-1}}| {safe_el:<{RIGHT_COL_WIDTH}} |")
 
-    # 6. Bottom Frame Actions
+    # 7. Bottom Frame Actions
     print("+" + "-" * 68 + "+")
 
     # Action menu
-    menu_str, _ = get_action_menu(player, enemies)
-    safe_menu = menu_str[:66]
-    print(f"|  {safe_menu:<66}|")
+    if active_ally is not None:
+        menu_str, _ = _ally_action_menu(active_ally, player, enemies)
+    else:
+        menu_str, _ = get_action_menu(player, enemies)
+    for line in _wrap_menu_lines(menu_str):
+        print(f"|  {line:<66}|")
 
-    # Cooldown message
-    if _player_has_abyss_fang(player) and player.get('abyss_fang_cooldown', 0) > 0:
-        cd_msg = f"(Abyss Fang recharging: {player['abyss_fang_cooldown']} turn(s))"
-        print(f"|  {cd_msg:<66}|")
+    # Cooldown message (player only)
+    if active_ally is None:
+        if _player_has_abyss_fang(player) and player.get('abyss_fang_cooldown', 0) > 0:
+            cd_msg = f"(Abyss Fang recharging: {player['abyss_fang_cooldown']} turn(s))"
+            print(f"|  {cd_msg:<66}|")
+
+        # Skill cooldown messages
+        skill_cds = player.get('skill_cooldowns', {})
+        if skill_cds:
+            unlocked = get_all_unlocked_skills(player)
+            for sid, sdef in unlocked:
+                cd = skill_cds.get(sid, 0)
+                if cd > 0:
+                    cd_msg = f"({sdef['name']} recharging: {cd} turn(s))"
+                    print(f"|  {cd_msg:<66}|")
 
     print("+" + "-" * 68 + "+")
 

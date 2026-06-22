@@ -13,7 +13,7 @@ from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
 from inventory_ui import manage_inventory_menu
-from leveling import gain_exp
+from leveling import gain_exp, gain_exp_ally
 
 
 def get_random_enemy_key(floor, boss=False, region=None):
@@ -261,6 +261,9 @@ def explore_dungeon(player):
                 player["gold"] = player.get("gold", 0) + super_boss_gold
                 print(f"\n Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
                 gain_exp(player, super_boss_exp)
+                for ally in player.get("allies", []):
+                    if ally.get("current_hp", 0) > 0:
+                        gain_exp_ally(ally, super_boss_exp)
 
                 # Sync per-city progress
                 next_floor = floor + 1
@@ -304,6 +307,9 @@ def explore_dungeon(player):
                 for enemy_key in enemy_keys:
                     enemy_level = ENEMIES[enemy_key]["level"]
                     gain_exp(player, enemy_level * 12)
+                    for ally in player.get("allies", []):
+                        if ally.get("current_hp", 0) > 0:
+                            gain_exp_ally(ally, enemy_level * 12)
                     add_drop_to_inventory(player, enemy_level)
                     add_gold_drop(player, enemy_key)
                     

@@ -1,7 +1,8 @@
 # combat/action_menu.py
 from combat.capture import is_monster_girl
-from combat.helpers import _player_has_abyss_fang          # <-- changed import
+from combat.helpers import _player_has_abyss_fang
 from combat.status_effects import is_silenced
+from combat.skills import get_available_skills
 
 
 def get_action_menu(player, enemies):
@@ -29,6 +30,12 @@ def get_action_menu(player, enemies):
     abyss_cd = player.get('abyss_fang_cooldown', 0)
     if abyss_fang and abyss_cd <= 0:
         actions.append(('w', 'Wield the Abyss'))
+
+    # Skills – add available class skills as numbered options
+    available_skills = get_available_skills(player)
+    for idx, (sid, sdef) in enumerate(available_skills):
+        key = str(idx + 1)
+        actions.append((key, sdef['name']))
 
     menu_str = '  '.join(f'[{key.upper()}]{label}' for key, label in actions)
     valid_keys = [key for key, _ in actions]
