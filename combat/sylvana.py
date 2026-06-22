@@ -3,7 +3,7 @@ import random
 from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
 from combat.superboss_common import superboss_triple_action_loop, superboss_combat_loop
 from character import player_max_hp
 from combat.status_effects import (
@@ -172,15 +172,8 @@ def combat_sylvana(player, floor=None):
         else:
             action_status = "Normal actions"
 
-        print_superboss_header(player, floor, "Queen of Mirrors Sylvana", "")
-        print(f"{action_status}")
-        
-        # We removed the extra penalty printout here!
-
-        print("\nEnemies:")
-        for idx, e in enumerate(elist):
-            print(f"  [{idx + 1}] {format_enemy_status_line(e)}")
-        print("[A]ttack  [D]efend  [F]lee  [U]se item")
+        print(f"  {action_status}")
+        print_combat_hud(player, elist, header="Superboss: Queen of Mirrors Sylvana")
 
     def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
         if enemy.get("is_fake"):

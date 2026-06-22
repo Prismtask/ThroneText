@@ -15,7 +15,7 @@ def ally_max_hp(ally):
     con = ally["attributes"]["Constitution"]
     level = ally.get("level", 1)
     bonus = ally.get("level_hp_bonus", 0)
-    return int(15 + con * 3 + bonus)
+    return int(15 + con * 3 + level * 2 + bonus)
 
 
 def create_ally_from_girl(girl):

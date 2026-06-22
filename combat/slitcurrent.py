@@ -2,7 +2,7 @@ import random
 from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
 from combat.superboss_common import superboss_triple_action_loop, superboss_combat_loop
 from combat.status_effects import apply_poison, apply_curse
 from resources.items import build_item
@@ -97,16 +97,13 @@ def combat_slitcurrent(player, floor=None):
 
     def custom_hud_hook(ctx, elist):
         clear_screen()
-        print_superboss_header(player, floor, "Dream-Devouring Slitcurrent", "")
-        print("\nEnemies in the room:")
-        for idx, e in enumerate(elist):
-            extra = ""
-            if e.get("key") == boss_key:
-                extra = f" [Devour: {ctx['devour_focus_stacks']}/3]"
-                if ctx["boss_stun_turns"] > 0:
-                    extra += f" [Stunned: {ctx['boss_stun_turns']} turns left]"
-            print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
-        print("[A]ttack  [D]efend  [F]lee  [U]se item")
+        b = next((e for e in elist if e.get("key") == boss_key), None)
+        if b:
+            print(f"  Slitcurrent: Devour {ctx['devour_focus_stacks']}/3", end="")
+            if ctx["boss_stun_turns"] > 0:
+                print(f" | Stunned: {ctx['boss_stun_turns']} turns left", end="")
+            print()
+        print_combat_hud(player, elist, header="Superboss: Dream-Devouring Slitcurrent")
 
     def player_action_override(ctx):
         action = input("Choose: ").strip().lower()

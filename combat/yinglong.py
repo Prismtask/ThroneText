@@ -37,7 +37,7 @@ import random
 from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
 from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_weaken, format_player_status_line
 from character import player_max_hp
@@ -172,20 +172,15 @@ def _inner_dragon_combat(player):
 
     def inner_hud(ctx, elist):
         clear_screen()
-        status_str = format_player_status_line(player)
-        print(f"\n☁ INSIDE YINGLONG ☁  — {player['name']}: {player['current_hp']} {status_str}".rstrip())
         wedge_warn = ""
         next_wedge_turn = 3 * (ctx["wedge_activations"] + 1)
         turns_left = next_wedge_turn - ctx["turn_counter"]
         if ctx["wedge_activations"] < 2:
-            wedge_warn = f"  ⚠ Heaven Pinning Wedge in {turns_left} turn(s)!"
-        print(f"Wedge activations remaining: {2 - ctx['wedge_activations']}/2{wedge_warn}")
+            wedge_warn = f"⚠ Heaven Pinning Wedge in {turns_left} turn(s)!"
+        print(f"☁ INSIDE YINGLONG ☁ {wedge_warn}")
         if ctx["bonus_dmg_next_turn"]:
             print("⚡ BONUS: You deflected the Wedge — deal +20% max HP next attack!")
-        print("\nDragon Guardians:")
-        for idx, e in enumerate(elist):
-            print(f"  [{idx+1}] {format_enemy_status_line(e)}")
-        print("[A]ttack  [D]efend  [F]lee (escape impossible)  [U]se item")
+        print_combat_hud(player, elist, header="Dragon Guardians")
 
     def inner_action_override(ctx):
         action = input("Choose: ").strip().lower()
@@ -360,8 +355,6 @@ def combat_yinglong(player, floor=None):
     # ── Custom HUD ──────────────────────────────────────────────────
     def custom_hud(ctx, elist):
         clear_screen()
-        b = next((e for e in elist if _is_boss(e)), None)
-
         phase_label = {1: "I — Dragon Descends", 2: "II — Devoured",
                        3: "III — Resurgent", 4: "IV — Immortal Rage"}.get(ctx["phase"], "")
         gimmick = f"Phase {phase_label}"
@@ -374,23 +367,17 @@ def combat_yinglong(player, floor=None):
         if ctx["bonus_dmg_next_turn"]:
             gimmick += " | ⚡ Wedge Deflected — bonus dmg ready!"
 
-        print_superboss_header(player, floor, "Heaven-Banished Dragon Yinglong", gimmick)
-
-        resist_note = "" if _has_shattered_heaven(player) else " [-60% from player]"
-        print("\nEnemies:")
-        for idx, e in enumerate(elist):
-            if _is_boss(e):
-                extra = resist_note
-                if ctx["immortal"] and ctx.get("wedge_active"):
-                    extra += " [IMMORTAL — destroy Wedge!]"
-            elif _is_pillar(e):
-                extra = " ← DESTROY to break Yinglong's scales!"
+        if not _has_shattered_heaven(player):
+            print("  ⚠ Yinglong's divine scales resist 60% of your damage.")
+        if ctx["immortal"] and ctx.get("wedge_active"):
+            print("  ☠ Yinglong is IMMORTAL while the Heaven Pinning Wedge exists!")
+        for e in elist:
+            if _is_pillar(e):
+                print("  ⚡ Heaven Pillar: Destroy it to break Yinglong's scales!")
             elif _is_wedge(e):
-                extra = " ← DESTROY to strip Immortality! (bounces 7% HP to dragon)"
-            else:
-                extra = ""
-            print(f"  [{idx+1}] {format_enemy_status_line(e, extra)}")
-        print("[A]ttack  [D]efend  [F]lee  [U]se item")
+                print("  ⚡ Heaven Pinning Wedge: Destroy it to strip Immortality!")
+
+        print_combat_hud(player, elist, header=f"Superboss: Heaven-Banished Dragon Yinglong | {gimmick}")
 
     def player_action_override(ctx):
         action = input("Choose: ").strip().lower()

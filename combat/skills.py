@@ -1071,4 +1071,9 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             if cooldowns[skill_id] <= 0:
                 del cooldowns[skill_id]
 
+    # Safety check: single-target skills may set victory=True for a kill,
+    # but victory is only valid if ALL enemies are defeated.
+    if victory and [e for e in enemies if e["hp"] > 0]:
+        victory = False
+
     return " ".join(msg_parts), victory

@@ -3,7 +3,7 @@ from utils import clear_screen, format_time
 from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
 from combat.helpers import _player_has_abyss_fang
-from combat.ally import get_alive_allies, format_ally_status_line, format_ally_buff_line, _ally_action_menu
+from combat.ally import get_alive_allies, format_ally_status_line, _ally_action_menu
 from combat.skills import get_all_unlocked_skills
 
 
@@ -141,7 +141,7 @@ def _wrap_menu_lines(menu_str, max_width=66):
     return lines
 
 
-def print_combat_hud(player, enemies, active_ally=None):
+def print_combat_hud(player, enemies, active_ally=None, header=""):
     """Print the main combat HUD with a perfectly aligned party vs enemies layout."""
     allies = get_alive_allies(player)
 
@@ -151,9 +151,9 @@ def print_combat_hud(player, enemies, active_ally=None):
     # 31 (Left) + 4 (Middle separator " | ") + 33 (Right) = 68
 
     # Determine header context
-    header = ""
-    if player.get("abyss_triple_actions", 0) > 0:
-        header = ">> ABYSSAL TEMPO ACTIVE <<"
+    if not header:
+        if player.get("abyss_triple_actions", 0) > 0:
+            header = ">> ABYSSAL TEMPO ACTIVE <<"
 
     # 1. Top Border
     print("+" + "-" * 68 + "+")
@@ -183,7 +183,7 @@ def print_combat_hud(player, enemies, active_ally=None):
         # Ally row 1: name + hp + ♀
         party_rows.append(format_ally_status_line(ally, idx=i+2, is_active=is_active))
         # Ally row 2: buffs
-        party_rows.append(format_ally_buff_line(ally))
+        party_rows.append(_get_entity_buff_tags(ally))
 
     # 4. Gather Enemy Rows (2 rows per entity)
     enemy_rows = []
@@ -241,7 +241,10 @@ def print_combat_hud(player, enemies, active_ally=None):
 
 def print_superboss_header(player, floor, boss_name, extra_gimmick_line=""):
     time_str = format_time(player.get("time_minutes", 0))
-    print(f" {floor} - Superboss: {boss_name} | Time: {time_str}")
+    if floor is not None:
+        print(f" Floor {floor} - Superboss: {boss_name} | Time: {time_str}")
+    else:
+        print(f" Superboss: {boss_name} | Time: {time_str}")
     if extra_gimmick_line:
         print(extra_gimmick_line)
     status_line = format_player_status_line(player)

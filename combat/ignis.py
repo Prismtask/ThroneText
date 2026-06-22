@@ -3,7 +3,7 @@ import random
 from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
 from combat.superboss_common import superboss_triple_action_loop, superboss_combat_loop
 from combat.status_effects import apply_weaken, apply_bleed, format_player_status_line
 
@@ -135,13 +135,8 @@ def combat_ignis(player, floor=None):
     def custom_hud(ctx, elist):
         clear_screen()
         hl = ctx["heat_level"]
-        print_superboss_header(player, floor, "Melt-Forge Golem Ignis", "")
-        print(f"heat_level: {hl} (Ignis +{hl * 5}% dmg | armor at {max(0, 100 - hl * 3)}%)")
-        print("\nEnemies:")
-        for idx, e in enumerate(elist):
-            extra = f" [Heat: {hl}]" if e.get("key") == boss_key else ""
-            print(f"  [{idx + 1}] {format_enemy_status_line(e, extra)}")
-        print("[A]ttack  [D]efend  [F]lee  [U]se item")
+        print(f"  Heat Level: {hl} (Ignis +{hl * 5}% damage | armor at {max(0, 100 - hl * 3)}%)")
+        print_combat_hud(player, elist, header="Superboss: Melt-Forge Golem Ignis")
 
     def player_action_override(ctx):
         action = input("Choose: ").strip().lower()

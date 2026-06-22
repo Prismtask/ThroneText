@@ -8,7 +8,7 @@
     "Dexterity": 6,
     "Wisdom": 1,
     "Learning": 7,
-    "Charisma": 2
+    "Charisma": 3
   },
   "city_floors": {
     "solmere": {
@@ -24,14 +24,14 @@
       "max_floor": 6
     },
     "skylume": {
-      "floor": 9,
-      "max_floor": 9
+      "floor": 11,
+      "max_floor": 11
     }
   },
-  "current_hp": 152,
-  "level": 27,
-  "exp": 1286,
-  "level_hp_bonus": 104,
+  "current_hp": 156,
+  "level": 28,
+  "exp": 1059,
+  "level_hp_bonus": 108,
   "inventory": [
     {
       "id": "tome_of_knowledge",
@@ -1759,6 +1759,61 @@
         "Wisdom": 1
       },
       "scaling_stat": "Strength"
+    },
+    {
+      "id": "crossbow",
+      "name": "Uncommon Crossbow",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 3,
+        "Learning": 1
+      },
+      "scaling_stat": "Dexterity"
+    },
+    {
+      "id": "dagger",
+      "name": "Uncommon Dagger",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "weapon",
+      "mods": {
+        "Dexterity": 3
+      },
+      "scaling_stat": "Dexterity"
+    },
+    {
+      "id": "curse_cleansing_scroll",
+      "name": "Common Scroll of Cleansing",
+      "type": "consumable",
+      "rarity": "common",
+      "enhance": 0,
+      "power": 0,
+      "cure_curse": true
+    },
+    {
+      "id": "cloak_of_shadows",
+      "name": "Uncommon Cloak of Shadows",
+      "type": "equipment",
+      "rarity": "uncommon",
+      "enhance": 0,
+      "slot": "accessory",
+      "mods": {
+        "Dexterity": 2,
+        "Charisma": 1
+      }
+    },
+    {
+      "id": "recalled_scroll",
+      "name": "Epic Scroll of Recall",
+      "type": "utility",
+      "rarity": "epic",
+      "enhance": 0,
+      "power": 0,
+      "fixed_flee": true
     }
   ],
   "equipped": {
@@ -1806,32 +1861,25 @@
       }
     }
   },
-  "active_buffs": [
-    {
-      "stat": "Strength",
-      "value": 8,
-      "remaining": 3,
-      "source": "abyss_fang"
-    }
-  ],
+  "active_buffs": [],
   "save_slot": 1,
   "dungeon_time": 0,
-  "gold": 8378,
-  "time_minutes": 165,
-  "location": "skylume",
+  "gold": 10282,
+  "time_minutes": 795,
+  "location": "irondeep",
   "superboss_seed": 867592,
   "allies": [
     {
       "name": "Alraune Fledger",
       "key": "alraune_fledger",
-      "level": 7,
+      "level": 16,
       "attributes": {
-        "Strength": 1,
-        "Constitution": 1,
-        "Dexterity": 2,
+        "Strength": 4,
+        "Constitution": 4,
+        "Dexterity": 4,
         "Wisdom": 1,
         "Learning": 1,
-        "Charisma": 3
+        "Charisma": 4
       },
       "equipped": {
         "weapon": {
@@ -1862,33 +1910,30 @@
         "accessory": null
       },
       "active_buffs": [],
-      "active_debuffs": [
-        {
-          "type": "dread",
-          "remaining": 1
-        }
-      ],
+      "active_debuffs": [],
       "blinded": false,
       "slowed": false,
       "stunned": false,
       "frozen": false,
       "is_ally": true,
       "affection": 100,
-      "max_hp": 32,
-      "current_hp": 32,
-      "dreaded": true
+      "max_hp": 95,
+      "current_hp": 89,
+      "dreaded": false,
+      "exp": 36,
+      "level_hp_bonus": 36
     },
     {
       "name": "Dryad Protector",
       "key": "dryad_protector",
-      "level": 9,
+      "level": 16,
       "attributes": {
-        "Strength": 1,
-        "Constitution": 1,
+        "Strength": 4,
+        "Constitution": 2,
         "Dexterity": 2,
-        "Wisdom": 1,
-        "Learning": 1,
-        "Charisma": 3
+        "Wisdom": 2,
+        "Learning": 2,
+        "Charisma": 4
       },
       "equipped": {
         "weapon": null,
@@ -1904,9 +1949,11 @@
       "is_ally": true,
       "affection": 58,
       "monster_girl": true,
-      "max_hp": 36,
-      "current_hp": 36,
-      "dreaded": false
+      "max_hp": 81,
+      "current_hp": 77,
+      "dreaded": false,
+      "exp": 325,
+      "level_hp_bonus": 28
     }
   ],
   "day": 12,
@@ -2149,79 +2196,85 @@
     "skylume": {
       "level": 3,
       "storage": [],
-      "last_income_day": 10,
+      "last_income_day": 12,
       "monster_girls": []
     }
   },
   "shop_stock_skylume": [
     [
       {
-        "id": "minor_healing_potion",
-        "name": "Rare Minor Healing Potion",
+        "id": "healing_salve",
+        "name": "Uncommon Healing Salve",
         "type": "consumable",
-        "rarity": "rare",
+        "rarity": "uncommon",
         "enhance": 0,
-        "power": 42
+        "power": 52,
+        "duration": 3,
+        "heal_over_time": 3
       },
-      60
-    ],
-    [
-      {
-        "id": "uncommon_scroll",
-        "name": "Common Scroll of Fusion",
-        "type": "scroll",
-        "rarity": "common",
-        "enhance": 0,
-        "target_rarity": "common"
-      },
-      65
+      30
     ],
     [
       {
         "id": "runic_dagger",
-        "name": "Uncommon Runic Dagger",
+        "name": "Rare Runic Dagger",
+        "type": "equipment",
+        "rarity": "rare",
+        "enhance": 0,
+        "slot": "weapon",
+        "mods": {
+          "Dexterity": 3,
+          "Learning": 3
+        },
+        "scaling_stat": "Dexterity"
+      },
+      195
+    ],
+    [
+      {
+        "id": "capture_net",
+        "name": "Uncommon Capture Net",
+        "type": "utility",
+        "rarity": "uncommon",
+        "enhance": 0,
+        "power": 0,
+        "capture_net": true,
+        "rarity_mult_bonus": 25
+      },
+      97
+    ],
+    [
+      {
+        "id": "elixir_of_strength",
+        "name": "Common Elixir of Strength",
+        "type": "consumable",
+        "rarity": "common",
+        "enhance": 0,
+        "power": 3,
+        "temp_stat": "Strength",
+        "duration": 4
+      },
+      20
+    ],
+    [
+      {
+        "id": "mace",
+        "name": "Uncommon Mace",
         "type": "equipment",
         "rarity": "uncommon",
         "enhance": 0,
         "slot": "weapon",
         "mods": {
-          "Dexterity": 2,
-          "Learning": 2
+          "Strength": 2,
+          "Wisdom": 1
         },
-        "scaling_stat": "Dexterity"
+        "scaling_stat": "Strength"
       },
       97
     ],
     [
       {
-        "id": "silk_garb",
-        "name": "Uncommon Silk Garb",
-        "type": "equipment",
-        "rarity": "uncommon",
-        "enhance": 0,
-        "slot": "armor",
-        "mods": {
-          "Charisma": 3,
-          "Dexterity": 1
-        }
-      },
-      97
-    ],
-    [
-      {
-        "id": "throwing_knife",
-        "name": "Common Throwing Knife",
-        "type": "utility",
-        "rarity": "common",
-        "enhance": 0,
-        "power": 22,
-        "armor_pierce": 2
-      },
-      65
-    ],
-    [
-      {
-        "id": "epic_scroll",
+        "id": "rare_scroll",
         "name": "Uncommon Scroll of Fusion",
         "type": "scroll",
         "rarity": "uncommon",
@@ -2232,35 +2285,50 @@
     ],
     [
       {
-        "id": "armor_shatter_flask",
-        "name": "Uncommon Armour Shatter Flask",
-        "type": "utility",
+        "id": "runic_orb",
+        "name": "Uncommon Runic Orb",
+        "type": "equipment",
         "rarity": "uncommon",
         "enhance": 0,
-        "power": 0
+        "slot": "weapon",
+        "mods": {
+          "Learning": 3,
+          "Charisma": 1
+        },
+        "scaling_stat": "Learning"
       },
       97
     ],
     [
       {
-        "id": "elven_mail",
-        "name": "Uncommon Elven Mail",
+        "id": "rare_scroll",
+        "name": "Common Scroll of Fusion",
+        "type": "scroll",
+        "rarity": "common",
+        "enhance": 0,
+        "target_rarity": "common"
+      },
+      65
+    ],
+    [
+      {
+        "id": "scale_armor",
+        "name": "Common Scale Armor",
         "type": "equipment",
-        "rarity": "uncommon",
+        "rarity": "common",
         "enhance": 0,
         "slot": "armor",
         "mods": {
-          "Dexterity": 3,
-          "Learning": 1
+          "Constitution": 3,
+          "Strength": 1
         }
       },
-      97
+      65
     ]
   ],
-  "last_shop_day_skylume": 11,
-  "abyss_fang_cooldown": 5,
+  "last_shop_day_skylume": 12,
+  "abyss_fang_cooldown": 0,
   "superboss_pool": [
-    2,
     3,
     1,
     4
@@ -2274,12 +2342,13 @@
     "war_shield_slam"
   ],
   "skill_cooldowns": {
-    "war_bladestorm": 6,
-    "war_cleave": 3
+    "war_bladestorm": 2,
+    "war_cleave": 3,
+    "war_execute": 4
   },
   "skill_mastery": {
-    "war_cleave": 3,
-    "war_execute": 1,
+    "war_cleave": 4,
+    "war_execute": 3,
     "war_bladestorm": 1
   },
   "passive_unlocked": true,
