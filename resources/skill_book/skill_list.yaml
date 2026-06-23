@@ -465,3 +465,360 @@ class_skills:
       power_type: str
       base_power: 18
       stun_chance: 0.5
+
+# ============================================================================
+# RACE-BASED PASSIVE SKILLS FOR ALLIES
+# ============================================================================
+
+race_passives:
+  Beast:
+    id: beast_passive
+    name: Feral Instinct
+    description: +2 Dexterity and Strength.
+    effect:
+      stat: all
+      value: 1
+      stats:
+      - Dexterity
+      - Strength
+  Fey:
+    id: fey_passive
+    name: Nature's Blessing
+    description: Heal 10% of max HP at the end of each turn.
+    effect:
+      type: regen
+      value: 0.1
+  Goblin:
+    id: goblin_passive
+    name: Quick Reflexes
+    description: +2 Dexterity and +20% dodge chance.
+    effect:
+      stat: Dexterity
+      value: 2
+  Dragonkin:
+    id: dragonkin_passive
+    name: Dragon's Might
+    description: +2 Strength and +15% elemental damage.
+    effect:
+      stat: Strength
+      value: 2
+  Shadow:
+    id: shadow_passive
+    name: Shadow Step
+    description: +2 Dexterity and 15% chance to evade attacks.
+    effect:
+      stat: Dexterity
+      value: 2
+  Elemental:
+    id: elemental_passive
+    name: Elemental Resilience
+    description: +2 Constitution and +20% resistance to all elements.
+    effect:
+      stat: Constitution
+      value: 2
+  Lizardfolk:
+    id: lizardfolk_passive
+    name: Reptilian Strength
+    description: +2 Strength and +1 Constitution.
+    effect:
+      stat: all
+      value: 1
+      stats:
+      - Strength
+      - Constitution
+  Abomination:
+    id: abomination_passive
+    name: Aberrant Form
+    description: +3 Strength and take 10% less damage.
+    effect:
+      type: damage_reduction
+      value: 0.1
+  Construct:
+    id: construct_passive
+    name: Mechanical Durability
+    description: +3 Constitution and immunity to poison/bleed.
+    effect:
+      stat: Constitution
+      value: 3
+  Vampire:
+    id: vampire_passive
+    name: Vampiric Bloodlust
+    description: Heal 25% of damage dealt and +1 Charisma.
+    effect:
+      type: life_steal
+      value: 0.25
+  Undead:
+    id: undead_passive
+    name: Unholy Resilience
+    description: +2 Wisdom and immunity to healing effects (self-healing only).
+    effect:
+      stat: Wisdom
+      value: 2
+  Human:
+    id: human_passive
+    name: Adaptability
+    description: +1 to all attributes.
+    effect:
+      stat: all
+      value: 1
+      stats:
+      - Strength
+      - Constitution
+      - Dexterity
+      - Wisdom
+      - Learning
+      - Charisma
+
+# ============================================================================
+# LEARNABLE SKILLS FOR ALLIES - OFFENSIVE
+# ============================================================================
+
+learnable_skills:
+  offensive:
+    slash:
+      name: Slash
+      description: A basic melee slash.
+      category: offensive
+      cooldown: 2
+      target: enemy
+      power_type: str
+      base_power: 8
+      mastery_thresholds: [10, 25, 50]
+    power_strike:
+      name: Power Strike
+      description: A strong downward strike.
+      category: offensive
+      cooldown: 3
+      target: enemy
+      power_type: str
+      base_power: 12
+      mastery_thresholds: [15, 35, 70]
+    fireball:
+      name: Fireball
+      description: Hurl a ball of flame at a single enemy.
+      category: offensive
+      cooldown: 3
+      target: enemy
+      power_type: ler
+      base_power: 14
+      mastery_thresholds: [12, 30, 60]
+    ice_shards:
+      name: Ice Shards
+      description: Launch sharp ice projectiles at all enemies.
+      category: offensive
+      cooldown: 4
+      target: enemies
+      power_type: ler
+      base_power: 10
+      mastery_thresholds: [15, 35, 70]
+    quick_strike:
+      name: Quick Strike
+      description: A fast, nimble attack.
+      category: offensive
+      cooldown: 1
+      target: enemy
+      power_type: dex
+      base_power: 6
+      mastery_thresholds: [10, 25, 50]
+    poison_strike:
+      name: Poison Strike
+      description: Strike with poison. Target takes damage over time.
+      category: offensive
+      cooldown: 3
+      target: enemy
+      power_type: dex
+      base_power: 8
+      poison_damage: 4
+      poison_duration: 4
+      mastery_thresholds: [15, 35, 70]
+    arcane_bolt:
+      name: Arcane Bolt
+      description: Fire a bolt of pure magic.
+      category: offensive
+      cooldown: 2
+      target: enemy
+      power_type: ler
+      base_power: 10
+      mastery_thresholds: [12, 30, 60]
+    multi_hit:
+      name: Multi Hit
+      description: Strike 3 times in quick succession.
+      category: offensive
+      cooldown: 4
+      target: enemy
+      power_type: dex
+      base_power: 6
+      hits: 3
+      mastery_thresholds: [20, 40, 80]
+    whirlwind:
+      name: Whirlwind
+      description: Spin and hit all enemies.
+      category: offensive
+      cooldown: 4
+      target: enemies
+      power_type: str
+      base_power: 9
+      mastery_thresholds: [18, 36, 72]
+
+  # DEFENSIVE SKILLS
+  defensive:
+    protect:
+      name: Protect
+      description: Reduce damage taken by 30% for 2 turns.
+      category: defensive
+      cooldown: 3
+      target: self
+      effect:
+        type: damage_reduction
+        value: 0.3
+        duration: 2
+      mastery_thresholds: [10, 25, 50]
+    shield_wall:
+      name: Shield Wall
+      description: Take reduced damage and protect an ally for 2 turns.
+      category: defensive
+      cooldown: 4
+      target: ally_or_self
+      effect:
+        type: damage_reduction
+        value: 0.4
+        duration: 2
+      mastery_thresholds: [15, 35, 70]
+    dodge:
+      name: Dodge
+      description: Gain +2 Dexterity and evade 50% of attacks for 2 turns.
+      category: defensive
+      cooldown: 3
+      target: self
+      effect:
+        type: evasion
+        value: 0.5
+        duration: 2
+      mastery_thresholds: [12, 30, 60]
+    hardened_skin:
+      name: Hardened Skin
+      description: Strengthen your body, taking 25% less damage for 3 turns.
+      category: defensive
+      cooldown: 4
+      target: self
+      effect:
+        type: damage_reduction
+        value: 0.25
+        duration: 3
+      mastery_thresholds: [14, 32, 64]
+    counter:
+      name: Counter
+      description: Parry and riposte. Reflect 40% of damage taken back to attacker.
+      category: defensive
+      cooldown: 3
+      target: self
+      effect:
+        type: reflection
+        value: 0.4
+        duration: 2
+      mastery_thresholds: [16, 38, 76]
+
+  # SUPPORT SKILLS
+  support:
+    heal:
+      name: Heal
+      description: Restore health to yourself or an ally.
+      category: support
+      cooldown: 3
+      target: ally_or_self
+      power_type: wis
+      base_power: 16
+      mastery_thresholds: [12, 30, 60]
+    group_heal:
+      name: Group Heal
+      description: Restore health to all allies.
+      category: support
+      cooldown: 5
+      target: all_allies
+      power_type: wis
+      base_power: 10
+      mastery_thresholds: [15, 35, 70]
+    regenerate:
+      name: Regenerate
+      description: Grant an ally 10% HP recovery each turn for 4 turns.
+      category: support
+      cooldown: 4
+      target: ally_or_self
+      effect:
+        type: regen
+        value: 0.1
+        duration: 4
+      mastery_thresholds: [14, 32, 64]
+    strength_buff:
+      name: Strength Buff
+      description: Increase an ally's Strength by 2 for 3 turns.
+      category: support
+      cooldown: 3
+      target: ally_or_self
+      effect:
+        type: stat_buff
+        stat: Strength
+        value: 2
+        duration: 3
+      mastery_thresholds: [10, 25, 50]
+    wisdom_buff:
+      name: Wisdom Buff
+      description: Increase an ally's Wisdom by 2 for 3 turns.
+      category: support
+      cooldown: 3
+      target: ally_or_self
+      effect:
+        type: stat_buff
+        stat: Wisdom
+        value: 2
+        duration: 3
+      mastery_thresholds: [10, 25, 50]
+    haste:
+      name: Haste
+      description: Grant an ally -2 cooldown on next skill use for 2 turns.
+      category: support
+      cooldown: 4
+      target: ally_or_self
+      effect:
+        type: cooldown_reduction
+        value: 2
+        duration: 2
+      mastery_thresholds: [14, 32, 64]
+    weakening_curse:
+      name: Weakening Curse
+      description: Reduce an enemy's Strength by 2 for 3 turns.
+      category: support
+      cooldown: 3
+      target: enemy
+      effect:
+        type: stat_debuff
+        stat: Strength
+        value: 2
+        duration: 3
+      mastery_thresholds: [12, 30, 60]
+    blind:
+      name: Blind
+      description: Reduce an enemy's accuracy. 40% chance to miss attacks for 3 turns.
+      category: support
+      cooldown: 3
+      target: enemy
+      effect:
+        type: blind
+        value: 0.4
+        duration: 3
+      mastery_thresholds: [12, 30, 60]
+    slow:
+      name: Slow
+      description: Reduce an enemy's speed and attack frequency for 3 turns.
+      category: support
+      cooldown: 3
+      target: enemy
+      effect:
+        type: slow
+        duration: 3
+      mastery_thresholds: [12, 30, 60]
+
+# ============================================================================
+# INNATE SKILLS FOR MONSTER GIRLS
+# ============================================================================
+

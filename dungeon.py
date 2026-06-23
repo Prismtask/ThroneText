@@ -207,7 +207,7 @@ def explore_dungeon(player):
     region = player["dungeon_region"]
     
     # ----- SUPER BOSS ENCOUNTER (every 10th floor) -----
-    if floor % 10 == 0:
+    if floor % 20 == 0:
         print("\n" + "="*50)
         print("⚠️  A dark, suffocating energy fills the air...")
         

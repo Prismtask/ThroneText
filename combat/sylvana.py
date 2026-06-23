@@ -13,6 +13,19 @@ from combat.status_effects import (
 )
 
 # ---------------------------------------------------------------------------
+# Custom Handlers
+# ---------------------------------------------------------------------------
+
+class IllusionDict(dict):
+    def __setitem__(self, key, value):
+        if key == "hp":
+            # If the entity's HP drops at all, instantly shatter it (1-hit kill rule)
+            if "hp" in self and value < self["hp"]:
+                value = 0
+        super().__setitem__(key, value)
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -29,17 +42,16 @@ def _scramble_name(name):
         chars[idx] = chars[idx].upper()
     return "".join(chars)
 
-
 def _make_fake_copy(boss):
     """Create a mirror illusion with identical stats but a scrambled name."""
-    fake = dict(boss)
+    fake = IllusionDict(boss)
     fake["key"] = "sylvana_mirror_copy"
     fake["name"] = _scramble_name(boss["name"])
     fake["is_fake"] = True
-    fake["hp"] = boss["hp"]
-    fake["max_hp"] = boss["max_hp"]
+    # Explicitly set HP using the superclass to bypass the 1-hit rule during creation
+    dict.__setitem__(fake, "hp", boss["hp"])
+    dict.__setitem__(fake, "max_hp", boss["max_hp"])
     return fake
-
 
 def _is_sylvana(e):
     return e.get("key") == "queen_of_mirrors_sylvana"
@@ -104,8 +116,6 @@ def combat_sylvana(player, floor=None):
     def on_kill_hook(target, elist, ctx):
         """Fallback — if something else kills a clone."""
         if target.get("is_fake"):
-            # Rage is already triggered by on_player_hit_hook,
-            # so just print a message and clear the split flag.
             print(f"\n🪞 The mirror copy of {target['name']} shatters!")
             ctx["split_active"] = False
         else:
@@ -125,6 +135,7 @@ def combat_sylvana(player, floor=None):
         """NEW: Trigger on any hit against a clone (main fix)."""
         if target.get("is_fake"):
             _trigger_mirror_rage(ctx, is_kill=False)
+            target["hp"] = 0 # Force the instant shatter redundantly
 
     def pre_player_hook(ctx, elist):
         b = next((e for e in elist if not e.get("is_fake")), None)

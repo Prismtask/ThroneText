@@ -14,10 +14,25 @@ def ensure_player_fields(player):
     from combat.skills import unlock_skills_for_level
     unlock_skills_for_level(player)
 
+    # Ensure elemental fields for new saves
+    if "elemental_res" not in player or "elemental_dmg" not in player:
+        from combat.elemental import compute_player_elemental
+        res, dmg = compute_player_elemental(player)
+        player["elemental_res"] = res
+        player["elemental_dmg"] = dmg
+
     # Ensure ally and house girl fields for leveling system
     for ally in player.get("allies", []):
         ally.setdefault("exp", 0)
         ally.setdefault("level_hp_bonus", 0)
+        ally.setdefault("cursed", False)
+        ally.setdefault("dreaded", False)
+        ally.setdefault("silenced", False)
+        if "elemental_res" not in ally or "elemental_dmg" not in ally:
+            from combat.elemental import compute_ally_elemental
+            res, dmg = compute_ally_elemental(ally)
+            ally["elemental_res"] = res
+            ally["elemental_dmg"] = dmg
 
     for house in player.get("houses", {}).values():
         for girl in house.get("monster_girls", []):
@@ -147,6 +162,18 @@ def create_character():
         except ValueError:
             print("Please enter a number.")
 
+    from combat.elemental import neutral_profile, merge_profiles
+    race_res = merge_profiles(neutral_profile(), RACES[race_key].get("elemental_res", {}))
+    race_dmg = merge_profiles(neutral_profile(), RACES[race_key].get("elemental_dmg", {}))
+    class_res = merge_profiles(neutral_profile(), CLASSES[class_key].get("elemental_res", {}))
+    class_dmg = merge_profiles(neutral_profile(), CLASSES[class_key].get("elemental_dmg", {}))
+    
+    base_res = {}
+    base_dmg = {}
+    for el in ["fire", "water", "thunder", "wind", "earth", "light", "dark"]:
+        base_res[el] = max(0.0, min(2.0, race_res[el] + class_res[el] - 1.0))
+        base_dmg[el] = max(0.0, min(2.0, race_dmg[el] + class_dmg[el] - 1.0))
+
     player = {
         "name": name,
         "race": RACES[race_key]["name"],
@@ -178,6 +205,8 @@ def create_character():
         "skill_cooldowns": {},
         "skill_mastery": {},
         "passive_unlocked": True,
+        "elemental_res": base_res,
+        "elemental_dmg": base_dmg,
     }
 
     save_game(player)

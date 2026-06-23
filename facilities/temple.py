@@ -11,8 +11,14 @@ def temple_menu(player, city_id="solmere"):
         print(f"=== TEMPLE OF {city_id.upper()} ===")
         print(f"Gold: {player.get('gold', 0)} | Time: {format_time(player.get('time_minutes', 480))}")
         
-        if player.get("cursed"):
-            print("\nYou feel a dark curse weighing upon your soul.")
+        # NEW: Check if the player OR any ally has a curse
+        party_cursed = player.get("cursed") or any(
+            ally.get("cursed") or any(d.get("type") == "curse" for d in ally.get("active_debuffs", []))
+            for ally in player.get("allies", [])
+        )
+        
+        if party_cursed:
+            print("\nYou feel a dark curse weighing upon your party.")
         else:
             print("\nYou feel at peace in this sacred place.")
         
@@ -38,8 +44,16 @@ def temple_menu(player, city_id="solmere"):
             advance_time(player, 15)
 
 def remove_curse(player, city_id):
-    if not player.get("cursed"):
-        print("You are not cursed. No need for cleansing.")
+    # NEW: Find which allies are cursed (flag or active_debuffs)
+    cursed_allies = [
+        ally for ally in player.get("allies", [])
+        if ally.get("cursed") or any(d.get("type") == "curse" for d in ally.get("active_debuffs", []))
+    ]
+    is_player_cursed = player.get("cursed")
+
+    # NEW: Check if anyone needs cleansing
+    if not is_player_cursed and not cursed_allies:
+        print("Your party is not cursed. No need for cleansing.")
         input("Press Enter...")
         return
     
@@ -50,13 +64,21 @@ def remove_curse(player, city_id):
         return
     
     player["gold"] -= cost
-    player["cursed"] = False
     
-    if player.get("active_debuffs"):
-        player["active_debuffs"] = [d for d in player["active_debuffs"] if d.get("type") != "curse"]
+    # Cleanse the Player
+    if is_player_cursed:
+        player["cursed"] = False
+        if player.get("active_debuffs"):
+            player["active_debuffs"] = [d for d in player["active_debuffs"] if d.get("type") != "curse"]
+            
+    # Cleanse all affected Allies
+    for ally in cursed_allies:
+        ally["cursed"] = False
+        if ally.get("active_debuffs"):
+            ally["active_debuffs"] = [d for d in ally["active_debuffs"] if d.get("type") != "curse"]
     
-    print("The priestess chants ancient prayers. The dark curse lifts from your body.")
-    print("The ritual is complete. You feel cleansed.")
+    print("The priestess chants ancient prayers. The dark curse lifts from your party.")
+    print("The ritual is complete. You all feel cleansed.")
     input("Press Enter...")
 
 def receive_blessing(player, city_id):

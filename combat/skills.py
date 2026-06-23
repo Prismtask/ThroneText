@@ -305,14 +305,40 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             pass
         return None
 
+    # ── Skill Element Mapping ──
+    SKILL_ELEMENTS = {
+        "mage_fireball": "fire", "mage_frostnova": "water", "mage_meteor": "fire",
+        "mage_overload": "thunder",
+        "pal_strike": "light", "pal_judgment": "light", "pal_consecrate": "light",
+        "pal_avenging": "light",
+        "lck_drain": "dark", "lck_pact": "dark", "lck_soul_fire": "dark",
+        "lck_curse": "dark", "lck_fear": "dark", "lck_empower": "dark",
+        "rog_backstab": "dark", "rog_assassinate": "dark", "rog_shadow_strike": "dark",
+        "rog_venom": "dark", "rog_smoke": "dark",
+        "rng_pierce": "wind", "rng_trueshot": "wind", "rng_rain": "wind",
+        "rng_rapid": "wind", "rng_mark": "wind",
+        "bar_rage": "fire", "bar_berserk": "fire", "bar_bloodlust": "fire",
+        "bar_sunder": "earth", "bar_earth_shatter": "earth", "bar_whirl": "wind",
+        "war_execute": "fire", "war_cleave": "fire", "war_bladestorm": "wind",
+        "war_shield_slam": "earth", "war_battlecry": "fire", "war_second_wind": "earth",
+        "clr_smite": "light", "clr_divine_wrath": "light", "clr_heal": "light",
+        "clr_mass_heal": "light", "clr_shield": "light", "clr_resurrection": "light",
+    }
+
     # ── Damage Helper ──
-    def _calc_dmg(target, power, ignore_armor=False):
+    def _calc_dmg(target, power, ignore_armor=False, element=None):
         armor = 0 if ignore_armor else target.get("con_mod", 0)
         # Apply sunder debuff reduction to armor
         for debuff in target.get("active_debuffs", []):
             if debuff.get("type") == "sunder":
                 armor = max(0, armor - debuff.get("value", 0))
         dmg = max(1, power - armor)
+        # Apply elemental damage if applicable
+        if element is None and skill_id in SKILL_ELEMENTS:
+            element = SKILL_ELEMENTS[skill_id]
+        if element:
+            from combat.elemental import calculate_elemental_damage
+            dmg = calculate_elemental_damage(dmg, player, target, element)
         return dmg
 
     # ── Life Steal Helper ──

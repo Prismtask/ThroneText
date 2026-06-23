@@ -583,7 +583,7 @@ CITIES = {
         "name": "Isle of Glass",
         "biome": "magical",
         "description": "A crystalline island that does not appear on any mundane map. Mages and scholars make pilgrimage here; most never leave.",
-        "services": ["arcane_tower"],
+        "services": ["arcane_tower", "port"],
         "dialogues": {
             "arcane_tower": ISLE_OF_GLASS_ARCANE_TOWER_DIALOGUE,
         },

@@ -17,6 +17,12 @@ def equip_item(player, item):
     if old:
         add_item_to_inventory(player, old)
     print(f"Equipped {item['name']}.")
+    # Recalculate elemental profile
+    from combat.elemental import compute_player_elemental
+    res, dmg = compute_player_elemental(player)
+    player["elemental_res"] = res
+    player["elemental_dmg"] = dmg
+
 
 def unequip_slot(player, slot):
     if slot in player["equipped"] and player["equipped"][slot]:
@@ -24,6 +30,11 @@ def unequip_slot(player, slot):
         player["equipped"][slot] = None
         add_item_to_inventory(player, item)
         print(f"Unequipped {item['name']}.")
+        # Recalculate elemental profile
+        from combat.elemental import compute_player_elemental
+        res, dmg = compute_player_elemental(player)
+        player["elemental_res"] = res
+        player["elemental_dmg"] = dmg
     else:
         print("Nothing equipped in that slot.")
 

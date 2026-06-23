@@ -313,6 +313,8 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
         # Tick skill cooldowns
         from combat.skills import tick_skill_cooldowns
         tick_skill_cooldowns(player)
+        for ally in player.get("allies", []):
+            tick_skill_cooldowns(ally)
 
         # Tick Berserk (Barbarian skill)
         if player.get("berserk_turns", 0) > 0:

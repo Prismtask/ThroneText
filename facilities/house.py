@@ -95,6 +95,32 @@ def _pending_income(player, city_id, house):
     return int(days_passed * base * mult)
 
 
+def get_current_house_allies(player):
+    """Return list of all monster girl allies currently in the active party."""
+    return player.get("allies", [])
+
+
+def get_house_data(player, city_id=None):
+    """Return the list of monster girls in the first house (or specified city)."""
+    if not city_id:
+        city_id = player.get("origin_city", "solmere")
+    house = _get_house(player, city_id)
+    if not house:
+        return []
+    return house.get("monster_girls", [])
+
+
+def save_house_data(player, girls_data, city_id=None):
+    """Save monster girl data back to the house."""
+    if not city_id:
+        city_id = player.get("origin_city", "solmere")
+    if not player.get("houses"):
+        player["houses"] = {}
+    if not player["houses"].get(city_id):
+        player["houses"][city_id] = {"level": 1, "storage": [], "last_income_day": player.get("day", 1)}
+    player["houses"][city_id]["monster_girls"] = girls_data
+
+
 # ── Sub-menus ────────────────────────────────────────────────────────────────
 
 def _house_rest(player, city_id, house):
@@ -302,117 +328,170 @@ def _house_lounge(player, city_id, house):
 
     if not all_girls:
         print("The lounge is quiet... no companions yet.")
-    else:
-        for i, (where, g) in enumerate(all_girls):
-            aff = g.get("affection", 30)
-            status = "💖" if aff >= 80 else "❤️" if aff >= 50 else "😐"
-            ready = " ✓" if aff >= RECRUIT_AFFECTION_THRESHOLD else ""
-            active_tag = " [ACTIVE]" if where == "active" else ""
-            if where == "active":
-                print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — HP: {g['current_hp']}/{g['max_hp']} — {status} Affection: {aff}/100{ready}")
-            else:
-                print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — {status} Affection: {aff}/100{ready}")
+        input("\nPress Enter...")
+        return
 
-    print("\nOptions:")
-    if all_girls:
-        print("1. Talk to a girl")
-        print("2. Give a gift")
-    if girls:
-        print("3. Recruit to party")
-    if allies:
-        print("4. Dismiss all allies back to house")
-    print("5. Back")
+    for i, (where, g) in enumerate(all_girls):
+        aff = g.get("affection", 30)
+        status = "💖" if aff >= 80 else "❤️" if aff >= 50 else "😐"
+        ready = " ✓" if aff >= RECRUIT_AFFECTION_THRESHOLD else ""
+        active_tag = " [ACTIVE]" if where == "active" else ""
+        if where == "active":
+            print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — HP: {g['current_hp']}/{g['max_hp']} — {status} Affection: {aff}/100{ready}")
+        else:
+            print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — {status} Affection: {aff}/100{ready}")
 
-    choice = input("\nChoice: ").strip()
-
-    if choice == "1" and all_girls:
-        try:
-            idx = int(input("Which girl? ")) - 1
-            if 0 <= idx < len(all_girls):
-                where, g = all_girls[idx]
-                gain = random.randint(3, 7)
-                g["affection"] = min(100, g.get("affection", 30) + gain)
-                print(f"You spent quality time with {g['name']}. Affection +{gain}!")
-        except:
-            pass
-
-    elif choice == "2" and all_girls:
-        # Gift giving
-        gifts = [it for it in player.get("inventory", []) if it.get("type") == "gift"]
-        if not gifts:
-            print("You have no gifts.")
-            input("Press Enter...")
+    try:
+        idx = int(input("\nSelect a girl (number) or 0 to go back: ")) - 1
+        if idx < 0 or idx >= len(all_girls):
             return
+    except ValueError:
+        return
 
-        print("\nYour Gifts:")
-        for i, g in enumerate(gifts):
-            print(f"{i+1}. {g['name']}")
+    where, girl = all_girls[idx]
+    girl_key = girl.get("key", "")
+    template = ENEMIES.get(girl_key, {})
+    dialogue = template.get("dialogue", {})
+    aff = girl.get("affection", 30)
 
-        try:
-            gidx = int(input("Choose gift: ")) - 1
-            gift = gifts[gidx]
-            gidx_real = player["inventory"].index(gift)
+    # --- Sub-menu for this girl ---
+    while True:
+        clear_screen()
+        print(f"=== {girl['name']} ===")
+        print(f"  Affection: {aff}/100")
+        print(f"  Status: {'Active' if where == 'active' else 'At home'}")
+        print()
+        print("1. Talk")
+        print("2. Give a gift")
+        if aff >= 60:
+            print("3. Ask for blessing")
+        if aff >= 80:
+            print("4. Share a kiss")
+        if where == "lounge":
+            print("5. Recruit to party")
+        print("0. Back")
 
-            print("\nGive to which girl?")
-            for i, (where, girl) in enumerate(all_girls):
-                print(f"{i+1}. {girl['name']}")
+        choice = input("\nChoice: ").strip()
+        if choice == "0":
+            break
 
-            gidx_girl = int(input("Choice: ")) - 1
-            where, target_girl = all_girls[gidx_girl]
+        elif choice == "1":  # Talk
+            # Determine affection range
+            if aff <= 30:
+                dialog_key = "house_talk_low"
+            elif aff <= 60:
+                dialog_key = "house_talk_mid"
+            elif aff <= 80:
+                dialog_key = "house_talk_high"
+            else:
+                dialog_key = "house_talk_max"
 
-            gift_type = gift.get("gift_type")
-            reaction = get_gift_reaction(target_girl.get("key"), gift_type)
+            line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+            # Replace {name} placeholder if present
+            line = line.format(name=girl['name']) if "{name}" in line else line
+            print("\n" + line)
 
-            target_girl["affection"] = max(0, min(100, target_girl["affection"] + reaction))
-            print(f"You gave {gift['name']} to {target_girl['name']}.")
-            print(f"Reaction: {reaction:+} affection!")
+            # Increase affection
+            gain = random.randint(3, 7)
+            girl["affection"] = min(100, aff + gain)
+            aff = girl["affection"]
+            print(f"\nAffection +{gain} (now {aff}/100)")
+            input("\nPress Enter...")
 
-            player["inventory"].pop(gidx_real)
-        except:
-            print("Gift giving cancelled.")
+        elif choice == "2":  # Gift
+            gifts = [it for it in player.get("inventory", []) if it.get("type") == "gift"]
+            if not gifts:
+                print("You have no gifts.")
+                input("Press Enter...")
+                continue
 
-    elif choice == "3" and girls:
-        try:
-            print("\nRecruit which girl?")
-            for i, girl in enumerate(girls):
-                aff = girl.get("affection", 30)
-                status = "💖" if aff >= 80 else "❤️" if aff >= 50 else "😐"
-                ready = " ✓" if aff >= RECRUIT_AFFECTION_THRESHOLD else ""
-                print(f"  {i+1}. {girl['name']} (Lv {girl['level']}) — {status} Affection: {aff}/100{ready}")
-            idx = int(input("Recruit which girl? ")) - 1
-            if 0 <= idx < len(girls):
-                girl = girls[idx]
-                aff = girl.get("affection", 30)
-                girl_key = girl.get("key", "")
-                template = ENEMIES.get(girl_key, {})
-                dialogue = template.get("dialogue", {})
+            print("\nYour Gifts:")
+            for i, g in enumerate(gifts):
+                print(f"{i+1}. {g['name']}")
+            try:
+                gidx = int(input("Choose gift: ")) - 1
+                if gidx < 0 or gidx >= len(gifts):
+                    print("Invalid gift.")
+                    input("Press Enter...")
+                    continue
+                gift = gifts[gidx]
+                # Remove from inventory
+                idx_in_inv = player["inventory"].index(gift)
+                gift_type = gift.get("gift_type", "unknown")
+                reaction = get_gift_reaction(girl_key, gift_type)
+                player["inventory"].pop(idx_in_inv)
 
-                if aff < RECRUIT_AFFECTION_THRESHOLD:
-                    denied_msg = dialogue.get("recruit_denied",
-                        f"{girl['name']} looks at you uncertainly. 'I don't know you well enough yet...'")
-                    print(denied_msg.format(name=girl['name']))
-                    print(f"  (Need {RECRUIT_AFFECTION_THRESHOLD}+ affection. Currently: {aff}/100)")
+                # Show love/hate dialogue
+                if reaction > 0:
+                    love_line = dialogue.get("house_gift_love", f"{girl['name']} beams with joy!")
+                    print(love_line.format(name=girl['name']) if "{name}" in love_line else love_line)
+                elif reaction < 0:
+                    hate_line = dialogue.get("house_gift_hate", f"{girl['name']} sighs, disappointed.")
+                    print(hate_line.format(name=girl['name']) if "{name}" in hate_line else hate_line)
                 else:
-                    accepted_msg = dialogue.get("recruit_accepted",
-                        f"{girl['name']} smiles warmly. 'I'll fight beside you!'")
-                    print(accepted_msg.format(name=girl['name']))
-                    print()
-                    from combat.ally import recruit_ally_from_house
-                    ally, msg = recruit_ally_from_house(player, girl, house)
-                    print(msg)
-                    if ally:
-                        print(f"{ally['name']}'s stats:")
-                        print(f"  HP: {ally['max_hp']}")
-                        print(f"  STR: {ally['attributes']['Strength']}  CON: {ally['attributes']['Constitution']}  DEX: {ally['attributes']['Dexterity']}")
-        except:
-            pass
+                    print(f"{girl['name']} shrugs indifferently.")
 
-    elif choice == "4" and allies:
-        from combat.ally import dismiss_allies_back_to_house
-        dismiss_allies_back_to_house(player)
-        print("All allies have returned to the house.")
+                # Apply reaction
+                old_aff = aff
+                girl["affection"] = max(0, min(100, aff + reaction))
+                aff = girl["affection"]
+                print(f"Reaction: {reaction:+} affection (now {aff}/100)")
+                input("\nPress Enter...")
+            except (ValueError, IndexError):
+                print("Invalid choice.")
+                input("Press Enter...")
 
-    input("\nPress Enter...")
+        elif choice == "3" and aff >= 60:  # Blessing
+            buff_line = dialogue.get("house_buff", f"{girl['name']} grants you a blessing.")
+            print(buff_line.format(name=girl['name']) if "{name}" in buff_line else buff_line)
+            # Apply a buff: +1 all stats for 1 floor
+            player.setdefault("active_buffs", [])
+            player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "girl_blessing"]
+            player["active_buffs"].append({
+                "type": "girl_blessing",
+                "stat": "all",
+                "value": 1,
+                "remaining": 1,
+            })
+            print("You feel a warm glow – +1 to all stats for 1 floor.")
+            input("\nPress Enter...")
+
+        elif choice == "4" and aff >= 80:  # Kiss
+            kiss_line = dialogue.get("house_bond_kiss", f"{girl['name']} kisses you tenderly.")
+            print(kiss_line.format(name=girl['name']) if "{name}" in kiss_line else kiss_line)
+            # Heal and boost affection
+            player["current_hp"] = min(player["current_hp"] + 20, player_max_hp(player))
+            gain = random.randint(5, 10)
+            girl["affection"] = min(100, aff + gain)
+            aff = girl["affection"]
+            print(f"Affection +{gain} (now {aff}/100). You feel renewed (healed 20 HP).")
+            input("\nPress Enter...")
+
+        elif choice == "5" and where == "lounge":  # Recruit
+            aff = girl.get("affection", 30)
+            if aff < RECRUIT_AFFECTION_THRESHOLD:
+                denied_msg = dialogue.get("recruit_denied",
+                    f"{girl['name']} looks at you uncertainly. 'I don't know you well enough yet...'")
+                print(denied_msg.format(name=girl['name']))
+                print(f"  (Need {RECRUIT_AFFECTION_THRESHOLD}+ affection. Currently: {aff}/100)")
+                input("\nPress Enter...")
+            else:
+                accepted_msg = dialogue.get("recruit_accepted",
+                    f"{girl['name']} smiles warmly. 'I'll fight beside you!'")
+                print(accepted_msg.format(name=girl['name']))
+                from combat.ally import recruit_ally_from_house
+                ally, msg = recruit_ally_from_house(player, girl, house)
+                print(msg)
+                if ally:
+                    print(f"{ally['name']}'s stats:")
+                    print(f"  HP: {ally['max_hp']}")
+                    print(f"  STR: {ally['attributes']['Strength']}  CON: {ally['attributes']['Constitution']}  DEX: {ally['attributes']['Dexterity']}")
+                input("\nPress Enter...")
+                break  # after recruitment, return to girl list
+
+        else:
+            print("Invalid option.")
+            input("Press Enter...")
 
 def get_gift_reaction(girl_key, gift_type):
     """Load personalized gift reactions from monster_girls.yaml"""

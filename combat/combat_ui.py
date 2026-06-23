@@ -118,6 +118,17 @@ def _get_entity_buff_tags(entity):
         if tag not in statuses:
             statuses.append(tag)
 
+    # Elemental tag: show dominant element if dmg > 1.1 for player/ally, or highest res for enemy
+    e_dmg = entity.get("elemental_dmg", {})
+    best_el = None
+    best_val = 1.1
+    for el, val in e_dmg.items():
+        if val > best_val:
+            best_val = val
+            best_el = el
+    if best_el:
+        statuses.append(f"{best_el[:3].upper()}")
+
     return f" [{' '.join(statuses)}]" if statuses else ""
 
 

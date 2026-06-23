@@ -98,9 +98,14 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
         dmg = random.randint(4, 10) + scaling_val - target["con_mod"]
         dmg = max(0, dmg)
+
+        # Apply elemental damage
+        from combat.elemental import calculate_elemental_damage, get_attack_element
+        element = get_attack_element(player, equipped_weapon)
+        final_dmg = calculate_elemental_damage(dmg, player, target, element)
         if on_hit:
             on_hit(target, enemies) 
-        target["hp"] -= dmg
+        target["hp"] -= final_dmg
 
         verb = "strike"
         if "Dexterity" in scaling_stats:
@@ -108,7 +113,14 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         elif "Learning" in scaling_stats:
             verb = "blast"
 
-        print(f"{player['name']} {verb} {target['name']} for {dmg} damage!")
+        # Elemental flavor text
+        elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
+                          "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
+        tag = elemental_tags.get(element, "")
+        if tag:
+            print(f"{player['name']} {verb} {target['name']} for {final_dmg} damage! {tag}")
+        else:
+            print(f"{player['name']} {verb} {target['name']} for {final_dmg} damage!")
         if target["hp"] <= 0:
             print(f"{player['name']} defeated {target['name']}!")
             if on_kill:

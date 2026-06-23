@@ -2,7 +2,6 @@
 import random
 from resources.items import ITEM_RARITY
 from combat.stats import get_effective_attribute
-from resources.enemies import MONSTER_GIRL_MESSAGES
 
 def is_monster_girl(enemy):
     """Check the explicit monster_girl flag set in monster_girls.yaml."""
@@ -10,19 +9,15 @@ def is_monster_girl(enemy):
 
 
 def get_capture_message(enemy, player):
-    """Personalized capture message from monster_girls.yaml."""
-    key = enemy.get("key")
-    
-    # Try to load from monster_girls.yaml capture_messages section
-    try:
-        if key in MONSTER_GIRL_MESSAGES:
-            template = MONSTER_GIRL_MESSAGES[key]
-            return template.format(
-                name=enemy.get("name", "the girl"),
-                player=player.get("name", "Adventurer")
-            )
-    except ImportError:
-        pass
+    """Personalized capture message from the enemy's dialogue block."""
+    dialogue = enemy.get("dialogue", {})
+    template = dialogue.get("capture")
+
+    if template:
+        return template.format(
+            name=enemy.get("name", "the girl"),
+            player=player.get("name", "Adventurer")
+        )
 
     # Fallback
     return f"{enemy.get('name', 'The creature')} is captured and gently bound by your net!"

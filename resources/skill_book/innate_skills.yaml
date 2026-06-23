@@ -1,0 +1,473 @@
+# ============================================================================
+# INNATE SKILLS FOR MONSTER GIRLS
+# ============================================================================
+
+innate_skills:
+  goblin_girl:
+    - goblin_dart
+    - goblin_evasion
+  harpy_scout:
+    - harpy_swoop
+    - harpy_cry
+  alraune_fledger:
+    - root_strike
+    - nature_embrace
+  kobold_tinkerer:
+    - gadget_explosion
+    - tinker_enhancement
+  dryad_protector:
+    - entangle
+    - forest_shield
+  ghost_maid:
+    - spectral_strike
+    - phantom_barrier
+  centaur_scout:
+    - charge
+    - hoof_stomp
+  moth_girl_flutterer:
+    - flutter_strike
+    - dust_cloud
+  slime_girl:
+    - acidic_blob
+    - slime_absorption
+  lamia_constrictor:
+    - constrict
+    - venom_fang
+  lizard_queen:
+    - royal_slash
+    - regenerate_scale
+  mimic_girl:
+    - surprise_strike
+    - mimic_form
+  umbral_weaver:
+    - shadow_strike
+    - web_trap
+  winter_fairy:
+    - frost_bolt
+    - ice_shield
+  holstaur_brawler:
+    - mighty_punch
+    - earthen_stomp
+  gargoyle_watcher:
+    - stone_fist
+    - stone_skin
+  vampire_seductress:
+    - blood_drain
+    - seductive_charm
+  yuki_onna:
+    - blizzard
+    - frozen_heart
+  amazon_warrior:
+    - spear_thrust
+    - warrior_stance
+  banshee_wailer:
+    - wail_of_sorrow
+    - death_shriek
+  neko_ninja:
+    - shadow_clone
+    - ninja_strike
+  arachne_weaver:
+    - web_throw
+    - spider_dance
+
+# ============================================================================
+# INNATE SKILL DEFINITIONS
+# ============================================================================
+
+innate_skill_defs:
+  goblin_dart:
+    name: Goblin Dart
+    description: Quick dart attack with a 50% chance to apply poison.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 6
+    poison_damage: 2
+    poison_duration: 3
+  goblin_evasion:
+    name: Goblin Evasion
+    description: Dodge incoming attacks with Goblin agility.
+    category: defensive
+    cooldown: 3
+    target: self
+    effect:
+      type: evasion
+      value: 0.6
+      duration: 2
+  harpy_swoop:
+    name: Harpy Swoop
+    description: Dive down and strike an enemy.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 10
+  harpy_cry:
+    name: Harpy Cry
+    description: Screech loudly, damaging all enemies.
+    category: offensive
+    cooldown: 3
+    target: enemies
+    power_type: cha
+    base_power: 8
+  root_strike:
+    name: Root Strike
+    description: Attack with magical roots.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: wis
+    base_power: 9
+  nature_embrace:
+    name: Nature's Embrace
+    description: Heal self and nearby allies moderately.
+    category: support
+    cooldown: 4
+    target: all_allies
+    power_type: wis
+    base_power: 12
+  gadget_explosion:
+    name: Gadget Explosion
+    description: Detonate a gadget for massive damage to one target.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: ler
+    base_power: 14
+  tinker_enhancement:
+    name: Tinker Enhancement
+    description: Enhance an ally's next action for increased power.
+    category: support
+    cooldown: 4
+    target: ally_or_self
+    effect:
+      type: power_buff
+      value: 0.25
+      duration: 1
+  entangle:
+    name: Entangle
+    description: Bind enemies in vines.
+    category: support
+    cooldown: 3
+    target: enemies
+    effect:
+      type: slow
+      duration: 3
+  forest_shield:
+    name: Forest Shield
+    description: Protect allies with nature's barrier.
+    category: defensive
+    cooldown: 4
+    target: all_allies
+    effect:
+      type: damage_reduction
+      value: 0.2
+      duration: 2
+  spectral_strike:
+    name: Spectral Strike
+    description: Pass through defenses to strike an enemy.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: wis
+    base_power: 10
+    ignore_armor: true
+  phantom_barrier:
+    name: Phantom Barrier
+    description: Create a protective barrier around an ally.
+    category: defensive
+    cooldown: 3
+    target: ally_or_self
+    effect:
+      type: damage_reduction
+      value: 0.35
+      duration: 2
+  charge:
+    name: Charge
+    description: Rush forward and strike an enemy.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 12
+  hoof_stomp:
+    name: Hoof Stomp
+    description: Stomp the ground, hitting all enemies.
+    category: offensive
+    cooldown: 3
+    target: enemies
+    power_type: str
+    base_power: 9
+  flutter_strike:
+    name: Flutter Strike
+    description: Delicate yet damaging strike.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 8
+  dust_cloud:
+    name: Dust Cloud
+    description: Blind enemies with magical dust.
+    category: support
+    cooldown: 3
+    target: enemies
+    effect:
+      type: blind
+      value: 0.5
+      duration: 2
+  acidic_blob:
+    name: Acidic Blob
+    description: Throw acidic slime at an enemy.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: con
+    base_power: 8
+  slime_absorption:
+    name: Slime Absorption
+    description: Absorb damage as health.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: damage_absorption
+      value: 0.4
+      duration: 2
+  constrict:
+    name: Constrict
+    description: Wrap around an enemy, immobilizing them.
+    category: support
+    cooldown: 3
+    target: enemy
+    effect:
+      type: stun
+      duration: 2
+  venom_fang:
+    name: Venom Fang
+    description: Strike with venomous fangs.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 9
+    poison_damage: 3
+    poison_duration: 4
+  royal_slash:
+    name: Royal Slash
+    description: A majestic and powerful slash.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: str
+    base_power: 13
+  regenerate_scale:
+    name: Regenerate Scale
+    description: Restore health through scale regeneration.
+    category: support
+    cooldown: 4
+    target: self
+    effect:
+      type: regen
+      value: 0.15
+      duration: 3
+  surprise_strike:
+    name: Surprise Strike
+    description: Strike when least expected.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: str
+    base_power: 11
+    guaranteed_crit: true
+  mimic_form:
+    name: Mimic Form
+    description: Temporarily mimic an ally's form for defense.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.3
+      duration: 2
+  shadow_strike:
+    name: Shadow Strike
+    description: Strike from darkness.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 10
+    guaranteed_crit: true
+  web_trap:
+    name: Web Trap
+    description: Trap enemies in webs.
+    category: support
+    cooldown: 3
+    target: enemies
+    effect:
+      type: slow
+      duration: 3
+  frost_bolt:
+    name: Frost Bolt
+    description: Fire a bolt of freezing energy.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: ler
+    base_power: 10
+  ice_shield:
+    name: Ice Shield
+    description: Create a shield of ice.
+    category: defensive
+    cooldown: 3
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.3
+      duration: 2
+  mighty_punch:
+    name: Mighty Punch
+    description: A powerful physical punch.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: str
+    base_power: 14
+  earthen_stomp:
+    name: Earthen Stomp
+    description: Stomp with earthen power.
+    category: offensive
+    cooldown: 3
+    target: enemies
+    power_type: str
+    base_power: 10
+  stone_fist:
+    name: Stone Fist
+    description: Strike with fists of stone.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: str
+    base_power: 12
+  stone_skin:
+    name: Stone Skin
+    description: Harden your skin like stone.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.4
+      duration: 2
+  blood_drain:
+    name: Blood Drain
+    description: Drain blood to heal yourself.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: wis
+    base_power: 10
+    effect:
+      type: life_steal
+      value: 0.5
+  seductive_charm:
+    name: Seductive Charm
+    description: Charm an enemy to reduce their damage.
+    category: support
+    cooldown: 4
+    target: enemy
+    effect:
+      type: stat_debuff
+      stat: Strength
+      value: 3
+      duration: 2
+  blizzard:
+    name: Blizzard
+    description: Unleash a blizzard on all enemies.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: ler
+    base_power: 13
+  frozen_heart:
+    name: Frozen Heart
+    description: Freeze your heart for power and protection.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.35
+      duration: 3
+  spear_thrust:
+    name: Spear Thrust
+    description: A precise spear thrust.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: str
+    base_power: 12
+  warrior_stance:
+    name: Warrior Stance
+    description: Assume a defensive warrior stance.
+    category: defensive
+    cooldown: 3
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.25
+      duration: 3
+  wail_of_sorrow:
+    name: Wail of Sorrow
+    description: A mournful wail that damages all enemies.
+    category: offensive
+    cooldown: 3
+    target: enemies
+    power_type: cha
+    base_power: 11
+  death_shriek:
+    name: Death Shriek
+    description: Unleash a shriek of death.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: cha
+    base_power: 13
+  shadow_clone:
+    name: Shadow Clone
+    description: Create a shadow clone to confuse enemies.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: evasion
+      value: 0.4
+      duration: 2
+  ninja_strike:
+    name: Ninja Strike
+    description: A swift ninja strike.
+    category: offensive
+    cooldown: 1
+    target: enemy
+    power_type: dex
+    base_power: 9
+  web_throw:
+    name: Web Throw
+    description: Throw webs at enemies.
+    category: offensive
+    cooldown: 2
+    target: enemies
+    power_type: dex
+    base_power: 7
+  spider_dance:
+    name: Spider Dance
+    description: Perform a hypnotic spider dance.
+    category: support
+    cooldown: 4
+    target: enemies
+    effect:
+      type: confusion
+      value: 0.3
+      duration: 2

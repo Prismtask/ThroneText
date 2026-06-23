@@ -26,13 +26,39 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     block = p_con + (5 if defending else 0)
     block = int(block * armor_mult)
 
-    enemy_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus - block
-    enemy_dmg = max(0, enemy_dmg)
+    base_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus - block
+    base_dmg = max(0, base_dmg)
+
+    # Apply elemental damage based on enemy's elemental profile
+    from combat.elemental import calculate_elemental_damage, ELEMENTS
+    enemy_dmg = base_dmg
+    element = None
+    if base_dmg > 0:
+        e_dmg_profile = enemy.get("elemental_dmg", {})
+        best_el = None
+        best_val = 1.0
+        for el in ELEMENTS:
+            val = e_dmg_profile.get(el, 1.0)
+            if val > best_val:
+                best_val = val
+                best_el = el
+        if best_el:
+            element = best_el
+            enemy_dmg = calculate_elemental_damage(base_dmg, enemy, player, element)
+        else:
+            enemy_dmg = base_dmg
 
     player["current_hp"] -= enemy_dmg
 
+    elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
+                      "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
+    tag = elemental_tags.get(element, "")
+
     if enemy_dmg > 0:
-        print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!")
+        if tag:
+            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage! {tag}")
+        else:
+            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!")
     else:
         print(f"The {enemy['name']} attacks but {player['name']} blocks all incoming damage!")
 

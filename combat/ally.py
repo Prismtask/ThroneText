@@ -6,16 +6,16 @@ from resources.enemies import ENEMIES, ENEMY_RACES
 from resources.races_classes import ATTRIBUTES
 from inventory import get_total_equipment_mods
 
-ALLY_STAT_MULTIPLIER = 0.75  # Allies are 75% as strong as original enemies
+ALLY_STAT_MULTIPLIER = 0.8   # Allies are 80% as strong as original enemies (base)
+ALLY_LEVEL_STAT_BONUS = 0.15 # Allies gain 0.15 stat per level above level 1
 ALLY_HP_MULTIPLIER = 0.70    # Allies have 70% of original enemy HP
 
 
 def ally_max_hp(ally):
-    """Compute ally max HP based on Constitution, level, and level-up bonuses."""
+    """Compute ally max HP based on Constitution and level-up bonuses (same formula as player)."""
     con = ally["attributes"]["Constitution"]
-    level = ally.get("level", 1)
     bonus = ally.get("level_hp_bonus", 0)
-    return int(15 + con * 3 + level * 2 + bonus)
+    return int(15 + con * 3 + bonus)
 
 
 def create_ally_from_girl(girl):
@@ -28,10 +28,12 @@ def create_ally_from_girl(girl):
     template = ENEMIES.get(enemy_key)
     if not template:
         # Fallback for missing template
+        from combat.elemental import neutral_profile
+        level = girl.get("level", 1)
         return {
             "name": girl.get("name", "Companion"),
             "key": enemy_key or "unknown",
-            "level": girl.get("level", 1),
+            "level": level,
             "attributes": {attr: 1 for attr in ATTRIBUTES},
             "current_hp": 30,
             "max_hp": 30,
@@ -42,25 +44,28 @@ def create_ally_from_girl(girl):
             "slowed": False,
             "stunned": False,
             "frozen": False,
+            "cursed": False,
+            "dreaded": False,
+            "silenced": False,
             "is_ally": True,
             "affection": girl.get("affection", 20),
             "exp": girl.get("exp", 0),
-            "level_hp_bonus": girl.get("level_hp_bonus", 0),
+            "level_hp_bonus": girl.get("level_hp_bonus", max(0, (level - 1) * 4)),
+            "elemental_res": neutral_profile(),
+            "elemental_dmg": neutral_profile(),
         }
 
     attrs = compute_enemy_attributes(enemy_key)
+    level = girl.get("level", 1)
 
-    # Scale down attributes for balance (companions shouldn't be as strong as enemies)
+    # Scale down attributes for balance with level-based scaling
+    # Formula: base_stat * 0.8 + (level - 1) * 0.15, minimum 1
     scaled_attrs = {}
     for attr in ATTRIBUTES:
         base = attrs.get(attr, 0)
-        scaled = max(0, int(base * ALLY_STAT_MULTIPLIER))
+        level_bonus = (level - 1) * ALLY_LEVEL_STAT_BONUS
+        scaled = max(1, int(base * ALLY_STAT_MULTIPLIER + level_bonus))
         scaled_attrs[attr] = scaled
-
-    # Ensure minimum stats so allies aren't useless
-    for attr in ATTRIBUTES:
-        if scaled_attrs[attr] < 1:
-            scaled_attrs[attr] = 1
 
     ally = {
         "name": girl.get("name", template["name"]),
@@ -74,16 +79,36 @@ def create_ally_from_girl(girl):
         "slowed": False,
         "stunned": False,
         "frozen": False,
+        "cursed": False,
+        "dreaded": False,
+        "silenced": False,
         "is_ally": True,
         "affection": girl.get("affection", 30),
         "monster_girl": template.get("monster_girl", True),
         "exp": girl.get("exp", 0),
-        "level_hp_bonus": girl.get("level_hp_bonus", 0),
+        "level_hp_bonus": girl.get("level_hp_bonus", max(0, (girl.get("level", 1) - 1) * 4)),
+        # Skill system fields
+        "passive_skill": girl.get("passive_skill", None),  # Race-based passive
+        "innate_skills": girl.get("innate_skills", []),    # 2 innate skills unique to girl
+        "learned_skills": girl.get("learned_skills", []),  # List of learned skill_ids
+        "learning": girl.get("learning", None),             # Current skill being learned: {"skill_id": "...", "exp": 0, "exp_needed": 300}
+        "skill_cooldowns": girl.get("skill_cooldowns", {}), # skill_id -> cooldown_remaining
+        "skill_mastery": girl.get("skill_mastery", {}),     # skill_id -> exp_count (for mastery levels)
     }
 
     # Compute HP based on scaled Constitution + level
     ally["max_hp"] = ally_max_hp(ally)
     ally["current_hp"] = ally["max_hp"]
+
+    # Add elemental stats from race
+    from combat.elemental import compute_ally_elemental
+    e_res, e_dmg = compute_ally_elemental(ally)
+    ally["elemental_res"] = e_res
+    ally["elemental_dmg"] = e_dmg
+    
+    # Initialize skill system
+    from combat.ally_skills import initialize_ally_skills
+    initialize_ally_skills(ally, enemy_key, template.get("race"))
 
     return ally
 
@@ -186,6 +211,11 @@ def equip_ally_item(ally, item, player):
     # Remove item from player inventory
     if item in player.get("inventory", []):
         player["inventory"].remove(item)
+    # Recalculate ally elemental profile
+    from combat.elemental import compute_ally_elemental
+    res, dmg = compute_ally_elemental(ally)
+    ally["elemental_res"] = res
+    ally["elemental_dmg"] = dmg
     return f"Equipped {item['name']} on {ally['name']}."
 
 
@@ -196,6 +226,11 @@ def unequip_ally_slot(ally, slot, player):
         item = ally["equipped"][slot]
         ally["equipped"][slot] = None
         add_item_to_inventory(player, item)
+        # Recalculate ally elemental profile
+        from combat.elemental import compute_ally_elemental
+        res, dmg = compute_ally_elemental(ally)
+        ally["elemental_res"] = res
+        ally["elemental_dmg"] = dmg
         return f"Unequipped {item['name']} from {ally['name']}."
     return "Nothing equipped in that slot."
 
@@ -263,6 +298,12 @@ def _ally_action_menu(ally, player, enemies):
     actions.append(('a', 'Attack'))
     actions.append(('d', 'Defend'))
 
+    # Skills – innate + learned, off cooldown
+    from combat.ally_skills import get_usable_skills_in_combat
+    usable_skills = get_usable_skills_in_combat(ally)
+    for idx, (sid, sdef) in enumerate(usable_skills):
+        actions.append((str(idx + 1), sdef['name']))
+
     # Use item - check if player has usable items
     combat_items = [
         item for item in player.get("inventory", [])
@@ -298,6 +339,33 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     while action not in valid_actions:
         print(f"  Invalid choice. Available: {', '.join(valid_actions)}")
         action = input("  Choose: ").strip().lower()
+
+    # ----- SKILLS (numbered 1-9) -----
+    if action.isdigit():
+        from combat.ally_skills import get_usable_skills_in_combat, execute_ally_skill, format_ally_mastery_label
+        if is_silenced(ally):
+            print(f"  {ally['name']} is silenced and cannot use skills!")
+            return "retry"
+
+        skill_idx = int(action) - 1
+        usable_skills = get_usable_skills_in_combat(ally)
+        if skill_idx < 0 or skill_idx >= len(usable_skills):
+            print("  Invalid skill choice.")
+            return "retry"
+
+        skill_id, skill_def = usable_skills[skill_idx]
+        print(f"\n  >> {skill_def['name']}: {skill_def['description']}")
+        mastery_label = format_ally_mastery_label(skill_id, ally)
+        if mastery_label:
+            print(f"      Mastery: {mastery_label}")
+        input("  Press Enter to use it...")
+
+        all_allies = player.get("allies", [])
+        msg, victory = execute_ally_skill(ally, player, skill_id, skill_def, enemies, all_allies)
+        print(f"  {msg}")
+        if victory:
+            return "victory"
+        return "continue"
 
     # ----- ATTACK -----
     if action == "a":
@@ -345,7 +413,15 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
 
         dmg = random.randint(3, 8) + scaling_val - target["con_mod"]
         dmg = max(0, dmg)
-        target["hp"] -= dmg
+
+        # Apply elemental damage
+        from combat.elemental import calculate_elemental_damage
+        element = None
+        if equipped_weapon and "elemental_dmg" in equipped_weapon:
+            from combat.elemental import get_attack_element
+            element = get_attack_element(ally, equipped_weapon)
+        final_dmg = calculate_elemental_damage(dmg, ally, target, element)
+        target["hp"] -= final_dmg
 
         verb = "strikes"
         if "Dexterity" in scaling_stats:
@@ -353,7 +429,14 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         elif "Learning" in scaling_stats:
             verb = "blasts"
 
-        print(f"  {ally['name']} {verb} {target['name']} for {dmg} damage!")
+        # Elemental flavor text
+        elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
+                          "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
+        tag = elemental_tags.get(element, "")
+        if tag:
+            print(f"  {ally['name']} {verb} {target['name']} for {final_dmg} damage! {tag}")
+        else:
+            print(f"  {ally['name']} {verb} {target['name']} for {final_dmg} damage!")
         if target["hp"] <= 0:
             print(f"  {ally['name']} defeated {target['name']}!")
         return "continue"
@@ -361,6 +444,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     # ----- DEFEND -----
     elif action == "d":
         print(f"  {ally['name']} braces for impact, raising their guard.")
+        ally["defending_this_turn"] = True
         return "continue"
 
     # ----- USE ITEM -----

@@ -6,6 +6,7 @@ from combat.enemy_ai import enemy_attack
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import print_combat_hud, print_superboss_header, print_player_mini_hud, format_enemy_status_line
 from combat.status_effects import tick_player_debuffs, tick_player_buffs
+from combat.skills import tick_skill_cooldowns
 from combat.ally import get_alive_allies, compute_ally_stats, handle_ally_turn
 from utils import clear_screen
 import random
@@ -210,7 +211,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     if new_def:
                         defending = True
                 elif result == "victory":
-                    return "victory"
+                    break
                 elif result in ("fled", "dead"):
                     return result
 
@@ -226,9 +227,9 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
                 if result == "continue":
                     if not prune_dead(enemies):
-                        return "victory"
+                        break
                 elif result == "victory":
-                    return "victory"
+                    break
                 elif result == "dead":
                     pass  # Ally death doesn't end combat
 
@@ -308,6 +309,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             if player["abyss_triple_actions"] == 0:
                 print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
 
+
+        tick_skill_cooldowns(player)
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             print(m)

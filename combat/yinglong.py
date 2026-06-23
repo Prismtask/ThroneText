@@ -1,4 +1,4 @@
-# yinglong.py – Heaven-Banished Dragon Yinglong super boss encounter
+# yinglong_3.py – Heaven-Banished Dragon Yinglong super boss encounter
 #
 # MECHANIC OVERVIEW:
 # ─────────────────
@@ -104,7 +104,6 @@ def _tick_shattered_heaven(player):
                 return True
     return False
 
-
 def _make_pillar():
     return {
         "key":     PILLAR_KEY,
@@ -119,7 +118,6 @@ def _make_pillar():
         "active_debuffs": [],
     }
 
-
 def _make_wedge():
     return {
         "key":     WEDGE_KEY,
@@ -133,7 +131,6 @@ def _make_wedge():
         "multiplier": 1.0,
         "active_debuffs": [],
     }
-
 
 def _make_dragonkin_minion(player, stat_mult):
     key = random.choice(DRAGON_MINION_POOL)
@@ -184,10 +181,12 @@ def _inner_dragon_combat(player):
     def inner_action_override(ctx):
         action = input("Choose: ").strip().lower()
         ctx["defending_this_turn"] = (action == "d")
-        ctx["turn_counter"] += 1
         return action
 
     def inner_post_round(ctx, elist):
+        if all(e["hp"] <= 0 for e in elist):
+            return
+        ctx["turn_counter"] += 1
         next_trigger = 3 * (ctx["wedge_activations"] + 1)
         if ctx["wedge_activations"] < 2 and ctx["turn_counter"] >= next_trigger:
             ctx["wedge_activations"] += 1
@@ -209,6 +208,14 @@ def _inner_dragon_combat(player):
                 wedge_dmg = int(max_hp_player * WEDGE_HP_DMG_PCT)
                 player["current_hp"] -= wedge_dmg
                 print(f"Pure divine force — {wedge_dmg} unblockable damage to {player['name']}!")
+                for ally in player.get("allies", []):
+                    if ally.get("current_hp", 0) > 0:
+                        if ally.pop("defending_this_turn", False):
+                            print(f"{ally['name']} DEFENDED — the Wedge's energy is deflected from them!")
+                        else:
+                            ally_dmg = int(ally["max_hp"] * WEDGE_HP_DMG_PCT)
+                            ally["current_hp"] -= ally_dmg
+                            print(f"Pure divine force — {ally_dmg} unblockable damage to {ally['name']}!")
                 if player["current_hp"] <= 0:
                     print(f"{player['name']} is crushed by Heaven's weight inside the Dragon!")
                     return "dead"
@@ -245,9 +252,46 @@ def _inner_dragon_combat(player):
 # ═══════════════════════════════════════════════════════════════════
 
 def combat_yinglong(player, floor=None):
-    boss = enemy_stats(BOSS_KEY, player)
+    # ── CUSTOM HOOKS & IMMORTALITY IMPLEMENTATION ───────────────
+    class ImmortalDragonDict(dict):
+        def __setitem__(self, key, value):
+            if key == "hp":
+                max_hp = self.get("max_hp_total")
+                if max_hp is None:
+                    max_hp = self.get("hp", 1000)
+                    self["max_hp_total"] = max_hp
+                
+                lock_threshold = int(max_hp * 0.20)
+                
+                # If Phase 4 is locked, clamp health to the floor threshold
+                if self.get("phase_4_locked"):
+                    if not self.get("_allow_hp_drop"):
+                        current_threshold = self.get("hp_lock_threshold", lock_threshold)
+                        if value < current_threshold:
+                            value = current_threshold
+                else:
+                    # Automatically trigger Phase 4 locking when hitting <= 20% HP
+                    if value <= lock_threshold:
+                        value = lock_threshold
+                        self["phase_4_locked"] = True
+                        self["hp_lock_threshold"] = lock_threshold
+            super().__setitem__(key, value)
+
+    class OneHitWedgeDict(dict):
+        def __setitem__(self, key, value):
+            if key == "hp":
+                # If its HP drops at all, instantly snap it to 0 (1-hit kill rule)
+                if value < self.get("hp", 1):
+                    value = 0
+            super().__setitem__(key, value)
+
+    # Initialize stats and wrap Yinglong in the Immortal Dictionary subclass
+    base_boss_stats = enemy_stats(BOSS_KEY, player)
+    boss = ImmortalDragonDict(base_boss_stats)
     boss["max_hp"] = boss["hp"]
-    boss["base_str_mod"] = boss["str_mod"]
+    boss["max_hp_total"] = boss["hp"]
+    boss["base_str_mod"] = boss.get("str_mod", 0)
+    
     enemies = [boss]
 
     print("\n" + "═" * 60)
@@ -272,15 +316,26 @@ def combat_yinglong(player, floor=None):
         "bonus_dmg_next_turn":  False,
     }
 
-    # ── Player Hit Hook (Immortality) ───────────────────────────────
+    # ── Player Hit Hook (Immortality & Bonus Damage) ────────────────
     def on_player_hit_hook(target, elist, ctx):
-        """Phase 4: Yinglong is completely immune to normal attacks while Wedge is active."""
         if not _is_boss(target):
             return
+            
         if ctx.get("immortal") and ctx.get("wedge_active"):
-            # Removed the target["hp"] reset line
             print("\n✦ Yinglong's divine immortality holds firm — it takes no damage!")
             return
+            
+        # Dynamically apply bonus deflected Wedge true damage directly to health pool
+        if ctx.get("bonus_dmg_next_turn"):
+            bonus_damage = int(player_max_hp(player) * 0.20)
+            
+            # Briefly disable immortality limits if present to allow bonus pure damage
+            target["_allow_hp_drop"] = True
+            target["hp"] -= bonus_damage
+            target["_allow_hp_drop"] = False
+            
+            print(f"\n⚡ Deflected Wedge energy surges! +{bonus_damage} bonus pure damage delivered!")
+            ctx["bonus_dmg_next_turn"] = False
 
     # ── Pre-player hook ─────────────────────────────────────────────
     def pre_player_hook(ctx, elist):
@@ -383,6 +438,26 @@ def combat_yinglong(player, floor=None):
         return action
 
     def on_kill_hook(target, elist, ctx):
+        # Handle the custom Phase 4 Wedge destruction backlash
+        if target.get("key") == WEDGE_KEY or target.get("name") == "Heaven Pinning Wedge":
+            b = next((e for e in elist if _is_boss(e)), None)
+            if b:
+                b["_allow_hp_drop"] = True
+                backlash_dmg = int(b["max_hp_total"] * WEDGE_BOUNCE_PCT)
+                b["hp"] -= backlash_dmg
+                b["hp_lock_threshold"] = b["hp"] # Update the locked floor threshold
+                b["_allow_hp_drop"] = False
+                
+                ctx["immortal"] = False
+                ctx["wedge_active"] = False
+                b["str_mod"] = b["base_str_mod"]
+                
+                print("\n" + "✦" * 55)
+                print(f"💥 The Heaven Pinning Wedge shatters! Backlash deals {backlash_dmg} true damage to Yinglong!")
+                print(f"🐉 Yinglong's immortality SHATTERS! HP forced down to {b['hp']}/{b['max_hp_total']}!")
+                print("✦" * 55)
+            return
+
         if _is_pillar(target):
             ctx["pillar_active"] = False
             result = _apply_shattered_heaven(player, turns=3)
@@ -391,20 +466,6 @@ def combat_yinglong(player, floor=None):
                 print("SHATTERED HEAVEN — you deal full damage to Yinglong for 3 turns!")
             else:
                 print("SHATTERED HEAVEN refreshed — full damage for 3 more turns!")
-
-        elif _is_wedge(target):
-            b = next((e for e in elist if _is_boss(e)), None)
-            if b:
-                bounce_dmg = int(b["max_hp"] * WEDGE_BOUNCE_PCT)
-                b["hp"] = max(0, b["hp"] - bounce_dmg)
-                ctx["immortal"] = False
-                ctx["wedge_active"] = False
-                b["str_mod"] = b["base_str_mod"]
-                print("\n" + "✦" * 55)
-                print(f"The Heaven Pinning Wedge DETONATES against Yinglong!")
-                print(f"⚡ {bounce_dmg} TRUE DAMAGE ricochets into the Dragon!")
-                print("Yinglong's immortality SHATTERS!")
-                print("✦" * 55)
 
     def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
         if _is_pillar(enemy):
@@ -446,37 +507,52 @@ def combat_yinglong(player, floor=None):
                 wedge_dmg = int(max_hp * WEDGE_HP_DMG_PCT)
                 player["current_hp"] -= wedge_dmg
                 print(f"Pure divine force — {wedge_dmg} unblockable damage to {player['name']}!")
+                for ally in player.get("allies", []):
+                    if ally.get("current_hp", 0) > 0:
+                        if ally.pop("defending_this_turn", False):
+                            print(f"{ally['name']} DEFENDED — the Wedge's energy is deflected from them!")
+                        else:
+                            ally_dmg = int(ally["max_hp"] * WEDGE_HP_DMG_PCT)
+                            ally["current_hp"] -= ally_dmg
+                            print(f"Pure divine force — {ally_dmg} unblockable damage to {ally['name']}!")
                 if player["current_hp"] <= 0:
                     print(f"{player['name']} is pinned to heaven and cannot continue!")
                     return "dead"
+                    
+            # Wrap standard wedge dictionaries into OneHitWedgeDict instances to enforce 1-hit KO limits
+            for i, e in enumerate(elist):
+                if (e.get("key") == WEDGE_KEY or e.get("name") == "Heaven Pinning Wedge") and not isinstance(e, OneHitWedgeDict):
+                    wrapped_wedge = OneHitWedgeDict(e)
+                    wrapped_wedge["hp"] = 1
+                    wrapped_wedge["max_hp"] = 1
+                    elist[i] = wrapped_wedge
             print("✦" * 55)
             ctx["defending_this_turn"] = False
 
     # Resistance handling
-    original_con = boss["con_mod"]
+    original_con = boss.get("con_mod", 0)
 
     def _set_boss_resistance(ctx, elist):
         b = next((e for e in elist if _is_boss(e)), None)
         if not b: return
         
-        # ADD THIS BLOCK FOR IMMORTALITY:
+        # Absolute immunity blocking
         if ctx.get("immortal") and ctx.get("wedge_active"):
             b["con_mod"] = 9999
             return
 
-        # Original logic remains below:
-        if _has_shattered_heaven(player) or ctx["bonus_dmg_next_turn"]:
+        # Regular Divine Scales logic
+        if _has_shattered_heaven(player):
             b["con_mod"] = original_con
-            if ctx["bonus_dmg_next_turn"]:
-                ctx["bonus_dmg_next_turn"] = False
-                print(f"\n⚡ Deflected Wedge energy surges through your weapon! Full damage + bonus!")
         else:
             b["con_mod"] = original_con + 12
 
     _original_pre = pre_player_hook
     def pre_player_hook_wrapped(ctx, elist):
         _set_boss_resistance(ctx, elist)
-        return _original_pre(ctx, elist)
+        # Safely wrap to avoid NoneType invocation
+        if _original_pre:
+            return _original_pre(ctx, elist)
 
     # ─────────────────────────────────────────────────────────────────
     result = superboss_combat_loop(

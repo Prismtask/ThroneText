@@ -36,7 +36,7 @@ def enemy_stats(enemy_key, player=None):
     scaled_con = int(con_mod * (1 + (multiplier - 1) * 0.6))
     scaled_dex = int(dex_mod * (1 + (multiplier - 1) * 0.5))
 
-    return {
+    result = {
         "key": enemy_key,
         "name": template["name"],
         "hp": scaled_hp,
@@ -48,6 +48,14 @@ def enemy_stats(enemy_key, player=None):
         "multiplier": round(multiplier, 2),
         "monster_girl": template.get("monster_girl", False)
     }
+
+    # Add elemental stats
+    from combat.elemental import compute_enemy_elemental
+    e_res, e_dmg = compute_enemy_elemental(result)
+    result["elemental_res"] = e_res
+    result["elemental_dmg"] = e_dmg
+
+    return result
 
 
 def get_effective_attribute(player, attr_name):

@@ -2,7 +2,6 @@ import yaml
 import os
 
 # Global containers for extra data extracted from YAML files
-CAPTURE_MESSAGES = {}
 AFFECTION_GIFTS = {}
 
 def load_enemies():
@@ -12,8 +11,8 @@ def load_enemies():
     1. Grouped: top-level keys are categories (races, "Superbosses", etc.),
        and each value is a dict of enemy entries.
     2. Flat: top-level keys are enemy IDs directly.
-    3. Special: top-level keys "capture_messages" and "affection_gifts"
-       are loaded into global dictionaries.
+    3. Special: top-level key "affection_gifts"
+       is loaded into a global dictionary.
     """
     enemies = {}
     
@@ -45,14 +44,6 @@ def load_enemies():
         
         for key, value in data.items():
             # --- Special sections --------------------------------------------------
-            if key == "capture_messages" and isinstance(value, dict):
-                # Merge capture messages (warn on duplicates)
-                for sub_key, msg in value.items():
-                    if sub_key in CAPTURE_MESSAGES:
-                        print(f"Warning: duplicate capture message for '{sub_key}' in {filename}")
-                    CAPTURE_MESSAGES[sub_key] = msg
-                continue
-
             if key == "affection_gifts" and isinstance(value, dict):
                 # Merge affection gift tables (warn on duplicates)
                 for sub_key, gifts in value.items():
@@ -89,9 +80,6 @@ def load_enemies():
     return enemies
 
 ENEMIES = load_enemies()
-
-# Alias for compatibility with existing imports
-MONSTER_GIRL_MESSAGES = CAPTURE_MESSAGES
 
 # Race/biome data (keep as before)
 try:

@@ -1,3 +1,4 @@
+# monster_girls.yaml – complete with all dialogue
 goblin_girl:
   name: Goblin Girl
   race: Goblin
@@ -10,8 +11,18 @@ goblin_girl:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} shuffles back nervously, clutching her hands. 'U-um... I don't really know you that well yet... Can we talk more first?'"
-    recruit_accepted: "The {name}'s eyes light up as she grabs your sleeve. 'Really? You'll take me with you? I'll try my best, I promise!'"
+    recruit_denied: The {name} shuffles back nervously, clutching her hands. 'U-um... I don't really know you that well yet... Can we talk more first?'
+    recruit_accepted: The {name}'s eyes light up as she grabs your sleeve. 'Really? You'll take me with you? I'll try my best, I promise!'
+    capture: The {name} blushes deeply and shyly steps into your arms...
+    house_talk_low: The {name} fidgets with her fingers. 'S-so... what do you want? I'm not very good at talking...'
+    house_talk_mid: The {name} smiles nervously. 'Oh! You're back! I was just polishing my lucky coin. Wanna see?'
+    house_talk_high: The {name} giggles and grabs your hand. 'Hehe, you always know how to make me smile. Tell me a story?'
+    house_talk_max: The {name} curls up beside you, resting her head on your shoulder. 'I feel so safe when you're here... I wish I could stay like this forever.'
+    house_gift_love: The {name} gasps, clutching the gift to her chest. 'For me?! Oh, I love it! Thank you, thank you!'
+    house_gift_hate: The {name} forces a weak smile. 'Oh... uh... thanks, I guess? Maybe I can trade it for something else...'
+    house_buff: The {name} closes her eyes and whispers a small incantation. 'There! A little luck from me to you – don't waste it!'
+    house_bond_kiss: The {name} stands on tiptoe and pecks your cheek, then hides her face. 'Ehehe... I've wanted to do that for so long.'
+    house_recruit_again: The {name} jumps up, grabbing your arm. 'You're back for me! I knew you'd come! Let's go!'
 
 harpy_scout:
   name: Harpy Scout
@@ -25,8 +36,18 @@ harpy_scout:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} ruffles her feathers and turns her head away. 'Hmph. A sky-rider like me doesn't follow just anyone. Prove yourself first.'"
-    recruit_accepted: "The {name} spreads her wings with a sharp cry. 'A worthy wind-mate! I'll scout the skies for you — none shall sneak past!'"
+    recruit_denied: The {name} ruffles her feathers and turns her head away. 'Hmph. A sky-rider like me doesn't follow just anyone. Prove yourself first.'
+    recruit_accepted: The {name} spreads her wings with a sharp cry. 'A worthy wind-mate! I'll scout the skies for you — none shall sneak past!'
+    capture: The {name} squawks in surprise, then softens as she lands beside you. 'Fine... but only because you're quick, {player}.'
+    house_talk_low: The {name} preens her wing, not looking at you. 'Oh, it's you. What do you want, groundling?'
+    house_talk_mid: She ruffles her feathers, a hint of a smile. 'You're not as clumsy as you look. Want to hear about the clouds I saw today?'
+    house_talk_high: She chirps happily, hopping closer. 'The wind told me you were coming! Let's fly together – I'll show you the world from above!'
+    house_talk_max: She nuzzles your neck, wings half‑spread. 'You are my sky. I never want to land again.'
+    house_gift_love: She squawks with delight, snatching the gift. 'For me?! Oh, it's perfect! I'll wear it on my wing!'
+    house_gift_hate: She tilts her head, confused. 'Uh... what is this? I can't eat it or fly with it...'
+    house_buff: She breathes a warm gust of wind over you. 'There – a tailwind for your journey. Use it well!'
+    house_bond_kiss: She leans in, brushing her beak against your cheek. 'A kiss from the skies – now you're marked as mine.'
+    house_recruit_again: She spreads her wings, eyes gleaming. 'Ready for another adventure? I've been itching to fly!'
 
 alraune_fledger:
   name: Alraune Fledger
@@ -40,8 +61,18 @@ alraune_fledger:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} tilts her flower-crown curiously, petals closing slightly. 'The soil between us is still thin... Water it more, traveller.'"
-    recruit_accepted: "The {name} blooms radiantly, sweet pollen drifting around you. 'Our roots have intertwined. I shall bloom beside you, always.'"
+    recruit_denied: The {name} tilts her flower-crown curiously, petals closing slightly. 'The soil between us is still thin... Water it more, traveller.'
+    recruit_accepted: The {name} blooms radiantly, sweet pollen drifting around you. 'Our roots have intertwined. I shall bloom beside you, always.'
+    capture: The {name} releases a sweet fragrance, petals folding around your hand gently. 'You... may tend to me, {player}.'
+    house_talk_low: The {name} rustles her leaves, eyes half‑closed. 'You are a stranger in my garden. Speak softly.'
+    house_talk_mid: She offers you a small blossom. 'I grew this for you. It smells like friendship – do you like it?'
+    house_talk_high: She wraps a vine around your wrist, pulling you close. 'My petals open only for you now. Stay a while?'
+    house_talk_max: She rests her head on your chest, fragrant and warm. 'I have woven my roots into your heart. Never leave me.'
+    house_gift_love: She radiates warmth, petals unfurling. 'Such a beautiful offering! I will treasure it forever.'
+    house_gift_hate: She shrinks back, leaves drooping. 'Oh... this doesn't suit me at all. Please take it back.'
+    house_buff: She sprinkles golden pollen over you. 'May your steps be light and your harvest plentiful.'
+    house_bond_kiss: She leans forward, pressing her lips to yours – soft as petals. 'Now we are bound, root and stem.'
+    house_recruit_again: She extends a leafy hand, smiling. 'The forest calls us. Let us walk together again.'
 
 kobold_tinkerer:
   name: Kobold Tinkerer
@@ -55,8 +86,18 @@ kobold_tinkerer:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} hides a small gadget behind her back, tail flicking. 'Wh-what? No. I barely know you. You might break my stuff!'"
-    recruit_accepted: "The {name} pulls out a tiny device and presses it into your palm. 'Here! My best prototype. Now we can tinker together — partners!'"
+    recruit_denied: The {name} hides a small gadget behind her back, tail flicking. 'Wh-what? No. I barely know you. You might break my stuff!'
+    recruit_accepted: The {name} pulls out a tiny device and presses it into your palm. 'Here! My best prototype. Now we can tinker together — partners!'
+    capture: The {name} drops her gadgets, tail wagging despite herself. 'D-don't break anything, okay {player}?'
+    house_talk_low: She fumbles with a gear, avoiding your eyes. 'Um... I'm busy. You can watch if you don't touch anything.'
+    house_talk_mid: She shows you a new contraption, eyes bright. 'Look! I made it spin faster! Wanna see how it works?'
+    house_talk_high: She bounces on her heels, talking a mile a minute. 'You're the best listener! I have so many ideas – let's build something together!'
+    house_talk_max: She curls up against you, holding a tiny clockwork heart. 'I made this for you. It ticks in time with mine.'
+    house_gift_love: She squeals, examining the gift from every angle. 'This is AMAZING! I can use it in my next invention!'
+    house_gift_hate: She stares at it, puzzled. 'Uh... what does it do? It doesn't even have gears...'
+    house_buff: She taps your forehead with a wrench. 'There! A boost of inspiration – your mind will work faster now.'
+    house_bond_kiss: She hesitates, then plants a quick kiss on your nose. 'T-that was a spark! See? Sparks are good!'
+    house_recruit_again: She straps on her toolbelt, grinning. 'Time to tinker and fight! I've got new gadgets to test!'
 
 dryad_protector:
   name: Dryad Protector
@@ -70,8 +111,18 @@ dryad_protector:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} steps behind a tree, leaves rustling. 'You are but a stranger passing through my grove. The forest does not trust lightly.'"
-    recruit_accepted: "The {name} takes your hand, bark-soft skin warm against yours. 'The ancient trees whisper your name with favor. I will guard you as I guard them.'"
+    recruit_denied: The {name} steps behind a tree, leaves rustling. 'You are but a stranger passing through my grove. The forest does not trust lightly.'
+    recruit_accepted: The {name} takes your hand, bark-soft skin warm against yours. 'The ancient trees whisper your name with favor. I will guard you as I guard them.'
+    capture: The {name} emerges from the bark, vines wrapping your wrist softly. 'The forest... allows you, {player}.'
+    house_talk_low: She stays half‑hidden behind a trunk. 'You have not earned my leaves yet. Speak, but do not touch.'
+    house_talk_mid: She steps closer, a twig snapping underfoot. 'You are not as loud as the others. I... can listen.'
+    house_talk_high: She touches your cheek, bark‑rough but gentle. 'You are like sunlight through the canopy. Stay a while.'
+    house_talk_max: She wraps her arms around you, leaves rustling with affection. 'You are my tree, my roots, my home.'
+    house_gift_love: She accepts it with a reverent bow. 'The forest thanks you. I thank you. It will grow in my heart.'
+    house_gift_hate: She pushes it back gently. 'This does not belong among the trees. Take it away.'
+    house_buff: She traces a rune on your palm with a twig. 'May the earth shield you and the branches guide you.'
+    house_bond_kiss: She presses her lips to yours – cool, earthy, and deep as the soil. 'Now you are rooted in me.'
+    house_recruit_again: She emerges from the grove, staff in hand. 'The forest gave me leave. I will walk with you again.'
 
 ghost_maid:
   name: Ghost Maid
@@ -85,8 +136,18 @@ ghost_maid:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} flickers like a candle, her voice an echo. 'I have served masters before... and they all left. Why should you be different?'"
-    recruit_accepted: "The {name} solidifies, curtsying with spectral grace. 'My spirit finds... warmth in your presence. Allow me to serve once more — happily.'"
+    recruit_denied: The {name} flickers like a candle, her voice an echo. 'I have served masters before... and they all left. Why should you be different?'
+    recruit_accepted: The {name} solidifies, curtsying with spectral grace. 'My spirit finds... warmth in your presence. Allow me to serve once more — happily.'
+    capture: The {name} flickers, her form solidifying as she curtsies. 'A new master... I shall not fade this time.'
+    house_talk_low: She hovers, translucent and distant. 'You are a mortal... why do you linger with the dead?'
+    house_talk_mid: She becomes more solid, offering a ghostly tea cup. 'Would you... care for some spectral tea? It's not quite real, but the thought is there.'
+    house_talk_high: She drifts beside you, a faint warmth in her chill. 'You are the first to see me as more than a servant. I... appreciate that.'
+    house_talk_max: She takes your hand, her touch almost solid. 'My heart, long cold, now beats for you. I will never leave.'
+    house_gift_love: She gasps, a flicker of light in her eyes. 'A gift... for me? I have not received one in centuries. Thank you.'
+    house_gift_hate: She stares blankly. 'This... does not cross the veil. It is of no use to me.'
+    house_buff: She whispers an ancient blessing, a chill that strengthens your resolve. 'May the shadows conceal you and the spirits guide you.'
+    house_bond_kiss: She leans in, her lips cold but full of feeling. 'A kiss from beyond – now you are bound to me.'
+    house_recruit_again: She curtsies, a soft smile on her translucent face. 'I am ready to serve again, my master.'
 
 centaur_scout:
   name: Centaur Scout
@@ -100,8 +161,18 @@ centaur_scout:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} stamps her hoof, crossing her arms. 'I charge with no herd I do not trust. Earn your place among us, two-legs.'"
-    recruit_accepted: "The {name} extends a calloused hand. 'You have the heart of a stallion. Ride with me — we shall thunder across every battlefield!'"
+    recruit_denied: The {name} stamps her hoof, crossing her arms. 'I charge with no herd I do not trust. Earn your place among us, two-legs.'
+    recruit_accepted: The {name} extends a calloused hand. 'You have the heart of a stallion. Ride with me — we shall thunder across every battlefield!'
+    capture: The {name} rears, then bows her head. 'You caught me fair, {player}. My hooves are yours... for now.'
+    house_talk_low: She keeps her distance, ears flat. 'You smell like a city. I need open skies to talk.'
+    house_talk_mid: She trots a circle around you. 'You're not as slow as I thought. Come, walk with me – I'll tell you of the plains.'
+    house_talk_high: She nickers warmly, nudging you with her shoulder. 'You are a good companion. Let's run together sometime!'
+    house_talk_max: She rests her head against yours, breathing deep. 'My herd is you. I would gallop to the ends of the earth for you.'
+    house_gift_love: She paws the ground, delighted. 'A fine gift! It reminds me of the open meadows – thank you!'
+    house_gift_hate: She snorts. 'This? It's useless. I can't wear it or eat it.'
+    house_buff: She stamps a hoof, and a surge of speed fills your limbs. 'Now you run like the wind!'
+    house_bond_kiss: She bends down, brushing her lips against your forehead. 'A kiss from a centaur – you are part of the herd now.'
+    house_recruit_again: She tosses her mane, ready to charge. 'The plains call! Let us ride together again!'
 
 moth_girl_flutterer:
   name: Moth Girl Flutterer
@@ -115,8 +186,18 @@ moth_girl_flutterer:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} flutters her wings, keeping her distance. 'You are not... bright enough for me yet. I need to know you are the light I seek.'"
-    recruit_accepted: "The {name} drifts closer, wing-dust shimmering like starlight. 'Your warmth calls to me. I will follow your flame anywhere, even into darkness.'"
+    recruit_denied: The {name} flutters her wings, keeping her distance. 'You are not... bright enough for me yet. I need to know you are the light I seek.'
+    recruit_accepted: The {name} drifts closer, wing-dust shimmering like starlight. 'Your warmth calls to me. I will follow your flame anywhere, even into darkness.'
+    capture: The {name} circles you, wing-dust sparkling. 'Your light... it is warmer than the moon, {player}.'
+    house_talk_low: She flutters near, then retreats. 'You flicker like a candle in the wind. Steady yourself.'
+    house_talk_mid: She lands on your shoulder, wings softly brushing your neck. 'You are a pleasant glow. Tell me about your day?'
+    house_talk_high: She dances around you, leaving a trail of glowing dust. 'You are the brightest star in my sky! I want to hear everything about you!'
+    house_talk_max: She settles in your lap, her wings folding. 'Your light is my home. I never want to fly elsewhere.'
+    house_gift_love: She shimmers with joy. 'Oh, it's beautiful! It shines like the moon – I will keep it near my heart!'
+    house_gift_hate: She dims, disappointed. 'It's... not glowing. I need things that shine.'
+    house_buff: She sprinkles silver dust over you. 'May your path always be lit, even in the darkest night.'
+    house_bond_kiss: She flutters up and presses her lips to yours – gentle as a moth's wing. 'Now you are my eternal flame.'
+    house_recruit_again: She buzzes with excitement. 'I've been waiting for your light! Take me with you!'
 
 slime_girl:
   name: Slime Girl
@@ -130,8 +211,18 @@ slime_girl:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} bounces uncertainly, shape shifting. 'Bloop... You're not squishy-familiar yet. More play first? Bloop-bloop?'"
-    recruit_accepted: "The {name} surges forward, wrapping around your arm in a cool, gelatinous hug. 'Bloop! You feel like home! Let's go together, go together!'"
+    recruit_denied: The {name} bounces uncertainly, shape shifting. 'Bloop... You're not squishy-familiar yet. More play first? Bloop-bloop?'
+    recruit_accepted: The {name} surges forward, wrapping around your arm in a cool, gelatinous hug. 'Bloop! You feel like home! Let's go together, go together!'
+    capture: The {name} surges into your arms, jiggling happily. 'Bloop! You caught the best prize! Squish!'
+    house_talk_low: She wobbles in place, a bit shy. 'Bloop... you're stiff. Relax?'
+    house_talk_mid: She bounces closer, jiggling. 'Bloop-bloop! You're fun! Squish-squish?'
+    house_talk_high: She wraps around your hand, warm and happy. 'Bloop! Your presence makes me giggle inside!'
+    house_talk_max: She envelops you in a cool, loving embrace. 'Bloop... you are my home. I never want to let go.'
+    house_gift_love: She absorbs the gift with a happy gurgle. 'Bloop! It's squishy and tasty! Perfect!'
+    house_gift_hate: She spits it out, confused. 'Bloop... yucky. Not squishy at all.'
+    house_buff: She squishes against you, leaving a glossy coat. 'Bloop! You're slippery now – hard to catch!'
+    house_bond_kiss: She forms a gel-like mouth and gives you a gooey kiss. 'Bloop~ Now you're part of me!'
+    house_recruit_again: She bounces eagerly. 'Bloop! Let's squish together again!'
 
 lamia_constrictor:
   name: Lamia Constrictor
@@ -145,8 +236,18 @@ lamia_constrictor:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} coils her tail, tilting her head with a sly smile. 'Mmm, you are interesting... but I prefer to coil around someone I truly know, darling.'"
-    recruit_accepted: "The {name} slithers close, wrapping her tail around your waist — warm, secure, almost possessive. 'You are mine now. And I am yours. Don't forget it.'"
+    recruit_denied: The {name} coils her tail, tilting her head with a sly smile. 'Mmm, you are interesting... but I prefer to coil around someone I truly know, darling.'
+    recruit_accepted: The {name} slithers close, wrapping her tail around your waist — warm, secure, almost possessive. 'You are mine now. And I am yours. Don't forget it.'
+    capture: The {name} wraps her tail around you — gentle, not trapping. 'You caught me, darling. Now... what will you do with me?'
+    house_talk_low: She circles you, watching. 'You're tense. I could help with that... if you trust me.'
+    house_talk_mid: She rests her head on your shoulder, tail loose. 'You're not bad company. Tell me a secret?'
+    house_talk_high: She coils around you in a gentle hug. 'You make me feel safe, little one. Stay with me.'
+    house_talk_max: She wraps you fully, whispering in your ear. 'You are my prey and my partner. I will never let go.'
+    house_gift_love: She hisses with pleasure, clutching the gift. 'Ooh, you know me so well. I'll treasure this.'
+    house_gift_hate: She pushes it away with her tail. 'This... does not suit me. Try again.'
+    house_buff: She breathes warm air over you, a soothing heat. 'My warmth will protect you from cold and fear.'
+    house_bond_kiss: She cups your face and kisses you deeply. 'Now you are truly caught in my coils.'
+    house_recruit_again: She slithers forward, a hungry glint in her eye. 'Ready for round two, darling? Let's hunt.'
 
 lizard_queen:
   name: Lizard Queen
@@ -160,8 +261,18 @@ lizard_queen:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} reclines on her tail, unimpressed. 'A queen does not serve a commoner. Show me you are a ruler worth kneeling beside.'"
-    recruit_accepted: "The {name} rises with regal poise, offering a clawed hand. 'You have proven yourself a worthy sovereign. I shall lend you my scales and my crown.'"
+    recruit_denied: The {name} reclines on her tail, unimpressed. 'A queen does not serve a commoner. Show me you are a ruler worth kneeling beside.'
+    recruit_accepted: The {name} rises with regal poise, offering a clawed hand. 'You have proven yourself a worthy sovereign. I shall lend you my scales and my crown.'
+    capture: The {name} hisses, then lowers her crown. 'You have defeated a queen. Treat her well, {player}, or face her wrath.'
+    house_talk_low: She looks down her snout. 'You are beneath me. Speak only when spoken to.'
+    house_talk_mid: She acknowledges you with a nod. 'You have earned a fraction of my attention. Use it wisely.'
+    house_talk_high: She invites you to sit beside her. 'You show promise. Tell me of your conquests.'
+    house_talk_max: She lays her head in your lap, regal yet vulnerable. 'You are the only one I would kneel for.'
+    house_gift_love: She accepts with a dignified nod. 'A worthy offering. You are learning your place.'
+    house_gift_hate: She scoffs. 'This is trash. Do not waste my time.'
+    house_buff: She raises her claws and intones a royal blessing. 'May your victories be many.'
+    house_bond_kiss: She presses her lips to yours – a queen's seal of devotion. 'Now you are mine, and I am yours.'
+    house_recruit_again: She rises, scales gleaming. 'You have summoned your queen. Let us reclaim glory.'
 
 mimic_girl:
   name: Mimic Girl
@@ -175,8 +286,18 @@ mimic_girl:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} grins, revealing rows of sharp teeth. 'Hehe~ You're not interesting enough to open my lid for. Try again later, maybe~'"
-    recruit_accepted: "The {name}'s tongue lolls out as she pounces into your arms. 'Jackpot! You're the best treasure I've ever found. Don't go hiding from me~'"
+    recruit_denied: The {name} grins, revealing rows of sharp teeth. 'Hehe~ You're not interesting enough to open my lid for. Try again later, maybe~'
+    recruit_accepted: The {name}'s tongue lolls out as she pounces into your arms. 'Jackpot! You're the best treasure I've ever found. Don't go hiding from me~'
+    capture: The {name} snaps her lid shut, then opens it with a giggle. 'Hehe~ You actually caught me! Treasure secured~'
+    house_talk_low: She snaps her jaws playfully. 'You look tasty... but I'm bored. Entertain me!'
+    house_talk_mid: She hops closer, tongue out. 'Hehe~ You're fun! Tell me a joke!'
+    house_talk_high: She nuzzles you, licking your cheek. 'Mmm~ You're my favourite treasure! Stay with me!'
+    house_talk_max: She curls around you, purring. 'I've found the best treasure of all – you. I'll protect you forever~'
+    house_gift_love: She devours it with glee. 'YUM! You know what I like! More, more!'
+    house_gift_hate: She spits it out, disgusted. 'Blech! That's not treasure!'
+    house_buff: She gives you a slobbery lick. 'There! Now you're lucky! Don't ask how it works~'
+    house_bond_kiss: She turns into a small chest, pops open, and gives you a kiss from inside. 'Hehe~ Surprise! Now you're mine!'
+    house_recruit_again: She transforms into a chest and leaps at you. 'Surprise! I'm ready to go again!'
 
 umbral_weaver:
   name: Umbral Weaver
@@ -190,8 +311,18 @@ umbral_weaver:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} melts into the shadows, her voice drifting from the darkness. 'You are not yet woven into my web. Come closer... if you dare.'"
-    recruit_accepted: "The {name} steps from the gloom, shadow-threads binding your hands together. 'You have become the thread I cannot cut. We are bound, little moth.'"
+    recruit_denied: The {name} melts into the shadows, her voice drifting from the darkness. 'You are not yet woven into my web. Come closer... if you dare.'
+    recruit_accepted: The {name} steps from the gloom, shadow-threads binding your hands together. 'You have become the thread I cannot cut. We are bound, little moth.'
+    capture: The {name} steps from the shadows, threads trailing behind her. 'You snared the snarer. Impressive... little moth.'
+    house_talk_low: She whispers from the corner. 'You are loud. Learn to be quiet, and I might speak.'
+    house_talk_mid: She appears beside you, a faint smile. 'You are learning. Would you like to see the patterns I weave?'
+    house_talk_high: She wraps a shadow-thread around your finger. 'You are part of my tapestry now. I will tell you secrets.'
+    house_talk_max: She holds you in the darkness, warm and safe. 'You are my light in the void. I will never let you fade.'
+    house_gift_love: She accepts it with a shadowy hand, and it melts into her form. 'A gift for the weaver? You are kind.'
+    house_gift_hate: She lets it drop, untouched. 'It is too bright. It hurts.'
+    house_buff: She spins a cloak of shadows around you. 'Now the darkness will hide and shield you.'
+    house_bond_kiss: She steps from the dark and presses her lips to yours – cool as night. 'Now you are bound to the shadow.'
+    house_recruit_again: She weaves a portal of darkness. 'Step through – I will guide you again.'
 
 winter_fairy:
   name: Winter Fairy
@@ -205,8 +336,18 @@ winter_fairy:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} flits away, leaving a trail of frost. 'Too warm, too fast. I need time to thaw... or you'll just melt my heart too quickly.'"
-    recruit_accepted: "The {name} lands on your shoulder, her breath frosting your cheek. 'You melt the ice without breaking it. That is rare. I will stay... for now.'"
+    recruit_denied: The {name} flits away, leaving a trail of frost. 'Too warm, too fast. I need time to thaw... or you'll just melt my heart too quickly.'
+    recruit_accepted: The {name} lands on your shoulder, her breath frosting your cheek. 'You melt the ice without breaking it. That is rare. I will stay... for now.'
+    capture: The {name} alights on your finger, frost blooming where she touches. 'You are warm, {player}... but not burning. I will stay.'
+    house_talk_low: She hovers just out of reach, frost in the air. 'You are too warm. I need distance.'
+    house_talk_mid: She lands on your palm, ice melting slightly. 'You are not so bad. Tell me of summer?'
+    house_talk_high: She curls up in your hood, her chill a comfort. 'You are my winter sun. Stay with me?'
+    house_talk_max: She presses her cold cheek to yours. 'You are the warmth I never knew I needed. I love you.'
+    house_gift_love: She hugs it, leaving a frost pattern. 'It's perfect! It reminds me of icicles!'
+    house_gift_hate: She drops it, shivering. 'This is too hot. Take it away.'
+    house_buff: She breathes a frosty mist over you. 'May your steps be silent and your heart cold as ice.'
+    house_bond_kiss: She flutters up and kisses you – cold and sweet as fresh snow. 'Now you are winter's chosen.'
+    house_recruit_again: She flits around you, leaving frost trails. 'I've been waiting for the cold to return. Let's go!'
 
 holstaur_brawler:
   name: Holstaur Brawler
@@ -221,8 +362,18 @@ holstaur_brawler:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} flexes her muscles, snorting. 'You look scrawny. I don't throw hooves for someone I could bench-press. Show me some grit!'"
-    recruit_accepted: "The {name} slaps your back with enough force to stagger you, laughing heartily. 'Haha! You got spirit! Let's crack some skulls together, partner!'"
+    recruit_denied: The {name} flexes her muscles, snorting. 'You look scrawny. I don't throw hooves for someone I could bench-press. Show me some grit!'
+    recruit_accepted: The {name} slaps your back with enough force to stagger you, laughing heartily. 'Haha! You got spirit! Let's crack some skulls together, partner!'
+    capture: The {name} snorts, then grins and pounds her chest. 'Hah! You got me, {player}! Best catch of the day!'
+    house_talk_low: She cracks her knuckles. 'Talk? I'd rather wrestle. But fine, make it quick.'
+    house_talk_mid: She grins, slapping your shoulder. 'You're tougher than you look! Let's arm-wrestle!'
+    house_talk_high: She throws an arm around you. 'You're my favourite sparring buddy! Let's grab a drink!'
+    house_talk_max: She hugs you, nearly crushing you. 'I'd take a thousand hits for you. You're my herd.'
+    house_gift_love: She bellows with joy, tossing it in the air. 'I LOVE IT! Let's celebrate!'
+    house_gift_hate: She snorts, unimpressed. 'This is useless. Can I eat it?'
+    house_buff: She flexes and gives you a hearty pat. 'There! Now you've got the strength of a bull!'
+    house_bond_kiss: She plants a kiss on your forehead, a bit too hard. 'Mwah! Now you're mine, partner!'
+    house_recruit_again: She stamps her hoof, ready for action. 'Time to brawl again! Let's go!'
 
 gargoyle_watcher:
   name: Gargoyle Watcher
@@ -236,8 +387,18 @@ gargoyle_watcher:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} folds her stone wings, immovable. 'I have watched a thousand seasons. You are but a flicker. Why should I leave my perch?'"
-    recruit_accepted: "The {name} cracks her stone knuckles, eyes gleaming with ancient life. 'You have earned the gaze of the eternal. I shall guard you as I guard the spires.'"
+    recruit_denied: The {name} folds her stone wings, immovable. 'I have watched a thousand seasons. You are but a flicker. Why should I leave my perch?'
+    recruit_accepted: The {name} cracks her stone knuckles, eyes gleaming with ancient life. 'You have earned the gaze of the eternal. I shall guard you as I guard the spires.'
+    capture: The {name} cracks her stone wings, then nods. 'A thousand years I watched. Finally... someone worth watching with.'
+    house_talk_low: She stands motionless, eyes following you. 'You move too fast. I watch.'
+    house_talk_mid: She shifts slightly, a grinding sound. 'You are... interesting. Tell me of the world beyond my perch.'
+    house_talk_high: She sits beside you, stone warm from the sun. 'You have become my favourite sight. Stay a while.'
+    house_talk_max: She takes your hand, her grip solid but gentle. 'You are the only thing I will leave my perch for.'
+    house_gift_love: She examines it, then nods once. 'A worthy tribute. I shall keep it always.'
+    house_gift_hate: She stares at it, unmoved. 'It is meaningless. Remove it.'
+    house_buff: She touches your brow with a stony finger. 'May you be as enduring as stone.'
+    house_bond_kiss: She bends down, her stone lips pressing against yours – cool and eternal. 'Now you are carved into my memory.'
+    house_recruit_again: She spreads her wings, ready to descend. 'The time to watch is over. I will fight.'
 
 vampire_seductress:
   name: Vampire Seductress
@@ -251,8 +412,18 @@ vampire_seductress:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} fans herself with a lace glove, amused. 'A mere mortal asking a lady of the night to serve? Adorable. Come back when you're... tastier.'"
-    recruit_accepted: "The {name} draws close, fangs glinting with playful menace. 'Mmm, you have bite. I think I'll keep you. Let's see how deep this bond runs, my pet.'"
+    recruit_denied: The {name} fans herself with a lace glove, amused. 'A mere mortal asking a lady of the night to serve? Adorable. Come back when you're... tastier.'
+    recruit_accepted: The {name} draws close, fangs glinting with playful menace. 'Mmm, you have bite. I think I'll keep you. Let's see how deep this bond runs, my pet.'
+    capture: The {name} fans herself, then smiles with fangs showing. 'Mmm, such persistence, {player}. You may keep me... for now.'
+    house_talk_low: She inspects her nails. 'Oh, it's you. I suppose you'll want to chat. How droll.'
+    house_talk_mid: She offers you a glass of something red. 'You're growing on me. Like a fine wine.'
+    house_talk_high: She leans close, fangs grazing your ear. 'You are the most delicious mortal I've met. Tell me more about yourself.'
+    house_talk_max: She cradles your face, eyes soft. 'I have walked the night for centuries, but you are the dawn I never expected.'
+    house_gift_love: She gasps, genuinely surprised. 'Oh my! This is exquisite. You have excellent taste.'
+    house_gift_hate: She raises an eyebrow. 'This? Really? I am a creature of the night, not a common merchant.'
+    house_buff: She whispers a dark blessing, a shiver of power. 'May the shadows embrace you and the night protect you.'
+    house_bond_kiss: She pulls you into a deep, lingering kiss. 'Now you are mine, body and soul.'
+    house_recruit_again: She extends her hand, a sly smile. 'Come, my pet. The night awaits us.'
 
 yuki_onna:
   name: Yuki-onna
@@ -267,8 +438,18 @@ yuki_onna:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} gazes through you, her beauty cold and distant. 'I have buried wanderers in snow for less. Leave me before I forget your warmth.'"
-    recruit_accepted: "The {name}'s frozen lips curve into a fragile smile. 'You are the first ember I did not extinguish. Walk with me... but do not melt away.'"
+    recruit_denied: The {name} gazes through you, her beauty cold and distant. 'I have buried wanderers in snow for less. Leave me before I forget your warmth.'
+    recruit_accepted: The {name}'s frozen lips curve into a fragile smile. 'You are the first ember I did not extinguish. Walk with me... but do not melt away.'
+    capture: The {name} drifts closer, snow swirling around her. 'You did not freeze, {player}. Perhaps... you are worth the thaw.'
+    house_talk_low: She stands apart, a cold wind between you. 'You are warm. I do not like it.'
+    house_talk_mid: She comes a step closer, frost melting. 'You are... not unpleasant. Tell me of the sun.'
+    house_talk_high: She lets you touch her hand, ice and fire. 'You are the only one who does not fear me. I... like that.'
+    house_talk_max: She rests her head on your shoulder, cold tears. 'I have found my warmth. Please never leave.'
+    house_gift_love: She accepts it, a faint smile. 'It is beautiful. I will keep it frozen in my heart.'
+    house_gift_hate: She lets it fall, untouched. 'It is too hot. It burns.'
+    house_buff: She blows a flurry of snow over you. 'May the cold never touch you, and your enemies freeze.'
+    house_bond_kiss: She presses her icy lips to yours – a kiss that thaws her heart. 'Now you are my warmth.'
+    house_recruit_again: She drifts forward, snow swirling. 'I have waited for you. Let us walk together again.'
 
 amazon_warrior:
   name: Amazon Warrior
@@ -283,8 +464,18 @@ amazon_warrior:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} plants her spear in the ground, arms crossed. 'I follow no war-leader who has not bled beside me. Earn your shield, stranger.'"
-    recruit_accepted: "The {name} raises her spear to the sky with a fierce war cry. 'You fight with honor! I will stand in your shield-wall — sisters in battle!'"
+    recruit_denied: The {name} plants her spear in the ground, arms crossed. 'I follow no war-leader who has not bled beside me. Earn your shield, stranger.'
+    recruit_accepted: The {name} raises her spear to the sky with a fierce war cry. 'You fight with honor! I will stand in your shield-wall — sisters in battle!'
+    capture: The {name} plants her spear in the ground, then salutes. 'You fought well, {player}. I will follow your banner.'
+    house_talk_low: She grips her spear, wary. 'You are not a warrior. Speak quickly.'
+    house_talk_mid: She relaxes slightly, leaning on her spear. 'You have courage, I'll give you that. Let's spar sometime.'
+    house_talk_high: She claps you on the back. 'You are a worthy comrade! I would charge into battle with you any day!'
+    house_talk_max: She kneels, offering you her spear. 'You are my queen. I will fight and die for you.'
+    house_gift_love: She grins, holding it high. 'A fine weapon! I will use it to crush our enemies!'
+    house_gift_hate: She tosses it aside. 'This is decoration, not a tool of war.'
+    house_buff: She shouts a battle cry, infusing you with courage. 'May your strikes be true and your heart fearless!'
+    house_bond_kiss: She pulls you into a fierce kiss. 'Now you are my battle‑sister – and more.'
+    house_recruit_again: She plants her spear, ready. 'I have rested enough. Let us fight again!'
 
 banshee_wailer:
   name: Banshee Wailer
@@ -298,8 +489,18 @@ banshee_wailer:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} covers her mouth, eyes wet with sorrow. 'I only wail for the dead... and you are not yet my reason to mourn. Go.'"
-    recruit_accepted: "The {name} takes your hand, her voice soft for the first time. 'You have silenced my grief. I will sing songs of life for you instead... until the end.'"
+    recruit_denied: The {name} covers her mouth, eyes wet with sorrow. 'I only wail for the dead... and you are not yet my reason to mourn. Go.'
+    recruit_accepted: The {name} takes your hand, her voice soft for the first time. 'You have silenced my grief. I will sing songs of life for you instead... until the end.'
+    capture: The {name} covers her mouth, tears falling. 'You heard my wail... and did not run. Thank you, {player}.'
+    house_talk_low: She sobs quietly. 'Why do you stay? I bring only sorrow.'
+    house_talk_mid: She looks up, a faint smile. 'You are... a strange comfort. Tell me a happy story?'
+    house_talk_high: She takes your hand, her touch cold but gentle. 'You have brought light to my darkness. I will sing for you.'
+    house_talk_max: She wraps her arms around you, her wail a whisper. 'You are my reason to live. I will never wail again.'
+    house_gift_love: She clutches it, tears of joy. 'A gift... for me? I have not received one in ages. Thank you.'
+    house_gift_hate: She pushes it away, trembling. 'It reminds me of what I have lost. Please take it back.'
+    house_buff: She hums a soothing melody, a balm to your soul. 'May peace follow you wherever you go.'
+    house_bond_kiss: She presses her lips to yours – cold, but full of life. 'Now you have stolen my heart.'
+    house_recruit_again: She wipes her tears, a smile breaking through. 'I am ready to sing again – for you.'
 
 neko_ninja:
   name: Neko Ninja
@@ -313,8 +514,18 @@ neko_ninja:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} poofs into smoke, reappearing behind you. 'Nyahaha~ Too slow to catch this cat! Try being more interesting, nya~'"
-    recruit_accepted: "The {name} rubs her cheek against your shoulder, purring softly. 'You've got the best lap for napping, and the best fights for stalking. I'm yours, nya~'"
+    recruit_denied: The {name} poofs into smoke, reappearing behind you. 'Nyahaha~ Too slow to catch this cat! Try being more interesting, nya~'
+    recruit_accepted: The {name} rubs her cheek against your shoulder, purring softly. 'You've got the best lap for napping, and the best fights for stalking. I'm yours, nya~'
+    capture: The {name} poofs out of smoke, landing in your arms. 'Nyahaha~ You caught the uncatchable! I guess I'm yours, nya~'
+    house_talk_low: She appears on a shelf, tail twitching. 'Nya? You again? Make it quick.'
+    house_talk_mid: She curls up beside you, purring. 'Nya~ You're not so bad. Tell me a secret?'
+    house_talk_high: She nuzzles your hand, eyes half‑closed. 'Nya~ You're my favourite human. Let's play!'
+    house_talk_max: She wraps around you, purring loudly. 'I will always be your shadow, nya. Always.'
+    house_gift_love: She snatches it, rubbing against it. 'Nya! I love it! It's so shiny!'
+    house_gift_hate: She sniffs it, then pushes it away. 'Nya... boring. I don't want it.'
+    house_buff: She flicks a bell at you. 'Nya~ You're quick as a cat now!'
+    house_bond_kiss: She gives you a quick lick on the cheek. 'Nya~ Now you're marked as my territory!'
+    house_recruit_again: She poofs in front of you. 'Ready for more fun, nya? Let's go!'
 
 arachne_weaver:
   name: Arachne Weaver
@@ -328,8 +539,18 @@ arachne_weaver:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} clicks her fangs, spinning a thread between her fingers. 'My silk is for prey, not strangers. Wrap yourself in trust first, little fly.'"
-    recruit_accepted: "The {name} weaves a delicate bracelet of silk around your wrist, unbreakable. 'You are the first thread I did not cut. I will never let you unravel.'"
+    recruit_denied: The {name} clicks her fangs, spinning a thread between her fingers. 'My silk is for prey, not strangers. Wrap yourself in trust first, little fly.'
+    recruit_accepted: The {name} weaves a delicate bracelet of silk around your wrist, unbreakable. 'You are the first thread I did not cut. I will never let you unravel.'
+    capture: The {name} cuts her own thread, dropping into your arms. 'My web has a new center... and it is you, {player}.'
+    house_talk_low: She weaves a small web, watching you. 'You are a fly in my web – do not struggle.'
+    house_talk_mid: She offers you a silk‑woven flower. 'I made this for you. It is soft, like you.'
+    house_talk_high: She wraps a strand around your finger. 'You are safe in my web. I will protect you.'
+    house_talk_max: She holds you gently, silk all around. 'You are the center of my web. I will never let you fall.'
+    house_gift_love: She examines it, then smiles. 'It is perfect. I will weave it into my web.'
+    house_gift_hate: She cuts it away. 'It is coarse. It does not belong.'
+    house_buff: She weaves a cloak of silk around you. 'May it shield you and ensnare your foes.'
+    house_bond_kiss: She leans in, her fangs brushed against your lips. 'Now you are caught forever.'
+    house_recruit_again: She spins a thread, pulling you closer. 'I missed you. Let us weave again.'
 
 mummy_princess:
   name: Mummy Princess
@@ -344,8 +565,18 @@ mummy_princess:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} adjusts her golden headdress, unimpressed. 'I ruled dynasties before your ancestors were born. A pharaoh kneels for no peasant.'"
-    recruit_accepted: "The {name} unwraps a strip of linen, pressing it into your palm like a sacred relic. 'You have found the heart beneath the bandages. Rule beside me, my king.'"
+    recruit_denied: The {name} adjusts her golden headdress, unimpressed. 'I ruled dynasties before your ancestors were born. A pharaoh kneels for no peasant.'
+    recruit_accepted: The {name} unwraps a strip of linen, pressing it into your palm like a sacred relic. 'You have found the heart beneath the bandages. Rule beside me, my king.'
+    capture: The {name} unwraps a hand, pressing it to your cheek. 'You have found the treasure of the tomb, {player}. Do not lose it.'
+    house_talk_low: She looks down her nose. 'You are not worthy of my time. Leave.'
+    house_talk_mid: She acknowledges you with a slight nod. 'You are... tolerable. Speak.'
+    house_talk_high: She invites you to sit on her throne. 'You have earned a place beside me. Tell me of your kingdom.'
+    house_talk_max: She unwraps her face, revealing a gentle smile. 'You are my heart, my king. I will rule eternity with you.'
+    house_gift_love: She accepts it with royal grace. 'A fine tribute. I shall place it in my sarcophagus.'
+    house_gift_hate: She drops it, disgusted. 'This is beneath a pharaoh. Take it away.'
+    house_buff: She recites an ancient spell. 'May the sands protect you and the gods favor you.'
+    house_bond_kiss: She kisses you, her bandages soft. 'Now you are bound to me for all time.'
+    house_recruit_again: She rises, regal and powerful. 'I have awoken. Let us reclaim our glory.'
 
 oni_bruiser:
   name: Oni Bruiser
@@ -359,8 +590,18 @@ oni_bruiser:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} cracks her knuckles, horns gleaming. 'Hah! You want an oni? Fight me first. If you survive, we'll talk. If not... well, that's funny too.'"
-    recruit_accepted: "The {name} lifts you effortlessly, spinning with a roar of laughter. 'You got GUTS! I like guts! Let's smash everything together, hahaha!'"
+    recruit_denied: The {name} cracks her knuckles, horns gleaming. 'Hah! You want an oni? Fight me first. If you survive, we'll talk. If not... well, that's funny too.'
+    recruit_accepted: The {name} lifts you effortlessly, spinning with a roar of laughter. 'You got GUTS! I like guts! Let's smash everything together, hahaha!'
+    capture: The {name} laughs, throwing her arms around you. 'Hahaha! You got me, {player}! Now let's raise some hell together!'
+    house_talk_low: She flexes, cracking her neck. 'Talk? Boring. Fight me.'
+    house_talk_mid: She grins, slapping your back. 'You're not as weak as I thought. Tell me a joke!'
+    house_talk_high: She throws an arm around you, laughing. 'You're the best human I've met! Let's drink!'
+    house_talk_max: She holds you gently, her voice soft. 'You are the only one who makes me feel... human. I love you.'
+    house_gift_love: She bellows, clutching it to her chest. 'IT'S PERFECT! I'm keeping it forever!'
+    house_gift_hate: She crushes it, unimpressed. 'Useless. Give me something to smash.'
+    house_buff: She roars, and you feel a surge of power. 'Now you have the strength of an oni!'
+    house_bond_kiss: She plants a rough kiss on your lips. 'Now you're mine! Don't forget it!'
+    house_recruit_again: She cracks her knuckles. 'Ready for round two? Let's smash!'
 
 salamander_dancer:
   name: Salamander Dancer
@@ -375,8 +616,18 @@ salamander_dancer:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} twirls, flames licking at her fingertips. 'You are still cold ash. I dance with only the hottest flames, darling. Warm up first.'"
-    recruit_accepted: "The {name} pulls you into a burning waltz, her heat somehow gentle. 'You match my fire without burning. Dance with me forever — our flames will never die.'"
+    recruit_denied: The {name} twirls, flames licking at her fingertips. 'You are still cold ash. I dance with only the hottest flames, darling. Warm up first.'
+    recruit_accepted: The {name} pulls you into a burning waltz, her heat somehow gentle. 'You match my fire without burning. Dance with me forever — our flames will never die.'
+    capture: The {name} twirls, flames dying to embers. 'My fire burns only for you now, {player}. Handle me with care.'
+    house_talk_low: She dances alone, not looking at you. 'You are cold. I cannot dance with you.'
+    house_talk_mid: She offers you a flickering hand. 'You are warming up. Let us sway together.'
+    house_talk_high: She twirls around you, flames gentle. 'You are my favourite partner! Dance with me!'
+    house_talk_max: She presses close, her flames a warm embrace. 'You are the fire in my heart. I will never burn out.'
+    house_gift_love: She embraces it, and it glows brighter. 'It burns with passion! I adore it!'
+    house_gift_hate: She drops it, singed. 'It is cold. It offends my flame.'
+    house_buff: She breathes a spark onto you. 'May your fire never dwindle.'
+    house_bond_kiss: She kisses you, and you taste embers. 'Now you are fire and I am flame – we are one.'
+    house_recruit_again: She spins, flames trailing. 'Ready to dance again? Let's set the world ablaze!'
 
 succubus_seductress:
   name: Succubus Seductress
@@ -390,8 +641,18 @@ succubus_seductress:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} lounges on thin air, tail swishing lazily. 'Mmm, you're cute... but I don't do 'casual binding.' Seduce me properly, or don't bother~'"
-    recruit_accepted: "The {name} wraps her tail around your waist, pulling you close with a wicked grin. 'You got under my skin. That's rare. Let's see how deep you can go, Master~'"
+    recruit_denied: The {name} lounges on thin air, tail swishing lazily. 'Mmm, you're cute... but I don't do 'casual binding.' Seduce me properly, or don't bother~'
+    recruit_accepted: The {name} wraps her tail around your waist, pulling you close with a wicked grin. 'You got under my skin. That's rare. Let's see how deep you can go, Master~'
+    capture: The {name} licks her lips seductively... 'Master~ I'll be good~'
+    house_talk_low: She lounges, inspecting her nails. 'Oh, it's you. Boring as ever.'
+    house_talk_mid: She purrs, leaning closer. 'You're getting interesting. Tell me a secret.'
+    house_talk_high: She wraps around you, tail caressing your arm. 'You're my favourite plaything. Let's have some fun.'
+    house_talk_max: She holds you close, voice tender. 'You are the only one I would give my heart to. I love you, Master.'
+    house_gift_love: She gasps, genuinely delighted. 'A gift! For me?! You spoil me! I love it!'
+    house_gift_hate: She pouts, pushing it away. 'This is not up to my standards. Try again.'
+    house_buff: She whispers a charm, and you feel irresistible. 'Now you are as alluring as I am.'
+    house_bond_kiss: She kisses you deeply, her touch electric. 'Now you are mine, forever.'
+    house_recruit_again: She crooks a finger, a sly smile. 'Ready for more, Master? Let's play.'
 
 dullahan_knight:
   name: Dullahan Knight
@@ -406,8 +667,18 @@ dullahan_knight:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} holds her severed head under one arm, both sets of eyes staring coldly. 'A knight without a heart fears no one. You have not earned my blade.'"
-    recruit_accepted: "The {name} places her head upon her neck, the gap sealing with a faint glow. 'You found where my heart hides. My sword is yours — guard it well, for I have none left.'"
+    recruit_denied: The {name} holds her severed head under one arm, both sets of eyes staring coldly. 'A knight without a heart fears no one. You have not earned my blade.'
+    recruit_accepted: The {name} places her head upon her neck, the gap sealing with a faint glow. 'You found where my heart hides. My sword is yours — guard it well, for I have none left.'
+    capture: The {name} holds her head steady, both sets of eyes meeting yours. 'You have conquered death's knight. I am... yours.'
+    house_talk_low: She holds her head in her hands, staring. 'You are not a foe. State your purpose.'
+    house_talk_mid: She places her head back, a soft smile. 'You are... a pleasant distraction. Tell me of the living.'
+    house_talk_high: She offers you her hand, head tucked under arm. 'You have earned my trust. I would protect you.'
+    house_talk_max: She wraps her arms around you, head resting on your shoulder. 'You are the heart I never had. I love you.'
+    house_gift_love: She holds it to her chest, a glimmer in her eyes. 'A gift... I feel warmth. Thank you.'
+    house_gift_hate: She lets it fall, indifferent. 'It means nothing to the dead.'
+    house_buff: She touches your shoulder, a chill of protection. 'May no blade harm you while I stand guard.'
+    house_bond_kiss: She kisses you, her lips cold but sincere. 'Now you have my heart, though I have none.'
+    house_recruit_again: She places her head on her shoulders, drawing her sword. 'I am ready to ride again.'
 
 kitsune_miko:
   name: Kitsune Miko
@@ -422,8 +693,18 @@ kitsune_miko:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} hides her smile behind a fan, tails swishing. 'Fufu~ A fox does not give her tails to just anyone. You must earn each one, little mortal~'"
-    recruit_accepted: "The {name} wraps all nine tails around you in a warm, fluffy embrace. 'You have passed every trial, even the ones I never told you about. My shrine is wherever you are.'"
+    recruit_denied: The {name} hides her smile behind a fan, tails swishing. 'Fufu~ A fox does not give her tails to just anyone. You must earn each one, little mortal~'
+    recruit_accepted: The {name} wraps all nine tails around you in a warm, fluffy embrace. 'You have passed every trial, even the ones I never told you about. My shrine is wherever you are.'
+    capture: The {name} tilts her head with a mischievous smile. 'Hehe, caught me~'
+    house_talk_low: She fans herself, tails flicking. 'You are still a stranger. I do not trust you.'
+    house_talk_mid: She lets you touch a tail. 'You are not unworthy. Share a cup of tea with me?'
+    house_talk_high: She wraps a tail around you. 'You have earned my favour. Let me tell you of the old spirits.'
+    house_talk_max: She cuddles you in a cocoon of tails. 'You are my most precious shrine. I will guard you forever.'
+    house_gift_love: She claps, tails wagging. 'Oh, you know my heart! This is perfect!'
+    house_gift_hate: She sighs, disappointed. 'This does not suit a priestess. I cannot accept it.'
+    house_buff: She waves a fan, and a gentle wind blesses you. 'May luck and wisdom walk with you.'
+    house_bond_kiss: She kisses you softly, tails enveloping you. 'Now you are my consort, mortal.'
+    house_recruit_again: She closes her fan, tails swishing. 'I have waited for your return. Let us go.'
 
 siren_empress:
   name: Siren Empress
@@ -437,8 +718,18 @@ siren_empress:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} sings a single, piercing note that makes the air shiver. 'You are a quiet tune in a sea of noise. Come back when your song moves me.'"
-    recruit_accepted: "The {name} descends from her coral throne, crown gleaming. 'Your melody has drowned out all others. I will sing victory into your name, my conductor.'"
+    recruit_denied: The {name} sings a single, piercing note that makes the air shiver. 'You are a quiet tune in a sea of noise. Come back when your song moves me.'
+    recruit_accepted: The {name} descends from her coral throne, crown gleaming. 'Your melody has drowned out all others. I will sing victory into your name, my conductor.'
+    capture: The {name} hums a low note, coral crown dipping. 'My song is yours to command, {player}. Do not waste it.'
+    house_talk_low: She hums a dissonant chord. 'You are out of tune. Learn harmony.'
+    house_talk_mid: She invites you to sit beside her. 'Your rhythm is improving. Let me teach you a melody.'
+    house_talk_high: She sings a beautiful aria, her eyes on you. 'You have become the theme of my song.'
+    house_talk_max: She holds you, singing a love song. 'You are the crescendo of my life. I will never stop singing for you.'
+    house_gift_love: She accepts it with a delighted trill. 'A new instrument! I shall compose a masterpiece!'
+    house_gift_hate: She returns it, unimpressed. 'It is a flat note. I cannot use it.'
+    house_buff: She sings a note that vibrates in your soul. 'May your voice be heard and your song never end.'
+    house_bond_kiss: She kisses you, and you hear the music of the spheres. 'Now we are a duet, forever.'
+    house_recruit_again: She rises, crown gleaming. 'My song calls for you. Let us make music together.'
 
 crimson_countess:
   name: Crimson Countess
@@ -452,8 +743,18 @@ crimson_countess:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} sips from a crystal goblet, barely looking up. 'Countless mortals have begged at my feet. You are merely the latest whisper in the dark.'"
-    recruit_accepted: "The {name} sets down her goblet, rising with predatory grace. 'You are the first to make my undead heart race. I shall make you my eternal consort — and my shield.'"
+    recruit_denied: The {name} sips from a crystal goblet, barely looking up. 'Countless mortals have begged at my feet. You are merely the latest whisper in the dark.'
+    recruit_accepted: The {name} sets down her goblet, rising with predatory grace. 'You are the first to make my undead heart race. I shall make you my eternal consort — and my shield.'
+    capture: The {name} sets down her goblet, red eyes gleaming. 'You have captured a countess, {player}. Let us see if you can keep her.'
+    house_talk_low: She swirls her goblet, disinterested. 'You are a footnote. Speak if you must.'
+    house_talk_mid: She glances at you with mild interest. 'You have some charm. Tell me of your lineage.'
+    house_talk_high: She offers you a seat at her table. 'You intrigue me. Let us discuss the finer things.'
+    house_talk_max: She holds you close, fangs sheathed. 'You are the first to make me feel alive. I love you.'
+    house_gift_love: She gasps, a rare smile. 'A gift of such quality! You have won my heart.'
+    house_gift_hate: She sets it aside, unimpressed. 'It is common. I deserve better.'
+    house_buff: She anoints you with a drop of her blood. 'May you be as eternal as I.'
+    house_bond_kiss: She kisses you, and you taste centuries. 'Now you are mine for all time.'
+    house_recruit_again: She rises, cloak billowing. 'I have missed you. Let us hunt.'
 
 demon_whip_master:
   name: Demon Whip Master
@@ -467,8 +768,18 @@ demon_whip_master:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} cracks her whip, the sound echoing like thunder. 'Kneel, worm. You are not worthy to hold my leash. Crawl back when you learn respect.'"
-    recruit_accepted: "The {name} coils her whip around your wrist — not to bind, but to tether. 'You are the first I would kneel beside. Command me... and I shall obey with pleasure.'"
+    recruit_denied: The {name} cracks her whip, the sound echoing like thunder. 'Kneel, worm. You are not worthy to hold my leash. Crawl back when you learn respect.'
+    recruit_accepted: The {name} coils her whip around your wrist — not to bind, but to tether. 'You are the first I would kneel beside. Command me... and I shall obey with pleasure.'
+    capture: The {name} cracks her whip once, then coils it. 'You have tamed the whip, {player}. I kneel... for now.'
+    house_talk_low: She cracks the whip near your feet. 'You are boring. Leave.'
+    house_talk_mid: She flicks the whip, a smile. 'You are interesting. Let me teach you how to crack it.'
+    house_talk_high: She wraps the whip around her own arm. 'You have earned my respect. Let us train together.'
+    house_talk_max: She kneels, offering you the whip. 'You are my master now. I love you.'
+    house_gift_love: She coils it, a rare smile. 'A fine addition to my collection. Thank you.'
+    house_gift_hate: She cuts it with her whip. 'This is weak. I am ashamed for you.'
+    house_buff: She flicks the whip, and you feel a surge of authority. 'Now you command respect.'
+    house_bond_kiss: She pulls you close and kisses you hard. 'Now you are my leash and my freedom.'
+    house_recruit_again: She cracks her whip, grinning. 'Ready to be dominated again? Let's go.'
 
 minotaur_gladiator:
   name: Minotaur Gladiator
@@ -483,8 +794,18 @@ minotaur_gladiator:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} snorts, horns gleaming in the arena lights. 'I've crushed champions in the dust. What makes you think you can lead a gladiator?'"
-    recruit_accepted: "The {name} slams her fist to her chest, a salute of blood and iron. 'You fight like a legend. I will be your shield-wall — no one passes while I draw breath!'"
+    recruit_denied: The {name} snorts, horns gleaming in the arena lights. 'I've crushed champions in the dust. What makes you think you can lead a gladiator?'
+    recruit_accepted: The {name} slams her fist to her chest, a salute of blood and iron. 'You fight like a legend. I will be your shield-wall — no one passes while I draw breath!'
+    capture: The {name} slams her fist to her chest, horns dipping. 'You bested me in the arena, {player}. My horns are yours.'
+    house_talk_low: She snorts, pawing the ground. 'Talk is for the weak. Fight me.'
+    house_talk_mid: She grunts, crossing her arms. 'You are not weak. Tell me of your battles.'
+    house_talk_high: She sits beside you, massive and calm. 'You are a worthy ally. Let us train together.'
+    house_talk_max: She holds you gently, her voice a rumble. 'You are my victory. I will never let you fall.'
+    house_gift_love: She bellows, lifting it high. 'A gift worthy of a champion! I am honoured!'
+    house_gift_hate: She throws it aside. 'It is worthless. Give me steel.'
+    house_buff: She stomps, and the ground shakes. 'May your steps be unshakeable.'
+    house_bond_kiss: She plants a surprisingly tender kiss. 'Now you are my arena.'
+    house_recruit_again: She stamps her foot, ready. 'The arena calls! Let us fight again!'
 
 vampire_matriarch:
   name: Vampire Matriarch
@@ -499,8 +820,18 @@ vampire_matriarch:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} cradles a porcelain doll, her gaze ancient and unreadable. 'My children are many. What makes you think I need one more? Prove your worth, fledgling.'"
-    recruit_accepted: "The {name} opens her arms, maternal and terrifying all at once. 'Come, my new child. I shall give you the dark gift of my fangs — and my eternal protection.'"
+    recruit_denied: The {name} cradles a porcelain doll, her gaze ancient and unreadable. 'My children are many. What makes you think I need one more? Prove your worth, fledgling.'
+    recruit_accepted: The {name} opens her arms, maternal and terrifying all at once. 'Come, my new child. I shall give you the dark gift of my fangs — and my eternal protection.'
+    capture: The {name} opens her arms, ancient and inviting. 'Come, {player}. I have waited long for one like you.'
+    house_talk_low: She cradles the doll, indifferent. 'You are not my child. Do not bother me.'
+    house_talk_mid: She sets down the doll, giving you a faint smile. 'You have potential. Tell me of your lineage.'
+    house_talk_high: She takes your hand, her touch maternal. 'You have earned my care. I will protect you.'
+    house_talk_max: She holds you as a mother would. 'You are my greatest child. I love you.'
+    house_gift_love: She accepts it with a soft smile. 'A thoughtful gift. You are learning.'
+    house_gift_hate: She pushes it away, disappointed. 'This is not how you honour a matriarch.'
+    house_buff: She whispers a blessing of blood and shadow. 'May you never hunger and always prevail.'
+    house_bond_kiss: She kisses your forehead, a mark of belonging. 'Now you are truly mine.'
+    house_recruit_again: She rises, ancient and powerful. 'Come, my child. We have much to do.'
 
 centaur_champion:
   name: Centaur Champion
@@ -515,8 +846,18 @@ centaur_champion:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} adjusts her armor, eyes fierce. 'I am a champion of my people. I will not follow a leader who cannot keep pace with my hooves.'"
-    recruit_accepted: "The {name} bows her head, mane flowing like silk. 'You run with the heart of a champion. I will charge at your side — through fire, through storm, through oblivion.'"
+    recruit_denied: The {name} adjusts her armor, eyes fierce. 'I am a champion of my people. I will not follow a leader who cannot keep pace with my hooves.'
+    recruit_accepted: The {name} bows her head, mane flowing like silk. 'You run with the heart of a champion. I will charge at your side — through fire, through storm, through oblivion.'
+    capture: The {name} stamps her hoof, then bows deeply. 'A champion yields to a greater champion, {player}. Ride with me.'
+    house_talk_low: She prances restlessly. 'You are slow. I have no time for dawdlers.'
+    house_talk_mid: She circles you, a spark of interest. 'You are faster than you look. Tell me of your home.'
+    house_talk_high: She offers you her hand. 'You are a true rider. Let us race!'
+    house_talk_max: She rests her head against yours. 'You are my champion. I will follow you anywhere.'
+    house_gift_love: She lifts it with a joyful neigh. 'A gift worthy of a champion! I am proud!'
+    house_gift_hate: She snorts, unimpressed. 'This is not fit for a warrior.'
+    house_buff: She stamps, and you feel a burst of speed. 'Now you run like the wind!'
+    house_bond_kiss: She kisses you, mane brushing your face. 'Now you are my herd.'
+    house_recruit_again: She tosses her mane, ready to charge. 'Let us ride to glory again!'
 
 infernal_empress:
   name: Infernal Empress
@@ -531,8 +872,18 @@ infernal_empress:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} sits on a throne of molten bone, eyes burning. 'Mortals are ash. Demons are smoke. Why should I bind myself to either? Amuse me, or burn.'"
-    recruit_accepted: "The {name} rises, hellfire curling around her like a gown. 'You are the spark that did not die in my furnace. Rule the abyss with me — I am tired of ruling alone.'"
+    recruit_denied: The {name} sits on a throne of molten bone, eyes burning. 'Mortals are ash. Demons are smoke. Why should I bind myself to either? Amuse me, or burn.'
+    recruit_accepted: The {name} rises, hellfire curling around her like a gown. 'You are the spark that did not die in my furnace. Rule the abyss with me — I am tired of ruling alone.'
+    capture: The {name} steps down from her throne, hellfire dimming to candlelight. 'You conquered the abyss, {player}. Now... conquer me.'
+    house_talk_low: She lounges on her throne, unimpressed. 'You are a gnat. Swat yourself away.'
+    house_talk_mid: She leans forward, a flicker of interest. 'You are not entirely boring. Speak.'
+    house_talk_high: She descends to your level, fire warm. 'You have earned my attention. Let us converse.'
+    house_talk_max: She takes you in her arms, fire soft. 'You are my equal. I love you.'
+    house_gift_love: She accepts it, and it glows with her fire. 'A gift fit for an empress. You please me.'
+    house_gift_hate: She incinerates it. 'Trash. Do not waste my time.'
+    house_buff: She breathes a wave of power over you. 'May you burn bright and never be extinguished.'
+    house_bond_kiss: She kisses you, and you taste the inferno. 'Now you are my consort in hell.'
+    house_recruit_again: She rises, hellfire roaring. 'The abyss awaits. Let us rule together.'
 
 scylla_wrecker:
   name: Scylla Wrecker
@@ -546,8 +897,18 @@ scylla_wrecker:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name}'s many tentacles writhe restlessly, eyes gleaming from the depths. 'I am the deep. You are the surface. We do not mix, little bubble.'"
-    recruit_accepted: "The {name} wraps a tentacle gently around your ankle, pulling you closer to her cold embrace. 'You dived where others drowned. I shall drag your enemies to the abyss.'"
+    recruit_denied: The {name}'s many tentacles writhe restlessly, eyes gleaming from the depths. 'I am the deep. You are the surface. We do not mix, little bubble.'
+    recruit_accepted: The {name} wraps a tentacle gently around your ankle, pulling you closer to her cold embrace. 'You dived where others drowned. I shall drag your enemies to the abyss.'
+    capture: The {name} wraps a tentacle around your wrist, pulling you toward the depths. 'You dived where others feared, {player}. I will not let you sink.'
+    house_talk_low: She lurks in the shadows of the room. 'You are dry. I do not like dry.'
+    house_talk_mid: She extends a tentacle, dripping. 'You are curious. Touch me if you dare.'
+    house_talk_high: She wraps a tentacle around your waist, pulling you close. 'You are my favourite surface‑dweller. Stay with me.'
+    house_talk_max: She holds you in a nest of tentacles, her voice soft. 'You are my treasure from the depths. I love you.'
+    house_gift_love: She takes it, coiling around it. 'It is wet and shiny. I love it!'
+    house_gift_hate: She lets it sink into the floor. 'It is dry and dead. Remove it.'
+    house_buff: She spouts a spray of brine over you. 'May you breathe deep and never drown.'
+    house_bond_kiss: She kisses you, tasting of salt and the deep. 'Now you are of the abyss.'
+    house_recruit_again: She rises, tentacles waving. 'The depths miss you. Let us dive again.'
 
 gorgon_petrifier:
   name: Gorgon Petrifier
@@ -562,8 +923,18 @@ gorgon_petrifier:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} adjusts her veil, snakes hissing a warning. 'One look and you are stone. One word and you are dust. Why would I trade solitude for a fragile mortal?'"
-    recruit_accepted: "The {name} lifts her veil, and for the first time her eyes hold no threat — only wonder. 'You did not turn to stone. You are my first... my only... safe place.'"
+    recruit_denied: The {name} adjusts her veil, snakes hissing a warning. 'One look and you are stone. One word and you are dust. Why would I trade solitude for a fragile mortal?'
+    recruit_accepted: The {name} lifts her veil, and for the first time her eyes hold no threat — only wonder. 'You did not turn to stone. You are my first... my only... safe place.'
+    capture: The {name} lifts her veil slowly, snakes hissing softly. 'You did not turn away. You did not turn to stone. You are... my first, {player}.'
+    house_talk_low: She keeps her veil down, snakes hissing. 'You are too bold. Look away.'
+    house_talk_mid: She lifts the veil a fraction. 'You are not afraid? ...Interesting.'
+    house_talk_high: She lets you touch her face, snakes still. 'You see me for who I am. I... like that.'
+    house_talk_max: She holds you, veil discarded, snakes nuzzling you. 'You are my only safe harbor. I love you.'
+    house_gift_love: She accepts it, and her snakes calm. 'A gift... I have never received one. Thank you.'
+    house_gift_hate: She recoils, snakes hissing. 'It is a trap. Take it away.'
+    house_buff: She whispers a petrification charm that hardens your resolve. 'May you be as unyielding as stone.'
+    house_bond_kiss: She kisses you, and you feel no fear. 'Now you are safe from my gaze.'
+    house_recruit_again: She lifts her veil, a smile on her face. 'I will walk with you again.'
 
 ninetales_fox:
   name: Ninetales Fox
@@ -577,8 +948,18 @@ ninetales_fox:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} swishes her nine tails, flames dancing between them. 'I have lived a thousand years. You are but a blink. Return when you have become a story worth telling.'"
-    recruit_accepted: "The {name} bows her head, all nine tails fanning out like a crown of fire. 'You are the chapter I never expected. I will guard your tale until the last page turns.'"
+    recruit_denied: The {name} swishes her nine tails, flames dancing between them. 'I have lived a thousand years. You are but a blink. Return when you have become a story worth telling.'
+    recruit_accepted: The {name} bows her head, all nine tails fanning out like a crown of fire. 'You are the chapter I never expected. I will guard your tale until the last page turns.'
+    capture: The {name} bows, all nine tails fanning out. 'A thousand years I waited, {player}. You are the story I was meant to find.'
+    house_talk_low: She fans her tails, uninterested. 'You are a page in a book I have already read.'
+    house_talk_mid: She lets you touch a tail tip. 'You have some new lines. Tell me your story.'
+    house_talk_high: She curls around you, tails warm. 'You are becoming a favourite chapter. Continue.'
+    house_talk_max: She holds you, all nine tails cocooning you. 'You are my epic. I will guard you forever.'
+    house_gift_love: She accepts it, tails flickering with joy. 'A gift for a legend? You are generous.'
+    house_gift_hate: She sets it aside, unimpressed. 'It is not worthy of my tale.'
+    house_buff: She breathes a wisp of flame that coils around you. 'May your story be filled with fire and glory.'
+    house_bond_kiss: She kisses you, and you taste a thousand years. 'Now you are part of my legend.'
+    house_recruit_again: She rises, nine tails blazing. 'I have waited long enough. Let us write the next chapter.'
 
 mermaid_siren_queen:
   name: Mermaid Siren Queen
@@ -593,8 +974,18 @@ mermaid_siren_queen:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} sinks beneath the waves, her voice rising like a warning. 'The tide does not answer to shore-dwellers. Learn the language of the deep, or drown trying.'"
-    recruit_accepted: "The {name} rises from the water, taking your hand in her webbed fingers. 'You are the current I would follow to any shore. My song is yours — my ocean, my heart.'"
+    recruit_denied: The {name} sinks beneath the waves, her voice rising like a warning. 'The tide does not answer to shore-dwellers. Learn the language of the deep, or drown trying.'
+    recruit_accepted: The {name} rises from the water, taking your hand in her webbed fingers. 'You are the current I would follow to any shore. My song is yours — my ocean, my heart.'
+    capture: The {name} sings a soft melody as she allows herself to be captured.
+    house_talk_low: She stays in a pool of water, distant. 'You are dry. I do not like dry.'
+    house_talk_mid: She lets you touch her tail. 'You are gentle. Tell me of your sea?'
+    house_talk_high: She rises to sit beside you, her voice melodic. 'You have become a part of my tide.'
+    house_talk_max: She wraps her arms around you, her song soft. 'You are my shore. I will always return.'
+    house_gift_love: She takes it, a bright trill. 'It is beautiful! I will keep it in my grotto!'
+    house_gift_hate: She pushes it away, sad. 'It does not belong beneath the waves.'
+    house_buff: She sings a note that fills you with calm. 'May the sea always carry you safely.'
+    house_bond_kiss: She kisses you, tasting of salt and song. 'Now you are part of my ocean.'
+    house_recruit_again: She surfaces, smiling. 'I heard your call. Let us sail together.'
 
 draconic_valkyrie:
   name: Draconic Valkyrie
@@ -609,8 +1000,18 @@ draconic_valkyrie:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} spreads her wings, scales gleaming like armor. 'I am dragon and valkyrie both. I choose who lives and dies. You have not earned my judgment yet.'"
-    recruit_accepted: "The {name} beats her wings in a thunderclap of approval, landing before you. 'You are worthy of the halls of glory! I will carry you to victory on dragon-wings!'"
+    recruit_denied: The {name} spreads her wings, scales gleaming like armor. 'I am dragon and valkyrie both. I choose who lives and dies. You have not earned my judgment yet.'
+    recruit_accepted: The {name} beats her wings in a thunderclap of approval, landing before you. 'You are worthy of the halls of glory! I will carry you to victory on dragon-wings!'
+    capture: The {name} folds her wings, spear resting at her side. 'You have earned the judgment of dragon and valkyrie, {player}. I choose life... with you.'
+    house_talk_low: She stands rigid, wings half‑spread. 'You are unproven. Speak.'
+    house_talk_mid: She relaxes, a glint in her eye. 'You are not worthless. Tell me of your battles.'
+    house_talk_high: She sits beside you, wings curving around you. 'You are a worthy warrior. I would fight beside you.'
+    house_talk_max: She wraps you in her wings, her voice soft. 'You are my glory. I love you.'
+    house_gift_love: She holds it high, scales glinting. 'A gift for a valkyrie! I accept!'
+    house_gift_hate: She drops it, unimpressed. 'It is not worthy of a dragon.'
+    house_buff: She roars, and you feel invincible. 'May you earn a place in the halls of the slain.'
+    house_bond_kiss: She kisses you, and you taste sky and fire. 'Now you are my chosen.'
+    house_recruit_again: She spreads her wings, spear ready. 'Valhalla awaits! Let us ride!'
 
 sphinx_riddler:
   name: Sphinx Riddler
@@ -625,8 +1026,18 @@ sphinx_riddler:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} taps her chin, tail flicking. 'Riddle me this: what walks on your hopes but has no weight? You. You are too light to carry my loyalty. Try again.'"
-    recruit_accepted: "The {name}'s eyes shine with delight, purring like a satisfied cat. 'You answered the riddle of my heart. I will be the wisdom at your side — ask, and I shall know.'"
+    recruit_denied: 'The {name} taps her chin, tail flicking. ''Riddle me this: what walks on your hopes but has no weight? You. You are too light to carry my loyalty. Try again.'''
+    recruit_accepted: The {name}'s eyes shine with delight, purring like a satisfied cat. 'You answered the riddle of my heart. I will be the wisdom at your side — ask, and I shall know.'
+    capture: The {name} purrs, tail flicking. 'The answer to the riddle was you all along, {player}. Clever mortal.'
+    house_talk_low: She lounges, tail flicking. 'You are too simple for my riddles. Leave.'
+    house_talk_mid: She offers you a riddle. 'Solve this, and I will talk.'
+    house_talk_high: She purrs, pleased. 'You have solved many. You are worthy of my company.'
+    house_talk_max: She curls against you, her voice a purr. 'You are the answer to my oldest riddle. I love you.'
+    house_gift_love: She takes it, a smile on her face. 'A gift wrapped in a puzzle? You know me well.'
+    house_gift_hate: She sets it aside, unimpressed. 'It is too obvious. I need mystery.'
+    house_buff: She whispers a riddle that unlocks your mind. 'May your thoughts be sharp and your words true.'
+    house_bond_kiss: She kisses you, and you feel the answer to all questions. 'Now you know my heart.'
+    house_recruit_again: She stretches, a new riddle on her lips. 'I missed you. Let us solve the world together.'
 
 lich_queen_avatar:
   name: Lich Queen Avatar
@@ -640,8 +1051,18 @@ lich_queen_avatar:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} turns a page in a tome that writes itself, not looking up. 'I have outlived empires. You are a footnote. Return when you are a chapter worth studying.'"
-    recruit_accepted: "The {name} closes her book, phylactery glowing between her ribs. 'You are the only variable my equations cannot solve. Fascinating. I will follow you... to compute your destiny.'"
+    recruit_denied: The {name} turns a page in a tome that writes itself, not looking up. 'I have outlived empires. You are a footnote. Return when you are a chapter worth studying.'
+    recruit_accepted: The {name} closes her book, phylactery glowing between her ribs. 'You are the only variable my equations cannot solve. Fascinating. I will follow you... to compute your destiny.'
+    capture: The {name} closes her tome, phylactery pulsing. 'You have solved the equation of my heart, {player}. Fascinating... and terrifying.'
+    house_talk_low: She reads, ignoring you. 'You are a distraction. Leave.'
+    house_talk_mid: She glances up, a flicker of interest. 'You are less distracting than most. Speak.'
+    house_talk_high: She closes the book, giving you her full attention. 'You are a fascinating variable. Let me study you.'
+    house_talk_max: She takes your hand, her phylactery warm. 'You are the equation I never solved. I love you.'
+    house_gift_love: She examines it with academic delight. 'A rare artifact! I will study it for centuries.'
+    house_gift_hate: She returns it, bored. 'It is mundane. I already have a thousand like it.'
+    house_buff: She inscribes a rune on your skin. 'May your intellect never falter.'
+    house_bond_kiss: She kisses you, and you feel infinite knowledge. 'Now you are my eternal thesis.'
+    house_recruit_again: She closes her book, phylactery glowing. 'I have new data. Let us test it together.'
 
 valkyrie_commander:
   name: Valkyrie Commander
@@ -656,8 +1077,18 @@ valkyrie_commander:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} grips her spear, eyes hard as tempered steel. 'I have escorted the bravest to Valhalla. You are not yet among them. Fight harder. Live bolder.'"
-    recruit_accepted: "The {name} kneels with her spear across her lap, a warrior's deepest vow. 'You are the legend I would sing of in the halls of the slain. I will follow you to Ragnarok and back.'"
+    recruit_denied: The {name} grips her spear, eyes hard as tempered steel. 'I have escorted the bravest to Valhalla. You are not yet among them. Fight harder. Live bolder.'
+    recruit_accepted: The {name} kneels with her spear across her lap, a warrior's deepest vow. 'You are the legend I would sing of in the halls of the slain. I will follow you to Ragnarok and back.'
+    capture: The proud {name} kneels with respect. 'You have bested me... I yield.'
+    house_talk_low: She stands at attention, spear ready. 'You are not a commander. State your business.'
+    house_talk_mid: She lowers her spear slightly. 'You have some command presence. Tell me of your battles.'
+    house_talk_high: She offers you a seat. 'You are a true leader. I would follow you.'
+    house_talk_max: She kneels, spear laid at your feet. 'You are my Valhalla. I love you.'
+    house_gift_love: She accepts it with a warrior's nod. 'A gift worthy of a valkyrie. I am honoured.'
+    house_gift_hate: She returns it, unimpressed. 'It is not fit for battle.'
+    house_buff: She intones a battle blessing. 'May your strikes be true and your shield unbreakable.'
+    house_bond_kiss: She kisses you with fierce passion. 'Now you are my fallen hero.'
+    house_recruit_again: She rises, spear gleaming. 'The battlefield calls! Let us ride!'
 
 dragon_goddess_avatar:
   name: Dragon Goddess Avatar
@@ -672,8 +1103,18 @@ dragon_goddess_avatar:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} exhales a breath of starfire, indifferent. 'I am the breath of creation. You are a spark in the void. Do not waste my time with mortal whims.'"
-    recruit_accepted: "The {name} lowers her massive head, starlight pooling in her eyes. 'You are the ember that refuses to die. I will burn the world for you — and build it anew from the ashes.'"
+    recruit_denied: The {name} exhales a breath of starfire, indifferent. 'I am the breath of creation. You are a spark in the void. Do not waste my time with mortal whims.'
+    recruit_accepted: The {name} lowers her massive head, starlight pooling in her eyes. 'You are the ember that refuses to die. I will burn the world for you — and build it anew from the ashes.'
+    capture: The {name} lowers her massive head, starlight pooling. 'You caught a star, {player}. Do not drop it, little spark.'
+    house_talk_low: She coils, immense and unapproachable. 'You are nothing. Do not presume.'
+    house_talk_mid: She regards you with a glimmer of interest. 'You have a spark. Let us see if it kindles.'
+    house_talk_high: She lowers her head to your level. 'You are worthy of my breath. Speak.'
+    house_talk_max: She wraps you in her wing, gentle as a star. 'You are my constellation. I love you.'
+    house_gift_love: She accepts it, and it glows with cosmic light. 'A gift for a goddess? You are bold. I like it.'
+    house_gift_hate: She incinerates it. 'It is dust. Do not offer me dust.'
+    house_buff: She breathes starlight over you. 'May you shine as bright as the cosmos.'
+    house_bond_kiss: She kisses you, and you taste galaxies. 'Now you are my eternal flame.'
+    house_recruit_again: She rises, wings spanning the sky. 'The stars are aligned. Let us reshape the world.'
 
 arachne_brood_queen:
   name: Arachne Brood Queen
@@ -688,8 +1129,18 @@ arachne_brood_queen:
   super_boss: false
   monster_girl: true
   dialogue:
-    recruit_denied: "The {name} tends to a cocoon of writhing silk, not sparing you a glance. 'My brood is countless. My patience is not. You are not yet worthy to walk my web.'"
-    recruit_accepted: "The {name} cradles your face in her many hands, silk soft as a mother's touch. 'You are the egg I never laid, the thread I never cut. I will weave victory around you.'"
+    recruit_denied: The {name} tends to a cocoon of writhing silk, not sparing you a glance. 'My brood is countless. My patience is not. You are not yet worthy to walk my web.'
+    recruit_accepted: The {name} cradles your face in her many hands, silk soft as a mother's touch. 'You are the egg I never laid, the thread I never cut. I will weave victory around you.'
+    capture: The {name} cradles you in her many arms, silk soft as a lullaby. 'You are the thread I never knew I needed, {player}.'
+    house_talk_low: She works her web, ignoring you. 'You are a fly. Stay out of my web.'
+    house_talk_mid: She pauses, giving you a glance. 'You are not a pest. Speak, but do not tangle.'
+    house_talk_high: She sits with you, her many hands gentle. 'You are a fine thread. I would weave you into my family.'
+    house_talk_max: She envelops you in silk and love. 'You are my brood-mate. I love you.'
+    house_gift_love: She takes it, weaving it into her web. 'A gift for the queen? You are wise.'
+    house_gift_hate: She cuts it away. 'It is coarse. It does not belong.'
+    house_buff: She wraps a silk blessing around you. 'May you never be trapped, and always ensnare your foes.'
+    house_bond_kiss: She kisses you, silk soft. 'Now you are part of my brood.'
+    house_recruit_again: She rises, her brood stirring. 'My web is ready. Let us hunt together.'
 
 cosmic_slime_empress:
   name: Cosmic Slime Empress
@@ -701,17 +1152,21 @@ cosmic_slime_empress:
     Learning: 6
     Charisma: 5
   boss: true
-  super_boss: true
+  monster_girl: true
+  super_boss: false
   dialogue:
-    recruit_denied: "The {name} ripples with the colors of distant galaxies, indifferent. 'I am the space between stars. You are a grain on a speck. Return when you are a constellation.'"
-    recruit_accepted: "The {name} envelops you in a cosmic embrace — cool, infinite, and warm all at once. 'You are the gravity I did not expect. I will orbit you until the universe ends... and after.'"
-
-capture_messages:
-  goblin_girl: "The {name} blushes deeply and shyly steps into your arms..."
-  succubus_seductress: "The {name} licks her lips seductively... 'Master~ I'll be good~'"
-  kitsune_miko: "The {name} tilts her head with a mischievous smile. 'Hehe, caught me~'"
-  mermaid_siren_queen: "The {name} sings a soft melody as she allows herself to be captured."
-  valkyrie_commander: "The proud {name} kneels with respect. 'You have bested me... I yield.'"
+    recruit_denied: The {name} ripples with the colors of distant galaxies, indifferent. 'I am the space between stars. You are a grain on a speck. Return when you are a constellation.'
+    recruit_accepted: The {name} envelops you in a cosmic embrace — cool, infinite, and warm all at once. 'You are the gravity I did not expect. I will orbit you until the universe ends... and after.'
+    capture: The {name} envelops you in galaxies, cool and infinite. 'You are the gravity I have been drifting toward, {player}. Welcome home.'
+    house_talk_low: She drifts, formless. 'You are too small. I cannot perceive you.'
+    house_talk_mid: She coalesces into a humanoid shape, curious. 'You are a tiny miracle. Tell me of your world.'
+    house_talk_high: She wraps a tendril around you, stars within. 'You have become a galaxy to me. Stay.'
+    house_talk_max: She holds you in her cosmic form, infinite love. 'You are the center of my universe. I love you.'
+    house_gift_love: She absorbs it, and it glows with new colors. 'A gift from a mortal? It is precious.'
+    house_gift_hate: She lets it drift away. 'It is not of the cosmos. I cannot accept.'
+    house_buff: She imbues you with stardust. 'May you traverse the void and never lose your way.'
+    house_bond_kiss: She kisses you, and you feel the birth of stars. 'Now you are eternal.'
+    house_recruit_again: She ripples, galaxies swirling. 'The universe calls. Let us journey together.'
 
 affection_gifts:
   goblin_girl:
@@ -720,45 +1175,273 @@ affection_gifts:
     weapon: 15
     candy: 30
     book: -5
-
+  harpy_scout:
+    jewelry: 30
+    flowers: 15
+    weapon: 25
+    candy: 10
+    book: -10
+  alraune_fledger:
+    flowers: 40
+    jewelry: 15
+    weapon: -15
+    candy: 20
+    book: 10
+  kobold_tinkerer:
+    weapon: 35
+    jewelry: 25
+    book: 30
+    candy: 15
+    flowers: -5
+  dryad_protector:
+    flowers: 40
+    book: 20
+    jewelry: 10
+    candy: -10
+    weapon: -5
+  ghost_maid:
+    jewelry: 25
+    book: 30
+    flowers: 5
+    candy: -15
+    weapon: -20
+  centaur_scout:
+    weapon: 30
+    flowers: 20
+    jewelry: 15
+    candy: 25
+    book: -10
+  moth_girl_flutterer:
+    jewelry: 35
+    flowers: 30
+    candy: 25
+    book: 10
+    weapon: -15
+  slime_girl:
+    candy: 40
+    flowers: 15
+    weapon: -10
+    jewelry: 20
+    book: 5
+  lamia_constrictor:
+    jewelry: 40
+    weapon: 25
+    flowers: 10
+    candy: 15
+    book: -5
+  lizard_queen:
+    jewelry: 40
+    weapon: 30
+    flowers: -10
+    candy: 5
+    book: 10
+  mimic_girl:
+    candy: 40
+    jewelry: 35
+    weapon: 20
+    flowers: 10
+    book: -15
+  umbral_weaver:
+    book: 35
+    jewelry: 25
+    flowers: -20
+    weapon: 10
+    candy: 5
+  winter_fairy:
+    flowers: 30
+    jewelry: 20
+    candy: -10
+    weapon: 5
+    book: 25
+  holstaur_brawler:
+    weapon: 35
+    candy: 30
+    flowers: 5
+    jewelry: -10
+    book: -15
+  gargoyle_watcher:
+    jewelry: 20
+    book: 30
+    weapon: 25
+    flowers: 10
+    candy: -15
+  vampire_seductress:
+    jewelry: 40
+    flowers: 25
+    candy: 35
+    book: 15
+    weapon: -10
+  yuki_onna:
+    flowers: 25
+    jewelry: 15
+    book: 30
+    candy: -10
+    weapon: 5
+  amazon_warrior:
+    weapon: 40
+    flowers: 15
+    jewelry: -15
+    candy: -20
+    book: 10
+  banshee_wailer:
+    flowers: 30
+    book: 25
+    jewelry: 20
+    candy: 5
+    weapon: -15
+  neko_ninja:
+    jewelry: 25
+    candy: 35
+    flowers: 10
+    book: -5
+    weapon: 20
+  arachne_weaver:
+    jewelry: 35
+    flowers: 20
+    book: 15
+    weapon: 25
+    candy: -10
+  mummy_princess:
+    jewelry: 40
+    book: 30
+    weapon: 15
+    flowers: -5
+    candy: 10
+  oni_bruiser:
+    weapon: 40
+    candy: 30
+    flowers: -10
+    jewelry: 5
+    book: -20
+  salamander_dancer:
+    jewelry: 35
+    flowers: 25
+    candy: 20
+    weapon: 15
+    book: -10
   succubus_seductress:
     jewelry: 40
     flowers: 20
     weapon: -15
     candy: 35
     book: 10
-
+  dullahan_knight:
+    jewelry: 30
+    weapon: 35
+    book: 20
+    flowers: -10
+    candy: -15
   kitsune_miko:
     book: 35
     flowers: 25
     jewelry: 15
     candy: -5
     weapon: 10
-
+  siren_empress:
+    jewelry: 40
+    flowers: 20
+    book: 30
+    candy: 15
+    weapon: -10
+  crimson_countess:
+    jewelry: 45
+    flowers: 20
+    book: 25
+    candy: 10
+    weapon: -15
+  demon_whip_master:
+    weapon: 40
+    jewelry: 20
+    candy: 10
+    flowers: -15
+    book: 5
+  minotaur_gladiator:
+    weapon: 40
+    flowers: 10
+    jewelry: 5
+    candy: 20
+    book: -15
+  vampire_matriarch:
+    jewelry: 35
+    flowers: 20
+    book: 25
+    candy: 15
+    weapon: -10
+  centaur_champion:
+    weapon: 35
+    flowers: 20
+    jewelry: 10
+    candy: 25
+    book: -10
+  infernal_empress:
+    jewelry: 40
+    weapon: 35
+    flowers: -20
+    candy: 10
+    book: 15
+  scylla_wrecker:
+    jewelry: 25
+    weapon: 20
+    flowers: -15
+    candy: 30
+    book: 10
+  gorgon_petrifier:
+    book: 35
+    jewelry: 30
+    flowers: 20
+    candy: 10
+    weapon: -10
+  ninetales_fox:
+    jewelry: 40
+    flowers: 30
+    book: 35
+    candy: 15
+    weapon: 5
+  mermaid_siren_queen:
+    jewelry: 35
+    flowers: 20
+    book: 25
+    candy: 10
+    weapon: -15
+  draconic_valkyrie:
+    weapon: 40
+    jewelry: 20
+    flowers: 15
+    book: 20
+    candy: -10
+  sphinx_riddler:
+    book: 40
+    jewelry: 25
+    flowers: 15
+    weapon: 10
+    candy: -5
+  lich_queen_avatar:
+    book: 45
+    jewelry: 20
+    weapon: 10
+    flowers: -20
+    candy: -15
   valkyrie_commander:
     weapon: 40
     flowers: 10
     jewelry: -10
     candy: -20
     book: 15
-
-#TBA
-# bond_message_first_tier:
-
-# bond_message_seond_tier:
-
-# bond_message_third tier
-
-# bond_marriage:
-
-# bond_message_fourth_tier:
-
-# bond_kiss:
-
-# bond_fight_1
-
-# bond_fight_2
-
-# bond_fight_3
-
-# bond_buff:
+  dragon_goddess_avatar:
+    weapon: 35
+    jewelry: 40
+    book: 20
+    flowers: 10
+    candy: -20
+  arachne_brood_queen:
+    jewelry: 35
+    weapon: 20
+    flowers: 15
+    book: 25
+    candy: -10
+  cosmic_slime_empress:
+    jewelry: 40
+    book: 40
+    candy: 35
+    flowers: -20
+    weapon: -25
