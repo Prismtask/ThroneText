@@ -199,6 +199,14 @@ def get_all_learnable_skills():
     return all_skills
 
 
+def get_passive_by_id(passive_id):
+    """Look up a race passive definition by its ID string (for legacy save compatibility)."""
+    for data in RACE_PASSIVES.values():
+        if data.get("id") == passive_id:
+            return data
+    return None
+
+
 def format_skill_learning_progress(ally):
     """Return a formatted string showing current learning progress."""
     if not ally.get("learning"):

@@ -17,8 +17,8 @@ def barracks_service(player, city_id):
     choice = input("\nChoice: ").strip()
     
     if choice == "1":
-        if player.get("gold", 0) >= 75:
-            player["gold"] -= 75
+        if player.get("gold", 0) >= 225:
+            player["gold"] -= 225
             player["training_buff"] = {"strength": 2, "expires_after": 1}
             print("You sweat through brutal drills. You feel stronger.")
             service_dialogue(city_id, "barracks", "train")
@@ -149,6 +149,11 @@ def select_skill_from_category(player, ally_data, category):
                 if success:
                     print(f"\n{ally_data['name']} is now learning {skill_name}!")
                     save_house_data(player, house_data)
+                    # Also update the active party copy so the skill appears immediately
+                    for party_ally in player.get("allies", []):
+                        if party_ally.get("name") == ally_data['name']:
+                            teach_ally_skill(party_ally, chosen_skill_id)
+                            break
                 else:
                     print(f"\nFailed to teach skill (already learning or already knows it).")
                 break

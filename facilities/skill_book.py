@@ -104,11 +104,19 @@ def _display_ally_skill_book(ally):
 
     # Race passive
     race = ally.get("race")
-    if race:
-        passive = get_race_passive(race)
-        if passive:
-            print(f"  [Passive] {passive['name']}")
-            print(f"    {passive['description']}")
+    passive = get_race_passive(race) if race else None
+    if not passive and ally.get("passive_skill"):
+        from combat.ally_skills import get_passive_by_id
+        passive = get_passive_by_id(ally["passive_skill"])
+    if not passive and ally.get("key"):
+        from resources.enemies import ENEMIES
+        template = ENEMIES.get(ally["key"], {})
+        template_race = template.get("race")
+        if template_race:
+            passive = get_race_passive(template_race)
+    if passive:
+        print(f"  [Passive] {passive['name']}")
+        print(f"    {passive['description']}")
 
     # Innate skills
     innate_ids = ally.get("innate_skills", [])

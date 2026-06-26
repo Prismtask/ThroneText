@@ -49,7 +49,19 @@ def display_player_status(player):
         else:
             print(f"  {slot.title()}: empty")
 
-    # Show player active skills right after equipment
+    # Show passive skill right after equipment
+    passive = get_passive_skill(player)
+    if passive:
+        print(f"\n--- Passive Skill ---")
+        print(f"  {passive['name']}: {passive['description']}")
+
+    # Show stat milestone bonuses right after passive
+    from combat.stat_milestones import format_milestone_bonuses
+    milestone_text = format_milestone_bonuses(player)
+    if milestone_text:
+        print(f"\n{milestone_text}")
+
+    # Show player active skills
     _display_player_skills(player)
 
     # Show allies
@@ -94,18 +106,6 @@ def display_player_status(player):
 
             # Show ally skills
             _display_ally_skills(ally)
-
-    # Show passive skill
-    passive = get_passive_skill(player)
-    if passive:
-        print(f"\n--- Passive Skill ---")
-        print(f"  {passive['name']}: {passive['description']}")
-
-    # Show stat milestone bonuses
-    from combat.stat_milestones import format_milestone_bonuses
-    milestone_text = format_milestone_bonuses(player)
-    if milestone_text:
-        print(f"\n{milestone_text}")
 
     display_active_bounties(player)
 
@@ -153,10 +153,18 @@ def _display_ally_skills(ally):
 
     # Passive
     race = ally.get("race")
-    if race:
-        passive = get_race_passive(race)
-        if passive:
-            lines.append(f"    [Passive] {passive['name']}: {passive['description']}")
+    passive = get_race_passive(race) if race else None
+    if not passive and ally.get("passive_skill"):
+        from combat.ally_skills import get_passive_by_id
+        passive = get_passive_by_id(ally["passive_skill"])
+    if not passive and ally.get("key"):
+        from resources.enemies import ENEMIES
+        template = ENEMIES.get(ally["key"], {})
+        template_race = template.get("race")
+        if template_race:
+            passive = get_race_passive(template_race)
+    if passive:
+        lines.append(f"    [Passive] {passive['name']}: {passive['description']}")
 
     # Innate skills
     innate_ids = ally.get("innate_skills", [])
