@@ -196,9 +196,10 @@ def add_drop_to_inventory(player, enemy_level):
     if drop:
         item_id, rarity = drop
         item = build_item(item_id, rarity)
+        print(f"An enemy drops: {item['name']} [{rarity}]!")
         from inventory_ui import prompt_acquire_item
         if prompt_acquire_item(player, item):
-            print(f"You found: {item['name']}!")
+            print(f"You acquired the {item['name']}!")
         return True
     return False
 
