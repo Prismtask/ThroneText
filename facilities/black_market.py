@@ -21,9 +21,12 @@ def black_market_service(player, city_id):
         if player.get("gold", 0) >= cost:
             player["gold"] -= cost
             item = random_equipment(rarity="rare")
-            add_item_to_inventory(player, item)
-            print(f"You acquire: {item['name']}")
-            service_dialogue(city_id, "black_market", "buy")
+            if add_item_to_inventory(player, item):
+                print(f"You acquire: {item['name']}")
+                service_dialogue(city_id, "black_market", "buy")
+            else:
+                print("Your bag is full! Cannot carry the relic.")
+                player["gold"] += cost  # refund
         else:
             print("Not enough gold.")
 
@@ -39,9 +42,12 @@ def black_market_service(player, city_id):
                 # Random rarity (common/uncommon/rare) via build_item
                 rarity = random.choice(["common", "uncommon", "rare", "epic", "legendary"])
                 net = build_item("capture_net", rarity=rarity)
-                add_item_to_inventory(player, net)
-                print(f"You acquire: {net['name']} (x1)")
-                service_dialogue(city_id, "black_market", "buy")
+                if add_item_to_inventory(player, net):
+                    print(f"You acquire: {net['name']} (x1)")
+                    service_dialogue(city_id, "black_market", "buy")
+                else:
+                    print("Your bag is full! Cannot carry the net.")
+                    player["gold"] += cost  # refund
             else:
                 print("Not enough gold.")
 

@@ -206,7 +206,8 @@ def equip_ally_item(ally, item, player):
     old = ally.get("equipped", {}).get(slot)
     if old:
         # Return old item to player inventory
-        add_item_to_inventory(player, old)
+        if not add_item_to_inventory(player, old):
+            return f"Cannot equip {item['name']} on {ally['name']} — your inventory is full."
     ally["equipped"][slot] = item
     # Remove item from player inventory
     if item in player.get("inventory", []):
@@ -224,14 +225,16 @@ def unequip_ally_slot(ally, slot, player):
     from inventory import add_item_to_inventory
     if slot in ally.get("equipped", {}) and ally["equipped"][slot]:
         item = ally["equipped"][slot]
-        ally["equipped"][slot] = None
-        add_item_to_inventory(player, item)
-        # Recalculate ally elemental profile
-        from combat.elemental import compute_ally_elemental
-        res, dmg = compute_ally_elemental(ally)
-        ally["elemental_res"] = res
-        ally["elemental_dmg"] = dmg
-        return f"Unequipped {item['name']} from {ally['name']}."
+        if add_item_to_inventory(player, item):
+            ally["equipped"][slot] = None
+            # Recalculate ally elemental profile
+            from combat.elemental import compute_ally_elemental
+            res, dmg = compute_ally_elemental(ally)
+            ally["elemental_res"] = res
+            ally["elemental_dmg"] = dmg
+            return f"Unequipped {item['name']} from {ally['name']}."
+        else:
+            return f"Cannot unequip {item['name']} from {ally['name']} — your inventory is full!"
     return "Nothing equipped in that slot."
 
 
@@ -257,7 +260,8 @@ def dismiss_allies_back_to_house(player):
         for slot in ["weapon", "armor", "accessory"]:
             item = ally.get("equipped", {}).get(slot)
             if item:
-                add_item_to_inventory(player, item)
+                if not add_item_to_inventory(player, item):
+                    print(f"Your inventory is full! {item['name']} from {ally['name']} was dropped.")
                 ally["equipped"][slot] = None
 
         # Add back to house (only if not already there)

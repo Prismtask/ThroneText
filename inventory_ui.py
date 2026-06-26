@@ -1,9 +1,12 @@
 from combat.skills import get_passive_skill, get_all_unlocked_skills
-from inventory import equip_item, unequip_slot, use_consumable, get_total_equipment_mods
+from inventory import (equip_item, unequip_slot, use_consumable, get_total_equipment_mods,
+                       get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items,
+                       add_item_to_inventory)
 from character import player_max_hp
 from resources.races_classes import ATTRIBUTES
 from utils import clear_screen, format_time
 from combat.ally import get_alive_allies, format_ally_status_line
+from combat.stat_milestones import format_milestone_label
 
 def display_player_status(player):
     """Show player name, level, HP, attributes (with equipment and buff bonuses), and equipped items."""
@@ -29,12 +32,14 @@ def display_player_status(player):
         eq_bonus = equip_mods.get(attr, 0)
         bf_bonus = buff_mods.get(attr, 0)
         total_bonus = eq_bonus + bf_bonus
+        milestone = format_milestone_label(player, attr)
+        milestone_str = f"  [{milestone}]" if milestone else ""
         
         # Display breakdown if there is a buff active
         if bf_bonus > 0:
-            print(f"  {attr}: {base} + {eq_bonus}(eq) + {bf_bonus}(buff) = {base + total_bonus}")
+            print(f"  {attr}: {base} + {eq_bonus}(eq) + {bf_bonus}(buff) = {base + total_bonus}{milestone_str}")
         else:
-            print(f"  {attr}: {base} + {eq_bonus} = {base + total_bonus}")
+            print(f"  {attr}: {base} + {eq_bonus} = {base + total_bonus}{milestone_str}")
             
     print("\nEquipment:")
     for slot in ["weapon", "armor", "accessory"]:
@@ -69,10 +74,12 @@ def display_player_status(player):
                 eq_bonus = ally_eq_mods.get(attr, 0)
                 bf_bonus = ally_buff_mods.get(attr, 0)
                 total_bonus = eq_bonus + bf_bonus
+                milestone = format_milestone_label(ally, attr)
+                milestone_str = f"  [{milestone}]" if milestone else ""
                 if bf_bonus > 0:
-                    print(f"    {attr}: {base} + {eq_bonus}(eq) + {bf_bonus}(buff) = {base + total_bonus}")
+                    print(f"    {attr}: {base} + {eq_bonus}(eq) + {bf_bonus}(buff) = {base + total_bonus}{milestone_str}")
                 else:
-                    print(f"    {attr}: {base} + {eq_bonus} = {base + total_bonus}")
+                    print(f"    {attr}: {base} + {eq_bonus} = {base + total_bonus}{milestone_str}")
 
             print("  Equipment:")
             for slot in ["weapon", "armor", "accessory"]:
@@ -87,6 +94,12 @@ def display_player_status(player):
     if passive:
         print(f"\n--- Passive Skill ---")
         print(f"  {passive['name']}: {passive['description']}")
+
+    # Show stat milestone bonuses
+    from combat.stat_milestones import format_milestone_bonuses
+    milestone_text = format_milestone_bonuses(player)
+    if milestone_text:
+        print(f"\n{milestone_text}")
 
     # Show active skills
     unlocked_skills = get_all_unlocked_skills(player)
@@ -158,6 +171,9 @@ def manage_equipment_submenu(player):
 
     while True:
         clear_screen()
+        equip_cap, other_cap = get_inventory_caps(player)
+        equip_count, other_count = count_inventory(player)
+        print(f"Equipment: {equip_count}/{equip_cap} | Other: {other_count}/{other_cap}")
         print("Equipment management:")
         print("1. Equip on yourself")
         print("2. Unequip your slot")
@@ -166,18 +182,18 @@ def manage_equipment_submenu(player):
         print("5. Back")
         sub = input("Choice: ")
         if sub == "1":
-            equip_items = [i for i in player.get("inventory", []) if i["type"] == "equipment"]
+            equip_items = get_sorted_equipment(player)
             if not equip_items:
                 print("No equipment in bag.")
                 input("Press Enter...")
                 continue
             for idx, itm in enumerate(equip_items):
-                print(f"{idx+1}. {itm['name']} (slot: {itm['slot']})")
+                print(f"{idx+1}. {itm['name']} (slot: {itm['slot']}) [{itm.get('rarity','common')}]")
             try:
                 idx = int(input("Equip which? (0 cancel): ")) - 1
                 if idx >= 0:
                     item = equip_items[idx]
-                    orig_idx = player["inventory"].index(item)
+                    orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is item)
                     player["inventory"].pop(orig_idx)
                     equip_item(player, item)
             except:
@@ -196,7 +212,7 @@ def manage_equipment_submenu(player):
                 print("No allies in your party.")
                 input("Press Enter...")
                 continue
-            equip_items = [i for i in player.get("inventory", []) if i["type"] == "equipment"]
+            equip_items = get_sorted_equipment(player)
             if not equip_items:
                 print("No equipment in bag.")
                 input("Press Enter...")
@@ -210,7 +226,7 @@ def manage_equipment_submenu(player):
                     ally = allies[a_idx]
                     print(f"\nEquipping {ally['name']}:")
                     for idx, itm in enumerate(equip_items):
-                        print(f"{idx+1}. {itm['name']} (slot: {itm['slot']})")
+                        print(f"{idx+1}. {itm['name']} (slot: {itm['slot']}) [{itm.get('rarity','common')}]")
                     i_idx = int(input("Equip which? (0 cancel): ")) - 1
                     if i_idx >= 0:
                         item = equip_items[i_idx]
@@ -253,25 +269,39 @@ def manage_bag_submenu(player):
     """Submenu for using/dropping items from inventory."""
     while True:
         clear_screen()
+        equip_cap, other_cap = get_inventory_caps(player)
+        equip_count, other_count = count_inventory(player)
         inv = player.get("inventory", [])
         if not inv:
             print("Your bag is empty.")
             input("Press Enter...")
             break
-        print("Your items:")
-        for idx, itm in enumerate(inv):
-            print(f"{idx+1}. {itm['name']} ({itm['type']})")
+        print(f"Equipment: {equip_count}/{equip_cap} | Other: {other_count}/{other_cap}")
+        print("\nYour items:")
+        sorted_equip = get_sorted_equipment(player)
+        sorted_items = get_sorted_items(player)
+        all_sorted = sorted_equip + sorted_items
+        if sorted_equip:
+            print("-- Equipment --")
+            for idx, itm in enumerate(sorted_equip):
+                print(f"  {idx+1}. {itm['name']} ({itm['slot']}) [{itm.get('rarity','common')}]")
+        if sorted_items:
+            print("-- Items --")
+            for idx, itm in enumerate(sorted_items):
+                offset = len(sorted_equip)
+                print(f"  {idx+1+offset}. {itm['name']} ({itm['type']}) [{itm.get('rarity','common')}]")
         print("\n[U]se item  [D]rop item  [B]ack")
         act = input("Choice: ").strip().lower()
         if act == "u":
             try:
                 idx = int(input("Item number: ")) - 1
-                if 0 <= idx < len(inv):
-                    item = inv[idx]
+                if 0 <= idx < len(all_sorted):
+                    item = all_sorted[idx]
                     if item["type"] in ("consumable","utility"):
                         msg = use_consumable(player, item, combat_state=None)
                         print(msg)
-                        player["inventory"].pop(idx)
+                        orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is item)
+                        player["inventory"].pop(orig_idx)
                         input("Press Enter...")
                     else:
                         print("You can only use consumables/utility outside combat.")
@@ -281,11 +311,70 @@ def manage_bag_submenu(player):
         elif act == "d":
             try:
                 idx = int(input("Drop which? ")) - 1
-                if 0 <= idx < len(inv):
-                    dropped = player["inventory"].pop(idx)
+                if 0 <= idx < len(all_sorted):
+                    item = all_sorted[idx]
+                    orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is item)
+                    dropped = player["inventory"].pop(orig_idx)
                     print(f"You drop {dropped['name']}.")
                     input("Press Enter...")
             except:
                 pass
         elif act == "b":
             break
+
+
+def prompt_acquire_item(player, item):
+    """Try to add item to inventory. If full, prompt player to discard an existing item or drop the new one.
+    Returns True if the item ends up in inventory, False if it was dropped.
+    """
+    if add_item_to_inventory(player, item):
+        return True
+
+    equip_cap, other_cap = get_inventory_caps(player)
+    equip_count, other_count = count_inventory(player)
+
+    is_equip = item.get("type") == "equipment"
+    cat_name = "Equipment" if is_equip else "Items"
+    cur_count = equip_count if is_equip else other_count
+    cur_cap = equip_cap if is_equip else other_cap
+
+    print(f"\n⚠️  Your {cat_name.lower()} bag is full! ({cur_count}/{cur_cap})")
+
+    if is_equip:
+        candidates = get_sorted_equipment(player)
+        header = "-- Equipment --"
+    else:
+        candidates = get_sorted_items(player)
+        header = "-- Items --"
+
+    if not candidates:
+        print(f"You have no {cat_name.lower()} to discard. The item is dropped.")
+        return False
+
+    print(f"\n{header}")
+    for idx, itm in enumerate(candidates):
+        extra = f" ({itm['slot']})" if is_equip else f" ({itm['type']})"
+        print(f"  {idx+1}. {itm['name']}{extra} [{itm.get('rarity','common')}]")
+
+    print(f"\n[D]rop the new item  or  enter a number (1-{len(candidates)}) to discard that item instead.")
+    choice = input("Choice: ").strip().lower()
+
+    if choice == "d":
+        print(f"You drop the {item['name']}.")
+        return False
+
+    try:
+        idx = int(choice) - 1
+        if 0 <= idx < len(candidates):
+            discarded = candidates[idx]
+            orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is discarded)
+            removed = player["inventory"].pop(orig_idx)
+            player.setdefault("inventory", []).append(item)
+            print(f"Discarded {removed['name']}. Acquired {item['name']}!")
+            return True
+        else:
+            print("Invalid choice. Dropping the new item.")
+            return False
+    except (ValueError, StopIteration):
+        print("Invalid choice. Dropping the new item.")
+        return False

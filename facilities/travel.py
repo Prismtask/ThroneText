@@ -14,6 +14,18 @@ def _danger_tag(travel_time):
     return ""
 
 
+def _effective_travel_time(player, raw_time):
+    """Apply mount time reduction for overland journeys."""
+    mount_id = player.get("mount_id")
+    if mount_id:
+        from resources.mounts import get_mount
+        mount = get_mount(mount_id)
+        if mount:
+            reduction = mount.get("time_reduction", 0)
+            return int(raw_time * (1 - reduction))
+    return raw_time
+
+
 def travel_to_city(player, current_city_id):
     """
     Overland travel between cities.
@@ -34,11 +46,22 @@ def travel_to_city(player, current_city_id):
         input("Press Enter...")
         return
 
+    # Show mount status if any
+    mount_id = player.get("mount_id")
+    if mount_id:
+        from resources.mounts import get_mount
+        mount = get_mount(mount_id)
+        if mount:
+            print(f"\n[Your {mount['name']} is ready. "
+                  f"{int(mount['time_reduction']*100)}% faster, "
+                  f"{int(mount['event_mitigation']*100)}% safer]")
+
     print(f"\n=== OVERLAND TRAVEL from {city['name']} ===")
     for i, conn in enumerate(land_routes, 1):
         dest_name = CITIES.get(conn["dest"], {}).get("name", conn["dest"])
-        tag       = _danger_tag(conn["travel_time"])
-        print(f"  {i}. {dest_name}  ({conn['travel_time']} min){tag}")
+        actual_time = _effective_travel_time(player, conn["travel_time"])
+        tag       = _danger_tag(actual_time)
+        print(f"  {i}. {dest_name}  ({actual_time} min){tag}")
     print("  0. Cancel")
 
     try:
@@ -52,7 +75,8 @@ def travel_to_city(player, current_city_id):
     chosen      = land_routes[idx]
     dest_id     = chosen["dest"]
     dest_name   = CITIES.get(dest_id, {}).get("name", dest_id)
-    travel_time = chosen["travel_time"]
+    raw_time    = chosen["travel_time"]
+    travel_time = _effective_travel_time(player, raw_time)
 
     # Use origin city biome for thematic enemy selection on this road
     origin_biome = city.get("biome", "temperate")

@@ -156,27 +156,24 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
     """Print the main combat HUD with a perfectly aligned party vs enemies layout."""
     allies = get_alive_allies(player)
 
-    # Grid Dimensions (Total inner width = 68 characters)
-    LEFT_COL_WIDTH = 31
-    RIGHT_COL_WIDTH = 33
-    # 31 (Left) + 4 (Middle separator " | ") + 33 (Right) = 68
-
     # Determine header context
     if not header:
         if player.get("abyss_triple_actions", 0) > 0:
             header = ">> ABYSSAL TEMPO ACTIVE <<"
 
-    # 1. Top Border
+    # 1. Top Border (Total inner width = 68 characters)
     print("+" + "-" * 68 + "+")
     if header:
         print("|" + _center_text(header, 68) + "|")
-        print("+" + "-" * LEFT_COL_WIDTH + "+" + "-" * (RIGHT_COL_WIDTH + 2) + "+")
+        # Fixed: Match the 32 | 35 column layout split
+        print("+" + "-" * 32 + "+" + "-" * 35 + "+")
 
     # 2. Column Headers
-    left_header = f" YOUR PARTY"
-    right_header = f" ENEMIES"
-    print(f"| {left_header:<{LEFT_COL_WIDTH}}| {right_header:<{RIGHT_COL_WIDTH}} |")
-    print(f"| " + "-" * (LEFT_COL_WIDTH - 1) + "| " + "-" * (RIGHT_COL_WIDTH) + "|")
+    left_header = " YOUR PARTY"
+    right_header = " ENEMIES"
+    # Fixed: Padded smoothly to maintain strict 32 and 35 character column boundaries
+    print(f"| {left_header:<30} | {right_header:<33} |")
+    print(f"| {'-' * 30} | {'-' * 33} |")
 
     # 3. Gather Party Rows (2 rows per entity)
     party_rows = []
@@ -191,20 +188,16 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
 
     for i, ally in enumerate(allies):
         is_active = (ally is active_ally)
-        # Ally row 1: name + hp + ♀
         party_rows.append(format_ally_status_line(ally, idx=i+2, is_active=is_active))
-        # Ally row 2: buffs
         party_rows.append(_get_entity_buff_tags(ally))
 
     # 4. Gather Enemy Rows (2 rows per entity)
     enemy_rows = []
     for idx, e in enumerate(enemies):
-        # Enemy row 1: name + hp + ♀
         name = e['name'][:12]
         hp_str = f"{e['hp']}/{e['max_hp']}"
         mg_symbol = " ♀" if e.get("monster_girl") else ""
         enemy_rows.append(f"[{idx+1}] {name:<12} {hp_str:>8}{mg_symbol}")
-        # Enemy row 2: buffs
         enemy_rows.append(_get_entity_buff_tags(e))
 
     # 5. Pad both sides to the same height
@@ -215,10 +208,11 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
         enemy_rows.append("")
 
     # 6. Print Side-by-Side Content Columns
+    # Fixed: Truncate and pad strings to fit perfectly into the 32 | 35 structure
     for pl, el in zip(party_rows, enemy_rows):
-        safe_pl = pl[:LEFT_COL_WIDTH - 1]
-        safe_el = el[:RIGHT_COL_WIDTH]
-        print(f"| {safe_pl:<{LEFT_COL_WIDTH-1}}| {safe_el:<{RIGHT_COL_WIDTH}} |")
+        safe_pl = pl[:30]
+        safe_el = el[:33]
+        print(f"| {safe_pl:<30} | {safe_el:<33} |")
 
     # 7. Bottom Frame Actions
     print("+" + "-" * 68 + "+")

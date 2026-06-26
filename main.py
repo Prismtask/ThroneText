@@ -3,7 +3,7 @@ from dungeon import explore_dungeon
 from save_load import list_saves, load_game, save_game, delete_save  # Added delete_save
 from city import visit_city
 from resources.cities import CITIES
-from utils import clear_screen, format_time
+from utils import clear_screen, format_time, handle_player_death
 
 def main_menu():
     while True:
@@ -127,8 +127,14 @@ def play_game(player):
         if player.get("location") not in ["dungeon", None]:
             city_id = player["location"]
             print(f"\nYou are in {CITIES.get(city_id, CITIES['solmere'])['name']}...")
-            if not visit_city(player, city_id):
+            city_result = visit_city(player, city_id)
+            if city_result == "save_exit":
                 return  # Saved and quit
+            if city_result == "dead":
+                if not handle_player_death(player):
+                    return  # Quit to main menu
+                # Player continues; they'll be in the city now
+                continue
             if player.get("location") == city_id:
                 player["location"] = "dungeon"
             continue
@@ -145,9 +151,12 @@ def play_game(player):
             # player["location"] is already set to origin_city inside explore_dungeon
             continue
 
-        if not result:  # Player died
-            input("Press Enter to return to main menu...")
-            break
+        if result == "dead":
+            if not handle_player_death(player):
+                input("Press Enter to return to main menu...")
+                break
+            # Player chose to continue; they're now in the city
+            continue
 
         # Floor cleared
         # explore_dungeon() already advanced city_floors[city]["floor/max_floor"],
@@ -186,8 +195,13 @@ def play_game(player):
                 if city_id in (None, "dungeon"):
                     city_id = "solmere"
                 player["location"] = city_id
-                if not visit_city(player, city_id):
+                city_result = visit_city(player, city_id)
+                if city_result == "save_exit":
                     return   # player saved & quit from within city
+                if city_result == "dead":
+                    if not handle_player_death(player):
+                        return  # Quit to main menu
+                    break
                 break
 
             elif choice == '3':

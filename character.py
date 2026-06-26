@@ -11,6 +11,10 @@ def ensure_player_fields(player):
     player.setdefault("passive_unlocked", True)
     player.setdefault("berserk_turns", 0)
     player.setdefault("bloodlust_turns", 0)
+    player.setdefault("mount_id", None)
+    player.setdefault("level_cap", 10)
+    player.setdefault("ascension_notified", {})
+    player.setdefault("inventory_upgrade", 0)
     from combat.skills import unlock_skills_for_level
     unlock_skills_for_level(player)
 
@@ -189,6 +193,7 @@ def create_character():
         # It is always synced back to city_floors on exit.
         "current_hp": player_max_hp(final_attrs),
         "level": 1,
+        "level_cap": 10,
         "exp": 0,
         "level_hp_bonus": 0,
         "inventory": [],
@@ -205,8 +210,11 @@ def create_character():
         "skill_cooldowns": {},
         "skill_mastery": {},
         "passive_unlocked": True,
+        "ascension_notified": {},
         "elemental_res": base_res,
         "elemental_dmg": base_dmg,
+        "mount_id": None,
+        "inventory_upgrade": 0,
     }
 
     save_game(player)

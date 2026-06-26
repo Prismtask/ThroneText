@@ -23,7 +23,8 @@ def roll_initiative(player, enemies):
     p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
     # Player
-    player_speed = random.randint(1, 20) + p_dex
+    from combat.stat_milestones import get_dexterity_bonus
+    player_speed = random.randint(1, 20) + p_dex + get_dexterity_bonus(player)
     combatants.append({
         "type": "player",
         "speed": player_speed,

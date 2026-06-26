@@ -2,8 +2,61 @@ import random
 from character import player_max_hp
 from resources.items import build_item, ITEMS, ITEM_RARITY
 
+RARITY_ORDER = {
+    "common": 0,
+    "uncommon": 1,
+    "rare": 2,
+    "epic": 3,
+    "legendary": 4,
+}
+
+def get_inventory_caps(player):
+    """Return (equipment_cap, other_cap) based on upgrades and allies."""
+    upgrade = player.get("inventory_upgrade", 0)
+    ally_count = len(player.get("allies", []))
+    equip_cap = 10 + upgrade * 5
+    other_cap = 20 + upgrade * 10 + ally_count * 5
+    return equip_cap, other_cap
+
+def count_inventory(player):
+    inv = player.get("inventory", [])
+    equip_count = sum(1 for i in inv if i.get("type") == "equipment")
+    other_count = sum(1 for i in inv if i.get("type") != "equipment")
+    return equip_count, other_count
+
 def add_item_to_inventory(player, item):
+    """Add item to inventory if there's space. Returns True if added, False if full."""
+    equip_cap, other_cap = get_inventory_caps(player)
+    equip_count, other_count = count_inventory(player)
+    if item.get("type") == "equipment":
+        if equip_count >= equip_cap:
+            return False
+    else:
+        if other_count >= other_cap:
+            return False
     player.setdefault("inventory", []).append(item)
+    return True
+
+def get_sorted_equipment(player):
+    """Return inventory equipment sorted by slot then rarity descending."""
+    inv = player.get("inventory", [])
+    slot_order = {"weapon": 0, "armor": 1, "accessory": 2}
+    equip = [i for i in inv if i.get("type") == "equipment"]
+    equip.sort(key=lambda x: (
+        slot_order.get(x.get("slot", ""), 99),
+        -RARITY_ORDER.get(x.get("rarity", "common"), 0)
+    ))
+    return equip
+
+def get_sorted_items(player):
+    """Return non-equipment items sorted by rarity descending, then by name."""
+    inv = player.get("inventory", [])
+    items = [i for i in inv if i.get("type") != "equipment"]
+    items.sort(key=lambda x: (
+        -RARITY_ORDER.get(x.get("rarity", "common"), 0),
+        x.get("name", "")
+    ))
+    return items
 
 def remove_item_from_inventory(player, index):
     return player["inventory"].pop(index)
@@ -13,28 +66,33 @@ def equip_item(player, item):
     if slot not in player["equipped"]:
         player["equipped"][slot] = None
     old = player["equipped"][slot]
-    player["equipped"][slot] = item
     if old:
-        add_item_to_inventory(player, old)
+        if not add_item_to_inventory(player, old):
+            print(f"Cannot equip {item['name']} — inventory is full. Unequip something first.")
+            return False
+    player["equipped"][slot] = item
     print(f"Equipped {item['name']}.")
     # Recalculate elemental profile
     from combat.elemental import compute_player_elemental
     res, dmg = compute_player_elemental(player)
     player["elemental_res"] = res
     player["elemental_dmg"] = dmg
+    return True
 
 
 def unequip_slot(player, slot):
     if slot in player["equipped"] and player["equipped"][slot]:
         item = player["equipped"][slot]
-        player["equipped"][slot] = None
-        add_item_to_inventory(player, item)
-        print(f"Unequipped {item['name']}.")
-        # Recalculate elemental profile
-        from combat.elemental import compute_player_elemental
-        res, dmg = compute_player_elemental(player)
-        player["elemental_res"] = res
-        player["elemental_dmg"] = dmg
+        if add_item_to_inventory(player, item):
+            player["equipped"][slot] = None
+            print(f"Unequipped {item['name']}.")
+            # Recalculate elemental profile
+            from combat.elemental import compute_player_elemental
+            res, dmg = compute_player_elemental(player)
+            player["elemental_res"] = res
+            player["elemental_dmg"] = dmg
+        else:
+            print(f"Cannot unequip {item['name']} — your inventory is full!")
     else:
         print("Nothing equipped in that slot.")
 
@@ -61,7 +119,8 @@ def use_consumable(player, item, combat_state=None):
             })
             msg = f"You drink {item['name']}. +{power} {stat} for {duration} turns."
         else:
-            heal = item["power"]
+            from combat.stat_milestones import get_wisdom_bonus
+            heal = item["power"] + get_wisdom_bonus(player)
             max_hp = player_max_hp(player)
             old_hp = player["current_hp"]
             player["current_hp"] = min(old_hp + heal, max_hp)

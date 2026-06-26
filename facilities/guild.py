@@ -213,6 +213,56 @@ def _view_enemy_intelligence(player, city_id):
             break
 
 
+def _ascend_level_cap(player, city_id):
+    """Guild ceremony to increase the player's level cap."""
+    from leveling import can_ascend_level_cap, get_next_level_cap, get_incomplete_dungeons
+
+    current_cap = player.get("level_cap", 10)
+    next_cap = get_next_level_cap(current_cap)
+
+    if not can_ascend_level_cap(player):
+        incomplete = get_incomplete_dungeons(player)
+        print(f"\n*** ASCENSION DENIED ***")
+        print(f"You have not yet conquered all dungeons to Floor {current_cap}.")
+        print(f"\nIncomplete Dungeons:")
+        for city_name, dungeon_name, max_floor, required in incomplete:
+            print(f"  {city_name} — {dungeon_name}: Floor {max_floor}/{required}")
+        print(f"\nReturn when every dungeon has been cleared to Floor {current_cap}.")
+        input("\nPress Enter...")
+        return
+
+    print(f"\n{'='*50}")
+    print("  The Guild Master lays a weathered hand on your shoulder.")
+    print(f"  'You have conquered the depths of Floor {current_cap}, adventurer.'")
+    print("  'The seal upon your soul may now be broken.'")
+    print(f"{'='*50}")
+
+    confirm = input("\nBegin the Ascension ceremony? (y/n): ").strip().lower()
+    if confirm != 'y':
+        print("\nThe Guild Master nods solemnly. 'Return when you are ready.'")
+        input("Press Enter...")
+        return
+
+    # Perform ascension
+    old_cap = current_cap
+    player["level_cap"] = next_cap
+    print(f"\n{'='*50}")
+    print(f"*** LEVEL CAP INCREASED: {old_cap} → {next_cap} ***")
+    print("  The Guild seal erupts in prismatic light!")
+    print("  Your soul expands, shattering its former limits.")
+    print(f"  You may now grow to Level {next_cap}!")
+    print(f"{'='*50}")
+
+    # Reset the global notification for the old cap so the next milestone can trigger
+    notified = player.get("ascension_notified", {})
+    global_key = f"global_{old_cap}"
+    if global_key in notified:
+        del notified[global_key]
+
+    advance_time(player, 30)
+    input("\nPress Enter...")
+
+
 def guild_service(player, city_id="solmere"):
     clear_screen()
     
@@ -238,10 +288,16 @@ def guild_service(player, city_id="solmere"):
         print(f"=== {CITIES[city_id]['name'].upper()} GUILD HALL ===")
         service_dialogue(city_id, "receptionist", "enter")
         print(f"Favor: {player['favor'].get(city_id, 0)} | Gold: {player.get('gold', 0)} | Day: {player.get('day', 1)}")
+        
+        from leveling import can_ascend_level_cap, get_next_level_cap
+        can_ascend = can_ascend_level_cap(player)
+        if can_ascend:
+            print("\n  🌟 ASCENSION READY! Your power yearns to break through!")
         print("1. View Bounty Board")
         print("2. Manage Active Bounties")
         print("3. Enemy Intelligence")
-        print("4. Leave")
+        print("4. Ascend Level Cap")
+        print("5. Leave")
         
         choice = input("Choice: ").strip()
         if choice == "1":
@@ -251,6 +307,8 @@ def guild_service(player, city_id="solmere"):
         elif choice == "3":
             _view_enemy_intelligence(player, city_id)
         elif choice == "4":
+            _ascend_level_cap(player, city_id)
+        elif choice == "5":
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 15)
             break

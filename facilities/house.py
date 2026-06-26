@@ -188,6 +188,8 @@ def _house_rest(player, city_id, house):
     input("\nPress Enter...")
 
 
+from inventory import get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items
+
 def _house_storage(player, city_id, house):
     """Move items between inventory and house storage chest."""
     lvl_data = _house_level_data(house)
@@ -197,7 +199,10 @@ def _house_storage(player, city_id, house):
     while True:
         clear_screen()
         inv     = player.get("inventory", [])
+        equip_cap, other_cap = get_inventory_caps(player)
+        equip_count, other_count = count_inventory(player)
         print(f"=== House Storage ({len(storage)}/{cap} slots used) ===")
+        print(f"Your Bag: {equip_count}/{equip_cap} equipment | {other_count}/{other_cap} items")
 
         print("\n-- Chest --")
         if storage:
@@ -208,8 +213,15 @@ def _house_storage(player, city_id, house):
 
         print("\n-- Your Bag --")
         if inv:
-            for i, itm in enumerate(inv):
-                print(f"  {i+1}. {itm['name']} ({itm['type']})")
+            sorted_equip = get_sorted_equipment(player)
+            sorted_items = get_sorted_items(player)
+            all_sorted = sorted_equip + sorted_items
+            for i, itm in enumerate(all_sorted):
+                tag = f"[{itm.get('rarity','common')}]"
+                if itm.get("type") == "equipment":
+                    print(f"  {i+1}. {itm['name']} ({itm['slot']}) {tag}")
+                else:
+                    print(f"  {i+1}. {itm['name']} ({itm['type']}) {tag}")
         else:
             print("  (empty)")
 
@@ -225,30 +237,108 @@ def _house_storage(player, city_id, house):
                 print(f"Chest is full ({cap} slots).")
                 input("Press Enter...")
                 continue
-            try:
-                idx = int(input("Deposit which item? (number): ")) - 1
-                if 0 <= idx < len(inv):
-                    item = inv.pop(idx)
-                    storage.append(item)
-                    print(f"Stored {item['name']} in your chest.")
-                    input("Press Enter...")
-            except (ValueError, IndexError):
-                pass
+            print("\nEnter numbers to deposit (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")
+            raw = input("Deposit which items? ").strip().lower()
+            if raw in ("", "0", "cancel"):
+                print("Cancelled.")
+                input("Press Enter...")
+                continue
+
+            sorted_equip = get_sorted_equipment(player)
+            sorted_items = get_sorted_items(player)
+            all_sorted = sorted_equip + sorted_items
+            indices = set()
+            if raw == "all":
+                indices = set(range(len(all_sorted)))
+            else:
+                for part in raw.split():
+                    if "-" in part:
+                        try:
+                            a, b = part.split("-", 1)
+                            indices.update(range(int(a) - 1, int(b)))
+                        except ValueError:
+                            pass
+                    else:
+                        try:
+                            indices.add(int(part) - 1)
+                        except ValueError:
+                            pass
+
+            indices = sorted([i for i in indices if 0 <= i < len(all_sorted)], reverse=True)
+            if not indices:
+                print("No valid items selected.")
+                input("Press Enter...")
+                continue
+
+            # Check capacity before depositing
+            deposit_count = len(indices)
+            if len(storage) + deposit_count > cap:
+                print(f"Not enough chest space. Can only store {cap - len(storage)} more items.")
+                input("Press Enter...")
+                continue
+
+            for i in indices:
+                item = all_sorted[i]
+                orig_idx = next(idx for idx, itm in enumerate(player["inventory"]) if itm is item)
+                player["inventory"].pop(orig_idx)
+                storage.append(item)
+            print(f"Stored {deposit_count} item(s) in your chest.")
+            input("Press Enter...")
 
         elif act == "w":
             if not storage:
                 print("The chest is empty.")
                 input("Press Enter...")
                 continue
-            try:
-                idx = int(input("Withdraw which item? (number): ")) - 1
-                if 0 <= idx < len(storage):
-                    item = storage.pop(idx)
-                    player.setdefault("inventory", []).append(item)
-                    print(f"Took {item['name']} from the chest.")
-                    input("Press Enter...")
-            except (ValueError, IndexError):
-                pass
+            print("\nEnter numbers to withdraw (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")
+            raw = input("Withdraw which items? ").strip().lower()
+            if raw in ("", "0", "cancel"):
+                print("Cancelled.")
+                input("Press Enter...")
+                continue
+
+            indices = set()
+            if raw == "all":
+                indices = set(range(len(storage)))
+            else:
+                for part in raw.split():
+                    if "-" in part:
+                        try:
+                            a, b = part.split("-", 1)
+                            indices.update(range(int(a) - 1, int(b)))
+                        except ValueError:
+                            pass
+                    else:
+                        try:
+                            indices.add(int(part) - 1)
+                        except ValueError:
+                            pass
+
+            indices = sorted([i for i in indices if 0 <= i < len(storage)], reverse=True)
+            if not indices:
+                print("No valid items selected.")
+                input("Press Enter...")
+                continue
+
+            # Check bag capacity before withdrawing
+            withdraw_equip = sum(1 for i in indices if storage[i].get("type") == "equipment")
+            withdraw_other = len(indices) - withdraw_equip
+            equip_cap, other_cap = get_inventory_caps(player)
+            equip_count, other_count = count_inventory(player)
+            if equip_count + withdraw_equip > equip_cap:
+                print(f"Not enough equipment bag space. Can hold {equip_cap - equip_count} more equipment.")
+                input("Press Enter...")
+                continue
+            if other_count + withdraw_other > other_cap:
+                print(f"Not enough item bag space. Can hold {other_cap - other_count} more items.")
+                input("Press Enter...")
+                continue
+
+            for i in indices:
+                item = storage.pop(i)
+                player.setdefault("inventory", []).append(item)
+            print(f"Took {len(indices)} item(s) from the chest.")
+            input("Press Enter...")
 
         elif act == "b":
             break

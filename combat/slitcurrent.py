@@ -168,7 +168,10 @@ def combat_slitcurrent(player, floor=None):
         print("\n  ✦ You obtained: ABYSS FANG (Legendary) ✦")
         print("~" * 55)
         abyss_fang = build_item("abyss_fang", "legendary")
-        player.setdefault("inventory", []).append(abyss_fang)
+        from inventory import add_item_to_inventory
+        if not add_item_to_inventory(player, abyss_fang):
+            player.setdefault("inventory", []).append(abyss_fang)
+            print("  (Your bag is full, but you force the Abyss Fang in anyway!)")
         input("\nPress Enter to continue...")
 
     return result

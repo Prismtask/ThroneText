@@ -5,6 +5,7 @@ from combat.combat_ui import print_combat_hud, format_enemy_status_line
 from combat.helpers import _player_has_abyss_fang
 from combat.action_menu import get_action_menu
 from combat.capture import is_monster_girl, attempt_capture
+from combat.stat_milestones import get_strength_bonus, get_dexterity_bonus, get_wisdom_bonus
 from combat.skills import get_available_skills, execute_skill, set_skill_cooldown, format_mastery_label
 
 
@@ -96,7 +97,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 from stats import get_effective_attribute
                 scaling_val += get_effective_attribute(player, stat)
 
-        dmg = random.randint(4, 10) + scaling_val - target["con_mod"]
+        dmg = random.randint(4, 10) + scaling_val + get_strength_bonus(player) - target["con_mod"]
         dmg = max(0, dmg)
 
         # Apply elemental damage
@@ -195,7 +196,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
             if "power" in item:
                 old_hp = player["current_hp"]
-                new_hp = min(old_hp + item["power"], player_max_hp(player))
+                heal = item["power"] + get_wisdom_bonus(player)
+                new_hp = min(old_hp + heal, player_max_hp(player))
                 healed_amount = new_hp - old_hp
                 player["current_hp"] = new_hp
                 msg += f"{player['name']} recover {healed_amount} HP. "
@@ -349,7 +351,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             print("You vanish effortlessly through the smoke! Escape successful!")
             return "fled", False
 
-        effective_player_dex = p_dex
+        effective_player_dex = p_dex + get_dexterity_bonus(player)
         for debuff in player.get("active_debuffs", []):
             if debuff["type"] == "slow":
                 effective_player_dex -= 3

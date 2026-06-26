@@ -19,9 +19,12 @@ def herbalist_service(player, city_id):
             player["gold"] -= cost
             # Build using the database dictionary structure
             potion = build_item("healing_potion", rarity="common")
-            add_item_to_inventory(player, potion)
-            print("You receive a healing potion.")
-            service_dialogue(city_id, "herbalist", "buy")
+            if add_item_to_inventory(player, potion):
+                print("You receive a healing potion.")
+                service_dialogue(city_id, "herbalist", "buy")
+            else:
+                print("Your bag is full! Cannot carry the potion.")
+                player["gold"] += cost  # refund
         else:
             print("Not enough gold.")
             
@@ -30,9 +33,12 @@ def herbalist_service(player, city_id):
         if player.get("gold", 0) >= cost:
             player["gold"] -= cost
             antidote = build_item("antidote", rarity="common")
-            add_item_to_inventory(player, antidote)
-            print("You receive an antidote.")
-            service_dialogue(city_id, "herbalist", "buy")
+            if add_item_to_inventory(player, antidote):
+                print("You receive an antidote.")
+                service_dialogue(city_id, "herbalist", "buy")
+            else:
+                print("Your bag is full! Cannot carry the antidote.")
+                player["gold"] += cost  # refund
         else:
             print("Not enough gold.")
     else:

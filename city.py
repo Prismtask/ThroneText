@@ -64,11 +64,19 @@ def visit_city(player, city_id=None):
         if player.get("cursed"):
             status_effects.append("Cursed")
         status_field = f" | Status: {' & '.join(status_effects)}" if status_effects else ""
+        # Show mount if owned
+        mount_field = ""
+        mount_id = player.get("mount_id")
+        if mount_id:
+            from resources.mounts import get_mount
+            m = get_mount(mount_id)
+            if m:
+                mount_field = f" | Mount: {m['name']}"
         # Show floor progress specific to this city's dungeon
         _cf     = player.get("city_floors", {}).get(city_id, {})
         _cur_fl = _cf.get("floor", 1) 
         _max_fl = _cf.get("max_floor", player.get("max_floor", 1))
-        print(f"Adventurer: {player['name']} | {city['name']} Dungeon: {_cur_fl}/{_max_fl} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{status_field}")
+        print(f"Adventurer: {player['name']} | {city['name']} Dungeon: {_cur_fl}/{_max_fl} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{mount_field}{status_field}")
 
         print("\nAvailable Services:")
         menu_options = {}
@@ -114,7 +122,7 @@ def visit_city(player, city_id=None):
             service = menu_options[choice]
             SERVICE_HANDLERS[service](player, city_id)
             if player.get("current_hp", 1) <= 0:
-                return False               # killed during a service (e.g. sea voyage)
+                return "dead"               # killed during a service (e.g. sea voyage)
             if player.get("location") != city_id:
                 return True
 
@@ -134,7 +142,7 @@ def visit_city(player, city_id=None):
             from facilities.travel import travel_to_city
             result = travel_to_city(player, city_id)
             if result == "dead":
-                return False                 # propagate death to game loop
+                return "dead"                 # propagate death to game loop
             if player.get("location") != city_id:
                 return True
 
@@ -182,7 +190,7 @@ def visit_city(player, city_id=None):
             player["location"] = city_id
             save_game(player)
             print("Game saved. Returning to menu.")
-            return False
+            return "save_exit"
 
         else:
             print("Invalid choice.")

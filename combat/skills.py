@@ -332,6 +332,9 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         for debuff in target.get("active_debuffs", []):
             if debuff.get("type") == "sunder":
                 armor = max(0, armor - debuff.get("value", 0))
+        # Apply Strength milestone bonus
+        from combat.stat_milestones import get_strength_bonus
+        power = power + get_strength_bonus(player)
         dmg = max(1, power - armor)
         # Apply elemental damage if applicable
         if element is None and skill_id in SKILL_ELEMENTS:
@@ -428,7 +431,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         target = _pick_ally_target()
         if not target:
             return "No valid target.", False
-        heal = int((base_power + scaling) * power_mult * get_passive_heal_bonus(player))
+        from combat.stat_milestones import get_wisdom_bonus
+        heal = int((base_power + scaling) * power_mult * get_passive_heal_bonus(player)) + get_wisdom_bonus(player)
         old_hp = target.get("current_hp", 0)
         max_hp = player_max_hp(target) if target is player else target.get("max_hp", old_hp)
         target["current_hp"] = min(old_hp + heal, max_hp)
@@ -451,7 +455,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
     # Mass Heal
     if skill_id == "clr_mass_heal":
         party = [player] + (allies or [])
-        heal = int((base_power + scaling) * power_mult * get_passive_heal_bonus(player))
+        from combat.stat_milestones import get_wisdom_bonus
+        heal = int((base_power + scaling) * power_mult * get_passive_heal_bonus(player)) + get_wisdom_bonus(player)
         total_healed = 0
         for member in party:
             if member.get("current_hp", 0) <= 0:
@@ -477,6 +482,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
     if skill_id == "war_second_wind":
         max_hp = player_max_hp(player)
         heal = int(max_hp * skill.get("heal_percent", 0.25))
+        from combat.stat_milestones import get_wisdom_bonus
+        heal = heal + get_wisdom_bonus(player)
         old_hp = player.get("current_hp", 0)
         player["current_hp"] = min(old_hp + heal, max_hp)
         actual = player["current_hp"] - old_hp
@@ -695,7 +702,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             target["hp"] -= dmg
             old_hp = player.get("current_hp", 0)
             max_hp = player_max_hp(player)
-            heal = dmg
+            from combat.stat_milestones import get_wisdom_bonus
+            heal = dmg + get_wisdom_bonus(player)
             player["current_hp"] = min(old_hp + heal, max_hp)
             healed = player["current_hp"] - old_hp
             msg_parts.append(f"You drain {dmg} HP from {target['name']}! You recover {healed} HP.")
@@ -724,7 +732,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             target["hp"] -= dmg
             old_hp = player.get("current_hp", 0)
             max_hp = player_max_hp(player)
-            heal = int(dmg * 0.5 * get_passive_heal_bonus(player))
+            from combat.stat_milestones import get_wisdom_bonus
+            heal = int(dmg * 0.5 * get_passive_heal_bonus(player)) + get_wisdom_bonus(player)
             player["current_hp"] = min(old_hp + heal, max_hp)
             actual_heal = player["current_hp"] - old_hp
             msg_parts.append(f"Holy Smite deals {dmg} damage to {target['name']}! You heal {actual_heal} HP.")
@@ -892,7 +901,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 victory = True
             old_hp = player.get("current_hp", 0)
             max_hp = player_max_hp(player)
-            heal = min(total_dmg, max_hp - old_hp)
+            from combat.stat_milestones import get_wisdom_bonus
+            heal = min(total_dmg + get_wisdom_bonus(player), max_hp - old_hp)
             player["current_hp"] = old_hp + heal
             if heal > 0:
                 msg_parts.append(f"You absorb the holy wrath, healing for {heal} HP!")
@@ -912,7 +922,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             if not [e for e in enemies if e["hp"] > 0]:
                 victory = True
             party = [player] + (allies or [])
-            heal_per = total_dmg // max(1, len(party))
+            from combat.stat_milestones import get_wisdom_bonus
+            heal_per = (total_dmg // max(1, len(party))) + get_wisdom_bonus(player)
             for member in party:
                 if member.get("current_hp", 0) > 0:
                     old_hp = member.get("current_hp", 0)

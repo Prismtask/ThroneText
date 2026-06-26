@@ -32,6 +32,7 @@ try:
 except ImportError:
     def _add_to_inv(player, item):
         player.setdefault("inventory", []).append(item)
+        return True
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -271,11 +272,11 @@ def _num_slots(travel_time, difficulty_mult):
 
 def _trigger_chance(travel_time, difficulty_mult):
     if travel_time <= 60:
-        base = 0.25
+        base = 0.30
     elif travel_time <= 180:
-        base = 0.33
+        base = 0.40
     else:
-        base = 0.45
+        base = 0.55
     return min(base * (difficulty_mult ** 0.6), 0.80)
 
 
@@ -331,13 +332,15 @@ def _handle_combat(player, travel_type, region):
                 rarity      = _combat_drop_rarity(enemy_level)
                 item_id     = _random_item_id()
                 item        = build_item(item_id, rarity)
-                _add_to_inv(player, item.copy())
-                print(f"  Found: {item['name']}  {_item_stat_line(item)}")
+                if not _add_to_inv(player, item.copy()):
+                    print(f"  Found: {item['name']}  {_item_stat_line(item)} (but your bag is full — dropped!)")
+                else:
+                    print(f"  Found: {item['name']}  {_item_stat_line(item)}")
 
         input("  Press Enter to continue your journey...")
 
     elif result == "fled":
-        penalty = random.randint(8, 20)
+        penalty = random.randint(15, 30)
         player["current_hp"] = max(1, player.get("current_hp", 1) - penalty)
         print(f"\n  You flee, but not cleanly — {penalty} damage taken in the scramble.")
         print(f"  HP: {player['current_hp']}/{player_max_hp(player)}")
@@ -362,9 +365,10 @@ def _handle_discovery(player, travel_type):
         else:
             rarity  = _discovery_rarity(player)
             item    = build_item(_random_item_id(), rarity)
-            _add_to_inv(player, item.copy())
             print(f"\n  A waterlogged satchel surfaces from the deep. You haul it aboard.")
             print(f"  Found: {item['name']}  {_item_stat_line(item)}")
+            from inventory_ui import prompt_acquire_item
+            prompt_acquire_item(player, item.copy())
     else:
         if find_gold:
             gold = random.randint(10, 50)
@@ -373,9 +377,10 @@ def _handle_discovery(player, travel_type):
         else:
             rarity  = _discovery_rarity(player)
             item    = build_item(_random_item_id(), rarity)
-            _add_to_inv(player, item.copy())
             print(f"\n  A hollow tree stump — something's wedged inside.")
             print(f"  Found: {item['name']}  {_item_stat_line(item)}")
+            from inventory_ui import prompt_acquire_item
+            prompt_acquire_item(player, item.copy())
 
     input("  Press Enter to continue...")
 
@@ -468,9 +473,12 @@ def _handle_merchant(player):
                 item, your_price, _ = stock[idx]
                 if player.get("gold", 0) >= your_price:
                     player["gold"] -= your_price
-                    _add_to_inv(player, item.copy())
-                    print(f'  You purchase [{item["name"]}] for {your_price}g.')
-                    print('  "Pleasure doing business!" The merchant tips his hat.')
+                    if _add_to_inv(player, item.copy()):
+                        print(f'  You purchase [{item["name"]}] for {your_price}g.')
+                        print('  "Pleasure doing business!" The merchant tips his hat.')
+                    else:
+                        print('  "Your bag looks stuffed, friend. Make room and come back!"')
+                        player["gold"] += your_price  # refund
                 else:
                     print(f'  "You\'re {your_price - player.get("gold", 0)}g short, friend."')
             else:
@@ -487,7 +495,7 @@ def _handle_merchant(player):
 def _handle_hazard(player, travel_type, difficulty_mult):
     """Environmental hazard dealing damage scaled by time-of-day difficulty."""
     max_hp = player_max_hp(player)
-    damage = max(3, int(max_hp * 0.08 * difficulty_mult))
+    damage = max(5, int(max_hp * 0.12 * difficulty_mult))
 
     if travel_type == "sea":
         desc = random.choice([
@@ -520,12 +528,12 @@ def _handle_storm(player, difficulty_mult):
     max_hp = player_max_hp(player)
     print("\n  A black wall of clouds swallows the horizon — the storm hits fast.")
 
-    if random.random() < 0.35 * difficulty_mult:
-        damage = max(4, int(max_hp * 0.12 * difficulty_mult))
+    if random.random() < 0.45 * difficulty_mult:
+        damage = max(6, int(max_hp * 0.18 * difficulty_mult))
         player["current_hp"] = max(1, player.get("current_hp", 1) - damage)
-        advance_time(player, 60)
-        print(f"  Mountainous waves batter the hull for a full hour.")
-        print(f"  You take {damage} damage and arrive one hour late.")
+        advance_time(player, 90)
+        print(f"  Mountainous waves batter the hull for an hour and a half.")
+        print(f"  You take {damage} damage and arrive late.")
         print(f"  HP: {player['current_hp']}/{max_hp}")
     else:
         advance_time(player, 30)
@@ -568,6 +576,14 @@ def run_travel_events(player, travel_time, travel_type="land", region=None):
     slots           = _num_slots(travel_time, difficulty_mult)
     chance          = _trigger_chance(travel_time, difficulty_mult)
     event_pool      = SEA_EVENTS if travel_type == "sea" else LAND_EVENTS
+
+    # Mounts reduce the chance of travel events on land routes
+    if travel_type == "land" and player.get("mount_id"):
+        from resources.mounts import get_mount
+        mount = get_mount(player["mount_id"])
+        if mount:
+            mitigation = mount.get("event_mitigation", 0)
+            chance *= (1 - mitigation)
 
     quiet_stretch = True
 

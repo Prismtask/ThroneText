@@ -9,11 +9,23 @@ from combat.slitcurrent import combat_slitcurrent
 from combat.sylvana import combat_sylvana
 from combat.ignis import combat_ignis
 from combat.yinglong import combat_yinglong
+from combat.rientrante import combat_rientrante
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
 from inventory_ui import manage_inventory_menu
 from leveling import gain_exp, gain_exp_ally
+from dungeon_rooms import (
+    pick_non_combat_type,
+    handle_fountain_room,
+    handle_merchant_room,
+    handle_treasure_room,
+    handle_trap_room,
+    handle_stat_check_room,
+    render_ascii_map,
+    ROOM_LABELS,
+    STAT_CHECK_EVENTS,
+)
 
 
 def get_random_enemy_key(floor, boss=False, region=None):
@@ -82,24 +94,53 @@ def get_random_enemy_key(floor, boss=False, region=None):
 
 
 def generate_floor(floor, region=None):
+    """Generate a floor with 10 rooms: 9 mixed rooms + 1 boss room.
+    
+    Non-combat rooms have a base 10% chance to appear.
+    For each consecutive combat room, the chance increases by 5%.
+    When a non-combat room appears, the chance resets to 10%.
+    """
     rooms = []
     max_enemies = min(5, floor)
-
-    for _ in range(4):
-        num_enemies = random.randint(1, max_enemies)
-        room_enemies = [get_random_enemy_key(floor, boss=False, region=region)
-                        for _ in range(num_enemies)]
-        rooms.append(room_enemies)
-
-    # Every 5th floor gets a True Boss. Otherwise, pick a normal enemy to act as the floor boss
+    
+    # Dynamic non-combat chance
+    non_combat_chance = 0.10
+    consecutive_combat = 0
+    
+    # Generate 9 rooms (index 0-8)
+    for room_idx in range(9):
+        if random.random() < non_combat_chance:
+            # Non-combat room
+            room_type = pick_non_combat_type()
+            if room_type == "stat_check":
+                event_key = random.choice(list(STAT_CHECK_EVENTS.keys()))
+                rooms.append({"type": "stat_check", "event": event_key})
+            elif room_type == "trap":
+                difficulty = int(10 + floor * 1.5)
+                rooms.append({"type": "trap", "difficulty": difficulty})
+            else:
+                rooms.append({"type": room_type})
+            # Reset chance after non-combat room
+            non_combat_chance = 0.10
+            consecutive_combat = 0
+        else:
+            # Combat room
+            num_enemies = random.randint(1, max_enemies)
+            enemy_keys = [get_random_enemy_key(floor, boss=False, region=region)
+                          for _ in range(num_enemies)]
+            rooms.append({"type": "combat", "enemies": enemy_keys})
+            consecutive_combat += 1
+            non_combat_chance = min(0.10 + 0.05 * consecutive_combat, 0.80)
+    
+    # Room 10: Boss room (always combat)
     is_true_boss_floor = (floor % 5 == 0)
     boss_room = [get_random_enemy_key(floor, boss=is_true_boss_floor, region=region)]
     
     num_minions = random.randint(0, min(4, floor - 1))
     for _ in range(num_minions):
         boss_room.append(get_random_enemy_key(floor, boss=False, region=region))
-    rooms.append(boss_room)
-
+    rooms.append({"type": "combat", "enemies": boss_room, "is_boss": True})
+    
     return rooms
 
 _EXCLUDED_ITEM_IDS = frozenset(
@@ -155,8 +196,9 @@ def add_drop_to_inventory(player, enemy_level):
     if drop:
         item_id, rarity = drop
         item = build_item(item_id, rarity)
-        player.setdefault("inventory", []).append(item)
-        print(f"You found: {item['name']}!")
+        from inventory_ui import prompt_acquire_item
+        if prompt_acquire_item(player, item):
+            print(f"You found: {item['name']}!")
         return True
     return False
 
@@ -213,7 +255,7 @@ def explore_dungeon(player):
         
         # 1. Initialize or refill the superboss pool if it's empty or missing
         if not player.get("superboss_pool"):
-            pool = [0, 1, 2, 3, 4]
+            pool = [0, 1, 2, 3, 4, 5]
             # Use seed + floor to keep the shuffle consistent per run/floor 
             # but fall back to a random seed if missing to prevent crashes
             rng = random.Random(player.get("superboss_seed", random.randint(1, 99999)) + floor)
@@ -233,6 +275,9 @@ def explore_dungeon(player):
             print("The air shimmers with heat haze. The stone floor has begun to glow.")
         elif tier == 4:
             print("The sky above the dungeon cracks open. Something vast descends.")
+        elif tier == 5:
+            print("The temperature plummets. Frost crawls across every surface.")
+            print("A pale, merciless light glows from somewhere beyond the walls.")
         print("You have stumbled directly into a SUPER BOSS ARENA!")
         print("="*50)
         input("Press Enter to face the horror...")
@@ -250,6 +295,8 @@ def explore_dungeon(player):
                 result = combat_ignis(player)
             elif tier == 4:
                 result = combat_yinglong(player)
+            elif tier == 5:
+                result = combat_rientrante(player)
                 
             if result == "victory":
                 # 3. Remove the defeated boss from the pool so it won't spawn again until reshuffled
@@ -267,8 +314,13 @@ def explore_dungeon(player):
 
                 # Sync per-city progress
                 next_floor = floor + 1
+                old_max = city_prog["max_floor"]
                 city_prog["floor"]     = next_floor
-                city_prog["max_floor"] = max(city_prog["max_floor"], next_floor)
+                city_prog["max_floor"] = max(old_max, next_floor)
+
+                if city_prog["max_floor"] > old_max:
+                    from leveling import check_level_cap_milestone
+                    check_level_cap_milestone(player, origin_city)
 
                 # Full heal and save
                 player["current_hp"] = player_max_hp(player)
@@ -279,20 +331,44 @@ def explore_dungeon(player):
                 input("Press Enter to continue the fight...")
                 continue
             elif result == "dead":
-                return False
+                return "dead"
 
     # ----- NORMAL FLOORS (non‑milestone) -----
-    print(f"\n=== DESCENDING INTO {region.upper()} DUNGEON – FLOOR {floor} ===")
-    input("Press Enter to begin...")
-    clear_screen()
-    rooms = generate_floor(floor, region=region)
-    total_rooms = len(rooms)
+    # Set floor for downstream handlers
+    player["floor"] = floor
 
-    for i, enemy_keys in enumerate(rooms):
-        if i == total_rooms - 1:
+    # Check for saved room progress on this floor
+    saved_floor = player.get("saved_dungeon_floor")
+    saved_rooms = player.get("saved_dungeon_rooms")
+    if saved_floor == floor and saved_rooms:
+        rooms = saved_rooms
+        start_room = player.get("saved_dungeon_room_index", 0)
+        if start_room > 0:
+            print(f"\n=== DESCENDING INTO {region.upper()} DUNGEON – FLOOR {floor} ===")
+            print(f"Resuming your exploration from Room {start_room + 1}...")
+            input("Press Enter to continue...")
+        clear_screen()
+    else:
+        print(f"\n=== DESCENDING INTO {region.upper()} DUNGEON – FLOOR {floor} ===")
+        input("Press Enter to begin...")
+        clear_screen()
+        rooms = generate_floor(floor, region=region)
+        start_room = 0
+        player["saved_dungeon_floor"] = floor
+        player["saved_dungeon_rooms"] = rooms
+        player["saved_dungeon_room_index"] = 0
+
+    total_rooms = len(rooms)
+    explored = set(range(start_room))
+
+    for i, room in enumerate(rooms[start_room:], start=start_room):
+        room_type = room.get("type", "combat")
+
+        if room.get("is_boss"):
             print(f"\n*** BOSS ROOM ***")
         else:
-            print(f"\n--- Room {i+1} ---")
+            room_label = ROOM_LABELS.get(room_type, f"--- Room {i+1} ---")
+            print(f"\n{room_label}")
         input("Press Enter to enter the room...")
 
         # Advance time by 1 hour per room
@@ -300,72 +376,137 @@ def explore_dungeon(player):
 
         while True:
             clear_screen()
-            result = combat(player, enemy_keys, floor=floor, room_num=i+1, total_rooms=total_rooms)
 
-            if result == "victory":
-                print("\n--- Room Victory Rewards ---")
-                for enemy_key in enemy_keys:
-                    enemy_level = ENEMIES[enemy_key]["level"]
-                    gain_exp(player, enemy_level * 12)
+            if room_type == "combat":
+                result = combat(player, room["enemies"], floor=floor, room_num=i+1, total_rooms=total_rooms)
+
+                if result == "victory":
+                    print("\n--- Room Victory Rewards ---")
+                    for enemy_key in room["enemies"]:
+                        enemy_level = ENEMIES[enemy_key]["level"]
+                        gain_exp(player, enemy_level * 12)
+                        for ally in player.get("allies", []):
+                            if ally.get("current_hp", 0) > 0:
+                                gain_exp_ally(ally, enemy_level * 12)
+                        add_drop_to_inventory(player, enemy_level)
+                        add_gold_drop(player, enemy_key)
+                        
+                        # BOUNTY TRACKING:
+                        if "active_bounties" in player:
+                            for b in player["active_bounties"]:
+                                if b["target_enemy"] == enemy_key and b["current"] < b["required"]:
+                                    b["current"] += 1
+                                    if b["current"] == b["required"]:
+                                        print(f"★ Bounty objective complete: Hunt {b['required']} {b['target_name']}!")
+
+                    # Heal after victory
+                    heal = random.randint(1, 5) + player_con_mod(player)
+                    player["current_hp"] = min(
+                        player["current_hp"] + heal,
+                        player_max_hp(player)
+                    )
+                    print(f"\nYou catch your breath and recover {heal} HP.")
+
+                    # Heal allies too
                     for ally in player.get("allies", []):
                         if ally.get("current_hp", 0) > 0:
-                            gain_exp_ally(ally, enemy_level * 12)
-                    add_drop_to_inventory(player, enemy_level)
-                    add_gold_drop(player, enemy_key)
-                    
-                    # BOUNTY TRACKING:
-                    if "active_bounties" in player:
-                        for b in player["active_bounties"]:
-                            if b["target_enemy"] == enemy_key and b["current"] < b["required"]:
-                                b["current"] += 1
-                                if b["current"] == b["required"]:
-                                    print(f"★ Bounty objective complete: Hunt {b['required']} {b['target_name']}!")
+                            ally_heal = random.randint(1, 3) + ally["attributes"].get("Constitution", 0)
+                            ally["current_hp"] = min(ally["current_hp"] + ally_heal, ally["max_hp"])
+                            print(f"  {ally['name']} recovers {ally_heal} HP.")
 
-                # Heal after victory
-                heal = random.randint(1, 5) + player_con_mod(player)
-                player["current_hp"] = min(
-                    player["current_hp"] + heal,
-                    player_max_hp(player)
-                )
-                print(f"\nYou catch your breath and recover {heal} HP.")
+                    break
 
-                # Heal allies too
-                for ally in player.get("allies", []):
-                    if ally.get("current_hp", 0) > 0:
-                        ally_heal = random.randint(1, 3) + ally["attributes"].get("Constitution", 0)
-                        ally["current_hp"] = min(ally["current_hp"] + ally_heal, ally["max_hp"])
-                        print(f"  {ally['name']} recovers {ally_heal} HP.")
+                elif result == "fled":
+                    print("You flee from the dungeon and return to the city.")
+                    input("Press Enter to continue...")
+                    origin = player.get("origin_city", "solmere")
+                    player["location"] = origin
+                    return "fled"
+                elif result == "dead":
+                    print("Your adventure ends here...")
+                    return "dead"
 
-                while True:
-                    print("\n[Enter] to continue  [I]nventory/Stats  [S]ave and quit")
-                    cmd = input().strip().lower()
-                    if cmd == "":
-                        break
-                    elif cmd == "i":
-                        manage_inventory_menu(player)
-                        continue
-                    elif cmd == "s":
-                        save_game(player)
-                        print("Game saved. Exiting to menu.")
-                        return "save_exit"
-                    else:
-                        continue
+            else:
+                # Non-combat room
+                if room_type == "fountain":
+                    result = handle_fountain_room(player, floor)
+                elif room_type == "merchant":
+                    result = handle_merchant_room(player, floor)
+                elif room_type == "treasure":
+                    result = handle_treasure_room(player, floor)
+                elif room_type == "trap":
+                    result = handle_trap_room(player, floor)
+                elif room_type == "stat_check":
+                    result = handle_stat_check_room(player, floor, room["event"])
+                else:
+                    result = "continue"
+
+                if result == "dead":
+                    return "dead"
+                elif result == "fled":
+                    print("You flee from the dungeon and return to the city.")
+                    input("Press Enter to continue...")
+                    origin = player.get("origin_city", "solmere")
+                    player["location"] = origin
+                    return "fled"
+                
                 break
 
-            elif result == "fled":
-                print("You flee from the dungeon and return to the city.")
-                input("Press Enter to continue...")
-                # Go back to the city you came from
-                origin = player.get("origin_city", "solmere")
-                player["location"] = origin
-                # Do not clear the floor; next descent will restart this floor
-                return "fled"
-            elif result == "dead":
-                print("Your adventure ends here...")
-                return False
+        # Update saved progress so reloads resume from the next room
+        player["saved_dungeon_room_index"] = i + 1
+
+        # Post-room menu (combat and non-combat both get this)
+        while True:
+            print("\n[Enter] to continue  [I]nventory/Stats  [S]ave and quit")
+            cmd = input().strip().lower()
+            if cmd == "":
+                break
+            elif cmd == "i":
+                manage_inventory_menu(player)
+                continue
+            elif cmd == "s":
+                save_game(player)
+                print("Game saved. Exiting to menu.")
+                return "save_exit"
+            else:
+                continue
+
+        # Mark room explored and show ASCII map
+        explored.add(i)
+        render_ascii_map(rooms, explored, i, floor)
 
     # Floor cleared (normal)
+    # Wipe saved dungeon state so the next floor starts fresh
+    for _key in ("saved_dungeon_floor", "saved_dungeon_rooms", "saved_dungeon_room_index"):
+        player.pop(_key, None)
 
+    # ── Tick floor-based buffs (well_rested, floor_buff) ─────────────────────
+    if player.get("active_buffs"):
+        expired = []
+        for buff in player.get("active_buffs", [])[:]:
+            if buff.get("type") in ("well_rested", "floor_buff"):
+                buff["remaining"] -= 1
+                if buff["remaining"] <= 0:
+                    player["active_buffs"].remove(buff)
+                    stat = buff.get("stat", "all")
+                    if stat == "all":
+                        expired.append("well-rested/floor buff")
+                    else:
+                        expired.append(f"{stat} buff")
+        if expired:
+            print(f"\nYour {', '.join(expired)} wears off as you transition floors.")
+
+    # Tick ally floor-based buffs
+    for ally in player.get("allies", []):
+        if ally.get("active_buffs"):
+            for buff in ally.get("active_buffs", [])[:]:
+                if buff.get("type") in ("well_rested", "floor_buff"):
+                    buff["remaining"] -= 1
+                    if buff["remaining"] <= 0:
+                        ally["active_buffs"].remove(buff)
+                        print(f"  {ally['name']}'s {buff.get('stat', 'floor')} buff wears off.")
+
+    # Remove blessings
     if player.get("active_buffs"):
         orig_len = len(player["active_buffs"])
         player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "blessing"]
@@ -382,8 +523,13 @@ def explore_dungeon(player):
     # player["floor"] += 1, but we mirror it here so city_prog stays in sync
     # whether control returns through main.py or any other path.
     next_floor = floor + 1
+    old_max = city_prog["max_floor"]
     city_prog["floor"]     = next_floor
-    city_prog["max_floor"] = max(city_prog["max_floor"], next_floor)
+    city_prog["max_floor"] = max(old_max, next_floor)
+
+    if city_prog["max_floor"] > old_max:
+        from leveling import check_level_cap_milestone
+        check_level_cap_milestone(player, origin_city)
 
     # Advance time by 1 hour for floor completion
     current_time = advance_time(player, 60)

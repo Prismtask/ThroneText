@@ -45,9 +45,12 @@ def gift_shop_service(player, city_id):
             "gift_type": gift_type,
             "value": 1
         }
-        add_item_to_inventory(player, gift_item)
-        print(f"You bought a {gift_type.title()} gift!")
-        service_dialogue(city_id, "gift_shop", "buy")
+        if add_item_to_inventory(player, gift_item):
+            print(f"You bought a {gift_type.title()} gift!")
+            service_dialogue(city_id, "gift_shop", "buy")
+        else:
+            print("Your bag is full! Cannot carry the gift.")
+            player["gold"] += cost  # refund
 
     except ValueError:
         print("Invalid input.")

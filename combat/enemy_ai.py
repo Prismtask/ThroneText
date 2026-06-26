@@ -48,6 +48,12 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         else:
             enemy_dmg = base_dmg
 
+    # Apply Constitution milestone damage reduction
+    from combat.stat_milestones import get_constitution_bonus
+    con_reduction = get_constitution_bonus(player)
+    if con_reduction > 0 and enemy_dmg > 0:
+        enemy_dmg = max(0, enemy_dmg - con_reduction)
+
     player["current_hp"] -= enemy_dmg
 
     elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",

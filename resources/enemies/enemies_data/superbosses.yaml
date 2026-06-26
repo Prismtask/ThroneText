@@ -56,3 +56,51 @@ Superbosses:
       Learning: 2
     boss: true
     super_boss: true
+  rientrante_frostbound:
+    name: Rientrante, the Frostbound
+    race: Elemental
+    level: 25
+    base_hp: 420
+    mods:
+      Strength: 5
+      Constitution: 6
+      Dexterity: 5
+    boss: true
+    super_boss: true
+    elemental_dmg:
+      water: 1.5
+    elemental_res:
+      water: 0.7
+      fire: 1.2
+  frost_shard:
+    name: Frost Shard
+    race: Elemental
+    level: 15
+    base_hp: 55
+    mods:
+      Dexterity: 5
+      Strength: 2
+    boss: false
+    super_boss: false
+  eye_of_truth:
+    name: Eye of Truth
+    race: Fey
+    level: 20
+    base_hp: 180
+    mods:
+      Dexterity: 4
+      Strength: 3
+      Constitution: 4
+    boss: false
+    super_boss: false
+  frozen_arm:
+    name: Frozen Arm
+    race: Construct
+    level: 18
+    base_hp: 120
+    mods:
+      Strength: 4
+      Constitution: 3
+      Dexterity: 3
+    boss: false
+    super_boss: false

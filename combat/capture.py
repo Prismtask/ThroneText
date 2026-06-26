@@ -54,7 +54,8 @@ def attempt_capture(player, target, net=None):
     difficulty = target.get("level", 1) * 1.2 + (1 - hp_percent) * 40
 
     roll = (cha + dex) * 0.8 + (rarity_mult * 25) - difficulty
-    success_chance = max(5, min(95, roll))
+    from combat.stat_milestones import get_charisma_bonus
+    success_chance = max(5, min(95, roll + get_charisma_bonus(player)))
 
     if random.uniform(0, 100) < success_chance:
         print("\n" + "✨" * 20)

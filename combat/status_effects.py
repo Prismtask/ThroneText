@@ -371,7 +371,8 @@ def tick_player_buffs(player):
 
         if btype == "hot":
             old_hp = player["current_hp"]
-            heal = buff["value"]
+            from combat.stat_milestones import get_wisdom_bonus
+            heal = buff["value"] + get_wisdom_bonus(player)
             new_hp = min(old_hp + heal, player_max_hp(player))
             healed = new_hp - old_hp
             player["current_hp"] = new_hp
@@ -382,8 +383,8 @@ def tick_player_buffs(player):
                 player["active_buffs"].remove(buff)
                 messages.append("Your healing salve's effect has worn off.")
 
-        elif btype == "blessing":
-            # Permanent — never expires through ticking
+        elif btype in ("blessing", "well_rested", "floor_buff"):
+            # Permanent / floor-based — never expires through round ticking
             continue
 
         else:
