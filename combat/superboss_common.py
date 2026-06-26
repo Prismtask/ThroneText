@@ -89,6 +89,18 @@ def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, p_ler, p_
     return None
 
 
+def _insert_extra_turn(turn_order, after_idx, source_combatant, label_suffix=" [ADVANCE]"):
+    """Insert an extra turn immediately after the current combatant."""
+    extra = {
+        "type": source_combatant["type"],
+        "speed": source_combatant["speed"],
+        "label": f"{source_combatant['label']}{label_suffix}",
+        "entity": source_combatant["entity"],
+        "extra_turn": "advance",
+    }
+    turn_order.insert(after_idx + 1, extra)
+
+
 def superboss_combat_loop(player, enemies, floor, boss_name, context,
                           pre_player_hook=None,
                           custom_hud_hook=None,
@@ -187,7 +199,10 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     continue
 
                 if combatant.get("extra_turn"):
-                    print(f"⚔️  ABYSS TEMPO — Extra Action {combatant['extra_turn']}/3!")
+                    if combatant["extra_turn"] == "advance":
+                        print(f"⚡ ACTION ADVANCE — {combatant['label']} surges forward!")
+                    else:
+                        print(f"⚔️  ABYSS TEMPO — Extra Action {combatant['extra_turn']}/3!")
 
                 print_player_mini_hud(player, live_enemies)
 
@@ -220,6 +235,11 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 if ally.get("current_hp", 0) <= 0:
                     continue
 
+                if combatant.get("extra_turn") == "advance":
+                    print(f"⚡ ACTION ADVANCE — {ally['name']} surges forward!")
+                elif combatant.get("extra_turn") == "clone":
+                    print(f"👁️  MIRROR CLONE — {ally['name']} mirrors the enemy!")
+
                 while True:
                     result = handle_ally_turn(ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha)
                     if result != "retry":
@@ -232,6 +252,12 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     break
                 elif result == "dead":
                     pass  # Ally death doesn't end combat
+
+                # Clean up clones after their turn
+                if ally.get("is_clone"):
+                    print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
+                    if ally in player.get("allies", []):
+                        player["allies"].remove(ally)
 
             else:  # enemy
                 enemy = combatant["entity"]
@@ -249,7 +275,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 temp_str = 0
 
                 if enemy_turn_hook:
-                    hook_res = enemy_turn_hook(enemy, context, player, p_con, defending)
+                    hook_res = enemy_turn_hook(enemy, context, player, p_con, defending, turn_order=turn_order, step_idx=step_idx)
                     if hook_res == "dead":
                         return "dead"
                     if hook_res:
@@ -291,6 +317,12 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                                 return "dead"
                             else:
                                 print(f"  {target['name']} has fallen!")
+
+            # Action Advance mechanic: insert extra turns for this entity
+            entity = combatant["entity"]
+            advances = entity.pop("action_advances", 0)
+            for _ in range(advances):
+                _insert_extra_turn(turn_order, step_idx, combatant)
 
         if post_round_hook:
             if post_round_hook(context, enemies) == "dead":

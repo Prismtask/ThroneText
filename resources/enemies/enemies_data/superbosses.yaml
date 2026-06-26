@@ -62,7 +62,7 @@ Superbosses:
     level: 25
     base_hp: 420
     mods:
-      Strength: 5
+      Strength: 12
       Constitution: 6
       Dexterity: 5
     boss: true

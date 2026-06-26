@@ -185,7 +185,7 @@ def combat_sylvana(player, floor=None):
         print(f"  {action_status}")
         print_combat_hud(player, elist, header="Superboss: Queen of Mirrors Sylvana")
 
-    def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
+    def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         if enemy.get("is_fake"):
             block = p_con + (5 if defending else 0)
             fake_dmg = max(0, random.randint(2, 6) + enemy["str_mod"] - block)

@@ -76,6 +76,49 @@ def _spawn_arm(player):
     return arm
 
 
+def _create_clone_from_enemy(enemy):
+    """Create a temporary ally clone from an enemy's stats for the Eye of Truth."""
+    clone = {
+        "name": f"Mirror {enemy['name']}",
+        "key": enemy.get("key", "unknown") + "_clone",
+        "level": enemy.get("level", 1),
+        "attributes": {
+            "Strength": int(enemy.get("str_mod", 0) * 1.2),
+            "Constitution": enemy.get("con_mod", 0),
+            "Dexterity": enemy.get("dex_mod", 0),
+            "Learning": 0,
+            "Wisdom": 0,
+            "Charisma": 0,
+        },
+        "current_hp": enemy.get("max_hp", enemy.get("hp", 50)),
+        "max_hp": enemy.get("max_hp", enemy.get("hp", 50)),
+        "equipped": {"weapon": None, "armor": None, "accessory": None},
+        "active_buffs": [],
+        "active_debuffs": [],
+        "blinded": False,
+        "slowed": False,
+        "stunned": False,
+        "frozen": False,
+        "cursed": False,
+        "dreaded": False,
+        "silenced": False,
+        "is_ally": True,
+        "is_clone": True,
+        "elemental_res": enemy.get("elemental_res", {}),
+        "elemental_dmg": enemy.get("elemental_dmg", {}),
+        "passive_skill": None,
+        "innate_skills": [],
+        "learned_skills": [],
+        "learning": None,
+        "skill_cooldowns": {},
+        "skill_mastery": {},
+        "exp": 0,
+        "level_hp_bonus": 0,
+        "affection": 0,
+    }
+    return clone
+
+
 def _glacial_pulse(boss, player):
     """Phase 1: Every 3rd boss turn, AoE frost damage + blind chance."""
     print("\n❄️  GLACIAL PULSE! The air itself freezes solid!")
@@ -223,6 +266,7 @@ def combat_rientrante(player, floor=None):
         "core_exposed_turns": 0,
         "truth_shattered_turns": 0,
         "shell_cracked_turns": 0,
+        "arms_resummoned": False,
     }
 
     # ── pre_player_hook ───────────────────────────────────────────────────
@@ -342,6 +386,29 @@ def combat_rientrante(player, floor=None):
                 if b:
                     b["damage_taken_mult"] = 1.5
                     ctx["core_exposed_turns"] = 3
+                    # Action Advance: Rientrante gains extra turn
+                    b["action_advances"] = b.get("action_advances", 0) + 1
+                    print("Rientrante's fury surges — he gains an extra action!")
+
+                eye = next(
+                    (e for e in elist if e.get("key") == EYE_KEY), None
+                )
+                if eye:
+                    eye["action_advances"] = eye.get("action_advances", 0) + 1
+                    print("The Eye of Truth flickers — it gains an extra action!")
+
+                # Resummon 2 arms (Phase 2 1st Skill adaptation)
+                if not ctx.get("arms_resummoned"):
+                    ctx["arms_resummoned"] = True
+                    print("The ice reforms! Two new Frozen Arms rise from the ground!")
+                    for _ in range(2):
+                        arm = _spawn_arm(player)
+                        elist.append(arm)
+                        ctx["arms_alive"] += 1
+                    if b:
+                        b["damage_taken_mult"] = b.get("damage_taken_mult", 1.0) * 1.2
+                        print("Rientrante's vulnerability increases! (+20% damage taken)")
+
             if result == "dead":
                 # Signal via context; end-of-round check will catch it
                 ctx["player_dead_from_burst"] = True
@@ -357,7 +424,7 @@ def combat_rientrante(player, floor=None):
                 ctx["truth_shattered_turns"] = 3
 
     # ── enemy_turn_hook ────────────────────────────────────────────────────
-    def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
+    def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         key = enemy.get("key")
 
         # Phase 1 boss
@@ -412,11 +479,59 @@ def combat_rientrante(player, floor=None):
                     return None
 
                 extra = truth_wound
+
+            # Action Advance: Eye of Truth gets extra turn when boss acts
+            if ctx["eye_alive"]:
+                eye = next((e for e in enemies if e.get("key") == EYE_KEY and e["hp"] > 0), None)
+                if eye:
+                    eye["action_advances"] = eye.get("action_advances", 0) + 1
+                    print(f"\n⚡ {enemy['name']} propels the Eye of Truth forward!")
+
             return actions, False, extra, 1.0, 0
 
         # Eye of Truth
         if key == EYE_KEY:
             ctx["revelation_counter"] += 1
+
+            if ctx["phase"] == 2:
+                # Eye of Truth Basic Attack: clone an enemy if arms are present
+                if ctx["arms_alive"] > 0:
+                    clone_targets = [
+                        e for e in enemies
+                        if e["hp"] > 0
+                        and e.get("key") not in (BOSS_KEY, EYE_KEY)
+                    ]
+                    if clone_targets:
+                        target = random.choice(clone_targets)
+                        clone = _create_clone_from_enemy(target)
+                        pl.setdefault("allies", []).append(clone)
+                        print(f"\n👁️  {enemy['name']} gazes at {target['name']} — a mirror image rises!")
+                        print(f"   Mirror {target['name']} joins your side!")
+                        # Insert clone directly into turn order right after Eye's turn
+                        turn_order = kwargs.get("turn_order")
+                        step_idx = kwargs.get("step_idx")
+                        if turn_order is not None and step_idx is not None:
+                            clone_entry = {
+                                "type": "ally",
+                                "speed": enemy.get("dex_mod", 10) + 20,
+                                "label": f"{clone['name']} [CLONE]",
+                                "entity": clone,
+                                "extra_turn": "clone",
+                            }
+                            turn_order.insert(step_idx + 1, clone_entry)
+                        return 1, False, None, 1.0, 0
+                    else:
+                        # No valid clone target, fall through to normal attack
+                        pass
+                else:
+                    # No arms alive: skip Eye and advance Rientrante
+                    boss = next((e for e in enemies if e.get("key") == BOSS_KEY), None)
+                    if boss:
+                        boss["action_advances"] = boss.get("action_advances", 0) + 1
+                        print(f"\n👁️  The Eye trembles! Rientrante surges forward!")
+                    return 0, True, None, 1.0, 0
+
+            # Phase 1: Original revelation beam every 2 turns
             if ctx["revelation_counter"] % 2 == 0:
                 result = _revelation_beam(enemy, pl)
                 if result == "dead":
@@ -477,6 +592,13 @@ def combat_rientrante(player, floor=None):
         if ctx.get("player_dead_from_burst"):
             if player["current_hp"] <= 0:
                 return "dead"
+
+        # Remove any lingering clones (should be destroyed after 1 turn)
+        for ally in list(player.get("allies", [])):
+            if ally.get("is_clone"):
+                print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
+                if ally in player["allies"]:
+                    player["allies"].remove(ally)
 
         return None
 
