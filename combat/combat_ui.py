@@ -85,6 +85,8 @@ def _get_entity_buff_tags(entity):
         "dread": "DRD",
         "blind": "BLD",
         "curse": "CRS",
+        "fear": "FER",
+        "vulnerable": "VUL",
     }
     for d in entity.get("active_debuffs", []):
         tag = debuff_map.get(d["type"])

@@ -39,9 +39,9 @@ def get_constitution_bonus(player):
 # ── Dexterity ───────────────────────────────────────────────────────────────
 
 def get_dexterity_bonus(player):
-    """+1 to flee/initiative rolls per 5 Dexterity."""
+    """+4% dodge chance per 5 Dexterity (returns decimal, e.g. 0.04 for 1 milestone)."""
     base_dex = player.get("attributes", {}).get("Dexterity", 0)
-    return _get_milestone_count(base_dex)
+    return _get_milestone_count(base_dex) * 0.04
 
 
 # ── Wisdom ──────────────────────────────────────────────────────────────────
@@ -81,9 +81,9 @@ def format_milestone_label(entity, attr):
     elif attr == "Constitution":
         return f"-{count} dmg taken"
     elif attr == "Dexterity":
-        return f"+{count} init/flee"
+        return f"+{count * 4}% dodge"
     elif attr == "Wisdom":
-        return f"+{count} heal"
+        return f"+{count} heal/init"
     elif attr == "Learning":
         return f"+{count}% XP"
     elif attr == "Charisma":
@@ -116,9 +116,9 @@ def format_milestone_bonuses(player):
         elif attr == "Constitution":
             lines.append(f"  Constitution: -{val} damage taken")
         elif attr == "Dexterity":
-            lines.append(f"  Dexterity:   +{val} initiative/flee")
+            lines.append(f"  Dexterity:   +{int(val * 100)}% dodge chance")
         elif attr == "Wisdom":
-            lines.append(f"  Wisdom:      +{val} HP from healing")
+            lines.append(f"  Wisdom:      +{val} HP from healing & initiative/flee")
         elif attr == "Learning":
             lines.append(f"  Learning:    +{int((val - 1.0) * 100)}% XP gain")
         elif attr == "Charisma":

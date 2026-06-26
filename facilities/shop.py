@@ -7,6 +7,7 @@ from inventory import add_item_to_inventory, get_total_equipment_mods, get_inven
 from combat.stats import get_effective_attribute
 from inventory_ui import display_player_status
 from city_dialogue import service_dialogue   # changed import
+from facilities.travel_events import _item_stat_line
 
 def get_effective_charisma(player):
     return get_effective_attribute(player, "Charisma")
@@ -165,7 +166,8 @@ def city_shop(player, city_id="solmere"):
         print("--- Shop Stock ---")
         for i, (item, base_price) in enumerate(shop_stock, 1):
             final_price = get_discounted_price(base_price, player, city_id)  # Pass city_id here!
-            print(f"{i}. {item['name']} - {final_price} gold (base: {base_price})")
+            stat = _item_stat_line(item)
+            print(f"{i}. {item['name']}  {stat} — {final_price} gold (base: {base_price})")
         print("\nOptions:")
         print("1) Buy   2) Sell   3) Upgrade Backpack   4) View Stats   5) Back to City")
 

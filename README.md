@@ -32,10 +32,7 @@ You start as a fresh adventurer in the city of **Solmere** and gradually unlock 
 
 ## How to Play
 
-1. **Run the game:**
-   ```bash
-   python main.py
-   ```
+1. **Run the game:** run TerminalRPG.exe
 2. **Create a new character** or load an existing save from multiple slots.
 3. You begin in your origin city. Use the city menu to rest, shop, gear up, or take bounties.
 4. When ready, **enter the dungeon** and descend floor by floor.
@@ -64,9 +61,9 @@ When starting a new game, you will:
 
 - **Choose a Class** (8 options):
   - *Warrior, Mage, Rogue, Cleric, Ranger, Paladin, Warlock, Barbarian*
-  - Each class provides unique stat bonuses, skill trees, and elemental profiles.
+  - Each class provides unique passive skills, active skills, and elemental profiles.
 
-- **Allocate 15 Attribute Points** across six attributes:
+- **Allocate 15 Attribute Points** across six attributes and for each 5 points you will get a passive bonuses:
   - **Strength** — Melee damage, physical attacks
   - **Constitution** — HP and durability
   - **Dexterity** — Speed, initiative, dodge

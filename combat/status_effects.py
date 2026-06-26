@@ -258,6 +258,11 @@ def tick_enemy_debuffs(enemy):
                 enemy["blinded"] = False
                 enemy["active_debuffs"].remove(debuff)
                 messages.append(f"The {enemy['name']} recovers their vision.")
+        elif debuff["type"] == "fear":
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                enemy["active_debuffs"].remove(debuff)
+                messages.append(f"The {enemy['name']} shakes off the fear!")
 
     # Handle freeze (stored as flat flag + counter, not in active_debuffs list)
     messages, died_from_freeze = _tick_enemy_freeze(enemy, messages)
@@ -344,6 +349,12 @@ def tick_player_debuffs(player):
                 player["active_debuffs"].remove(debuff)
                 messages.append("Your vision clears – the blindness fades.")
 
+        elif dtype == "vulnerable":
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                player["active_debuffs"].remove(debuff)
+                messages.append("Your vulnerability fades — the rage subsides.")
+
         elif dtype == "curse":
             # Indefinite — only removed by cure_curse()
             continue
@@ -386,6 +397,12 @@ def tick_player_buffs(player):
         elif btype in ("blessing", "well_rested", "floor_buff"):
             # Permanent / floor-based — never expires through round ticking
             continue
+
+        elif btype == "divine_shield":
+            buff["remaining"] -= 1
+            if buff["remaining"] <= 0:
+                player["active_buffs"].remove(buff)
+                messages.append("Your divine shield fades.")
 
         else:
             # Generic timed buff (stat boost, defense buff, etc.)
@@ -492,6 +509,7 @@ def get_player_status_tags(player):
         "dread":   "Dreaded",
         "curse":   "Cursed",
         "blind":   "Blinded",
+        "vulnerable": "Vulnerable",
     }
     for d in player.get("active_debuffs", []):
         label = type_labels.get(d["type"])

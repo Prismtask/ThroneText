@@ -8,6 +8,14 @@ from resources.enemies import ENEMIES
 
 
 def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0):
+    # --- Check fear BEFORE ticking (so it applies this full turn) ---
+    fear_mult = 1.0
+    for debuff in enemy.get("active_debuffs", []):
+        if debuff.get("type") == "fear":
+            fear_mult = max(0.0, 1.0 - debuff.get("value", 0))
+            break
+
+    # Tick enemy debuffs (poison, burn, blind, fear, etc.)
     msgs, died = tick_enemy_debuffs(enemy)
     for m in msgs:
         print(m)
@@ -23,11 +31,44 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         print(f"The {enemy['name']} is frozen solid and cannot act!")
         return "stunned"
 
+    # --- DODGE CHECK ---
+    from combat.stat_milestones import get_dexterity_bonus
+    dodge_chance = get_dexterity_bonus(player)
+    # Add evasion buffs
+    for buff in player.get("active_buffs", []):
+        if buff.get("type") == "evasion":
+            dodge_chance += buff.get("value", 0)
+    # Cap dodge at 80% to prevent absolute immunity
+    dodge_chance = min(dodge_chance, 0.80)
+    if dodge_chance > 0 and random.random() < dodge_chance:
+        print(f"The {enemy['name']} lunges at {player['name']} — but {player['name']} dodges out of the way!")
+        return "dodged"
+
+    # --- DIVINE SHIELD CHECK ---
+    divine_shield = any(
+        b.get("type") == "divine_shield" and b.get("remaining", 0) > 0
+        for b in player.get("active_buffs", [])
+    )
+    if divine_shield:
+        print(f"The {enemy['name']}'s attack glances off {player['name']}'s divine shield!")
+        return "blocked"
+
+    # --- BASE DAMAGE ---
     block = p_con + (5 if defending else 0)
     block = int(block * armor_mult)
 
-    base_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus - block
+    raw_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus
+    raw_dmg = int(raw_dmg * fear_mult)
+    base_dmg = raw_dmg - block
     base_dmg = max(0, base_dmg)
+
+    # --- VULNERABLE CHECK ---
+    vulnerable_mult = 1.0
+    for debuff in player.get("active_debuffs", []):
+        if debuff.get("type") == "vulnerable":
+            vulnerable_mult = 1.0 + debuff.get("value", 0)
+            break
+    base_dmg = int(base_dmg * vulnerable_mult)
 
     # Apply elemental damage based on enemy's elemental profile
     from combat.elemental import calculate_elemental_damage, ELEMENTS
@@ -48,12 +89,26 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         else:
             enemy_dmg = base_dmg
 
+    # --- DEFENSE BUFFS (flat reduction) ---
+    defense_reduction = 0
+    for buff in player.get("active_buffs", []):
+        if buff.get("type") == "defense":
+            defense_reduction += buff.get("value", 0)
+    if defense_reduction > 0:
+        enemy_dmg = max(0, enemy_dmg - defense_reduction)
+
     # Apply Constitution milestone damage reduction
     from combat.stat_milestones import get_constitution_bonus
     con_reduction = get_constitution_bonus(player)
     if con_reduction > 0 and enemy_dmg > 0:
         enemy_dmg = max(0, enemy_dmg - con_reduction)
 
+    # Apply Barbarian passive damage reduction
+    from combat.skills import apply_passive_to_damage_taken
+    enemy_dmg = apply_passive_to_damage_taken(player, enemy_dmg)
+
+    # Final floor
+    enemy_dmg = max(0, enemy_dmg)
     player["current_hp"] -= enemy_dmg
 
     elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
