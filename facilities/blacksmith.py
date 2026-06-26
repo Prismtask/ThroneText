@@ -32,18 +32,25 @@ def enhance_item(player, dialogues, city_id):
     # 1. Build a unified pool of items tracking where they live
     enhanceable_pool = []
     
-    # Add equipped items first (Weapon, Armor, Accessory)
+    # Add player's equipped items first (Weapon, Armor, Accessory)
     equipped_slots = ["weapon", "armor", "accessory"]
     for slot in equipped_slots:
         equipped_item = player.get("equipped", {}).get(slot)
         if equipped_item:
-            enhanceable_pool.append((True, slot, equipped_item))
+            enhanceable_pool.append((True, "Player", equipped_item))
+            
+    # Add ally equipped items
+    for ally in player.get("allies", []):
+        for slot in equipped_slots:
+            equipped_item = ally.get("equipped", {}).get(slot)
+            if equipped_item:
+                enhanceable_pool.append((True, ally["name"], equipped_item))
             
     # Add unequipped equipment from inventory
     inv = player.get("inventory", [])
     for idx, item in enumerate(inv):
         if item.get("type") == "equipment":
-            enhanceable_pool.append((False, idx, item))
+            enhanceable_pool.append((False, None, item))
             
     if not enhanceable_pool:
         print(dialogues["no_equipment"])
@@ -51,8 +58,8 @@ def enhance_item(player, dialogues, city_id):
         return
         
     print("\n--- Enhance Equipment ---")
-    for i, (is_equipped, _, item) in enumerate(enhanceable_pool):
-        tag = " (Equipped)" if is_equipped else ""
+    for i, (is_equipped, owner_name, item) in enumerate(enhanceable_pool):
+        tag = f" (Equipped by {owner_name})" if is_equipped else ""
         print(f"{i+1}. {item['name']}{tag} (enhance +{item.get('enhance', 0)})")
         
     try:
@@ -60,7 +67,7 @@ def enhance_item(player, dialogues, city_id):
         if choice < 0:
             return
             
-        is_equipped, location_key, item = enhanceable_pool[choice]
+        is_equipped, owner_name, item = enhanceable_pool[choice]
         
         current_enhance = item.get("enhance", 0)
         if current_enhance >= 10:
@@ -125,10 +132,15 @@ def fuse_scroll_with_item(player, dialogues, city_id):
         for slot in equipped_slots:
             equipped_item = player.get("equipped", {}).get(slot)
             if equipped_item:
-                enhanceable_pool.append((True, slot, equipped_item))
+                enhanceable_pool.append((True, "Player", equipped_item))
+        for ally in player.get("allies", []):
+            for slot in equipped_slots:
+                equipped_item = ally.get("equipped", {}).get(slot)
+                if equipped_item:
+                    enhanceable_pool.append((True, ally["name"], equipped_item))
         for idx, item in enumerate(inv):
             if item.get("type") == "equipment":
-                enhanceable_pool.append((False, idx, item))
+                enhanceable_pool.append((False, None, item))
                 
         if not enhanceable_pool:
             print(dialogues["no_equipment"])
@@ -136,12 +148,12 @@ def fuse_scroll_with_item(player, dialogues, city_id):
             return
             
         print("\n--- Choose Equipment for Scroll Fusion ---")
-        for i, (is_equipped, _, item) in enumerate(enhanceable_pool):
-            tag = " (Equipped)" if is_equipped else ""
+        for i, (is_equipped, owner_name, item) in enumerate(enhanceable_pool):
+            tag = f" (Equipped by {owner_name})" if is_equipped else ""
             print(f"{i+1}. {item['name']}{tag}")
             
         choice_eq = int(input("Choose equipment: ")) - 1
-        is_equipped, location_key, eq_item = enhanceable_pool[choice_eq]
+        is_equipped, owner_name, eq_item = enhanceable_pool[choice_eq]
         
         # Apply standard fusion pricing rules modified by Charisma value
         base_cost = 150

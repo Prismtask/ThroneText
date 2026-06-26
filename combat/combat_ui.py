@@ -4,6 +4,7 @@ from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
 from combat.helpers import _player_has_abyss_fang
 from combat.ally import get_alive_allies, format_ally_status_line, _ally_action_menu
+from combat.ally_skills import get_all_ally_skills
 from combat.skills import get_all_unlocked_skills
 
 
@@ -238,6 +239,16 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
         if skill_cds:
             unlocked = get_all_unlocked_skills(player)
             for sid, sdef in unlocked:
+                cd = skill_cds.get(sid, 0)
+                if cd > 0:
+                    cd_msg = f"({sdef['name']} recharging: {cd} turn(s))"
+                    print(f"|  {cd_msg:<66}|")
+    else:
+        # Ally skill cooldown messages
+        skill_cds = active_ally.get('skill_cooldowns', {})
+        if skill_cds:
+            all_skills = get_all_ally_skills(active_ally)
+            for sid, sdef in all_skills:
                 cd = skill_cds.get(sid, 0)
                 if cd > 0:
                     cd_msg = f"({sdef['name']} recharging: {cd} turn(s))"

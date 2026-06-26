@@ -229,7 +229,19 @@ def format_skill_learning_progress(ally):
 
 # ── Combat Skill Execution ──────────────────────────────────────────────────
 
-def format_ally_mastery_label(skill_id, ally):
+def get_all_ally_skills(ally):
+    """Return all innate + learned skills with definitions (including those on cooldown)."""
+    skills = []
+    for sid in ally.get("innate_skills", []):
+        sdef = get_innate_skill_def(sid)
+        if sdef:
+            skills.append((sid, sdef))
+    for sid in ally.get("learned_skills", []):
+        sdef = get_learnable_skill_def(sid)
+        if sdef:
+            skills.append((sid, sdef))
+    return skills
+
     """Return a mastery label string for display."""
     level = get_ally_skill_mastery_level(ally, skill_id)
     labels = ["", "★", "★★", "★★★"]
