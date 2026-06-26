@@ -1,4 +1,4 @@
-from combat.skills import get_passive_skill, get_all_unlocked_skills
+from combat.skills import get_passive_skill, get_all_unlocked_skills, format_mastery_label, get_skill_mastery_level
 from inventory import (equip_item, unequip_slot, use_consumable, get_total_equipment_mods,
                        get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items,
                        add_item_to_inventory)
@@ -49,6 +49,9 @@ def display_player_status(player):
         else:
             print(f"  {slot.title()}: empty")
 
+    # Show player active skills right after equipment
+    _display_player_skills(player)
+
     # Show allies
     allies = get_alive_allies(player)
     if allies:
@@ -89,6 +92,9 @@ def display_player_status(player):
                 else:
                     print(f"    {slot.title()}: empty")
 
+            # Show ally skills
+            _display_ally_skills(ally)
+
     # Show passive skill
     passive = get_passive_skill(player)
     if passive:
@@ -101,17 +107,91 @@ def display_player_status(player):
     if milestone_text:
         print(f"\n{milestone_text}")
 
-    # Show active skills
-    unlocked_skills = get_all_unlocked_skills(player)
-    if unlocked_skills:
-        print(f"\n--- Active Skills ({len(unlocked_skills)} unlocked) ---")
-        cooldowns = player.get("skill_cooldowns", {})
-        for sid, sdef in unlocked_skills:
-            cd = cooldowns.get(sid, 0)
-            cd_str = f" [CD: {cd}]" if cd > 0 else ""
-            print(f"  {sdef['name']}{cd_str} - Lv.{sdef['unlock_level']}")
-
     display_active_bounties(player)
+
+
+def _display_player_skills(player):
+    """Display player's active skills with cooldown and mastery info."""
+    from combat.skills import get_class_skill_map, get_skill_mastery_level
+    skill_map = get_class_skill_map(player)
+    if not skill_map:
+        return
+    unlocked = set(player.get("skills", []))
+    level = player.get("level", 1)
+    cooldowns = player.get("skill_cooldowns", {})
+
+    locked = []
+    available = []
+    for sid, sdef in skill_map.items():
+        ul = sdef["unlock_level"]
+        is_unlocked = sid in unlocked and level >= ul
+        cd = cooldowns.get(sid, 0)
+        cd_str = f" [CD: {cd}]" if cd > 0 else ""
+        mastery_label = format_mastery_label(sid, player)
+        label = f"  {sdef['name']}{cd_str} {mastery_label} - Lv.{ul}"
+        if is_unlocked:
+            available.append(label)
+        else:
+            locked.append(f"  {sdef['name']} - Lv.{ul} [LOCKED]")
+
+    if available or locked:
+        total = len(available) + len(locked)
+        print(f"\n--- Active Skills ({len(available)}/{total} unlocked) ---")
+        for label in available:
+            print(label)
+        for label in locked:
+            print(label)
+
+
+def _display_ally_skills(ally):
+    """Display an ally's skills: innate, learned, and learning progress."""
+    from combat.ally_skills import (
+        get_innate_skill_def, get_learnable_skill_def, get_ally_skill_mastery_level,
+        format_skill_learning_progress, get_race_passive
+    )
+    lines = []
+
+    # Passive
+    race = ally.get("race")
+    if race:
+        passive = get_race_passive(race)
+        if passive:
+            lines.append(f"    [Passive] {passive['name']}: {passive['description']}")
+
+    # Innate skills
+    innate_ids = ally.get("innate_skills", [])
+    if innate_ids:
+        for sid in innate_ids:
+            sdef = get_innate_skill_def(sid)
+            if sdef:
+                mastery = get_ally_skill_mastery_level(ally, sid)
+                stars = "★" * mastery if mastery > 0 else ""
+                cd = ally.get("skill_cooldowns", {}).get(sid, 0)
+                cd_str = f" [CD: {cd}]" if cd > 0 else ""
+                lines.append(f"    [Innate] {sdef['name']}{cd_str} {stars}")
+
+    # Learned skills
+    learned_ids = ally.get("learned_skills", [])
+    if learned_ids:
+        for sid in learned_ids:
+            sdef = get_learnable_skill_def(sid)
+            if sdef:
+                mastery = get_ally_skill_mastery_level(ally, sid)
+                stars = "★" * mastery if mastery > 0 else ""
+                cd = ally.get("skill_cooldowns", {}).get(sid, 0)
+                cd_str = f" [CD: {cd}]" if cd > 0 else ""
+                lines.append(f"    [Learned] {sdef['name']}{cd_str} {stars}")
+
+    # Currently learning
+    progress = format_skill_learning_progress(ally)
+    if progress and "Not learning" not in progress:
+        lines.append(f"    [Learning] {progress}")
+
+    if lines:
+        print("  Skills:")
+        for line in lines:
+            print(line)
+
 
 def display_active_bounties(player):
     """Show active bounties and which are ready to turn in."""

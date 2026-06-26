@@ -40,21 +40,21 @@ STAT_CHECK_EVENTS = {
         "desc": "A wounded adventurer lies against the wall, bleeding from a nasty gash. They look at you with pleading eyes.",
         "stat": "Wisdom",
         "base_dc": 12,
-        "dc_floor_mult": 1 / 3,
+        "dc_floor_mult": 0.6,
     },
     "bury_corpse": {
         "name": "Ancient Corpse",
         "desc": "The skeletal remains of a long-dead explorer rest in the corner. Their equipment is rusted, but their spirit seems restless.",
         "stat": "Strength",
         "base_dc": 10,
-        "dc_floor_mult": 1 / 4,
+        "dc_floor_mult": 0.8,
     },
     "monster_approaching": {
         "name": "Monster Approaching",
         "desc": "A low growl echoes from the shadows. A beast emerges from the darkness, sizing up your party.",
         "stat": "Charisma",
         "base_dc": 11,
-        "dc_floor_mult": 1 / 3,
+        "dc_floor_mult": 0.6,
     },
 }
 

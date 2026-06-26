@@ -44,6 +44,9 @@ def initialize_ally_skills(ally, enemy_key, race):
     else:
         ally["passive_skill"] = None
     
+    # Store race for UI lookups
+    ally["race"] = race
+    
     # Set innate skills (2 skills unique to this monster girl)
     if enemy_key in INNATE_SKILLS_MAP:
         ally["innate_skills"] = INNATE_SKILLS_MAP[enemy_key]

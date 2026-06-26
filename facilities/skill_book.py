@@ -7,27 +7,45 @@ from combat.skills import (
     format_mastery_label,
 )
 from character import player_max_hp
+from combat.ally import get_alive_allies
+from combat.ally_skills import (
+    get_race_passive, get_innate_skill_def, get_learnable_skill_def,
+    get_ally_skill_mastery_level, format_skill_learning_progress
+)
 
 
 def display_skill_book(player):
-    """Display the player's skill book with all known skills, mastery levels, and descriptions."""
+    """Display the full party skill book with all skills, mastery levels, and descriptions."""
     clear_screen()
     print(f"=== {player['name']}'s Skill Book ===")
     print(f"Class: {player['class']} | Level: {player.get('level', 1)}")
     print("=" * 60)
 
+    # ── Player Skills ──
+    _display_player_skill_book(player)
+
+    # ── Ally Skills ──
+    allies = get_alive_allies(player)
+    if allies:
+        for ally in allies:
+            _display_ally_skill_book(ally)
+
+    print("\n" + "=" * 60)
+    input("Press Enter to return...")
+
+
+def _display_player_skill_book(player):
+    """Display the player's class skills with locked/unlocked status."""
     # Passive skill
     passive = PASSIVE_SKILLS.get(player.get("class"))
     if passive:
-        print(f"\n[PASSIVE] {passive['name']}")
+        print(f"\n[Player Passive] {passive['name']}")
         print(f"    {passive['description']}")
-        print("    Always active.")
 
     # Active skills
     skill_map = get_class_skill_map(player)
     if not skill_map:
         print("\nNo skills available for your class.")
-        input("\nPress Enter to return...")
         return
 
     unlocked = set(player.get("skills", []))
@@ -79,8 +97,63 @@ def display_skill_book(player):
                 if bonuses["extra_effect"]:
                     print(f"      Bonus effect at ★★★")
 
-    print("\n" + "=" * 60)
-    input("Press Enter to return...")
+
+def _display_ally_skill_book(ally):
+    """Display an ally's skill book: passive, innate, learned, and learning progress."""
+    print(f"\n--- {ally['name']} (Level {ally.get('level', 1)}) ---")
+
+    # Race passive
+    race = ally.get("race")
+    if race:
+        passive = get_race_passive(race)
+        if passive:
+            print(f"  [Passive] {passive['name']}")
+            print(f"    {passive['description']}")
+
+    # Innate skills
+    innate_ids = ally.get("innate_skills", [])
+    if innate_ids:
+        print("\n  --- Innate Skills ---")
+        for sid in innate_ids:
+            sdef = get_innate_skill_def(sid)
+            if not sdef:
+                continue
+            cd = sdef.get("cooldown", 1)
+            mastery = get_ally_skill_mastery_level(ally, sid)
+            mastery_label = "★" * mastery if mastery > 0 else ""
+            cd_str = ""
+            if ally.get("skill_cooldowns", {}).get(sid, 0) > 0:
+                cd_str = f" [CD: {ally['skill_cooldowns'][sid]}]"
+            print(f"  {sdef['name']}{cd_str} {mastery_label}")
+            print(f"    {sdef.get('description', '')}")
+            print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')}")
+            if mastery > 0:
+                print(f"    Mastery Lv.{mastery}")
+
+    # Learned skills
+    learned_ids = ally.get("learned_skills", [])
+    if learned_ids:
+        print("\n  --- Learned Skills ---")
+        for sid in learned_ids:
+            sdef = get_learnable_skill_def(sid)
+            if not sdef:
+                continue
+            cd = sdef.get("cooldown", 1)
+            mastery = get_ally_skill_mastery_level(ally, sid)
+            mastery_label = "★" * mastery if mastery > 0 else ""
+            cd_str = ""
+            if ally.get("skill_cooldowns", {}).get(sid, 0) > 0:
+                cd_str = f" [CD: {ally['skill_cooldowns'][sid]}]"
+            print(f"  {sdef['name']}{cd_str} {mastery_label}")
+            print(f"    {sdef.get('description', '')}")
+            print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')}")
+            if mastery > 0:
+                print(f"    Mastery Lv.{mastery}")
+
+    # Currently learning
+    if ally.get("learning"):
+        progress = format_skill_learning_progress(ally)
+        print(f"\n  [Learning] {progress}")
 
 
 def skill_book_menu(player):
