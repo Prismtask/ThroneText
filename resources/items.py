@@ -167,12 +167,118 @@ ITEMS = {
     "rarity_mult_bonus": 25
     },
 
+    # === Ascension Stones (sold at temples when dungeon floors are cleared) ===
+    "ascension_stone_i":   {"name": "Ascension Stone I",   "type": "utility", "ascension_tier": 1},
+    "ascension_stone_ii":  {"name": "Ascension Stone II",  "type": "utility", "ascension_tier": 2},
+    "ascension_stone_iii": {"name": "Ascension Stone III", "type": "utility", "ascension_tier": 3},
+    "ascension_stone_iv":  {"name": "Ascension Stone IV",  "type": "utility", "ascension_tier": 4},
+    "ascension_stone_v":   {"name": "Ascension Stone V",   "type": "utility", "ascension_tier": 5},
+    "ascension_stone_vi":  {"name": "Ascension Stone VI",  "type": "utility", "ascension_tier": 6},
+
     # === Scrolls ===
     "common_scroll":     {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "common"},
     "uncommon_scroll":   {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "uncommon"},
     "rare_scroll":       {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "rare"},
     "epic_scroll":       {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "epic"},
-    "legendary_scroll":  {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "legendary"}
+    "legendary_scroll":  {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "legendary"},
+
+    # === Engagement Rings (Gift Shop Only) ===
+    "ruby_engagement_ring": {
+        "name": "Ruby Engagement Ring",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Strength": 3},
+        "elemental_dmg": {"fire": 1.1},
+    },
+    "sapphire_engagement_ring": {
+        "name": "Sapphire Engagement Ring",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Wisdom": 3},
+        "elemental_dmg": {"water": 1.1},
+    },
+    "emerald_engagement_ring": {
+        "name": "Emerald Engagement Ring",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Dexterity": 3},
+        "elemental_dmg": {"wind": 1.1},
+    },
+    "topaz_engagement_ring": {
+        "name": "Topaz Engagement Ring",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Learning": 3},
+        "elemental_dmg": {"thunder": 1.1},
+    },
+    "amethyst_engagement_ring": {
+        "name": "Amethyst Engagement Ring",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Charisma": 3},
+        "elemental_dmg": {"dark": 1.1},
+    },
+    "diamond_engagement_ring": {
+        "name": "Diamond Engagement Ring",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Constitution": 3},
+        "elemental_dmg": {"light": 1.1},
+    },
+
+    # === Wedding Accessories (Legendary, Soulbound, One per girl) ===
+    "wedding_goblin_girl":        {"name": "Lucky Copper Ring",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 3, "Learning": 2}, "special": "goblin_luck", "elemental_dmg": {}},
+    "wedding_harpy_scout":        {"name": "Windweaver Pinion",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 4, "Wisdom": 1}, "special": "tailwind", "elemental_res": {"wind": 1.3}},
+    "wedding_alraune_fledger":    {"name": "Pollenheart Locket",      "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 3, "Constitution": 2}, "special": "bloom_regen", "elemental_res": {"earth": 1.2}},
+    "wedding_kobold_tinkerer":    {"name": "Clockwork Bond Ring",     "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Learning": 4, "Dexterity": 1}, "special": "tinkerers_inspiration", "elemental_res": {"thunder": 1.2}},
+    "wedding_dryad_protector":    {"name": "Barkskin Band",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 4, "Wisdom": 1}, "special": "bark_shield", "elemental_res": {"earth": 1.3, "fire": 1.1}},
+    "wedding_ghost_maid":         {"name": "Ectoplasm Veil",          "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 3, "Charisma": 2}, "special": "spectral_dodge", "elemental_res": {"dark": 1.3}},
+    "wedding_centaur_scout":      {"name": "Thunderhoof Brooch",      "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 2, "Dexterity": 3}, "special": "stampede", "elemental_dmg": {"wind": 1.2}},
+    "wedding_moth_girl_flutterer":{"name": "Moondust Pendant",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 3, "Charisma": 2}, "special": "moth_dust", "elemental_dmg": {"light": 1.2}},
+    "wedding_slime_girl":         {"name": "Gelatinous Heart",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 5, "Learning": 1}, "special": "slime_absorb", "elemental_res": {"water": 1.2, "thunder": 1.2}},
+    "wedding_lamia_constrictor":  {"name": "Coiled Serpent Ring",     "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 2, "Dexterity": 3}, "special": "coil_bind", "elemental_dmg": {"earth": 1.2}},
+    "wedding_lizard_queen":       {"name": "Crownscale Circlet",      "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 3, "Constitution": 2}, "special": "regal_presence", "elemental_res": {"fire": 1.2, "earth": 1.2}},
+    "wedding_mimic_girl":         {"name": "Mimic's Tooth",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 3, "Dexterity": 2}, "special": "mimic_jackpot", "elemental_dmg": {"dark": 1.2}},
+    "wedding_umbral_weaver":      {"name": "Shadowthread Ring",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 3, "Wisdom": 2}, "special": "shadow_cloak", "elemental_res": {"dark": 1.3}},
+    "wedding_winter_fairy":       {"name": "Frostbloom Charm",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 3, "Charisma": 2}, "special": "frost_aura", "elemental_dmg": {"water": 1.3}},
+    "wedding_holstaur_brawler":   {"name": "Bullheart Signet",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 4, "Constitution": 2}, "special": "bull_rush", "elemental_dmg": {"earth": 1.3}},
+    "wedding_gargoyle_watcher":   {"name": "Stonegaze Locket",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 4, "Strength": 2}, "special": "stone_endurance", "elemental_res": {"earth": 1.3, "wind": 1.2}},
+    "wedding_vampire_seductress": {"name": "Sanguine Kiss Ring",      "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 4, "Dexterity": 2}, "special": "blood_drain", "elemental_dmg": {"dark": 1.3}},
+    "wedding_yuki_onna":          {"name": "Blizzard Veil",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 3, "Learning": 3}, "special": "blizzard_song", "elemental_dmg": {"water": 1.3, "wind": 1.2}},
+    "wedding_amazon_warrior":     {"name": "Warband of the Sister",   "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 3, "Dexterity": 2, "Charisma": 1}, "special": "war_sister", "elemental_dmg": {"fire": 1.2, "wind": 1.1}},
+    "wedding_banshee_wailer":     {"name": "Wailing Spirit Locket",   "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 4, "Wisdom": 2}, "special": "keening_wail", "elemental_dmg": {"dark": 1.2, "wind": 1.2}},
+    "wedding_neko_ninja":         {"name": "Nekomata Bell",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 5, "Strength": 1}, "special": "neko_shadow", "elemental_dmg": {"dark": 1.2, "wind": 1.1}},
+    "wedding_arachne_weaver":     {"name": "Silkspinner Band",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 4, "Strength": 2}, "special": "silk_bind", "elemental_res": {"earth": 1.2, "dark": 1.2}},
+    "wedding_mummy_princess":     {"name": "Pharaoh's Band",          "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 4, "Constitution": 2, "Learning": 1}, "special": "pharaohs_curse", "elemental_res": {"dark": 1.2, "earth": 1.2}},
+    "wedding_oni_bruiser":        {"name": "Oni Horn Ring",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 5, "Constitution": 2}, "special": "oni_rage", "elemental_dmg": {"fire": 1.3, "earth": 1.2}},
+    "wedding_salamander_dancer":  {"name": "Emberwaltz Ring",         "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 3, "Charisma": 3}, "special": "flame_dance", "elemental_dmg": {"fire": 1.3}},
+    "wedding_succubus_seductress":{"name": "Dreamcatcher Ring",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 5, "Dexterity": 2}, "special": "dream_drain", "elemental_dmg": {"dark": 1.3}},
+    "wedding_dullahan_knight":    {"name": "Headless Rider's Seal",   "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 4, "Constitution": 2, "Charisma": 1}, "special": "headless_oath", "elemental_res": {"dark": 1.2, "light": 1.1}},
+    "wedding_kitsune_miko":       {"name": "Foxfire Band",            "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Wisdom": 4, "Charisma": 3}, "special": "foxfire_trick", "elemental_dmg": {"fire": 1.2, "light": 1.2}},
+    "wedding_siren_empress":      {"name": "Coral Crown Ring",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 5, "Dexterity": 2}, "special": "siren_song", "elemental_dmg": {"water": 1.3, "wind": 1.1}},
+    "wedding_crimson_countess":   {"name": "Crimson Sigil",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 5, "Dexterity": 2}, "special": "crimson_feast", "elemental_dmg": {"dark": 1.3, "water": 1.2}},
+    "wedding_demon_whip_master":  {"name": "Whipmaster's Coil",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 4, "Charisma": 2}, "special": "whip_crack", "elemental_dmg": {"fire": 1.2, "dark": 1.2}},
+    "wedding_minotaur_gladiator": {"name": "Arenaborn Signet",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 5, "Constitution": 2, "Dexterity": 1}, "special": "arena_glory", "elemental_dmg": {"earth": 1.3, "fire": 1.1}},
+    "wedding_vampire_matriarch":  {"name": "Matriarch's Favor",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 4, "Constitution": 3, "Wisdom": 2}, "special": "matriarchs_embrace", "elemental_res": {"dark": 1.3, "water": 1.2}},
+    "wedding_centaur_champion":   {"name": "Champion's Mane Ring",    "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 3, "Dexterity": 3, "Charisma": 2}, "special": "champion_charge", "elemental_dmg": {"wind": 1.3, "light": 1.2}},
+    "wedding_infernal_empress":   {"name": "Infernal Throne Seal",    "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 4, "Charisma": 4, "Constitution": 2}, "special": "infernal_crown", "elemental_dmg": {"fire": 1.4, "dark": 1.3}},
+    "wedding_scylla_wrecker":     {"name": "Abyssal Coil",            "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 4, "Constitution": 3, "Dexterity": 1}, "special": "abyssal_grasp", "elemental_dmg": {"water": 1.4, "dark": 1.2}},
+    "wedding_gorgon_petrifier":   {"name": "Gorgon's Veil Ring",      "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 3, "Charisma": 3, "Wisdom": 2}, "special": "stone_gaze", "elemental_dmg": {"earth": 1.3, "dark": 1.2}},
+    "wedding_ninetales_fox":      {"name": "Sunfire Band",            "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 5, "Wisdom": 3, "Learning": 2}, "special": "legendary_flame", "elemental_dmg": {"fire": 1.4, "light": 1.3}},
+    "wedding_mermaid_siren_queen":{"name": "Tidecaller Ring",         "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 5, "Wisdom": 3, "Learning": 2}, "special": "tidal_blessing", "elemental_dmg": {"water": 1.4, "wind": 1.2}},
+    "wedding_draconic_valkyrie":  {"name": "Dragonwing Signet",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 4, "Constitution": 3, "Charisma": 2}, "special": "dragon_judgment", "elemental_dmg": {"fire": 1.3, "wind": 1.3}},
+    "wedding_sphinx_riddler":     {"name": "Riddlelock Band",         "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Learning": 5, "Wisdom": 3, "Charisma": 2}, "special": "riddle_solved", "elemental_dmg": {"thunder": 1.3, "light": 1.2}},
+    "wedding_lich_queen_avatar":  {"name": "Phylactery Bond",         "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Learning": 6, "Charisma": 3, "Wisdom": 2}, "special": "lich_grasp", "elemental_dmg": {"dark": 1.4, "thunder": 1.2}},
+    "wedding_valkyrie_commander": {"name": "Commander's Ring",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 4, "Dexterity": 3, "Charisma": 3}, "special": "valkyrie_ride", "elemental_dmg": {"light": 1.3, "wind": 1.2}},
+    "wedding_dragon_goddess_avatar":{"name": "Stardust Crown",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 5, "Constitution": 4, "Charisma": 3}, "special": "starfire_breath", "elemental_dmg": {"fire": 1.4, "light": 1.4, "thunder": 1.2}},
+    "wedding_arachne_brood_queen":{"name": "Broodmother's Web",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 5, "Strength": 3, "Constitution": 2}, "special": "brood_swarm", "elemental_res": {"earth": 1.3, "dark": 1.3}},
+    "wedding_cosmic_slime_empress":{"name": "Galaxy Heart",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 6, "Learning": 5, "Charisma": 4}, "special": "cosmic_gravity", "elemental_res": {"fire": 1.2, "water": 1.2, "thunder": 1.2, "wind": 1.2, "earth": 1.2, "light": 1.2, "dark": 1.2}},
 }
 
 def build_item(item_id, rarity="common", enhance=0):
@@ -220,7 +326,7 @@ def build_item(item_id, rarity="common", enhance=0):
     elif base["type"] == "utility":
         item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
         # ADDED "fixed_flee" to the list below:
-        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce", "fixed_flee", "capture_net", "rarity_mult_bonus"]:
+        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce", "fixed_flee", "capture_net", "rarity_mult_bonus", "ascension_tier"]:
             if k in base:
                 item[k] = base[k]
                 
@@ -235,7 +341,7 @@ def random_equipment(rarity=None):
             ["common", "uncommon", "rare", "epic", "legendary"],
             weights=[50, 30, 15, 4, 1]
         )[0]
-    equip_ids = [item_id for item_id, data in ITEMS.items() if data.get("slot")]
+    equip_ids = [item_id for item_id, data in ITEMS.items() if data.get("slot") and not data.get("unique")]
     if not equip_ids:
         return {
             "name": "Mysterious Relic",

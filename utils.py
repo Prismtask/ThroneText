@@ -83,6 +83,7 @@ def advance_time(player, minutes):
     if "day" not in player:
         player["day"] = 1
 
+    old_day = player["day"]
     player["time_minutes"] += minutes
     
     # 1440 minutes = 24 hours
@@ -90,6 +91,19 @@ def advance_time(player, minutes):
         days_passed = player["time_minutes"] // 1440
         player["day"] += days_passed
         player["time_minutes"] %= 1440
+        
+        # ── Process day-based events ─────────────────────────────────────
+        from events import process_day_rollover, display_event_alert, queue_event_alerts
+        events = process_day_rollover(player, days_passed, old_day)
+        
+        if events:
+            if player.get("location") == "dungeon":
+                # Queue alerts to show when player returns to the city
+                queue_event_alerts(player, events)
+            else:
+                # Show immediately
+                for evt in events:
+                    display_event_alert(evt)
         
         # CHECK BOUNTY EXPIRY AFTER DAY ROLLOVER
         from facilities.guild import check_bounty_expiry

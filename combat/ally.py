@@ -37,7 +37,7 @@ def create_ally_from_girl(girl):
             "attributes": {attr: 1 for attr in ATTRIBUTES},
             "current_hp": 30,
             "max_hp": 30,
-            "equipped": {"weapon": None, "armor": None, "accessory": None},
+            "equipped": {"weapon": None, "armor": None, "accessory1": None, "accessory2": None},
             "active_buffs": [],
             "active_debuffs": [],
             "blinded": False,
@@ -72,7 +72,7 @@ def create_ally_from_girl(girl):
         "key": enemy_key,
         "level": girl.get("level", template["level"]),
         "attributes": scaled_attrs,
-        "equipped": {"weapon": None, "armor": None, "accessory": None},
+        "equipped": {"weapon": None, "armor": None, "accessory1": None, "accessory2": None},
         "active_buffs": [],
         "active_debuffs": [],
         "blinded": False,
@@ -84,9 +84,13 @@ def create_ally_from_girl(girl):
         "silenced": False,
         "is_ally": True,
         "affection": girl.get("affection", 30),
+        "affection_cap": girl.get("affection_cap", 100),
+        "engaged": girl.get("engaged", False),
+        "married": girl.get("married", False),
         "monster_girl": template.get("monster_girl", True),
         "exp": girl.get("exp", 0),
         "level_hp_bonus": girl.get("level_hp_bonus", max(0, (girl.get("level", 1) - 1) * 4)),
+        "level_cap": girl.get("level_cap", 10),
         # Skill system fields
         "passive_skill": girl.get("passive_skill", None),  # Race-based passive
         "innate_skills": girl.get("innate_skills", []),    # 2 innate skills unique to girl
@@ -201,14 +205,25 @@ def get_all_party_members(player):
 
 def equip_ally_item(ally, item, player):
     """Equip an item on an ally from the player's inventory."""
-    from inventory import equip_item, add_item_to_inventory
-    slot = item["slot"]
-    old = ally.get("equipped", {}).get(slot)
+    from inventory import add_item_to_inventory
+    item_slot = item["slot"]
+    # Resolve dual accessory slots
+    if item_slot == "accessory":
+        if ally.get("equipped", {}).get("accessory1") is None:
+            target_slot = "accessory1"
+        elif ally.get("equipped", {}).get("accessory2") is None:
+            target_slot = "accessory2"
+        else:
+            target_slot = "accessory1"
+    else:
+        target_slot = item_slot
+
+    old = ally.get("equipped", {}).get(target_slot)
     if old:
         # Return old item to player inventory
         if not add_item_to_inventory(player, old):
             return f"Cannot equip {item['name']} on {ally['name']} — your inventory is full."
-    ally["equipped"][slot] = item
+    ally["equipped"][target_slot] = item
     # Remove item from player inventory
     if item in player.get("inventory", []):
         player["inventory"].remove(item)
@@ -257,7 +272,7 @@ def dismiss_allies_back_to_house(player):
 
     for ally in allies:
         # Return equipped items to player
-        for slot in ["weapon", "armor", "accessory"]:
+        for slot in ["weapon", "armor", "accessory1", "accessory2"]:
             item = ally.get("equipped", {}).get(slot)
             if item:
                 if not add_item_to_inventory(player, item):
@@ -272,8 +287,12 @@ def dismiss_allies_back_to_house(player):
                 "name": ally["name"],
                 "level": ally["level"],
                 "affection": ally.get("affection", 30),
+                "affection_cap": ally.get("affection_cap", 100),
+                "engaged": ally.get("engaged", False),
+                "married": ally.get("married", False),
                 "exp": ally.get("exp", 0),
                 "level_hp_bonus": ally.get("level_hp_bonus", 0),
+                "level_cap": ally.get("level_cap", 10),
             })
 
 
@@ -332,14 +351,14 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
 
     a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
 
-    # Show HUD with this ally marked as active
+    # Show HUD with this ally marked as active (this already renders the menu block)
     print_combat_hud(player, enemies, active_ally=ally)
 
-    print(f"\n  >> {ally['name']}'s Turn")
-    menu_str, valid_actions = _ally_action_menu(ally, player, enemies)
-    print(f"  {menu_str}")
+    # Fetch the actions behind the scenes to keep the tracking list valid
+    _, valid_actions = _ally_action_menu(ally, player, enemies)
 
-    action = input("  Choose: ").strip().lower()
+    # REMOVED: Redundant text headers and duplicate action list prints
+    action = input(f"  ({ally['name']}) Choose action: ").strip().lower()
     while action not in valid_actions:
         print(f"  Invalid choice. Available: {', '.join(valid_actions)}")
         action = input("  Choose: ").strip().lower()

@@ -8,6 +8,14 @@ from utils import clear_screen, format_time
 from combat.ally import get_alive_allies, format_ally_status_line
 from combat.stat_milestones import format_milestone_label
 
+def _slot_display_name(slot):
+    if slot == "accessory1":
+        return "Accessory 1"
+    if slot == "accessory2":
+        return "Accessory 2"
+    return slot.title()
+
+
 def display_player_status(player):
     """Show player name, level, HP, attributes (with equipment and buff bonuses), and equipped items."""
     equip_mods = get_total_equipment_mods(player)
@@ -42,12 +50,12 @@ def display_player_status(player):
             print(f"  {attr}: {base} + {eq_bonus} = {base + total_bonus}{milestone_str}")
             
     print("\nEquipment:")
-    for slot in ["weapon", "armor", "accessory"]:
+    for slot in ["weapon", "armor", "accessory1", "accessory2"]:
         item = player.get("equipped", {}).get(slot)
         if item:
-            print(f"  {slot.title()}: {item['name']} ({item.get('rarity','common')})")
+            print(f"  {_slot_display_name(slot)}: {item['name']} ({item.get('rarity','common')})")
         else:
-            print(f"  {slot.title()}: empty")
+            print(f"  {_slot_display_name(slot)}: empty")
 
     # Show passive skill right after equipment
     passive = get_passive_skill(player)
@@ -97,12 +105,12 @@ def display_player_status(player):
                     print(f"    {attr}: {base} + {eq_bonus} = {base + total_bonus}{milestone_str}")
 
             print("  Equipment:")
-            for slot in ["weapon", "armor", "accessory"]:
+            for slot in ["weapon", "armor", "accessory1", "accessory2"]:
                 item = ally.get("equipped", {}).get(slot)
                 if item:
-                    print(f"    {slot.title()}: {item['name']} ({item.get('rarity', 'common')})")
+                    print(f"    {_slot_display_name(slot)}: {item['name']} ({item.get('rarity', 'common')})")
                 else:
-                    print(f"    {slot.title()}: empty")
+                    print(f"    {_slot_display_name(slot)}: empty")
 
             # Show ally skills
             _display_ally_skills(ally)
@@ -287,9 +295,9 @@ def manage_equipment_submenu(player):
             except:
                 pass
         elif sub == "2":
-            print("Slots: weapon, armor, accessory")
+            print("Slots: weapon, armor, accessory1, accessory2")
             slot = input("Slot to unequip: ").strip().lower()
-            if slot in ["weapon","armor","accessory"]:
+            if slot in ["weapon","armor","accessory1","accessory2"]:
                 unequip_slot(player, slot)
             else:
                 print("Invalid slot.")
@@ -336,14 +344,14 @@ def manage_equipment_submenu(player):
                 if 0 <= a_idx < len(allies):
                     ally = allies[a_idx]
                     print(f"\n{ally['name']}'s equipment:")
-                    for slot in ["weapon", "armor", "accessory"]:
+                    for slot in ["weapon", "armor", "accessory1", "accessory2"]:
                         item = ally.get("equipped", {}).get(slot)
                         if item:
-                            print(f"  {slot.title()}: {item['name']}")
+                            print(f"  {_slot_display_name(slot)}: {item['name']}")
                         else:
-                            print(f"  {slot.title()}: empty")
+                            print(f"  {_slot_display_name(slot)}: empty")
                     slot = input("Slot to unequip: ").strip().lower()
-                    if slot in ["weapon", "armor", "accessory"]:
+                    if slot in ["weapon", "armor", "accessory1", "accessory2"]:
                         print(unequip_ally_slot(ally, slot, player))
                     else:
                         print("Invalid slot.")

@@ -559,8 +559,8 @@ CITIES = {
 
     "blackwake": {
         "name": "Blackwake",
-        "biome": "coastal",
-        "description": "A lawless sea-cove known only to sailors and criminals. No roads lead here — just unmarked sea lanes and whispered directions.",
+        "biome": "sea_caves",
+        "description": "A vast network of sea caves and submerged tunnels beneath the Blackwake cove. Bioluminescent fungi cling to damp walls, and the sound of dripping water echoes endlessly. Only those who know the hidden passages dare enter.",
         "services": ["inn", "port", "black_market"],
         "dialogues": {
             "receptionist": BLACKWAKE_RECEPTIONIST_DIALOGUE,

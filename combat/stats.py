@@ -90,6 +90,14 @@ def get_effective_attribute(player, attr_name):
         elif buff.get("stat") == attr_name:
             total += buff.get("value", 0)
 
+    # Apply percentage buffs (e.g., cosmic_gravity)
+    pct_mult = 1.0
+    for buff in player.get("active_buffs", []):
+        if buff.get("type") == "wedding_stats":
+            pct_mult += buff.get("value", 0)
+    if pct_mult != 1.0:
+        total = int(total * pct_mult)
+
     return total
 
 

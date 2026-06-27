@@ -79,6 +79,9 @@ def tick_skill_cooldowns(player):
 
 def set_skill_cooldown(player, skill_id):
     """Put a skill on cooldown after use."""
+    from combat.wedding_specials import apply_wedding_skill_cooldown_skip
+    if apply_wedding_skill_cooldown_skip(player, skill_id):
+        return
     skill_map = get_class_skill_map(player)
     if skill_id in skill_map:
         cooldown = skill_map[skill_id]["cooldown"]

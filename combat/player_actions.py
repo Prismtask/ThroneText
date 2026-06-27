@@ -2,6 +2,7 @@ import random
 from character import player_max_hp
 from combat.status_effects import cure_curse, apply_poison, is_silenced, is_dreaded, format_player_status_line
 from combat.combat_ui import print_combat_hud, format_enemy_status_line
+from combat.helpers import _player_has_abyss_fang
 from combat.wedding_specials import (
     apply_wedding_attack_bonus_procs,
     apply_wedding_on_hit,
@@ -104,6 +105,13 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         dmg = random.randint(4, 10) + scaling_val + get_strength_bonus(player) - target["con_mod"]
         dmg = max(0, dmg)
 
+        # Wedding accessory attack bonuses
+        is_first = not player.get("wedding_first_attack_done")
+        wedding_bonus = apply_wedding_attack_bonus_procs(player, target, dmg, is_first)
+        dmg += wedding_bonus
+        if wedding_bonus > 0:
+            dmg = max(0, dmg)
+
         # Apply elemental damage
         from combat.elemental import calculate_elemental_damage, get_attack_element
         element = get_attack_element(player, equipped_weapon)
@@ -111,6 +119,10 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if on_hit:
             on_hit(target, enemies) 
         target["hp"] -= final_dmg
+
+        # Wedding on-hit effects
+        apply_wedding_on_hit(player, target, enemies, final_dmg)
+        player["wedding_first_attack_done"] = True
 
         verb = "strike"
         if "Dexterity" in scaling_stats:
@@ -130,6 +142,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             print(f"{player['name']} defeated {target['name']}!")
             if on_kill:
                 on_kill(target, enemies)
+            apply_wedding_on_kill(player, target, enemies)
         return "continue", False
 
     # ----- DEFEND -----

@@ -5,6 +5,8 @@ from resources.cities import CITIES
 from save_load import save_game
 from city_dialogue import service_dialogue
 
+from events import format_date, flush_event_queue
+
 # Import all facility handlers
 from facilities.shop import city_shop
 from facilities.inn import inn_menu
@@ -53,6 +55,9 @@ def visit_city(player, city_id=None):
     service_dialogue(city_id, "receptionist", "enter")
     print(f"\nA kind but stern receptionist nods at you from the guild desk in {city['name']}.")
 
+    # Show any events that fired while the player was in the dungeon
+    flush_event_queue(player)
+
     while True:
         clear_screen()
         current_time_str = format_time(player["time_minutes"])
@@ -76,7 +81,7 @@ def visit_city(player, city_id=None):
         _cf     = player.get("city_floors", {}).get(city_id, {})
         _cur_fl = _cf.get("floor", 1) 
         _max_fl = _cf.get("max_floor", player.get("max_floor", 1))
-        print(f"Adventurer: {player['name']} | {city['name']} Dungeon: {_cur_fl}/{_max_fl} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{mount_field}{status_field}")
+        print(f"Adventurer: {player['name']} | {city['name']} Dungeon: {_cur_fl}/{_max_fl} | {format_date(player)} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{mount_field}{status_field}")
 
         print("\nAvailable Services:")
         menu_options = {}

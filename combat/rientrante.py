@@ -92,7 +92,7 @@ def _create_clone_from_enemy(enemy):
         },
         "current_hp": enemy.get("max_hp", enemy.get("hp", 50)),
         "max_hp": enemy.get("max_hp", enemy.get("hp", 50)),
-        "equipped": {"weapon": None, "armor": None, "accessory": None},
+        "equipped": {"weapon": None, "armor": None, "accessory1": None, "accessory2": None},
         "active_buffs": [],
         "active_debuffs": [],
         "blinded": False,

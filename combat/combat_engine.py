@@ -10,6 +10,10 @@ from combat.status_effects import tick_player_debuffs, tick_player_buffs
 from combat.ally import (
     get_alive_allies, compute_ally_stats, handle_ally_turn
 )
+from combat.wedding_specials import (
+    begin_wedding_combat, end_wedding_combat,
+    apply_wedding_combat_start, apply_wedding_end_of_round
+)
 from utils import clear_screen, format_time
 
 
@@ -76,6 +80,15 @@ def _get_alive_party(player):
 
 def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
     """Generic combat loop supporting player + allies vs enemies."""
+    begin_wedding_combat(player, floor, room_num)
+    try:
+        return _combat_inner(player, enemy_keys, floor, room_num, total_rooms)
+    finally:
+        end_wedding_combat(player)
+
+
+def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
+    """Generic combat loop supporting player + allies vs enemies."""
     player["abyss_triple_actions"] = 0
     enemies = [enemy_stats(k, player) for k in enemy_keys]
 
@@ -95,6 +108,8 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
     for e in enemies:
         print(f"- A {e['name']} appears! (HP: {e['hp']})")
     input("Press Enter to begin...")
+
+    apply_wedding_combat_start(player, enemies)
 
     round_num = 0
     while True:
@@ -359,6 +374,9 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
                 print(f"  {ally['name']} succumbs to their wounds!")
             for m in tick_player_buffs(ally):
                 print(f"  {ally['name']}: {m}")
+
+        # Wedding end-of-round effects
+        apply_wedding_end_of_round(player)
 
         print("\n  " + "─" * 66)
         input("  Press Enter to continue...")

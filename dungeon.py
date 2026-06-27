@@ -415,6 +415,10 @@ def explore_dungeon(player):
                             ally["current_hp"] = min(ally["current_hp"] + ally_heal, ally["max_hp"])
                             print(f"  {ally['name']} recovers {ally_heal} HP.")
 
+                    # Wedding end-of-combat rewards
+                    from combat.wedding_specials import apply_wedding_combat_end
+                    apply_wedding_combat_end(player, victory=True)
+
                     break
 
                 elif result == "fled":
@@ -452,6 +456,9 @@ def explore_dungeon(player):
                     return "fled"
                 
                 break
+
+            # Increment wedding bark_shield room counter
+            player["wedding_bark_shield_room_count"] = player.get("wedding_bark_shield_room_count", 0) + 1
 
         # Update saved progress so reloads resume from the next room
         player["saved_dungeon_room_index"] = i + 1

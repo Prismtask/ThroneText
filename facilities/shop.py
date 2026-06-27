@@ -76,24 +76,39 @@ def sell_items(player):
         print("No valid items selected.")
         return
 
-    total_gold = sum(_sell_price(all_items[i], player) for i in indices)
-    names = [all_items[i]["name"] for i in indices]
-    print(f"\nYou will sell {len(indices)} item(s) for {total_gold} gold:")
-    for n in names:
+    from combat.wedding_specials import is_wedding_item_soulbound
+    # Filter out soulbound wedding items
+    filtered_indices = []
+    filtered_names = []
+    for i in indices:
+        item = all_items[i]
+        if is_wedding_item_soulbound(item):
+            print(f"  - {item['name']} [SOULBOUND — cannot be sold]")
+        else:
+            filtered_indices.append(i)
+            filtered_names.append(item['name'])
+    
+    if not filtered_indices:
+        print("\nNo valid items to sell (all selected items are soulbound).")
+        return
+
+    total_gold = sum(_sell_price(all_items[i], player) for i in filtered_indices)
+    print(f"\nYou will sell {len(filtered_indices)} item(s) for {total_gold} gold:")
+    for n in filtered_names:
         print(f"  - {n}")
     confirm = input("Confirm? (y/n): ").strip().lower()
     if confirm != "y":
         print("Cancelled.")
         return
 
-    for i in indices:
+    for i in filtered_indices:
         item = all_items[i]
         # find by identity to remove the correct instance
         orig_idx = next(idx for idx, itm in enumerate(player["inventory"]) if itm is item)
         player["inventory"].pop(orig_idx)
 
     player["gold"] = player.get("gold", 0) + total_gold
-    print(f"Sold {len(indices)} item(s) for {total_gold} gold.")
+    print(f"Sold {len(filtered_indices)} item(s) for {total_gold} gold.")
 
 
 def upgrade_backpack(player):

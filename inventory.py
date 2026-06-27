@@ -62,15 +62,26 @@ def remove_item_from_inventory(player, index):
     return player["inventory"].pop(index)
 
 def equip_item(player, item):
-    slot = item["slot"]
-    if slot not in player["equipped"]:
-        player["equipped"][slot] = None
-    old = player["equipped"][slot]
+    item_slot = item["slot"]
+    # Resolve dual accessory slots
+    if item_slot == "accessory":
+        if player.get("equipped", {}).get("accessory1") is None:
+            target_slot = "accessory1"
+        elif player.get("equipped", {}).get("accessory2") is None:
+            target_slot = "accessory2"
+        else:
+            target_slot = "accessory1"
+    else:
+        target_slot = item_slot
+        if target_slot not in player["equipped"]:
+            player["equipped"][target_slot] = None
+
+    old = player["equipped"][target_slot]
     if old:
         if not add_item_to_inventory(player, old):
             print(f"Cannot equip {item['name']} — inventory is full. Unequip something first.")
             return False
-    player["equipped"][slot] = item
+    player["equipped"][target_slot] = item
     print(f"Equipped {item['name']}.")
     # Recalculate elemental profile
     from combat.elemental import compute_player_elemental

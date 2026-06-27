@@ -5,7 +5,16 @@ from combat.status_effects import (
     apply_drain, apply_silence, tick_enemy_debuffs
 )
 from resources.enemies import ENEMIES
-
+from combat.wedding_specials import (
+    apply_wedding_dodge_bonus,
+    apply_wedding_on_dodge,
+    apply_wedding_damage_reduction,
+    apply_wedding_fatal_blow_survival,
+    apply_wedding_on_damage_taken,
+    apply_wedding_enemy_accuracy_penalty,
+    apply_wedding_enemy_attack_pre_damage,
+)
+ 
 
 def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0):
     # --- Check fear BEFORE ticking (so it applies this full turn) ---
@@ -38,11 +47,19 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     for buff in player.get("active_buffs", []):
         if buff.get("type") == "evasion":
             dodge_chance += buff.get("value", 0)
+    # Wedding dodge bonuses + enemy accuracy penalty
+    dodge_chance += apply_wedding_dodge_bonus(player)
+    dodge_chance += apply_wedding_enemy_accuracy_penalty(player)
     # Cap dodge at 80% to prevent absolute immunity
     dodge_chance = min(dodge_chance, 0.80)
     if dodge_chance > 0 and random.random() < dodge_chance:
         print(f"The {enemy['name']} lunges at {player['name']} — but {player['name']} dodges out of the way!")
+        apply_wedding_on_dodge(player, enemy)
         return "dodged"
+
+    # --- PRE-DAMAGE WEDDING EFFECTS (foxfire trick, etc.) ---
+    if apply_wedding_enemy_attack_pre_damage(player, enemy):
+        return "missed"
 
     # --- DIVINE SHIELD CHECK ---
     divine_shield = any(
@@ -107,6 +124,13 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     from combat.skills import apply_passive_to_damage_taken
     enemy_dmg = apply_passive_to_damage_taken(player, enemy_dmg)
 
+    # Wedding damage reduction (slime_absorb, stone_endurance, etc.)
+    is_elemental = element is not None
+    enemy_dmg = apply_wedding_damage_reduction(player, enemy_dmg, is_elemental=is_elemental, element=element)
+
+    # Wedding fatal blow survival (bark_shield)
+    enemy_dmg = apply_wedding_fatal_blow_survival(player, enemy_dmg)
+
     # Final floor
     enemy_dmg = max(0, enemy_dmg)
     player["current_hp"] -= enemy_dmg
@@ -120,6 +144,8 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
             print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage! {tag}")
         else:
             print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!")
+        # Wedding retribution effects (pharaohs_curse, infernal_crown, keening_wail)
+        apply_wedding_on_damage_taken(player, enemy, enemy_dmg, "hit")
     else:
         print(f"The {enemy['name']} attacks but {player['name']} blocks all incoming damage!")
 

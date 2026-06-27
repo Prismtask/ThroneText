@@ -55,7 +55,8 @@ def attempt_capture(player, target, net=None):
 
     roll = (cha + dex) * 0.8 + (rarity_mult * 25) - difficulty
     from combat.stat_milestones import get_charisma_bonus
-    success_chance = max(5, min(95, roll + get_charisma_bonus(player)))
+    from combat.wedding_specials import apply_wedding_capture_bonus
+    success_chance = max(5, min(95, roll + get_charisma_bonus(player) + apply_wedding_capture_bonus(player)))
 
     if random.uniform(0, 100) < success_chance:
         print("\n" + "✨" * 20)
@@ -88,14 +89,20 @@ def store_captured_girl(player, mg):
         print(f"Your house is already full (max {max_girls} monster girls).")
         return False
 
+    from combat.wedding_specials import apply_wedding_capture_affection_bonus
+    base_affection = 20 + apply_wedding_capture_affection_bonus(player)
+
     house.setdefault("monster_girls", []).append({
         "key": mg.get("key"),
         "name": mg.get("name"),
         "level": mg.get("level"),
-        "affection": 20,
+        "affection": base_affection,
         "captured_on": player.get("day", 1),
         "exp": 0,
         "level_hp_bonus": 0,
+        "level_cap": 10,
     })
     print(f"💕 {mg.get('name')} has been added to your house in {house_city}!")
+    if base_affection > 20:
+        print(f"  (Regal Presence — she starts with {base_affection} affection!)")
     return True

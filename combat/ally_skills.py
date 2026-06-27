@@ -242,6 +242,7 @@ def get_all_ally_skills(ally):
             skills.append((sid, sdef))
     return skills
 
+def format_ally_mastery_label(skill_id, ally):
     """Return a mastery label string for display."""
     level = get_ally_skill_mastery_level(ally, skill_id)
     labels = ["", "★", "★★", "★★★"]

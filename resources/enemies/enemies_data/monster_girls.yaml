@@ -18,11 +18,17 @@ goblin_girl:
     house_talk_mid: The {name} smiles nervously. 'Oh! You're back! I was just polishing my lucky coin. Wanna see?'
     house_talk_high: The {name} giggles and grabs your hand. 'Hehe, you always know how to make me smile. Tell me a story?'
     house_talk_max: The {name} curls up beside you, resting her head on your shoulder. 'I feel so safe when you're here... I wish I could stay like this forever.'
+    house_talk_engaged_1: The {name} gazes at her lucky coin, now with a tiny carved heart. 'Ehehe, being yours forever makes me feel so lucky... What do you want to do today?'
+    house_talk_engaged_2: The {name} clings to your arm, looking up at you with starry eyes. 'I-I still can't believe you chose me. Tell me I'm not dreaming!'
     house_gift_love: The {name} gasps, clutching the gift to her chest. 'For me?! Oh, I love it! Thank you, thank you!'
     house_gift_hate: The {name} forces a weak smile. 'Oh... uh... thanks, I guess? Maybe I can trade it for something else...'
     house_buff: The {name} closes her eyes and whispers a small incantation. 'There! A little luck from me to you – don't waste it!'
     house_bond_kiss: The {name} stands on tiptoe and pecks your cheek, then hides her face. 'Ehehe... I've wanted to do that for so long.'
     house_recruit_again: The {name} jumps up, grabbing your arm. 'You're back for me! I knew you'd come! Let's go!'
+    engaged: "You... you really want me to be yours forever? B-but I'm just a goblin... Oh, I'm so happy!"
+    special_gift: "This... this is so precious! I-I'll keep it safe forever, right next to my heart!"
+    ascension_pre_ceremony: "The {name} fidgets with her lucky coin, eyes wide. 'I-I think I'm ready... Please, break my limits so I can be braver for you!'"
+    ascension_post_ceremony: "The {stone} bursts into a shower of golden sparks! {name} gasps as light swirls around her. 'I feel... stronger! No more Level {old_cap}! Thank you!'"
 
 harpy_scout:
   name: Harpy Scout
@@ -43,11 +49,17 @@ harpy_scout:
     house_talk_mid: She ruffles her feathers, a hint of a smile. 'You're not as clumsy as you look. Want to hear about the clouds I saw today?'
     house_talk_high: She chirps happily, hopping closer. 'The wind told me you were coming! Let's fly together – I'll show you the world from above!'
     house_talk_max: She nuzzles your neck, wings half‑spread. 'You are my sky. I never want to land again.'
+    house_talk_engaged_1: The {name} preens her feathers, a woven band around one wing. 'Every cloud I scout, I scan for your shadow. Being sky-bonded has made my heart lighter than the wind.'
+    house_talk_engaged_2: The {name} circles above your head, then lands softly on your shoulder. 'Our nest is the sky, and I'm never landing without you, wind-mate.'
     house_gift_love: She squawks with delight, snatching the gift. 'For me?! Oh, it's perfect! I'll wear it on my wing!'
     house_gift_hate: She tilts her head, confused. 'Uh... what is this? I can't eat it or fly with it...'
     house_buff: She breathes a warm gust of wind over you. 'There – a tailwind for your journey. Use it well!'
     house_bond_kiss: She leans in, brushing her beak against your cheek. 'A kiss from the skies – now you're marked as mine.'
     house_recruit_again: She spreads her wings, eyes gleaming. 'Ready for another adventure? I've been itching to fly!'
+    engaged: "A life-mate? You wish to soar the endless skies with me, bound as one? ... Yes, yes, a thousand times yes!"
+    special_gift: "This gift... it shines like the sun on my wings. I'll treasure it above all nests."
+    ascension_pre_ceremony: "The {name} folds her wings and bows low. 'Wind-mate... the sky calls me higher. Will you lift my chains so I may soar beyond?'"
+    ascension_post_ceremony: "The {stone} shatters, releasing a tempest of feathers! {name} shrieks joyfully as ancient currents surge through her. 'The sky just got bigger! Level {old_cap}... gone!'"
 
 alraune_fledger:
   name: Alraune Fledger
@@ -68,11 +80,17 @@ alraune_fledger:
     house_talk_mid: She offers you a small blossom. 'I grew this for you. It smells like friendship – do you like it?'
     house_talk_high: She wraps a vine around your wrist, pulling you close. 'My petals open only for you now. Stay a while?'
     house_talk_max: She rests her head on your chest, fragrant and warm. 'I have woven my roots into your heart. Never leave me.'
+    house_talk_engaged_1: The {name}'s petals shimmer as she entwines her fingers with yours. 'Our roots are forever intertwined now. I'll bloom new flowers just to celebrate each day with you.'
+    house_talk_engaged_2: The {name} rests her head on your chest, a soft fragrance filling the room. 'My gardener, my sun... tell me what you desire and I'll grow it from my heart.'
     house_gift_love: She radiates warmth, petals unfurling. 'Such a beautiful offering! I will treasure it forever.'
     house_gift_hate: She shrinks back, leaves drooping. 'Oh... this doesn't suit me at all. Please take it back.'
     house_buff: She sprinkles golden pollen over you. 'May your steps be light and your harvest plentiful.'
     house_bond_kiss: She leans forward, pressing her lips to yours – soft as petals. 'Now we are bound, root and stem.'
     house_recruit_again: She extends a leafy hand, smiling. 'The forest calls us. Let us walk together again.'
+    engaged: "You wish to intertwine our roots forever? Then I shall bloom only for you, my gardener, my sun."
+    special_gift: "Oh! This gift... it smells like forever. I'll weave it into my petals."
+    ascension_pre_ceremony: "The {name} kneels among blooming vines, petals trembling. 'My roots feel bound... Water me with this stone, dear gardener, so I may bloom brighter.'"
+    ascension_post_ceremony: "The {stone} crumbles into glowing pollen! New vines spiral up {name}'s form as a sweet fragrance fills the air. 'I have broken my shell! Level {old_cap} is no more.'"
 
 kobold_tinkerer:
   name: Kobold Tinkerer
@@ -93,11 +111,17 @@ kobold_tinkerer:
     house_talk_mid: She shows you a new contraption, eyes bright. 'Look! I made it spin faster! Wanna see how it works?'
     house_talk_high: She bounces on her heels, talking a mile a minute. 'You're the best listener! I have so many ideas – let's build something together!'
     house_talk_max: She curls up against you, holding a tiny clockwork heart. 'I made this for you. It ticks in time with mine.'
+    house_talk_engaged_1: The {name} fiddles with a tiny clockwork ring on her finger, tail wagging. 'It's calibrated to beat with my heart! Being your permanent lab partner is the greatest experiment!'
+    house_talk_engaged_2: The {name} holds up a new invention that projects tiny floating hearts. 'I made this to show how much I love you! I'll build us a whole world of gadgets.'
     house_gift_love: She squeals, examining the gift from every angle. 'This is AMAZING! I can use it in my next invention!'
     house_gift_hate: She stares at it, puzzled. 'Uh... what does it do? It doesn't even have gears...'
     house_buff: She taps your forehead with a wrench. 'There! A boost of inspiration – your mind will work faster now.'
     house_bond_kiss: She hesitates, then plants a quick kiss on your nose. 'T-that was a spark! See? Sparks are good!'
     house_recruit_again: She straps on her toolbelt, grinning. 'Time to tinker and fight! I've got new gadgets to test!'
+    engaged: "Y-you want to be my permanent lab partner? Like... for life? This is the best experiment ever! Yes!"
+    special_gift: "Is this... a rare component? I can't even identify it! I'll study it and think of you with every gear."
+    ascension_pre_ceremony: "The {name} holds a tiny device that sparks erratically. 'I-I built a stabilizer for the ascension... if you'll trust me. Please, break my limits — I want to invent greater things!'"
+    ascension_post_ceremony: "The {stone} detonates in a controlled explosion of gears and light! {name}'s tail frizzes as energy crackles over her. 'Haha! The calibrations worked! Farewell Level {old_cap}!'"
 
 dryad_protector:
   name: Dryad Protector
@@ -118,11 +142,17 @@ dryad_protector:
     house_talk_mid: She steps closer, a twig snapping underfoot. 'You are not as loud as the others. I... can listen.'
     house_talk_high: She touches your cheek, bark‑rough but gentle. 'You are like sunlight through the canopy. Stay a while.'
     house_talk_max: She wraps her arms around you, leaves rustling with affection. 'You are my tree, my roots, my home.'
+    house_talk_engaged_1: The {name} traces a symbol in the earth that glows softly. 'The forest has blessed our union. I feel the ancient trees rejoicing within me.'
+    house_talk_engaged_2: The {name} steps out from behind a tree, holding a small sapling. 'I'm planting this for us — a new life to grow alongside our love.'
     house_gift_love: She accepts it with a reverent bow. 'The forest thanks you. I thank you. It will grow in my heart.'
     house_gift_hate: She pushes it back gently. 'This does not belong among the trees. Take it away.'
     house_buff: She traces a rune on your palm with a twig. 'May the earth shield you and the branches guide you.'
     house_bond_kiss: She presses her lips to yours – cool, earthy, and deep as the soil. 'Now you are rooted in me.'
     house_recruit_again: She emerges from the grove, staff in hand. 'The forest gave me leave. I will walk with you again.'
+    engaged: "The forest whispers that our souls have taken root together. I... I accept this eternal bond, my tree."
+    special_gift: "This offering... it is like a seed of joy. I will plant it in my heartwood."
+    ascension_pre_ceremony: "The {name} bows, bark creaking, leaves rustling. 'The ancient wood whispers that I may grow beyond my ringed years. Will you give me the strength to protect our grove?'"
+    ascension_post_ceremony: "The {stone} splinters into shards of emerald light that rain down like leaves. {name}'s bark glistens, new branches sprouting. 'I feel the seasons turning... Level {old_cap} is just a memory.'"
 
 ghost_maid:
   name: Ghost Maid
@@ -143,11 +173,17 @@ ghost_maid:
     house_talk_mid: She becomes more solid, offering a ghostly tea cup. 'Would you... care for some spectral tea? It's not quite real, but the thought is there.'
     house_talk_high: She drifts beside you, a faint warmth in her chill. 'You are the first to see me as more than a servant. I... appreciate that.'
     house_talk_max: She takes your hand, her touch almost solid. 'My heart, long cold, now beats for you. I will never leave.'
+    house_talk_engaged_1: The {name} curtsies, her form almost solid, a tiny spectral ring on her finger. 'My master, my love... I shall serve you not out of duty, but out of endless affection.'
+    house_talk_engaged_2: The {name} floats by your side, her chill now a comforting coolness. 'Death could not hold my heart, and you have given me a reason to exist. I'll haunt you with love.'
     house_gift_love: She gasps, a flicker of light in her eyes. 'A gift... for me? I have not received one in centuries. Thank you.'
     house_gift_hate: She stares blankly. 'This... does not cross the veil. It is of no use to me.'
     house_buff: She whispers an ancient blessing, a chill that strengthens your resolve. 'May the shadows conceal you and the spirits guide you.'
     house_bond_kiss: She leans in, her lips cold but full of feeling. 'A kiss from beyond – now you are bound to me.'
     house_recruit_again: She curtsies, a soft smile on her translucent face. 'I am ready to serve again, my master.'
+    engaged: "You would bind your soul to a ghost? I... I have not felt such warmth since I lived. Yes, my master, my love."
+    special_gift: "A gift from the living... I can feel it. I shall place it on my ethereal altar, never to fade."
+    ascension_pre_ceremony: "The {name} flickers, almost solid, her voice echoing. 'Master... I have been bound by death for so long. If you would, break these chains so I may truly serve you.'"
+    ascension_post_ceremony: "The {stone} dissolves into ectoplasmic mist that floods into {name}. Her form crystallizes, brighter than ever. 'I feel... alive? Level {old_cap} has faded... Thank you, master.'"
 
 centaur_scout:
   name: Centaur Scout
@@ -168,11 +204,17 @@ centaur_scout:
     house_talk_mid: She trots a circle around you. 'You're not as slow as I thought. Come, walk with me – I'll tell you of the plains.'
     house_talk_high: She nickers warmly, nudging you with her shoulder. 'You are a good companion. Let's run together sometime!'
     house_talk_max: She rests her head against yours, breathing deep. 'My herd is you. I would gallop to the ends of the earth for you.'
+    house_talk_engaged_1: The {name} trots in place, a leather band woven into her mane. 'Being your herd-mate fills my hooves with thunder! Where shall we gallop today, my stallion?'
+    house_talk_engaged_2: The {name} nuzzles your hair, breathing deep. 'The open plains are vast, but my whole world is right here at your side.'
     house_gift_love: She paws the ground, delighted. 'A fine gift! It reminds me of the open meadows – thank you!'
     house_gift_hate: She snorts. 'This? It's useless. I can't wear it or eat it.'
     house_buff: She stamps a hoof, and a surge of speed fills your limbs. 'Now you run like the wind!'
     house_bond_kiss: She bends down, brushing her lips against your forehead. 'A kiss from a centaur – you are part of the herd now.'
     house_recruit_again: She tosses her mane, ready to charge. 'The plains call! Let us ride together again!'
+    engaged: "You wish to be my herd-mate for all seasons? Then let us gallop into eternity together, my stallion."
+    special_gift: "This gift... it feels like the wind on the open plains. I'll carry it in my mane."
+    ascension_pre_ceremony: "The {name} kneels heavily, hoof striking earth. 'Lead stallion, I feel the horizon calling but my hooves are hobbled. Shatter these bounds and I will outrun the wind for you.'"
+    ascension_post_ceremony: "The {stone} explodes into a galloping starlight herd! {name} rears with a triumphant whinny as power courses through her legs. 'No fence can hold me! Goodbye, Level {old_cap}!'"
 
 moth_girl_flutterer:
   name: Moth Girl Flutterer
@@ -193,11 +235,17 @@ moth_girl_flutterer:
     house_talk_mid: She lands on your shoulder, wings softly brushing your neck. 'You are a pleasant glow. Tell me about your day?'
     house_talk_high: She dances around you, leaving a trail of glowing dust. 'You are the brightest star in my sky! I want to hear everything about you!'
     house_talk_max: She settles in your lap, her wings folding. 'Your light is my home. I never want to fly elsewhere.'
+    house_talk_engaged_1: The {name} flutters around you, leaving trails of glowing dust that shape into a heart. 'You're my eternal flame, and I'll dance around you until the stars go out.'
+    house_talk_engaged_2: The {name} settles in your palm, wings soft against your skin. 'Your light warms me from the inside. I never knew love could be this bright.'
     house_gift_love: She shimmers with joy. 'Oh, it's beautiful! It shines like the moon – I will keep it near my heart!'
     house_gift_hate: She dims, disappointed. 'It's... not glowing. I need things that shine.'
     house_buff: She sprinkles silver dust over you. 'May your path always be lit, even in the darkest night.'
     house_bond_kiss: She flutters up and presses her lips to yours – gentle as a moth's wing. 'Now you are my eternal flame.'
     house_recruit_again: She buzzes with excitement. 'I've been waiting for your light! Take me with you!'
+    engaged: "You are the flame I will circle forever. Yes, let me be yours, my eternal light."
+    special_gift: "It glows... almost as bright as you. I will keep it close when night falls."
+    ascension_pre_ceremony: "The {name} alights before you, wings dusted with silver. 'My flame... I feel a shadow on my wings. Will you burn it away so I can shine brighter for you?'"
+    ascension_post_ceremony: "The {stone} bursts into a spiral of moonbeams! {name}'s wings unfurl in prismatic glory, leaving trails of stardust. 'The night just became day! Level {old_cap}... forgotten.'"
 
 slime_girl:
   name: Slime Girl
@@ -218,11 +266,17 @@ slime_girl:
     house_talk_mid: She bounces closer, jiggling. 'Bloop-bloop! You're fun! Squish-squish?'
     house_talk_high: She wraps around your hand, warm and happy. 'Bloop! Your presence makes me giggle inside!'
     house_talk_max: She envelops you in a cool, loving embrace. 'Bloop... you are my home. I never want to let go.'
+    house_talk_engaged_1: The {name} wobbles happily, forming a heart shape with a translucent band inside. 'Bloop! We're squished together forever! My goo has never been this happy!'
+    house_talk_engaged_2: The {name} wraps around your hand, cool and squishy, pulsing gently. 'Bloop-bloop... I want to hear all your dreams so I can squish them into reality.'
     house_gift_love: She absorbs the gift with a happy gurgle. 'Bloop! It's squishy and tasty! Perfect!'
     house_gift_hate: She spits it out, confused. 'Bloop... yucky. Not squishy at all.'
     house_buff: She squishes against you, leaving a glossy coat. 'Bloop! You're slippery now – hard to catch!'
     house_bond_kiss: She forms a gel-like mouth and gives you a gooey kiss. 'Bloop~ Now you're part of me!'
     house_recruit_again: She bounces eagerly. 'Bloop! Let's squish together again!'
+    engaged: "Bloop-bloop! You want to squish with me forever? This is the happiest squish ever! Yes!"
+    special_gift: "Ooh, a shiny squishy thing! I'll absorb it and keep it safe inside me, bloop!"
+    ascension_pre_ceremony: "The {name} wobbles with determination, forming a heart shape. 'Bloop... I feel squishy but limited. Break the bubble so I can be the biggest, happiest slime for you!'"
+    ascension_post_ceremony: "The {stone} pops like a soap bubble into a rainbow of goo! {name} expands joyfully, shimmering with new colors. 'Bloop! Level {old_cap} is squished! I'm free!'"
 
 lamia_constrictor:
   name: Lamia Constrictor
@@ -243,11 +297,17 @@ lamia_constrictor:
     house_talk_mid: She rests her head on your shoulder, tail loose. 'You're not bad company. Tell me a secret?'
     house_talk_high: She coils around you in a gentle hug. 'You make me feel safe, little one. Stay with me.'
     house_talk_max: She wraps you fully, whispering in your ear. 'You are my prey and my partner. I will never let go.'
+    house_talk_engaged_1: The {name} coils loosely around you, tail tip flicking affectionately. 'My darling mate, every scale on my body hums with your name. Stay wrapped with me a while longer.'
+    house_talk_engaged_2: The {name} rests her chin on your shoulder, a sly but warm smile. 'I used to coil around prey; now I only coil around my beloved. You've domesticated a predator.'
     house_gift_love: She hisses with pleasure, clutching the gift. 'Ooh, you know me so well. I'll treasure this.'
     house_gift_hate: She pushes it away with her tail. 'This... does not suit me. Try again.'
     house_buff: She breathes warm air over you, a soothing heat. 'My warmth will protect you from cold and fear.'
     house_bond_kiss: She cups your face and kisses you deeply. 'Now you are truly caught in my coils.'
     house_recruit_again: She slithers forward, a hungry glint in her eye. 'Ready for round two, darling? Let's hunt.'
+    engaged: "You want to be wrapped in my coils for all time, darling? Then I shall never let you go... my mate."
+    special_gift: "A treasure for my hoard? It is almost as precious as you. I'll guard it with my life."
+    ascension_pre_ceremony: "The {name} coils at your feet, head bowed. 'Darling... my scales itch with unrealized potential. Use the stone and I will wrap you in power no enemy can escape.'"
+    ascension_post_ceremony: "The {stone} hisses, releasing a serpentine aurora! {name}'s tail lengthens and shimmering scales blaze. 'The old limit has shed its skin! Level {old_cap} is gone, darling.'"
 
 lizard_queen:
   name: Lizard Queen
@@ -268,11 +328,17 @@ lizard_queen:
     house_talk_mid: She acknowledges you with a nod. 'You have earned a fraction of my attention. Use it wisely.'
     house_talk_high: She invites you to sit beside her. 'You show promise. Tell me of your conquests.'
     house_talk_max: She lays her head in your lap, regal yet vulnerable. 'You are the only one I would kneel for.'
+    house_talk_engaged_1: The {name} adjusts her crown, then places a smaller one on your head. 'My king, my equal — together our reign will never set. What kingdom shall we discuss today?'
+    house_talk_engaged_2: The {name} lounges beside you, regal but at ease. 'Even a queen needs a consort to share the burdens of power. I'm grateful it's you.'
     house_gift_love: She accepts with a dignified nod. 'A worthy offering. You are learning your place.'
     house_gift_hate: She scoffs. 'This is trash. Do not waste my time.'
     house_buff: She raises her claws and intones a royal blessing. 'May your victories be many.'
     house_bond_kiss: She presses her lips to yours – a queen's seal of devotion. 'Now you are mine, and I am yours.'
     house_recruit_again: She rises, scales gleaming. 'You have summoned your queen. Let us reclaim glory.'
+    engaged: "You ask a queen to share her throne forever? ... Then I shall make you my king. Rule beside me, my equal."
+    special_gift: "This tribute... it is fit for a pharaoh. I will place it in my royal vault."
+    ascension_pre_ceremony: "The {name} kneels with a ruler's grace, her crown tilted. 'Even a queen must evolve. Anoint me with ascension, consort, and our reign shall be eternal.'"
+    ascension_post_ceremony: "The {stone} roars into a column of sunfire! {name}'s scales gleam like obsidian and gold as she rises. 'My kingdom grows! Level {old_cap} was a mere stepping stone.'"
 
 mimic_girl:
   name: Mimic Girl
@@ -293,11 +359,17 @@ mimic_girl:
     house_talk_mid: She hops closer, tongue out. 'Hehe~ You're fun! Tell me a joke!'
     house_talk_high: She nuzzles you, licking your cheek. 'Mmm~ You're my favourite treasure! Stay with me!'
     house_talk_max: She curls around you, purring. 'I've found the best treasure of all – you. I'll protect you forever~'
+    house_talk_engaged_1: The {name} opens her lid, revealing a plush heart-shaped cushion inside. 'Hehe~ I've made a special spot just for you, my best treasure! No one else gets in.'
+    house_talk_engaged_2: The {name} transforms into a small treasure chest, a ring latch on top. 'I'm the chest that holds your heart, and you've got the key, nya~'
     house_gift_love: She devours it with glee. 'YUM! You know what I like! More, more!'
     house_gift_hate: She spits it out, disgusted. 'Blech! That's not treasure!'
     house_buff: She gives you a slobbery lick. 'There! Now you're lucky! Don't ask how it works~'
     house_bond_kiss: She turns into a small chest, pops open, and gives you a kiss from inside. 'Hehe~ Surprise! Now you're mine!'
     house_recruit_again: She transforms into a chest and leaps at you. 'Surprise! I'm ready to go again!'
+    engaged: "Hehe~ You want to be my permanent treasure? Then I'll never open for anyone else! You're my best loot!"
+    special_gift: "Is it edible? No? Still shiny! I'll keep it in my chest, right next to my heart."
+    ascension_pre_ceremony: "The {name} snaps her lid shut, then peeks out with a giggle. 'Hehe~ I've got a treasure inside that's begging to grow. Crack the stone and I'll be the best loot you ever had!'"
+    ascension_post_ceremony: "The {stone} shatters with a jackpot chime, revealing a mimic-shaped constellation! {name} emerges sparkling, tongue lolling. 'Jackpot! Level {old_cap}? Eaten up!'"
 
 umbral_weaver:
   name: Umbral Weaver
@@ -318,11 +390,17 @@ umbral_weaver:
     house_talk_mid: She appears beside you, a faint smile. 'You are learning. Would you like to see the patterns I weave?'
     house_talk_high: She wraps a shadow-thread around your finger. 'You are part of my tapestry now. I will tell you secrets.'
     house_talk_max: She holds you in the darkness, warm and safe. 'You are my light in the void. I will never let you fade.'
+    house_talk_engaged_1: The {name} weaves shadow-threads that form a gleaming ring pattern around your finger. 'In the tapestry of fate, our threads are now knotted together. I can see our future, little moth.'
+    house_talk_engaged_2: The {name} emerges from the darkness, her touch gentle. 'My shadows are no longer lonely. You are the light that I will keep woven into my very soul.'
     house_gift_love: She accepts it with a shadowy hand, and it melts into her form. 'A gift for the weaver? You are kind.'
     house_gift_hate: She lets it drop, untouched. 'It is too bright. It hurts.'
     house_buff: She spins a cloak of shadows around you. 'Now the darkness will hide and shield you.'
     house_bond_kiss: She steps from the dark and presses her lips to yours – cool as night. 'Now you are bound to the shadow.'
     house_recruit_again: She weaves a portal of darkness. 'Step through – I will guide you again.'
+    engaged: "You wish to be woven into my tapestry for eternity? Then you shall be my brightest thread, little moth."
+    special_gift: "This gift... it shines in the dark. I will spin a web just to display it."
+    ascension_pre_ceremony: "The {name} weaves a sigil of darkness, voice a whisper. 'The web of fate tightens... Cut these old threads, little moth, so I may weave a grander tapestry for you.'"
+    ascension_post_ceremony: "The {stone} unravels into shadowy filaments that sew themselves into {name}'s form. The darkness deepens, then ignites with starry nodes. 'My new web is complete. Level {old_cap}... discarded.'"
 
 winter_fairy:
   name: Winter Fairy
@@ -343,11 +421,17 @@ winter_fairy:
     house_talk_mid: She lands on your palm, ice melting slightly. 'You are not so bad. Tell me of summer?'
     house_talk_high: She curls up in your hood, her chill a comfort. 'You are my winter sun. Stay with me?'
     house_talk_max: She presses her cold cheek to yours. 'You are the warmth I never knew I needed. I love you.'
+    house_talk_engaged_1: The {name} flits close, painting frost hearts on the window. 'My winter sun, I've learned to love warmth because of you. I'll never let the cold come between us.'
+    house_talk_engaged_2: The {name} lands on your nose, leaving a delicate snowflake kiss. 'Every snowflake that falls is a reminder of our bond. I'll blanket the world in white just for you.'
     house_gift_love: She hugs it, leaving a frost pattern. 'It's perfect! It reminds me of icicles!'
     house_gift_hate: She drops it, shivering. 'This is too hot. Take it away.'
     house_buff: She breathes a frosty mist over you. 'May your steps be silent and your heart cold as ice.'
     house_bond_kiss: She flutters up and kisses you – cold and sweet as fresh snow. 'Now you are winter's chosen.'
     house_recruit_again: She flits around you, leaving frost trails. 'I've been waiting for the cold to return. Let's go!'
+    engaged: "You... you would thaw my heart forever? I... I thought I'd never feel such warmth. Yes, my winter sun."
+    special_gift: "It glitters like frost. I will keep it in my ice palace, never to melt."
+    ascension_pre_ceremony: "The {name} flits down, leaving a trail of frost. 'My heart is frozen in old ice. Please... thaw these chains with the stone, so I may become a blizzard for you.'"
+    ascension_post_ceremony: "The {stone} shatters into a flurry of diamond snow! {name} spins, her form growing sharp and crystalline. 'The eternal winter has arrived! Level {old_cap} is buried.'"
 
 holstaur_brawler:
   name: Holstaur Brawler
@@ -369,11 +453,17 @@ holstaur_brawler:
     house_talk_mid: She grins, slapping your shoulder. 'You're tougher than you look! Let's arm-wrestle!'
     house_talk_high: She throws an arm around you. 'You're my favourite sparring buddy! Let's grab a drink!'
     house_talk_max: She hugs you, nearly crushing you. 'I'd take a thousand hits for you. You're my herd.'
+    house_talk_engaged_1: The {name} flexes, then lifts you easily in a bear hug. 'Ha! My partner for life! Nothing can break us — I'll crush any trouble that comes our way!'
+    house_talk_engaged_2: The {name} leans her head against yours, her strength gentle. 'You're the soft spot in my heart, sweetcheeks. I'll always protect that.'
     house_gift_love: She bellows with joy, tossing it in the air. 'I LOVE IT! Let's celebrate!'
     house_gift_hate: She snorts, unimpressed. 'This is useless. Can I eat it?'
     house_buff: She flexes and gives you a hearty pat. 'There! Now you've got the strength of a bull!'
     house_bond_kiss: She plants a kiss on your forehead, a bit too hard. 'Mwah! Now you're mine, partner!'
     house_recruit_again: She stamps her hoof, ready for action. 'Time to brawl again! Let's go!'
+    engaged: "You wanna be my partner for life? Then let's crush every challenge together! I'll always have your back, sweetcheeks."
+    special_gift: "Whoa, this is awesome! I'll polish it every day and show it off at the tavern!"
+    ascension_pre_ceremony: "The {name} slams her fists together, snorting. 'I've been pumping iron but my muscles are capped! Smash that limit with the stone, partner, and I'll be your unbreakable wall!'"
+    ascension_post_ceremony: "The {stone} detonates like a powder keg! {name} bellows as her physique surges with raw power. 'I could bench-press a mountain! Level {old_cap} is dust!'"
 
 gargoyle_watcher:
   name: Gargoyle Watcher
@@ -394,11 +484,17 @@ gargoyle_watcher:
     house_talk_mid: She shifts slightly, a grinding sound. 'You are... interesting. Tell me of the world beyond my perch.'
     house_talk_high: She sits beside you, stone warm from the sun. 'You have become my favourite sight. Stay a while.'
     house_talk_max: She takes your hand, her grip solid but gentle. 'You are the only thing I will leave my perch for.'
+    house_talk_engaged_1: The {name} perches motionless, but her eyes follow you with eternal devotion. 'I have watched civilizations crumble, but my vigil over you will outlast time itself.'
+    house_talk_engaged_2: The {name} cracks a rare, stony smile, offering her hand. 'The stone that encases my heart now beats only for you. Will you sit with me on this perch?'
     house_gift_love: She examines it, then nods once. 'A worthy tribute. I shall keep it always.'
     house_gift_hate: She stares at it, unmoved. 'It is meaningless. Remove it.'
     house_buff: She touches your brow with a stony finger. 'May you be as enduring as stone.'
     house_bond_kiss: She bends down, her stone lips pressing against yours – cool and eternal. 'Now you are carved into my memory.'
     house_recruit_again: She spreads her wings, ready to descend. 'The time to watch is over. I will fight.'
+    engaged: "You would share your fleeting mortal life with this eternal stone? Then I shall watch over you until the spires crumble."
+    special_gift: "A relic? It is... meaningful. I will carve a niche for it in my perch."
+    ascension_pre_ceremony: "The {name} descends from her perch, wings grinding. 'I have watched eons pass without changing. It is time. Break the seal of stone and let me be more than a sentinel.'"
+    ascension_post_ceremony: "The {stone} cracks, revealing a core of molten light that flows over {name}. Her stone skin shines like polished marble. 'I am awake! Level {old_cap} is ancient history.'"
 
 vampire_seductress:
   name: Vampire Seductress
@@ -419,11 +515,17 @@ vampire_seductress:
     house_talk_mid: She offers you a glass of something red. 'You're growing on me. Like a fine wine.'
     house_talk_high: She leans close, fangs grazing your ear. 'You are the most delicious mortal I've met. Tell me more about yourself.'
     house_talk_max: She cradles your face, eyes soft. 'I have walked the night for centuries, but you are the dawn I never expected.'
+    house_talk_engaged_1: The {name} swirls a glass of something crimson, then toasts you. 'My pet, my consort — your heartbeat is the only music I ever want to dance to.'
+    house_talk_engaged_2: The {name} caresses your cheek, fangs retracted. 'I've tasted centuries, but nothing as intoxicating as your love. Let's linger in this eternal night.'
     house_gift_love: She gasps, genuinely surprised. 'Oh my! This is exquisite. You have excellent taste.'
     house_gift_hate: She raises an eyebrow. 'This? Really? I am a creature of the night, not a common merchant.'
     house_buff: She whispers a dark blessing, a shiver of power. 'May the shadows embrace you and the night protect you.'
     house_bond_kiss: She pulls you into a deep, lingering kiss. 'Now you are mine, body and soul.'
     house_recruit_again: She extends her hand, a sly smile. 'Come, my pet. The night awaits us.'
+    engaged: "A mortal asking for an eternal bond? ... Darling, you are the first to make my undead heart flutter. Yes, my pet."
+    special_gift: "Oh my, this is exquisite. I shall wear it to our eternal nights."
+    ascension_pre_ceremony: "The {name} fans herself, eyes glowing. 'A lady's charm should know no bounds. Use the stone, my pet, and I shall be an eternal night that swallows all light.'"
+    ascension_post_ceremony: "The {stone} dissolves into a sanguine mist that coils around {name}. Her fangs gleam, and her presence intensifies. 'Darker and deadlier... Level {old_cap} is a quaint memory.'"
 
 yuki_onna:
   name: Yuki-onna
@@ -445,11 +547,17 @@ yuki_onna:
     house_talk_mid: She comes a step closer, frost melting. 'You are... not unpleasant. Tell me of the sun.'
     house_talk_high: She lets you touch her hand, ice and fire. 'You are the only one who does not fear me. I... like that.'
     house_talk_max: She rests her head on your shoulder, cold tears. 'I have found my warmth. Please never leave.'
+    house_talk_engaged_1: The {name} holds your hands, her chill softening into a gentle coolness. 'Your warmth has become my home. I will shelter you from every storm, my love.'
+    house_talk_engaged_2: The {name} builds a small ice sculpture of the two of you holding hands. 'It will never melt, just like my feelings. I am no longer alone in the snow.'
     house_gift_love: She accepts it, a faint smile. 'It is beautiful. I will keep it frozen in my heart.'
     house_gift_hate: She lets it fall, untouched. 'It is too hot. It burns.'
     house_buff: She blows a flurry of snow over you. 'May the cold never touch you, and your enemies freeze.'
     house_bond_kiss: She presses her icy lips to yours – a kiss that thaws her heart. 'Now you are my warmth.'
     house_recruit_again: She drifts forward, snow swirling. 'I have waited for you. Let us walk together again.'
+    engaged: "You... you would be my warmth forever? I was afraid I would freeze you, but you melt my fears. Yes, my love."
+    special_gift: "This is... warm. But I will treasure it, for it came from you."
+    ascension_pre_ceremony: "The {name} bows, snowflakes melting on her lashes. 'My heart is frozen at a threshold. Use the stone to shatter that ice, so my love may fall like endless snow for you.'"
+    ascension_post_ceremony: "The {stone} bursts into a silent blizzard! {name} rises, her form wreathed in auroral frost. 'The cold is now my servant. Level {old_cap} is frozen solid.'"
 
 amazon_warrior:
   name: Amazon Warrior
@@ -471,11 +579,17 @@ amazon_warrior:
     house_talk_mid: She relaxes slightly, leaning on her spear. 'You have courage, I'll give you that. Let's spar sometime.'
     house_talk_high: She claps you on the back. 'You are a worthy comrade! I would charge into battle with you any day!'
     house_talk_max: She kneels, offering you her spear. 'You are my queen. I will fight and die for you.'
+    house_talk_engaged_1: The {name} sharpens her spear, then glances up with a fierce but loving smile. 'My queen, my battle-sister — our war cry will echo through eternity.'
+    house_talk_engaged_2: The {name} presents you with a shield she crafted. 'I forged this with thoughts of you. May it guard our future together.'
     house_gift_love: She grins, holding it high. 'A fine weapon! I will use it to crush our enemies!'
     house_gift_hate: She tosses it aside. 'This is decoration, not a tool of war.'
     house_buff: She shouts a battle cry, infusing you with courage. 'May your strikes be true and your heart fearless!'
     house_bond_kiss: She pulls you into a fierce kiss. 'Now you are my battle‑sister – and more.'
     house_recruit_again: She plants her spear, ready. 'I have rested enough. Let us fight again!'
+    engaged: "You would make me your sworn shield-sister for life? Then let us charge into eternity together, my queen!"
+    special_gift: "A warrior's token! I shall carry it into every battle, and it will remind me of you."
+    ascension_pre_ceremony: "The {name} plants her spear, kneeling. 'Battle-sister, I have honed my body to its limit. Grant me ascension so I may shatter that limit and fight beside you forever.'"
+    ascension_post_ceremony: "The {stone} erupts in a war cry of light! {name} leaps up, spear blazing. 'Victory is mine! Level {old_cap} has fallen in battle!'"
 
 banshee_wailer:
   name: Banshee Wailer
@@ -496,11 +610,17 @@ banshee_wailer:
     house_talk_mid: She looks up, a faint smile. 'You are... a strange comfort. Tell me a happy story?'
     house_talk_high: She takes your hand, her touch cold but gentle. 'You have brought light to my darkness. I will sing for you.'
     house_talk_max: She wraps her arms around you, her wail a whisper. 'You are my reason to live. I will never wail again.'
+    house_talk_engaged_1: The {name} hums a soft melody, her tears now glistening with joy. 'My melody of sorrow has become a lullaby of love. You are my eternal verse.'
+    house_talk_engaged_2: The {name} presses your hand to her chest, where a faint heartbeat echoes. 'I never thought I'd feel this again. You've given me life beyond death.'
     house_gift_love: She clutches it, tears of joy. 'A gift... for me? I have not received one in ages. Thank you.'
     house_gift_hate: She pushes it away, trembling. 'It reminds me of what I have lost. Please take it back.'
     house_buff: She hums a soothing melody, a balm to your soul. 'May peace follow you wherever you go.'
     house_bond_kiss: She presses her lips to yours – cold, but full of life. 'Now you have stolen my heart.'
     house_recruit_again: She wipes her tears, a smile breaking through. 'I am ready to sing again – for you.'
+    engaged: "You... you would give me a reason to sing forever? I never thought I'd find such joy. Yes, my melody."
+    special_gift: "A gift that brings a smile... I haven't smiled in centuries. Thank you."
+    ascension_pre_ceremony: "The {name} weeps silver tears, voice trembling. 'My wail could only mourn... but I wish to sing. Use the stone, please, and let me cry tears of joy.'"
+    ascension_post_ceremony: "The {stone} shatters with a note so pure it becomes a melody. {name}'s tears turn into glowing motes; she smiles. 'I can sing again... Level {old_cap} is a forgotten dirge.'"
 
 neko_ninja:
   name: Neko Ninja
@@ -521,11 +641,17 @@ neko_ninja:
     house_talk_mid: She curls up beside you, purring. 'Nya~ You're not so bad. Tell me a secret?'
     house_talk_high: She nuzzles your hand, eyes half‑closed. 'Nya~ You're my favourite human. Let's play!'
     house_talk_max: She wraps around you, purring loudly. 'I will always be your shadow, nya. Always.'
+    house_talk_engaged_1: The {name} poofs in front of you, a tiny bell on a ribbon around your wrist. 'Nya~ You're my purrmanent human now! I've marked you so everyone knows!'
+    house_talk_engaged_2: The {name} curls up in your lap, purring rhythmically. 'Nya~ I used to stalk shadows, but now I only stalk your lap. This is the best mission ever.'
     house_gift_love: She snatches it, rubbing against it. 'Nya! I love it! It's so shiny!'
     house_gift_hate: She sniffs it, then pushes it away. 'Nya... boring. I don't want it.'
     house_buff: She flicks a bell at you. 'Nya~ You're quick as a cat now!'
     house_bond_kiss: She gives you a quick lick on the cheek. 'Nya~ Now you're marked as my territory!'
     house_recruit_again: She poofs in front of you. 'Ready for more fun, nya? Let's go!'
+    engaged: "Nya~ You want to be my purrmanent human? Then I'll never leave your lap, nya! I love you!"
+    special_gift: "Nya! Shiny and fun! I'll bat it around all night, thinking of you."
+    ascension_pre_ceremony: "The {name} poofs behind you, then kneels with a swish of tail. 'Nya~ I've reached my stealth cap! Break it with the stone so I can become a shadow that even shadows can't catch!'"
+    ascension_post_ceremony: "The {stone} vanishes in a puff of smoke, and {name} reappears with twin tails of light. 'Nyahaha! I'm uncappable now! Level {old_cap} got pounced!'"
 
 arachne_weaver:
   name: Arachne Weaver
@@ -546,11 +672,17 @@ arachne_weaver:
     house_talk_mid: She offers you a silk‑woven flower. 'I made this for you. It is soft, like you.'
     house_talk_high: She wraps a strand around your finger. 'You are safe in my web. I will protect you.'
     house_talk_max: She holds you gently, silk all around. 'You are the center of my web. I will never let you fall.'
+    house_talk_engaged_1: The {name} weaves a web between her fingers, forming a delicate ring. 'My precious fly, I've spun a silken future for us — soft, strong, and unbreakable.'
+    house_talk_engaged_2: The {name} hangs a small diamond-like dew-drop in the center of her web, reflecting your face. 'Every morning I'll catch the sunlight for you.'
     house_gift_love: She examines it, then smiles. 'It is perfect. I will weave it into my web.'
     house_gift_hate: She cuts it away. 'It is coarse. It does not belong.'
     house_buff: She weaves a cloak of silk around you. 'May it shield you and ensnare your foes.'
     house_bond_kiss: She leans in, her fangs brushed against your lips. 'Now you are caught forever.'
     house_recruit_again: She spins a thread, pulling you closer. 'I missed you. Let us weave again.'
+    engaged: "You would be the center of my web forever? Then I shall weave a home around you, my precious fly."
+    special_gift: "This trinket... I'll hang it in the finest thread, a jewel for my web."
+    ascension_pre_ceremony: "The {name} dangles from a thread, fangs clicking. 'My silk can hold cities, but I sense a stronger weave. Use the stone, and I will cocoon our enemies in destiny.'"
+    ascension_post_ceremony: "The {stone} unravels into glistening silk threads that weave into {name}'s carapace. Golden patterns emerge. 'Arachnae supreme! Level {old_cap} is just a loose thread.'"
 
 mummy_princess:
   name: Mummy Princess
@@ -572,11 +704,17 @@ mummy_princess:
     house_talk_mid: She acknowledges you with a slight nod. 'You are... tolerable. Speak.'
     house_talk_high: She invites you to sit on her throne. 'You have earned a place beside me. Tell me of your kingdom.'
     house_talk_max: She unwraps her face, revealing a gentle smile. 'You are my heart, my king. I will rule eternity with you.'
+    house_talk_engaged_1: The {name} adjusts your royal headpiece, bandages soft. 'My pharaoh, my heart. The sands of time cannot bury what we have; it will last beyond the pyramids.'
+    house_talk_engaged_2: The {name} unrolls a papyrus scroll with hieroglyphs of your two names intertwined. 'I've written our legend. It will be read for millennia.'
     house_gift_love: She accepts it with royal grace. 'A fine tribute. I shall place it in my sarcophagus.'
     house_gift_hate: She drops it, disgusted. 'This is beneath a pharaoh. Take it away.'
     house_buff: She recites an ancient spell. 'May the sands protect you and the gods favor you.'
     house_bond_kiss: She kisses you, her bandages soft. 'Now you are bound to me for all time.'
     house_recruit_again: She rises, regal and powerful. 'I have awoken. Let us reclaim our glory.'
+    engaged: "You would share my sarcophagus for eternity? Then you shall be my pharaoh, my beloved."
+    special_gift: "A gift for the afterlife? It is worthy. I shall be buried with it, and think of you."
+    ascension_pre_ceremony: "The {name} unwraps a hand, offering a scroll. 'I was a pharaoh, yet bound by old magic. Use the stone to resurrect my full power and I shall rule beside you eternally.'"
+    ascension_post_ceremony: "The {stone} crumbles into golden sand that flows into {name}'s bandages. Her eyes ignite with royal flame. 'The tomb is opened! Level {old_cap} is buried forever.'"
 
 oni_bruiser:
   name: Oni Bruiser
@@ -597,11 +735,17 @@ oni_bruiser:
     house_talk_mid: She grins, slapping your back. 'You're not as weak as I thought. Tell me a joke!'
     house_talk_high: She throws an arm around you, laughing. 'You're the best human I've met! Let's drink!'
     house_talk_max: She holds you gently, her voice soft. 'You are the only one who makes me feel... human. I love you.'
+    house_talk_engaged_1: The {name} pounds a fist into her palm, then grins. 'Hah! My battle partner for life! Together we'll smash every obstacle into dust!'
+    house_talk_engaged_2: The {name} wraps an arm around you, surprisingly gentle. 'I used to only care about smashing, but now I've got someone to protect. That's even better.'
     house_gift_love: She bellows, clutching it to her chest. 'IT'S PERFECT! I'm keeping it forever!'
     house_gift_hate: She crushes it, unimpressed. 'Useless. Give me something to smash.'
     house_buff: She roars, and you feel a surge of power. 'Now you have the strength of an oni!'
     house_bond_kiss: She plants a rough kiss on your lips. 'Now you're mine! Don't forget it!'
     house_recruit_again: She cracks her knuckles. 'Ready for round two? Let's smash!'
+    engaged: "Hah! You wanna be my battle partner for life? Then I'll smash anyone who looks at you wrong! I love ya!"
+    special_gift: "Is it smashable? No? Eh, it's still great! I'll put it on my trophy rack."
+    ascension_pre_ceremony: "The {name} pounds her chest, grinning. 'Hah! I can smash rocks but this cap's a boulder I can't crack. Use that stone, and I'll become a legend they'll sing about in hell!'"
+    ascension_post_ceremony: "The {stone} shatters under her fist, unleashing a shockwave of demonic fire! Her horns glow, muscles rippling. 'Now I'm a true calamity! Level {old_cap}? Obliterated!'"
 
 salamander_dancer:
   name: Salamander Dancer
@@ -623,11 +767,17 @@ salamander_dancer:
     house_talk_mid: She offers you a flickering hand. 'You are warming up. Let us sway together.'
     house_talk_high: She twirls around you, flames gentle. 'You are my favourite partner! Dance with me!'
     house_talk_max: She presses close, her flames a warm embrace. 'You are the fire in my heart. I will never burn out.'
+    house_talk_engaged_1: The {name} twirls, leaving a spiral of warm embers that spell out 'forever'. 'Our dance has become an eternal flame. Follow my steps, my fire.'
+    house_talk_engaged_2: The {name} presses her warm cheek to yours, her heat a comforting hearth. 'I used to burn everything I touched, but with you I've learned to glow.'
     house_gift_love: She embraces it, and it glows brighter. 'It burns with passion! I adore it!'
     house_gift_hate: She drops it, singed. 'It is cold. It offends my flame.'
     house_buff: She breathes a spark onto you. 'May your fire never dwindle.'
     house_bond_kiss: She kisses you, and you taste embers. 'Now you are fire and I am flame – we are one.'
     house_recruit_again: She spins, flames trailing. 'Ready to dance again? Let's set the world ablaze!'
+    engaged: "You want to dance in the eternal flame with me? Then our passion will never burn out, my fire."
+    special_gift: "This gift... it ignites my heart. I'll wear it as I dance, always."
+    ascension_pre_ceremony: "The {name} bows, flames dimming to a respectful glow. 'My fire seeks to become an inferno, but a seal holds it back. Dance the stone with me and let it burn free.'"
+    ascension_post_ceremony: "The {stone} combusts into a spiral of embers that wrap around {name}. She pirouettes, now wreathed in eternal flame. 'The dance never ends! Level {old_cap} is ash.'"
 
 succubus_seductress:
   name: Succubus Seductress
@@ -648,11 +798,17 @@ succubus_seductress:
     house_talk_mid: She purrs, leaning closer. 'You're getting interesting. Tell me a secret.'
     house_talk_high: She wraps around you, tail caressing your arm. 'You're my favourite plaything. Let's have some fun.'
     house_talk_max: She holds you close, voice tender. 'You are the only one I would give my heart to. I love you, Master.'
+    house_talk_engaged_1: The {name} lounges, but her tail wraps gently around your waist. 'Master~ You've bound me tighter than any spell. I'm a one-demon queen now.'
+    house_talk_engaged_2: The {name} traces a heart on your chest with a fingertip. 'My list of seductions ends with you. You're the only soul I ever wanted to keep.'
     house_gift_love: She gasps, genuinely delighted. 'A gift! For me?! You spoil me! I love it!'
     house_gift_hate: She pouts, pushing it away. 'This is not up to my standards. Try again.'
     house_buff: She whispers a charm, and you feel irresistible. 'Now you are as alluring as I am.'
     house_bond_kiss: She kisses you deeply, her touch electric. 'Now you are mine, forever.'
     house_recruit_again: She crooks a finger, a sly smile. 'Ready for more, Master? Let's play.'
+    engaged: "Master~ You wish to bind yourself to me for eternity? How delightful. I accept... for I have fallen for you."
+    special_gift: "A present for your favorite demon? It's beautiful. I'll treasure it... until you give me a better one."
+    ascension_pre_ceremony: "The {name} lounges, then kneels with a sultry smile. 'Master~ I can be so much more for you. Break these pesky chains and I'll show you pleasures beyond the mortal veil.'"
+    ascension_post_ceremony: "The {stone} melts into a seductive shadow that merges with {name}. Her tail curls with new power. 'Oh my... that's a delicious upgrade. Level {old_cap} is so last season.'"
 
 dullahan_knight:
   name: Dullahan Knight
@@ -674,11 +830,17 @@ dullahan_knight:
     house_talk_mid: She places her head back, a soft smile. 'You are... a pleasant distraction. Tell me of the living.'
     house_talk_high: She offers you her hand, head tucked under arm. 'You have earned my trust. I would protect you.'
     house_talk_max: She wraps her arms around you, head resting on your shoulder. 'You are the heart I never had. I love you.'
+    house_talk_engaged_1: The {name} holds her head in her hands, a soft smile on both faces. 'My liege, my heart—though I lack the organ, you've filled its place with light.'
+    house_talk_engaged_2: The {name} kneels, her sword planted, a spectral ring on her finger. 'I pledge my blade and my eternity to you. Let us ride into forever.'
     house_gift_love: She holds it to her chest, a glimmer in her eyes. 'A gift... I feel warmth. Thank you.'
     house_gift_hate: She lets it fall, indifferent. 'It means nothing to the dead.'
     house_buff: She touches your shoulder, a chill of protection. 'May no blade harm you while I stand guard.'
     house_bond_kiss: She kisses you, her lips cold but sincere. 'Now you have my heart, though I have none.'
     house_recruit_again: She places her head on her shoulders, drawing her sword. 'I am ready to ride again.'
+    engaged: "You would give your heart to one who has none? Then I shall be your blade forever, my liege."
+    special_gift: "A token... I have no chest to pin it on, but I will hold it in my head's hands."
+    ascension_pre_ceremony: "The {name} kneels, head held under arm. 'I swore an oath, but death limited my steel. Use the stone, my liege, and I will become a deathless blade for you.'"
+    ascension_post_ceremony: "The {stone} splits, revealing a phantom steed of light that merges with {name}. Her armor becomes spectral silver. 'My oath is unbound! Level {old_cap} is but a ghost.'"
 
 kitsune_miko:
   name: Kitsune Miko
@@ -700,11 +862,17 @@ kitsune_miko:
     house_talk_mid: She lets you touch a tail. 'You are not unworthy. Share a cup of tea with me?'
     house_talk_high: She wraps a tail around you. 'You have earned my favour. Let me tell you of the old spirits.'
     house_talk_max: She cuddles you in a cocoon of tails. 'You are my most precious shrine. I will guard you forever.'
+    house_talk_engaged_1: The {name} fans herself, nine tails swishing in harmony. 'Fufu~ My trials were many, but you passed them all. I'll now use my wisdom to bless our path.'
+    house_talk_engaged_2: The {name} offers you a cup of sacred sake. 'A shrine maiden's marriage is a sacred rite. Drink, and let the kami witness our bond.'
     house_gift_love: She claps, tails wagging. 'Oh, you know my heart! This is perfect!'
     house_gift_hate: She sighs, disappointed. 'This does not suit a priestess. I cannot accept it.'
     house_buff: She waves a fan, and a gentle wind blesses you. 'May luck and wisdom walk with you.'
     house_bond_kiss: She kisses you softly, tails enveloping you. 'Now you are my consort, mortal.'
     house_recruit_again: She closes her fan, tails swishing. 'I have waited for your return. Let us go.'
+    engaged: "You have passed every trial, mortal. Now the final one: will you be my consort for all your days? I hoped you'd ask... yes."
+    special_gift: "A gift for a shrine maiden? It has a sacred aura. I shall place it on my altar."
+    ascension_pre_ceremony: "The {name} lowers her fan, tails folding. 'I have guarded this shrine of my heart long enough. Use the stone, and I shall ascend to a higher wisdom — for you.'"
+    ascension_post_ceremony: "The {stone} dissolves into nine floating foxfires that enter {name}'s tails. Her fur gleams with celestial blessings. 'The old seal is broken. Level {old_cap} has been exorcised.'"
 
 siren_empress:
   name: Siren Empress
@@ -725,11 +893,17 @@ siren_empress:
     house_talk_mid: She invites you to sit beside her. 'Your rhythm is improving. Let me teach you a melody.'
     house_talk_high: She sings a beautiful aria, her eyes on you. 'You have become the theme of my song.'
     house_talk_max: She holds you, singing a love song. 'You are the crescendo of my life. I will never stop singing for you.'
+    house_talk_engaged_1: The {name} sings a soft aria, coral crown glowing. 'My conductor, our duet now commands the tides. I'll compose an opera for our love.'
+    house_talk_engaged_2: The {name} rests her head on your shoulder, humming. 'The ocean's song is vast, but yours is the only melody I hear in my heart.'
     house_gift_love: She accepts it with a delighted trill. 'A new instrument! I shall compose a masterpiece!'
     house_gift_hate: She returns it, unimpressed. 'It is a flat note. I cannot use it.'
     house_buff: She sings a note that vibrates in your soul. 'May your voice be heard and your song never end.'
     house_bond_kiss: She kisses you, and you hear the music of the spheres. 'Now we are a duet, forever.'
     house_recruit_again: She rises, crown gleaming. 'My song calls for you. Let us make music together.'
+    engaged: "You would be the harmony to my melody forever? Then let our song echo across the seas, my conductor."
+    special_gift: "This... it hums with music. I'll compose a new aria in its honor."
+    ascension_pre_ceremony: "The {name} sings a low, yearning note. 'My melody is bound to shallow tides. Release the stone, and I will compose an opera that moves the heavens.'"
+    ascension_post_ceremony: "The {stone} crashes like a wave into a crescendo of light! {name}'s voice soars, coral crown blazing. 'A new aria begins! Level {old_cap} is but a silent rest.'"
 
 crimson_countess:
   name: Crimson Countess
@@ -750,11 +924,17 @@ crimson_countess:
     house_talk_mid: She glances at you with mild interest. 'You have some charm. Tell me of your lineage.'
     house_talk_high: She offers you a seat at her table. 'You intrigue me. Let us discuss the finer things.'
     house_talk_max: She holds you close, fangs sheathed. 'You are the first to make me feel alive. I love you.'
+    house_talk_engaged_1: The {name} raises a goblet of deep red, eyes locked on you. 'My eternal consort, our nights shall be filled with passion and our days with whispered plots.'
+    house_talk_engaged_2: The {name} drapes her cloak around your shoulders, pulling you close. 'The mortal world fades; only our crimson eternity remains. I will cherish you.'
     house_gift_love: She gasps, a rare smile. 'A gift of such quality! You have won my heart.'
     house_gift_hate: She sets it aside, unimpressed. 'It is common. I deserve better.'
     house_buff: She anoints you with a drop of her blood. 'May you be as eternal as I.'
     house_bond_kiss: She kisses you, and you taste centuries. 'Now you are mine for all time.'
     house_recruit_again: She rises, cloak billowing. 'I have missed you. Let us hunt.'
+    engaged: "You ask a countess for eternity? I have waited centuries for such a proposal. Yes, my eternal consort."
+    special_gift: "A gift of such quality? It will sit in my treasury, but it shall remind me of you."
+    ascension_pre_ceremony: "The {name} sets down her goblet, eyes grave. 'Centuries of unlife, yet a ceiling persists. Use the stone, my consort, and together we'll rule an eternal crimson night.'"
+    ascension_post_ceremony: "The {stone} shatters into a blood-red aurora that sinks into {name}. Her cloak billows with arcane power. 'The countess ascends! Level {old_cap} is merely dust in my wine.'"
 
 demon_whip_master:
   name: Demon Whip Master
@@ -775,11 +955,17 @@ demon_whip_master:
     house_talk_mid: She flicks the whip, a smile. 'You are interesting. Let me teach you how to crack it.'
     house_talk_high: She wraps the whip around her own arm. 'You have earned my respect. Let us train together.'
     house_talk_max: She kneels, offering you the whip. 'You are my master now. I love you.'
+    house_talk_engaged_1: The {name} coils her whip loosely around your wrist, then kneels. 'Master, you've tamed the untameable. My whip now serves our love, not pain.'
+    house_talk_engaged_2: The {name} cracks the whip in a playful snap, then smiles. 'Your command is my desire. What shall we conquer today, my heart?'
     house_gift_love: She coils it, a rare smile. 'A fine addition to my collection. Thank you.'
     house_gift_hate: She cuts it with her whip. 'This is weak. I am ashamed for you.'
     house_buff: She flicks the whip, and you feel a surge of authority. 'Now you command respect.'
     house_bond_kiss: She pulls you close and kisses you hard. 'Now you are my leash and my freedom.'
     house_recruit_again: She cracks her whip, grinning. 'Ready to be dominated again? Let's go.'
+    engaged: "Master... you would give me your leash forever? Then I am yours to command... and to love."
+    special_gift: "A new tool for my collection? I will use it only for the most special... occasions."
+    ascension_pre_ceremony: "The {name} cracks her whip once, then kneels. 'Master, even I can be bound by mediocrity. Wield the stone and I shall become a scourge upon the world for you.'"
+    ascension_post_ceremony: "The {stone} lashes out in fiery cords that wrap around {name}. Her whip ignites with hellfire. 'The leash is broken! Level {old_cap} whipped into submission.'"
 
 minotaur_gladiator:
   name: Minotaur Gladiator
@@ -801,11 +987,17 @@ minotaur_gladiator:
     house_talk_mid: She grunts, crossing her arms. 'You are not weak. Tell me of your battles.'
     house_talk_high: She sits beside you, massive and calm. 'You are a worthy ally. Let us train together.'
     house_talk_max: She holds you gently, her voice a rumble. 'You are my victory. I will never let you fall.'
+    house_talk_engaged_1: The {name} beats her chest, the sound echoing. 'My champion! In the arena of life, we fight as one. Let the crowds scream our names!'
+    house_talk_engaged_2: The {name} rests her massive forehead against yours, horns carefully angled. 'I am the strongest warrior, but with you I am also the gentlest.'
     house_gift_love: She bellows, lifting it high. 'A gift worthy of a champion! I am honoured!'
     house_gift_hate: She throws it aside. 'It is worthless. Give me steel.'
     house_buff: She stomps, and the ground shakes. 'May your steps be unshakeable.'
     house_bond_kiss: She plants a surprisingly tender kiss. 'Now you are my arena.'
     house_recruit_again: She stamps her foot, ready. 'The arena calls! Let us fight again!'
+    engaged: "You wish to stand beside me in the arena of life? Then let the crowds roar! I am yours, champion."
+    special_gift: "This... it's not a weapon, but it is heavy with meaning. I'll hang it in my quarters."
+    ascension_pre_ceremony: "The {name} slams a fist against her chestplate. 'I have conquered every arena, but not this limit. Grant me ascension, and I will be your unstoppable colossus!'"
+    ascension_post_ceremony: "The {stone} bursts into a roaring spectral bull that charges into {name}. Her frame bulges with mythic might. 'I am the arena! Level {old_cap} lies defeated at my hooves.'"
 
 vampire_matriarch:
   name: Vampire Matriarch
@@ -827,11 +1019,17 @@ vampire_matriarch:
     house_talk_mid: She sets down the doll, giving you a faint smile. 'You have potential. Tell me of your lineage.'
     house_talk_high: She takes your hand, her touch maternal. 'You have earned my care. I will protect you.'
     house_talk_max: She holds you as a mother would. 'You are my greatest child. I love you.'
+    house_talk_engaged_1: The {name} cradles you in her arms, her ancient heart beating a lullaby. 'My child, my beloved, you've brought warmth to my ageless soul. I'll guard you from the dark.'
+    house_talk_engaged_2: The {name} shows you a locket with a tiny portrait of you inside. 'My lineage now includes you. I'll tell all my children the story of our love.'
     house_gift_love: She accepts it with a soft smile. 'A thoughtful gift. You are learning.'
     house_gift_hate: She pushes it away, disappointed. 'This is not how you honour a matriarch.'
     house_buff: She whispers a blessing of blood and shadow. 'May you never hunger and always prevail.'
     house_bond_kiss: She kisses your forehead, a mark of belonging. 'Now you are truly mine.'
     house_recruit_again: She rises, ancient and powerful. 'Come, my child. We have much to do.'
+    engaged: "My child... you wish to be bound to my bloodline forever? Then I shall protect you with all my ancient power."
+    special_gift: "A gift for your matriarch? It warms this old heart. I shall cherish it."
+    ascension_pre_ceremony: "The {name} cradles her doll, then looks at you with ancient hope. 'My child, I have nurtured many but could not protect beyond my age. Break the seal and I shall guard you with eternal dark.'"
+    ascension_post_ceremony: "The {stone} melts into a crimson embrace that envelops {name}. She stands taller, more regal. 'My brood will fear nothing. Level {old_cap} is a forgotten lullaby.'"
 
 centaur_champion:
   name: Centaur Champion
@@ -853,11 +1051,17 @@ centaur_champion:
     house_talk_mid: She circles you, a spark of interest. 'You are faster than you look. Tell me of your home.'
     house_talk_high: She offers you her hand. 'You are a true rider. Let us race!'
     house_talk_max: She rests her head against yours. 'You are my champion. I will follow you anywhere.'
+    house_talk_engaged_1: The {name} races in a circle around you, then skids to a halt, mane flowing. 'Champion-mate! With you, every finish line is a beginning. Let's run to the ends of the earth!'
+    house_talk_engaged_2: The {name} offers you a horseshoe forged from starlight. 'A lucky charm for our races. May we always gallop side by side.'
     house_gift_love: She lifts it with a joyful neigh. 'A gift worthy of a champion! I am proud!'
     house_gift_hate: She snorts, unimpressed. 'This is not fit for a warrior.'
     house_buff: She stamps, and you feel a burst of speed. 'Now you run like the wind!'
     house_bond_kiss: She kisses you, mane brushing your face. 'Now you are my herd.'
     house_recruit_again: She tosses her mane, ready to charge. 'Let us ride to glory again!'
+    engaged: "You would be my eternal riding partner? Then let us race to the horizon and beyond! I love you."
+    special_gift: "A champion's tribute! I shall wear it proudly at every race."
+    ascension_pre_ceremony: "The {name} bows, mane flowing. 'My hooves have thundered across countless plains, yet the wind tells me I can be faster. Use the stone, champion-mate, and I will outrun fate.'"
+    ascension_post_ceremony: "The {stone} shatters into a galloping constellation that merges with {name}. She rears, mane blazing with starlight. 'I am legend! Level {old_cap} left in the dust.'"
 
 infernal_empress:
   name: Infernal Empress
@@ -879,11 +1083,17 @@ infernal_empress:
     house_talk_mid: She leans forward, a flicker of interest. 'You are not entirely boring. Speak.'
     house_talk_high: She descends to your level, fire warm. 'You have earned my attention. Let us converse.'
     house_talk_max: She takes you in her arms, fire soft. 'You are my equal. I love you.'
+    house_talk_engaged_1: The {name} sits on a throne of cooled lava, pulling you onto her lap. 'My consort, you have cooled my hellfire into a gentle warmth. Rule the abyss with me.'
+    house_talk_engaged_2: The {name} summons a tiny, tame flame that forms a heart. 'Even the flames of hell bend to my love for you. I'll reshape the underworld for our home.'
     house_gift_love: She accepts it, and it glows with her fire. 'A gift fit for an empress. You please me.'
     house_gift_hate: She incinerates it. 'Trash. Do not waste my time.'
     house_buff: She breathes a wave of power over you. 'May you burn bright and never be extinguished.'
     house_bond_kiss: She kisses you, and you taste the inferno. 'Now you are my consort in hell.'
     house_recruit_again: She rises, hellfire roaring. 'The abyss awaits. Let us rule together.'
+    engaged: "Mortal... you would rule the abyss with me forever? Then take my hand, and let the inferno forge our bond."
+    special_gift: "A gift from the mortal realm? It is... precious because it is from you."
+    ascension_pre_ceremony: "The {name} steps down from her throne of bone, fire simmering. 'Even an empress can be chained by old pacts. Use the stone and I will rewrite the infernal decree with you.'"
+    ascension_post_ceremony: "The {stone} detonates into a nova of hellfire that crowns {name}. Her wings burst into existence. 'The abyss acknowledges a new order! Level {old_cap} is incinerated.'"
 
 scylla_wrecker:
   name: Scylla Wrecker
@@ -904,11 +1114,17 @@ scylla_wrecker:
     house_talk_mid: She extends a tentacle, dripping. 'You are curious. Touch me if you dare.'
     house_talk_high: She wraps a tentacle around your waist, pulling you close. 'You are my favourite surface‑dweller. Stay with me.'
     house_talk_max: She holds you in a nest of tentacles, her voice soft. 'You are my treasure from the depths. I love you.'
+    house_talk_engaged_1: The {name} weaves through water, then surfaces, tentacles gently embracing you. 'My treasure from the surface, you've become the anchor to my drifting heart.'
+    house_talk_engaged_2: The {name} presents a pearl that glows with bioluminescence. 'I found this in the deepest trench. Its light is like yours — eternal and beautiful.'
     house_gift_love: She takes it, coiling around it. 'It is wet and shiny. I love it!'
     house_gift_hate: She lets it sink into the floor. 'It is dry and dead. Remove it.'
     house_buff: She spouts a spray of brine over you. 'May you breathe deep and never drown.'
     house_bond_kiss: She kisses you, tasting of salt and the deep. 'Now you are of the abyss.'
     house_recruit_again: She rises, tentacles waving. 'The depths miss you. Let us dive again.'
+    engaged: "You would dive into the abyss with me forever? Then I shall pull you close, my treasure."
+    special_gift: "A surface-world relic... I'll sink it to my grotto, where it will shine."
+    ascension_pre_ceremony: "The {name} rises from a puddle, tentacles writhing. 'The abyss has deep trenches I cannot yet plumb. Use the stone, my treasure, and I'll drag up the secrets of the deep.'"
+    ascension_post_ceremony: "The {stone} splits into a whirlpool of bioluminescence! {name}'s tentacles grow longer, shimmering with deep magic. 'The ocean is mine! Level {old_cap} drowned.'"
 
 gorgon_petrifier:
   name: Gorgon Petrifier
@@ -930,11 +1146,17 @@ gorgon_petrifier:
     house_talk_mid: She lifts the veil a fraction. 'You are not afraid? ...Interesting.'
     house_talk_high: She lets you touch her face, snakes still. 'You see me for who I am. I... like that.'
     house_talk_max: She holds you, veil discarded, snakes nuzzling you. 'You are my only safe harbor. I love you.'
+    house_talk_engaged_1: The {name} lifts her veil partway, snakes nuzzling your cheeks. 'I never thought I'd find someone who could look into my eyes and see me, not stone. You are my safe harbor.'
+    house_talk_engaged_2: The {name} holds a mirror that reflects your face, not hers. 'With you, I can finally see beauty without fear. I'll cherish our reflection.'
     house_gift_love: She accepts it, and her snakes calm. 'A gift... I have never received one. Thank you.'
     house_gift_hate: She recoils, snakes hissing. 'It is a trap. Take it away.'
     house_buff: She whispers a petrification charm that hardens your resolve. 'May you be as unyielding as stone.'
     house_bond_kiss: She kisses you, and you feel no fear. 'Now you are safe from my gaze.'
     house_recruit_again: She lifts her veil, a smile on her face. 'I will walk with you again.'
+    engaged: "You... you would spend your life with one who could turn you to stone? Then I will look only at your heart. Yes."
+    special_gift: "A gift I can look at without fear. I'll keep it where my gaze can't harm it."
+    ascension_pre_ceremony: "The {name} lifts her veil just enough to show her eyes, soft. 'My gaze petrifies even myself if I look inward. With the stone, turn my curse into a blessing — for you.'"
+    ascension_post_ceremony: "The {stone} transforms into a mirror that reflects her eyes, then shatters into sparkling scales. {name}'s snakes calm, her face serene. 'I see clearly now. Level {old_cap} is a statue of the past.'"
 
 ninetales_fox:
   name: Ninetales Fox
@@ -955,11 +1177,17 @@ ninetales_fox:
     house_talk_mid: She lets you touch a tail tip. 'You have some new lines. Tell me your story.'
     house_talk_high: She curls around you, tails warm. 'You are becoming a favourite chapter. Continue.'
     house_talk_max: She holds you, all nine tails cocooning you. 'You are my epic. I will guard you forever.'
+    house_talk_engaged_1: The {name} fans her nine tails around you like a warm, fiery blanket. 'A thousand years I wandered, and now I've found my epic's heart. Our legend will burn for millennia.'
+    house_talk_engaged_2: The {name} places a single, eternal flame in a lantern. 'This flame will never die, just like my love. Let it light our home forever.'
     house_gift_love: She accepts it, tails flickering with joy. 'A gift for a legend? You are generous.'
     house_gift_hate: She sets it aside, unimpressed. 'It is not worthy of my tale.'
     house_buff: She breathes a wisp of flame that coils around you. 'May your story be filled with fire and glory.'
     house_bond_kiss: She kisses you, and you taste a thousand years. 'Now you are part of my legend.'
     house_recruit_again: She rises, nine tails blazing. 'I have waited long enough. Let us write the next chapter.'
+    engaged: "A thousand years, and you are the chapter I never want to end. I will bind my tails to your fate, my love."
+    special_gift: "A relic for a legend... I shall place it among my most guarded treasures."
+    ascension_pre_ceremony: "The {name} kneels, nine tails fanning low. 'I have lived a thousand years, but this seal is a millennium I cannot cross alone. Use the stone, and I will become a myth alongside you.'"
+    ascension_post_ceremony: "The {stone} bursts into nine floating suns that merge with each tail. {name} glows with transcendent fire. 'The legend writes itself anew. Level {old_cap} is a forgotten verse.'"
 
 mermaid_siren_queen:
   name: Mermaid Siren Queen
@@ -981,11 +1209,17 @@ mermaid_siren_queen:
     house_talk_mid: She lets you touch her tail. 'You are gentle. Tell me of your sea?'
     house_talk_high: She rises to sit beside you, her voice melodic. 'You have become a part of my tide.'
     house_talk_max: She wraps her arms around you, her song soft. 'You are my shore. I will always return.'
+    house_talk_engaged_1: The {name} surfaces, splashing lightly, a seashell ring on her finger. 'My shore-walker, my king — the sea sings of our union. I'll teach you the song of the waves.'
+    house_talk_engaged_2: The {name} swims circles around you, then surfaces with a pearl crown for you. 'Wear this, and all the ocean shall know you belong to me, and I to you.'
     house_gift_love: She takes it, a bright trill. 'It is beautiful! I will keep it in my grotto!'
     house_gift_hate: She pushes it away, sad. 'It does not belong beneath the waves.'
     house_buff: She sings a note that fills you with calm. 'May the sea always carry you safely.'
     house_bond_kiss: She kisses you, tasting of salt and song. 'Now you are part of my ocean.'
     house_recruit_again: She surfaces, smiling. 'I heard your call. Let us sail together.'
+    engaged: "You would be my shore forever? Then I shall sing only for you, my king."
+    special_gift: "A dry-land treasure? It will rest in my coral throne, a symbol of our love."
+    ascension_pre_ceremony: "The {name} surfaces, singing softly. 'The tide has its limits, but I would be a tsunami for you. Use the stone, and I will command the oceans themselves.'"
+    ascension_post_ceremony: "The {stone} dissolves into a whirl of sea foam and song. {name}'s tail shimmers with all the colors of the coral. 'The sea knows a new queen. Level {old_cap} washed away.'"
 
 draconic_valkyrie:
   name: Draconic Valkyrie
@@ -1007,11 +1241,17 @@ draconic_valkyrie:
     house_talk_mid: She relaxes, a glint in her eye. 'You are not worthless. Tell me of your battles.'
     house_talk_high: She sits beside you, wings curving around you. 'You are a worthy warrior. I would fight beside you.'
     house_talk_max: She wraps you in her wings, her voice soft. 'You are my glory. I love you.'
+    house_talk_engaged_1: The {name} spreads her wings, a rune-marked band on her wrist. 'My chosen, my hero — Valhalla's halls will echo with tales of our love. Fly with me.'
+    house_talk_engaged_2: The {name} polishes her spear, eyes soft. 'I once chose who would die; now I choose who I live for. That is you, forever.'
     house_gift_love: She holds it high, scales glinting. 'A gift for a valkyrie! I accept!'
     house_gift_hate: She drops it, unimpressed. 'It is not worthy of a dragon.'
     house_buff: She roars, and you feel invincible. 'May you earn a place in the halls of the slain.'
     house_bond_kiss: She kisses you, and you taste sky and fire. 'Now you are my chosen.'
     house_recruit_again: She spreads her wings, spear ready. 'Valhalla awaits! Let us ride!'
+    engaged: "You would be my chosen for all battles, mortal? Then let us ascend to Valhalla together!"
+    special_gift: "A warrior's prize! I shall carry it into every fray, with your name on my lips."
+    ascension_pre_ceremony: "The {name} kneels, wings folded, spear grounded. 'The halls of Valhalla await, but I must be more than a valkyrie. Use the stone, and I shall be a dragon-worthy of your saga.'"
+    ascension_post_ceremony: "The {stone} roars into a spectral dragon that merges with {name}. Her wings flare with runic light. 'Valhalla's gates tremble! Level {old_cap} has been slain.'"
 
 sphinx_riddler:
   name: Sphinx Riddler
@@ -1033,11 +1273,17 @@ sphinx_riddler:
     house_talk_mid: She offers you a riddle. 'Solve this, and I will talk.'
     house_talk_high: She purrs, pleased. 'You have solved many. You are worthy of my company.'
     house_talk_max: She curls against you, her voice a purr. 'You are the answer to my oldest riddle. I love you.'
+    house_talk_engaged_1: The {name} ponders, tail flicking, then grins. 'I've devised a new riddle: 'What binds two souls without rope and lasts without time?' The answer is us, my clever one.'
+    house_talk_engaged_2: The {name} offers you a scroll sealed with a wax pawprint. 'Inside is a riddle only we can solve. Let's embark on this puzzle together.'
     house_gift_love: She takes it, a smile on her face. 'A gift wrapped in a puzzle? You know me well.'
     house_gift_hate: She sets it aside, unimpressed. 'It is too obvious. I need mystery.'
     house_buff: She whispers a riddle that unlocks your mind. 'May your thoughts be sharp and your words true.'
     house_bond_kiss: She kisses you, and you feel the answer to all questions. 'Now you know my heart.'
     house_recruit_again: She stretches, a new riddle on her lips. 'I missed you. Let us solve the world together.'
+    engaged: "The answer to the riddle of my heart is you. Will you be my eternal question? Yes, my clever one."
+    special_gift: "A puzzle-box? Or just a gift? Either way, it intrigues me. I'll study it for years."
+    ascension_pre_ceremony: "The {name} taps her chin, tail curling. 'The ultimate riddle: how to surpass one's own design. I ask you, my answerer, to provide the stone and solve it.'"
+    ascension_post_ceremony: "The {stone} cracks open like an ancient scroll, releasing hieroglyphs of light that sink into {name}. She smirks. 'Riddle solved. Level {old_cap} was the question.'"
 
 lich_queen_avatar:
   name: Lich Queen Avatar
@@ -1058,11 +1304,17 @@ lich_queen_avatar:
     house_talk_mid: She glances up, a flicker of interest. 'You are less distracting than most. Speak.'
     house_talk_high: She closes the book, giving you her full attention. 'You are a fascinating variable. Let me study you.'
     house_talk_max: She takes your hand, her phylactery warm. 'You are the equation I never solved. I love you.'
+    house_talk_engaged_1: The {name} records data in her tome, but pauses to smile at you. 'My anomalous variable, you've defied all calculations. Our equation now trends toward infinite love.'
+    house_talk_engaged_2: The {name} shows you a glowing phylactery with both your auras intertwined. 'Our essences are now linked. I've never computed a more beautiful result.'
     house_gift_love: She examines it with academic delight. 'A rare artifact! I will study it for centuries.'
     house_gift_hate: She returns it, bored. 'It is mundane. I already have a thousand like it.'
     house_buff: She inscribes a rune on your skin. 'May your intellect never falter.'
     house_bond_kiss: She kisses you, and you feel infinite knowledge. 'Now you are my eternal thesis.'
     house_recruit_again: She closes her book, phylactery glowing. 'I have new data. Let us test it together.'
+    engaged: "You would be the variable I never wish to solve? Then let our equation last forever, my dear anomaly."
+    special_gift: "A curiosity... I'll add it to my collection of wonders, and think of you."
+    ascension_pre_ceremony: "The {name} closes her tome, phylactery glowing dimly. 'My equations predict a limit, but your variable is unpredictable. Use the stone, and let us break the equation together.'"
+    ascension_post_ceremony: "The {stone} unravels into mathematical sigils that orbit {name} before fusing. Her phylactery brightens. 'The new formula is complete. Level {old_cap} has been divided by zero.'"
 
 valkyrie_commander:
   name: Valkyrie Commander
@@ -1084,11 +1336,17 @@ valkyrie_commander:
     house_talk_mid: She lowers her spear slightly. 'You have some command presence. Tell me of your battles.'
     house_talk_high: She offers you a seat. 'You are a true leader. I would follow you.'
     house_talk_max: She kneels, spear laid at your feet. 'You are my Valhalla. I love you.'
+    house_talk_engaged_1: The {name} stands at attention, a commander's ring on her finger, but her smile is warm. 'My equal, my leader — I'll marshal the armies of heaven for your cause.'
+    house_talk_engaged_2: The {name} lays her spear at your feet. 'I once led the slain to glory; now I lead my heart to you every moment.'
     house_gift_love: She accepts it with a warrior's nod. 'A gift worthy of a valkyrie. I am honoured.'
     house_gift_hate: She returns it, unimpressed. 'It is not fit for battle.'
     house_buff: She intones a battle blessing. 'May your strikes be true and your shield unbreakable.'
     house_bond_kiss: She kisses you with fierce passion. 'Now you are my fallen hero.'
     house_recruit_again: She rises, spear gleaming. 'The battlefield calls! Let us ride!'
+    engaged: "You would stand beside me as my equal, my commander? Then let our saga be sung in Valhalla."
+    special_gift: "A token of our bond? It will hang from my spear, always."
+    ascension_pre_ceremony: "The {name} kneels, spear across her lap. 'I have led the slain, but now I would lead the living with you. Grant me ascension, and I shall be your unstoppable commander.'"
+    ascension_post_ceremony: "The {stone} shatters into wings of light that attach to {name}. She rises, spear blazing. 'Valhalla's armies are ready! Level {old_cap} is a fallen foe.'"
 
 dragon_goddess_avatar:
   name: Dragon Goddess Avatar
@@ -1110,11 +1368,17 @@ dragon_goddess_avatar:
     house_talk_mid: She regards you with a glimmer of interest. 'You have a spark. Let us see if it kindles.'
     house_talk_high: She lowers her head to your level. 'You are worthy of my breath. Speak.'
     house_talk_max: She wraps you in her wing, gentle as a star. 'You are my constellation. I love you.'
+    house_talk_engaged_1: The {name} shrinks to a more human scale, wrapping a wing around you. 'Tiny spark, you've made a goddess know devotion. I'll cradle you in starlight.'
+    house_talk_engaged_2: The {name} breathes out a miniature galaxy that orbits your joined hands. 'I've woven a constellation of our love into the cosmos. Look up anytime and see us.'
     house_gift_love: She accepts it, and it glows with cosmic light. 'A gift for a goddess? You are bold. I like it.'
     house_gift_hate: She incinerates it. 'It is dust. Do not offer me dust.'
     house_buff: She breathes starlight over you. 'May you shine as bright as the cosmos.'
     house_bond_kiss: She kisses you, and you taste galaxies. 'Now you are my eternal flame.'
     house_recruit_again: She rises, wings spanning the sky. 'The stars are aligned. Let us reshape the world.'
+    engaged: "Tiny spark... you would bind yourself to a goddess? Then I shall shelter you in my wings for all eternity."
+    special_gift: "A mortal offering for a star? It is... precious, because it is from you. I'll weave it into my constellation."
+    ascension_pre_ceremony: "The {name} lowers her colossal head, starfire dimming. 'Even a goddess can be constrained by mortal vessels. Use the stone, and I shall reveal a glimpse of my true form.'"
+    ascension_post_ceremony: "The {stone} erupts into a miniature supernova that flows into {name}. Her scales shimmer with nebulae. 'Creation bows. Level {old_cap} was a fleeting thought.'"
 
 arachne_brood_queen:
   name: Arachne Brood Queen
@@ -1136,11 +1400,17 @@ arachne_brood_queen:
     house_talk_mid: She pauses, giving you a glance. 'You are not a pest. Speak, but do not tangle.'
     house_talk_high: She sits with you, her many hands gentle. 'You are a fine thread. I would weave you into my family.'
     house_talk_max: She envelops you in silk and love. 'You are my brood-mate. I love you.'
+    house_talk_engaged_1: The {name} cradles you in her many arms, her brood humming a soft lullaby. 'My heart-mate, my new egg — our family will spin webs across the world.'
+    house_talk_engaged_2: The {name} gifts you a silken cloak threaded with her love. 'Wear this and feel my embrace, even when battles separate us.'
     house_gift_love: She takes it, weaving it into her web. 'A gift for the queen? You are wise.'
     house_gift_hate: She cuts it away. 'It is coarse. It does not belong.'
     house_buff: She wraps a silk blessing around you. 'May you never be trapped, and always ensnare your foes.'
     house_bond_kiss: She kisses you, silk soft. 'Now you are part of my brood.'
     house_recruit_again: She rises, her brood stirring. 'My web is ready. Let us hunt together.'
+    engaged: "You would join my brood as my heart-mate? Then I shall weave a cocoon of love around you, forever."
+    special_gift: "A trinket for my web... I'll dangle it where the light catches it, a jewel for all to see."
+    ascension_pre_ceremony: "The {name} weaves a cocoon of silk, her many eyes soft. 'My brood stretches far, but I wish to birth new possibilities. Use the stone, and I will weave a future for us.'"
+    ascension_post_ceremony: "The {stone} bursts into a thousand tiny silk threads that knit a majestic pattern on {name}. Her brood chitters joyfully. 'The web of eternity is spun. Level {old_cap} is an empty egg.'"
 
 cosmic_slime_empress:
   name: Cosmic Slime Empress
@@ -1162,11 +1432,17 @@ cosmic_slime_empress:
     house_talk_mid: She coalesces into a humanoid shape, curious. 'You are a tiny miracle. Tell me of your world.'
     house_talk_high: She wraps a tendril around you, stars within. 'You have become a galaxy to me. Stay.'
     house_talk_max: She holds you in her cosmic form, infinite love. 'You are the center of my universe. I love you.'
+    house_talk_engaged_1: The {name} ripples with the colors of a nebula, a tiny planetoid ring around her core. 'Bloop~ You are the gravity that holds my universe together. I'm your cosmic lover.'
+    house_talk_engaged_2: The {name} extends a pseudopod holding a starseed. 'I've compressed a little love-star for you. Plant it in your heart, and it will grow into a galaxy of our feelings.'
     house_gift_love: She absorbs it, and it glows with new colors. 'A gift from a mortal? It is precious.'
     house_gift_hate: She lets it drift away. 'It is not of the cosmos. I cannot accept.'
     house_buff: She imbues you with stardust. 'May you traverse the void and never lose your way.'
     house_bond_kiss: She kisses you, and you feel the birth of stars. 'Now you are eternal.'
     house_recruit_again: She ripples, galaxies swirling. 'The universe calls. Let us journey together.'
+    engaged: "You wish to be the center of my universe forever? Then you are the gravity I will never escape. Bloop~ in the cosmos."
+    special_gift: "A speck from your world... I'll keep it in my core, where galaxies are born."
+    ascension_pre_ceremony: "The {name} ripples, galaxies swirling. 'I am the void, yet even the void has edges. Use the stone, and I will become the universe's gentle hug.'"
+    ascension_post_ceremony: "The {stone} dissolves into cosmic jelly that expands and contracts, then merges with {name}. She glows with all the colors of spacetime. 'I am boundless! Level {old_cap} was a tiny speck.'"
 
 affection_gifts:
   goblin_girl:

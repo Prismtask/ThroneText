@@ -33,7 +33,7 @@ def enhance_item(player, dialogues, city_id):
     enhanceable_pool = []
     
     # Add player's equipped items first (Weapon, Armor, Accessory)
-    equipped_slots = ["weapon", "armor", "accessory"]
+    equipped_slots = ["weapon", "armor", "accessory1", "accessory2"]
     for slot in equipped_slots:
         equipped_item = player.get("equipped", {}).get(slot)
         if equipped_item:
@@ -128,7 +128,7 @@ def fuse_scroll_with_item(player, dialogues, city_id):
         
         # Build combined pool of weapon slots for fusion targets
         enhanceable_pool = []
-        equipped_slots = ["weapon", "armor", "accessory"]
+        equipped_slots = ["weapon", "armor", "accessory1", "accessory2"]
         for slot in equipped_slots:
             equipped_item = player.get("equipped", {}).get(slot)
             if equipped_item:

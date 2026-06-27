@@ -337,6 +337,10 @@ def _handle_combat(player, travel_type, region):
                 else:
                     print(f"  Found: {item['name']}  {_item_stat_line(item)}")
 
+        # Wedding end-of-combat rewards
+        from combat.wedding_specials import apply_wedding_combat_end
+        apply_wedding_combat_end(player, victory=True)
+
         input("  Press Enter to continue your journey...")
 
     elif result == "fled":

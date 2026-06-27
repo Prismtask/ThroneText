@@ -215,19 +215,24 @@ def _view_enemy_intelligence(player, city_id):
 
 def _ascend_level_cap(player, city_id):
     """Guild ceremony to increase the player's level cap."""
-    from leveling import can_ascend_level_cap, get_next_level_cap, get_incomplete_dungeons
+    from leveling import (
+        can_ascend_level_cap, get_next_level_cap, get_incomplete_biomes,
+        get_biomes_cleared_to_cap, get_required_biomes_for_cap
+    )
 
     current_cap = player.get("level_cap", 10)
     next_cap = get_next_level_cap(current_cap)
 
     if not can_ascend_level_cap(player):
-        incomplete = get_incomplete_dungeons(player)
+        incomplete = get_incomplete_biomes(player)
+        cleared = len(get_biomes_cleared_to_cap(player, current_cap))
+        required = get_required_biomes_for_cap(current_cap)
         print(f"\n*** ASCENSION DENIED ***")
-        print(f"You have not yet conquered all dungeons to Floor {current_cap}.")
-        print(f"\nIncomplete Dungeons:")
-        for city_name, dungeon_name, max_floor, required in incomplete:
-            print(f"  {city_name} — {dungeon_name}: Floor {max_floor}/{required}")
-        print(f"\nReturn when every dungeon has been cleared to Floor {current_cap}.")
+        print(f"Biomes conquered to Floor {current_cap}: {cleared}/{required}")
+        print(f"\nUncleared Biomes:")
+        for biome_name, example_city, max_floor, required_floor in incomplete:
+            print(f"  {biome_name} (e.g., {example_city}): Floor {max_floor}/{required_floor}")
+        print(f"\nClear any city dungeon in {required - cleared} more biome(s) to ascend.")
         input("\nPress Enter...")
         return
 
@@ -287,7 +292,7 @@ def guild_service(player, city_id="solmere"):
         clear_screen()
         print(f"=== {CITIES[city_id]['name'].upper()} GUILD HALL ===")
         service_dialogue(city_id, "receptionist", "enter")
-        print(f"Favor: {player['favor'].get(city_id, 0)} | Gold: {player.get('gold', 0)} | Day: {player.get('day', 1)}")
+        print(f"Favor: {player['favor'].get(city_id, 0)} | Gold: {player.get('gold', 0)}")
         
         from leveling import can_ascend_level_cap, get_next_level_cap
         can_ascend = can_ascend_level_cap(player)

@@ -551,6 +551,11 @@ def handle_stat_check_room(player, floor, event_key):
                 gold = enemy_level * 5 + random.randint(3, 10)
                 player["gold"] = player.get("gold", 0) + gold
                 print(f"Found {gold} gold.")
+
+                # Wedding end-of-combat rewards
+                from combat.wedding_specials import apply_wedding_combat_end
+                apply_wedding_combat_end(player, victory=True)
+
                 input("Press Enter...")
 
     input("\nPress Enter...")

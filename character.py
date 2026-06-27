@@ -25,23 +25,58 @@ def ensure_player_fields(player):
         player["elemental_res"] = res
         player["elemental_dmg"] = dmg
 
+    # Migrate old single-accessory slot to dual accessory slots
+    equipped = player.get("equipped", {})
+    if "accessory" in equipped:
+        player["equipped"]["accessory1"] = equipped.pop("accessory")
+        player["equipped"]["accessory2"] = None
+    for slot in ["weapon", "armor", "accessory1", "accessory2"]:
+        if slot not in player.get("equipped", {}):
+            player.setdefault("equipped", {})[slot] = None
+
+    player.setdefault("daily_effects", {})
+    player.setdefault("event_queue", [])
+
+    # Engagement / wedding system fields
+    player.setdefault("girl_talk_today", {})
+    player.setdefault("girl_gift_today", {})
+    player.setdefault("girl_daily_last_day", 0)
+    player.setdefault("engaged_girls", [])
+    player.setdefault("married_girls", [])
+
     # Ensure ally and house girl fields for leveling system
     for ally in player.get("allies", []):
         ally.setdefault("exp", 0)
         ally.setdefault("level_hp_bonus", 0)
+        ally.setdefault("level_cap", 10)
         ally.setdefault("cursed", False)
         ally.setdefault("dreaded", False)
         ally.setdefault("silenced", False)
+        ally.setdefault("affection_cap", 100)
+        ally.setdefault("engaged", False)
+        ally.setdefault("married", False)
         if "elemental_res" not in ally or "elemental_dmg" not in ally:
             from combat.elemental import compute_ally_elemental
             res, dmg = compute_ally_elemental(ally)
             ally["elemental_res"] = res
             ally["elemental_dmg"] = dmg
+        # Migrate old ally accessory slot
+        ally_equipped = ally.get("equipped", {})
+        if "accessory" in ally_equipped:
+            ally["equipped"]["accessory1"] = ally_equipped.pop("accessory")
+            ally["equipped"]["accessory2"] = None
+        for slot in ["weapon", "armor", "accessory1", "accessory2"]:
+            if slot not in ally.get("equipped", {}):
+                ally.setdefault("equipped", {})[slot] = None
 
     for house in player.get("houses", {}).values():
         for girl in house.get("monster_girls", []):
             girl.setdefault("exp", 0)
             girl.setdefault("level_hp_bonus", 0)
+            girl.setdefault("level_cap", 10)
+            girl.setdefault("affection_cap", 100)
+            girl.setdefault("engaged", False)
+            girl.setdefault("married", False)
 
 
 def player_max_hp(player_or_attrs):
@@ -49,10 +84,14 @@ def player_max_hp(player_or_attrs):
     if isinstance(player_or_attrs, dict) and "attributes" in player_or_attrs:
         attrs = player_or_attrs["attributes"]
         bonus = player_or_attrs.get("level_hp_bonus", 0)
+        base = 15 + attrs["Constitution"] * 3 + bonus
+        # Wedding max HP bonus (matriarchs_embrace)
+        from combat.wedding_specials import apply_wedding_max_hp_bonus
+        return base + apply_wedding_max_hp_bonus(player_or_attrs)
     else:
         attrs = player_or_attrs
         bonus = 0
-    return 15 + attrs["Constitution"] * 3 + bonus
+        return 15 + attrs["Constitution"] * 3 + bonus
 
 
 def allocate_points(base_attributes):
@@ -197,7 +236,7 @@ def create_character():
         "exp": 0,
         "level_hp_bonus": 0,
         "inventory": [],
-        "equipped": {"weapon": None, "armor": None, "accessory": None},
+        "equipped": {"weapon": None, "armor": None, "accessory1": None, "accessory2": None},
         "active_buffs": [],
         "save_slot": slot,
         "dungeon_time": 0,
@@ -215,6 +254,11 @@ def create_character():
         "elemental_dmg": base_dmg,
         "mount_id": None,
         "inventory_upgrade": 0,
+        "girl_talk_today": {},
+        "girl_gift_today": {},
+        "girl_daily_last_day": 0,
+        "engaged_girls": [],
+        "married_girls": [],
     }
 
     save_game(player)
