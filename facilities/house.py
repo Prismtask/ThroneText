@@ -731,8 +731,7 @@ def _house_lounge(player, city_id, house):
                 input("Press Enter...")
                 continue
 
-            engaged_line = dialogue.get("house_engaged",
-                f"{girl['name']} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
+            engaged_line = dialogue.get("house_engaged", f"{girl['name']} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
             print("\n" + (engaged_line.format(name=girl['name']) if "{name}" in engaged_line else engaged_line))
             girl["engaged"] = True
             girl["affection_cap"] = 200
