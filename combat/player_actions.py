@@ -2,7 +2,11 @@ import random
 from character import player_max_hp
 from combat.status_effects import cure_curse, apply_poison, is_silenced, is_dreaded, format_player_status_line
 from combat.combat_ui import print_combat_hud, format_enemy_status_line
-from combat.helpers import _player_has_abyss_fang
+from combat.wedding_specials import (
+    apply_wedding_attack_bonus_procs,
+    apply_wedding_on_hit,
+    apply_wedding_on_kill,
+)
 from combat.action_menu import get_action_menu
 from combat.capture import is_monster_girl, attempt_capture
 from combat.stat_milestones import get_strength_bonus, get_wisdom_bonus
