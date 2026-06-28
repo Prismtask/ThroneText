@@ -10,6 +10,26 @@ RARITY_ORDER = {
     "legendary": 4,
 }
 
+def _items_stackable(a, b):
+    """Check if two non-equipment items can stack."""
+    if a.get("type") == "equipment" or b.get("type") == "equipment":
+        return False
+    a_key = a.get("id") or a.get("name")
+    b_key = b.get("id") or b.get("name")
+    if a_key != b_key:
+        return False
+    if a.get("rarity") != b.get("rarity"):
+        return False
+    if a.get("enhance", 0) != b.get("enhance", 0):
+        return False
+    if a.get("gift_type") != b.get("gift_type"):
+        return False
+    return True
+
+def _ensure_count(item):
+    if "count" not in item:
+        item["count"] = 1
+
 def get_inventory_caps(player):
     """Return (equipment_cap, other_cap) based on upgrades and allies."""
     upgrade = player.get("inventory_upgrade", 0)
@@ -26,16 +46,24 @@ def count_inventory(player):
 
 def add_item_to_inventory(player, item):
     """Add item to inventory if there's space. Returns True if added, False if full."""
+    _ensure_count(item)
     equip_cap, other_cap = get_inventory_caps(player)
     equip_count, other_count = count_inventory(player)
     if item.get("type") == "equipment":
         if equip_count >= equip_cap:
             return False
+        player.setdefault("inventory", []).append(item)
+        return True
     else:
+        inv = player.setdefault("inventory", [])
+        for existing in inv:
+            if _items_stackable(existing, item):
+                existing["count"] = existing.get("count", 1) + item["count"]
+                return True
         if other_count >= other_cap:
             return False
-    player.setdefault("inventory", []).append(item)
-    return True
+        inv.append(item)
+        return True
 
 def get_sorted_equipment(player):
     """Return inventory equipment sorted by slot then rarity descending."""
@@ -59,7 +87,54 @@ def get_sorted_items(player):
     return items
 
 def remove_item_from_inventory(player, index):
-    return player["inventory"].pop(index)
+    """Remove item from inventory by index, decrementing count if stacked."""
+    inv = player.get("inventory", [])
+    if 0 <= index < len(inv):
+        item = inv[index]
+        count = item.get("count", 1)
+        if count > 1:
+            item["count"] = count - 1
+            return item
+        return inv.pop(index)
+    return None
+
+def remove_item_by_reference(player, item, amount=1):
+    """Remove amount from a specific item stack in inventory. Returns True if successful."""
+    inv = player.get("inventory", [])
+    for idx, itm in enumerate(inv):
+        if itm is item:
+            count = itm.get("count", 1)
+            if count > amount:
+                itm["count"] = count - amount
+            else:
+                inv.pop(idx)
+            return True
+    return False
+
+def consume_stackable_items(player, predicate, amount_needed):
+    """Consume amount_needed items matching predicate from stacked inventory.
+    Returns list of (item_ref, amount_consumed) tuples.
+    """
+    inv = player.get("inventory", [])
+    consumed = []
+    remaining = amount_needed
+    i = 0
+    while i < len(inv) and remaining > 0:
+        item = inv[i]
+        if predicate(item):
+            count = item.get("count", 1)
+            if count > remaining:
+                item["count"] = count - remaining
+                consumed.append((item, remaining))
+                remaining = 0
+                break
+            else:
+                consumed.append((item, count))
+                remaining -= count
+                inv.pop(i)
+                continue
+        i += 1
+    return consumed
 
 def equip_item(player, item):
     item_slot = item["slot"]

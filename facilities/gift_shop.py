@@ -87,7 +87,8 @@ def gift_shop_service(player, city_id):
             "name": f"Romantic {gift_type.title()}",
             "type": "gift",
             "gift_type": gift_type,
-            "value": 1
+            "value": 1,
+            "count": 1
         }
         if add_item_to_inventory(player, gift_item):
             print(f"You bought a {gift_type.title()} gift!")

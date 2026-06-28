@@ -13,7 +13,7 @@ from character import player_max_hp
 from combat.stats import compute_player_stats
 from utils import clear_screen, advance_time
 from resources.items import ITEMS, ITEM_RARITY, build_item
-from inventory import add_item_to_inventory
+from inventory import add_item_to_inventory, remove_item_by_reference
 from leveling import gain_exp, gain_exp_ally
 from combat.combat_engine import combat
 from combat.ally import get_alive_allies
@@ -302,15 +302,19 @@ def handle_merchant_room(player, floor):
 
             print("\nYour inventory:")
             for i, item in enumerate(inv):
-                price = _sell_price(player, item)
-                print(f"  {i+1}. {item['name']}  —  {price}g")
+                unit_price = _sell_price(player, item)
+                count = item.get("count", 1)
+                stack_price = unit_price * count
+                count_str = f" (x{count})" if count > 1 else ""
+                print(f"  {i+1}. {item['name']}{count_str}  —  {stack_price}g")
             print("  0. Never mind")
 
             try:
                 idx = int(input("\nSell which item? ").strip()) - 1
                 if 0 <= idx < len(inv):
-                    item = inv.pop(idx)
-                    gold = _sell_price(player, item)
+                    item = inv[idx]
+                    gold = _sell_price(player, item) * item.get("count", 1)
+                    remove_item_by_reference(player, item, item.get("count", 1))
                     player["gold"] = player.get("gold", 0) + gold
                     print(f'  Sold [{item["name"]}] for {gold}g.')
                 else:

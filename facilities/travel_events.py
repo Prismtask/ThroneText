@@ -28,11 +28,22 @@ from character import player_max_hp
 
 # Prefer the proper inventory helper (handles capacity / stacking if implemented)
 try:
-    from inventory import add_item_to_inventory as _add_to_inv
+    from inventory import add_item_to_inventory as _add_to_inv, remove_item_by_reference
 except ImportError:
     def _add_to_inv(player, item):
         player.setdefault("inventory", []).append(item)
         return True
+    def remove_item_by_reference(player, item, amount=1):
+        inv = player.get("inventory", [])
+        for idx, itm in enumerate(inv):
+            if itm is item:
+                count = itm.get("count", 1)
+                if count > amount:
+                    itm["count"] = count - amount
+                else:
+                    inv.pop(idx)
+                return True
+        return False
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -401,15 +412,19 @@ def _sell_to_merchant(player):
     print("  (Road sell rate: ~75 % of city shop value)\n")
 
     for i, item in enumerate(inv):
-        price = _sell_price(player, item)
-        print(f"  {i+1:>2}. {item['name']}  {_item_stat_line(item)}  —  {price}g")
+        unit_price = _sell_price(player, item)
+        count = item.get("count", 1)
+        stack_price = unit_price * count
+        count_str = f" (x{count})" if count > 1 else ""
+        print(f"  {i+1:>2}. {item['name']}{count_str}  {_item_stat_line(item)}  —  {stack_price}g")
     print("   0. Never mind")
 
     try:
         idx = int(input("\n  Sell which item? ").strip()) - 1
         if 0 <= idx < len(inv):
-            item  = inv.pop(idx)
-            gold  = _sell_price(player, item)
+            item = inv[idx]
+            gold = _sell_price(player, item) * item.get("count", 1)
+            remove_item_by_reference(player, item, item.get("count", 1))
             player["gold"] = player.get("gold", 0) + gold
             print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
         else:

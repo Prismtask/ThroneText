@@ -242,7 +242,7 @@ def _house_rest(player, city_id, house):
     input("\nPress Enter...")
 
 
-from inventory import get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items
+from inventory import get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items, remove_item_by_reference, consume_stackable_items
 
 def _house_storage(player, city_id, house):
     """Move items between inventory and house storage chest."""
@@ -463,16 +463,53 @@ def _house_upgrade(player, city_id, house):
     input("\nPress Enter...")
 
 
+def _int_to_roman(num):
+    """Convert integer (1-10) to Roman numeral."""
+    val = [10, 9, 5, 4, 1]
+    syms = ["X", "IX", "V", "IV", "I"]
+    roman = ""
+    i = 0
+    while num > 0:
+        d = num // val[i]
+        roman += syms[i] * d
+        num -= d * val[i]
+        i += 1
+    return roman
+
+
+def _get_ascension_requirements(current_cap):
+    """
+    Returns a list of (tier, count) tuples for ascending from current_cap.
+    Formula: to ascend from cap C, need (C/10 - t + 1) stones of tier t
+    for t = 1 .. C/10.
+    Example: C=20 → [(1, 2), (2, 1)]  → 2 Stone I + 1 Stone II
+             C=30 → [(1, 3), (2, 2), (3, 1)]
+    """
+    max_tier = current_cap // 10
+    requirements = []
+    for tier in range(1, max_tier + 1):
+        count = max_tier - tier + 1
+        requirements.append((tier, count))
+    return requirements
+
+
 def _can_ascend_ally(player, ally):
-    """Check if ally is at their level cap and player has the matching Ascension Stone."""
+    """Check if ally is at their level cap and player has ALL required stones."""
     current_cap = ally.get("level_cap", 10)
     if ally["level"] < current_cap:
         return False
-    required_tier = current_cap // 10
+    requirements = _get_ascension_requirements(current_cap)
+    # Count available stones per tier in inventory (stack-aware)
+    available = {}
     for item in player.get("inventory", []):
-        if item.get("ascension_tier") == required_tier:
-            return True
-    return False
+        tier = item.get("ascension_tier")
+        if tier:
+            available[tier] = available.get(tier, 0) + item.get("count", 1)
+    # Check all requirements
+    for tier, count in requirements:
+        if available.get(tier, 0) < count:
+            return False
+    return True
 
 
 def _house_lounge(player, city_id, house):
@@ -559,9 +596,15 @@ def _house_lounge(player, city_id, house):
             opt_num += 1
 
         can_ascend = where == "active" and _can_ascend_ally(player, girl)
+        at_cap = where == "active" and girl["level"] >= girl.get("level_cap", 10)
         if can_ascend:
             print(f"{opt_num}. Ascend (break level limit)")
             opt_num += 1
+        elif at_cap:
+            # Show what stones are needed
+            requirements = _get_ascension_requirements(girl.get("level_cap", 10))
+            needs = ", ".join(f"{count} Stone {_int_to_roman(tier)}" for tier, count in requirements)
+            print(f"  [Ascend: needs {needs}]")
         if where == "lounge":
             print(f"{opt_num}. Recruit to party")
         print("0. Back")
@@ -667,10 +710,9 @@ def _house_lounge(player, city_id, house):
                     continue
                 gift = gifts[gidx]
                 # Remove from inventory
-                idx_in_inv = player["inventory"].index(gift)
                 gift_type = gift.get("gift_type", "unknown")
                 reaction = get_gift_reaction(girl_key, gift_type)
-                player["inventory"].pop(idx_in_inv)
+                remove_item_by_reference(player, gift)
 
                 # Show love/hate dialogue
                 if reaction > 0:
@@ -746,16 +788,30 @@ def _house_lounge(player, city_id, house):
             if can_ascend:
                 # ── ASCEND ──
                 current_cap = girl.get("level_cap", 10)
-                required_tier = current_cap // 10
-                stone = None
-                for item in player.get("inventory", []):
-                    if item.get("ascension_tier") == required_tier:
-                        stone = item
-                        break
-                if not stone:
-                    print("You do not have the required Ascension Stone.")
-                    input("Press Enter...")
-                    continue
+                requirements = _get_ascension_requirements(current_cap)
+
+                # Gather all required stones from inventory (stack-aware)
+                inv = player.get("inventory", [])
+                consumed_refs = []
+                for tier, count in requirements:
+                    tier_consumed = consume_stackable_items(player, lambda item: item.get("ascension_tier") == tier, count)
+                    total_found = sum(amt for _, amt in tier_consumed)
+                    if total_found < count:
+                        print("You do not have enough Ascension Stones.")
+                        input("Press Enter...")
+                        continue
+                    consumed_refs.extend(tier_consumed)
+
+                # Build summary of consumed stones for display
+                stone_summary = ", ".join(
+                    f"{count} Stone {_int_to_roman(tier)}"
+                    for tier, count in requirements
+                )
+                # Pick the highest-tier stone for dialogue reference
+                highest_stone = next(
+                    (item for item, _ in consumed_refs if item.get("ascension_tier") == current_cap // 10),
+                    consumed_refs[0][0] if consumed_refs else None
+                )
 
                 # Capture old cap before the ceremony
                 old_cap = girl["level_cap"]
@@ -763,20 +819,19 @@ def _house_lounge(player, city_id, house):
                 # Dialogue 1: Ally's reaction (from monster_girls.yaml)
                 pre_line = dialogue.get("ascension_pre_ceremony",
                     f"{girl['name']} kneels before you, her eyes closed in reverence.\n'I feel the chains upon my soul. Please... set me free.'")
-                pre_line = pre_line.format(name=girl['name'], stone=stone['name'], old_cap=old_cap)
+                pre_line = pre_line.format(name=girl['name'], stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
                 print("\n" + pre_line)
                 input("\nPress Enter to begin the ceremony...")
 
-                # Consume stone
-                player["inventory"].remove(stone)
                 girl["level_cap"] = old_cap + 10
 
                 # Dialogue 2: The ascension itself (from monster_girls.yaml)
                 post_line = dialogue.get("ascension_post_ceremony",
-                    f"The {stone['name']} shatters into motes of prismatic light!\nAncient power surges through {girl['name']}.\nHer form shimmers, breaking the seal of Level {old_cap}.")
-                post_line = post_line.format(name=girl['name'], stone=stone['name'], old_cap=old_cap)
+                    f"The {highest_stone['name'] if highest_stone else 'stone'} shatters into motes of prismatic light!\nAncient power surges through {girl['name']}.\nHer form shimmers, breaking the seal of Level {old_cap}.")
+                post_line = post_line.format(name=girl['name'], stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
                 print(f"\n{'='*50}")
                 print("  " + post_line.replace("\n", "\n  "))
+                print(f"  Stones consumed: {stone_summary}")
                 print(f"  *** LEVEL CAP INCREASED: {old_cap} → {girl['level_cap']} ***")
                 print(f"{'='*50}")
 

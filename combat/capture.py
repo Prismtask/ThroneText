@@ -2,6 +2,7 @@
 import random
 from resources.items import ITEM_RARITY
 from combat.stats import get_effective_attribute
+from inventory import remove_item_by_reference
 
 def is_monster_girl(enemy):
     """Check the explicit monster_girl flag set in monster_girls.yaml."""
@@ -42,7 +43,7 @@ def attempt_capture(player, target, net=None):
             print("You need a Capture Net to attempt this!")
             return False
         # Consume net from inventory
-        player["inventory"].pop(net_idx)
+        remove_item_by_reference(player, net)
     # else: net was already provided/consumed by caller (e.g., battle item use)
 
     # Success calculation

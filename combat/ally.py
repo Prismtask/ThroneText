@@ -4,7 +4,7 @@ import random
 from combat.stats import compute_enemy_attributes
 from resources.enemies import ENEMIES, ENEMY_RACES
 from resources.races_classes import ATTRIBUTES
-from inventory import get_total_equipment_mods
+from inventory import get_total_equipment_mods, remove_item_by_reference
 
 ALLY_STAT_MULTIPLIER = 0.8   # Allies are 80% as strong as original enemies (base)
 ALLY_LEVEL_STAT_BONUS = 0.15 # Allies gain 0.15 stat per level above level 1
@@ -594,7 +594,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 msg += f"{target['name']} is blinded. "
 
             print(f"  {msg}")
-            player["inventory"].pop(true_idx)
+            remove_item_by_reference(player, item)
 
             if not [e for e in enemies if e["hp"] > 0]:
                 return "victory"

@@ -59,8 +59,8 @@ def _get_available_ascension_stones(player):
 
 
 def _ascension_stone_base_price(tier):
-    """Linear pricing: 500 gold per tier."""
-    return 500 * tier
+    """Temple fixed pricing: 500 gold per tier, marked up 1.2x."""
+    return int(600 * tier)
 
 
 def _buy_ascension_stone(player, city_id):

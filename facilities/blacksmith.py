@@ -2,7 +2,7 @@
 import random
 from resources.items import ITEMS, ITEM_RARITY
 from resources.dialogues import BLACKSMITH_DIALOGUES
-from inventory import add_item_to_inventory, apply_scroll_to_item
+from inventory import add_item_to_inventory, apply_scroll_to_item, remove_item_by_reference
 from utils import clear_screen, advance_time, format_time
 from combat.stats import get_effective_attribute
 from city_dialogue import service_dialogue
@@ -167,7 +167,7 @@ def fuse_scroll_with_item(player, dialogues, city_id):
         if apply_scroll_to_item(eq_item, scroll):
             player["gold"] -= cost
             # Extract scroll instance safely from total inventory tracking list
-            player["inventory"].pop(scroll_idx)
+            remove_item_by_reference(player, scroll)
             print(dialogues["fusion_success"].format(eq_item['name'], scroll['target_rarity']))
         else:
             print(dialogues["fusion_failed"])

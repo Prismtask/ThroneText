@@ -33,6 +33,7 @@ def _sell_price(item, player):
 
 
 def sell_items(player):
+    from inventory import remove_item_by_reference
     inv = player.get("inventory", [])
     if not inv:
         print("No items to sell.")
@@ -42,12 +43,15 @@ def sell_items(player):
     sorted_items = get_sorted_items(player)
     all_items = sorted_equip + sorted_items
     for i, item in enumerate(all_items):
-        price = _sell_price(item, player)
+        unit_price = _sell_price(item, player)
+        count = item.get("count", 1)
+        stack_price = unit_price * count
         tag = f"[{item.get('rarity','common')}]"
+        count_str = f" (x{count})" if count > 1 else ""
         if item.get("type") == "equipment":
-            print(f"{i+1}. {item['name']} ({item['slot']}) {tag} — {price} gold")
+            print(f"{i+1}. {item['name']}{count_str} ({item['slot']}) {tag} — {stack_price} gold")
         else:
-            print(f"{i+1}. {item['name']} ({item['type']}) {tag} — {price} gold")
+            print(f"{i+1}. {item['name']}{count_str} ({item['type']}) {tag} — {stack_price} gold")
     print("\nEnter numbers to sell (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")
     raw = input("Sell which items? ").strip().lower()
     if raw in ("", "0", "cancel"):
@@ -92,8 +96,8 @@ def sell_items(player):
         print("\nNo valid items to sell (all selected items are soulbound).")
         return
 
-    total_gold = sum(_sell_price(all_items[i], player) for i in filtered_indices)
-    print(f"\nYou will sell {len(filtered_indices)} item(s) for {total_gold} gold:")
+    total_gold = sum(_sell_price(all_items[i], player) * all_items[i].get("count", 1) for i in filtered_indices)
+    print(f"\nYou will sell {len(filtered_indices)} item stack(s) for {total_gold} gold:")
     for n in filtered_names:
         print(f"  - {n}")
     confirm = input("Confirm? (y/n): ").strip().lower()
@@ -103,12 +107,10 @@ def sell_items(player):
 
     for i in filtered_indices:
         item = all_items[i]
-        # find by identity to remove the correct instance
-        orig_idx = next(idx for idx, itm in enumerate(player["inventory"]) if itm is item)
-        player["inventory"].pop(orig_idx)
+        remove_item_by_reference(player, item, item.get("count", 1))
 
     player["gold"] = player.get("gold", 0) + total_gold
-    print(f"Sold {len(filtered_indices)} item(s) for {total_gold} gold.")
+    print(f"Sold {len(filtered_indices)} item stack(s) for {total_gold} gold.")
 
 
 def upgrade_backpack(player):

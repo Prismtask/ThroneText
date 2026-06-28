@@ -1,7 +1,7 @@
 from combat.skills import get_passive_skill, get_all_unlocked_skills, format_mastery_label, get_skill_mastery_level
 from inventory import (equip_item, unequip_slot, use_consumable, get_total_equipment_mods,
                        get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items,
-                       add_item_to_inventory)
+                       add_item_to_inventory, remove_item_by_reference)
 from character import player_max_hp
 from resources.races_classes import ATTRIBUTES
 from utils import clear_screen, format_time
@@ -385,7 +385,8 @@ def manage_bag_submenu(player):
             print("-- Items --")
             for idx, itm in enumerate(sorted_items):
                 offset = len(sorted_equip)
-                print(f"  {idx+1+offset}. {itm['name']} ({itm['type']}) [{itm.get('rarity','common')}]")
+                count_str = f" (x{itm.get('count', 1)})" if itm.get('count', 1) > 1 else ""
+                print(f"  {idx+1+offset}. {itm['name']}{count_str} ({itm['type']}) [{itm.get('rarity','common')}]")
         print("\n[U]se item  [D]rop item  [B]ack")
         act = input("Choice: ").strip().lower()
         if act == "u":
@@ -396,8 +397,7 @@ def manage_bag_submenu(player):
                     if item["type"] in ("consumable","utility"):
                         msg = use_consumable(player, item, combat_state=None)
                         print(msg)
-                        orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is item)
-                        player["inventory"].pop(orig_idx)
+                        remove_item_by_reference(player, item)
                         input("Press Enter...")
                     else:
                         print("You can only use consumables/utility outside combat.")
@@ -409,9 +409,8 @@ def manage_bag_submenu(player):
                 idx = int(input("Drop which? ")) - 1
                 if 0 <= idx < len(all_sorted):
                     item = all_sorted[idx]
-                    orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is item)
-                    dropped = player["inventory"].pop(orig_idx)
-                    print(f"You drop {dropped['name']}.")
+                    remove_item_by_reference(player, item, item.get("count", 1))
+                    print(f"You drop {item['name']}.")
                     input("Press Enter...")
             except:
                 pass
@@ -450,7 +449,8 @@ def prompt_acquire_item(player, item):
     print(f"\n{header}")
     for idx, itm in enumerate(candidates):
         extra = f" ({itm['slot']})" if is_equip else f" ({itm['type']})"
-        print(f"  {idx+1}. {itm['name']}{extra} [{itm.get('rarity','common')}]")
+        count_str = f" (x{itm.get('count', 1)})" if not is_equip and itm.get('count', 1) > 1 else ""
+        print(f"  {idx+1}. {itm['name']}{count_str}{extra} [{itm.get('rarity','common')}]")
 
     print(f"\n[D]rop the new item  or  enter a number (1-{len(candidates)}) to discard that item instead.")
     choice = input("Choice: ").strip().lower()
@@ -463,10 +463,9 @@ def prompt_acquire_item(player, item):
         idx = int(choice) - 1
         if 0 <= idx < len(candidates):
             discarded = candidates[idx]
-            orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is discarded)
-            removed = player["inventory"].pop(orig_idx)
+            remove_item_by_reference(player, discarded)
             player.setdefault("inventory", []).append(item)
-            print(f"Discarded {removed['name']}. Acquired {item['name']}!")
+            print(f"Discarded {discarded['name']}. Acquired {item['name']}!")
             return True
         else:
             print("Invalid choice. Dropping the new item.")

@@ -168,12 +168,12 @@ ITEMS = {
     },
 
     # === Ascension Stones (sold at temples when dungeon floors are cleared) ===
-    "ascension_stone_i":   {"name": "Ascension Stone I",   "type": "utility", "ascension_tier": 1},
-    "ascension_stone_ii":  {"name": "Ascension Stone II",  "type": "utility", "ascension_tier": 2},
-    "ascension_stone_iii": {"name": "Ascension Stone III", "type": "utility", "ascension_tier": 3},
-    "ascension_stone_iv":  {"name": "Ascension Stone IV",  "type": "utility", "ascension_tier": 4},
-    "ascension_stone_v":   {"name": "Ascension Stone V",   "type": "utility", "ascension_tier": 5},
-    "ascension_stone_vi":  {"name": "Ascension Stone VI",  "type": "utility", "ascension_tier": 6},
+    "ascension_stone_i":   {"name": "Ascension Stone I",   "type": "utility", "ascension_tier": 1, "rarity": "rare"},
+    "ascension_stone_ii":  {"name": "Ascension Stone II",  "type": "utility", "ascension_tier": 2, "rarity": "rare"},
+    "ascension_stone_iii": {"name": "Ascension Stone III", "type": "utility", "ascension_tier": 3, "rarity": "rare"},
+    "ascension_stone_iv":  {"name": "Ascension Stone IV",  "type": "utility", "ascension_tier": 4, "rarity": "rare"},
+    "ascension_stone_v":   {"name": "Ascension Stone V",   "type": "utility", "ascension_tier": 5, "rarity": "rare"},
+    "ascension_stone_vi":  {"name": "Ascension Stone VI",  "type": "utility", "ascension_tier": 6, "rarity": "rare"},
 
     # === Scrolls ===
     "common_scroll":     {"name": "Scroll of Fusion", "type": "scroll", "target_rarity": "common"},
@@ -283,6 +283,9 @@ ITEMS = {
 
 def build_item(item_id, rarity="common", enhance=0):
     base = ITEMS[item_id]
+    # Some items (e.g. Ascension Stones) have a fixed rarity regardless of drop/shop roll
+    if base.get("rarity"):
+        rarity = base["rarity"]
     r = ITEM_RARITY[rarity]
 
     item = {
@@ -317,21 +320,23 @@ def build_item(item_id, rarity="common", enhance=0):
                 el: round(1.0 + (val - 1.0) * r["stat_mult"], 2)
                 for el, val in item["elemental_res"].items()
             }
-    elif base["type"] == "consumable":
-        item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
-        for k in ["temp_stat", "duration", "heal_over_time", "defense_buff", "cure_curse"]:
-            if k in base:
-                item[k] = base[k]
-                
-    elif base["type"] == "utility":
-        item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
-        # ADDED "fixed_flee" to the list below:
-        for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce", "fixed_flee", "capture_net", "rarity_mult_bonus", "ascension_tier"]:
-            if k in base:
-                item[k] = base[k]
-                
-    elif base["type"] == "scroll":
-        item["target_rarity"] = rarity
+    elif base["type"] in ("consumable", "utility", "scroll"):
+        item["count"] = 1
+        if base["type"] == "consumable":
+            item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
+            for k in ["temp_stat", "duration", "heal_over_time", "defense_buff", "cure_curse"]:
+                if k in base:
+                    item[k] = base[k]
+                    
+        elif base["type"] == "utility":
+            item["power"] = int(base.get("base_power", 0) * r["stat_mult"])
+            # ADDED "fixed_flee" to the list below:
+            for k in ["status", "bonus_vs", "escape_bonus", "damage_over_time", "duration", "stun_chance", "blind_enemy", "armor_pierce", "fixed_flee", "capture_net", "rarity_mult_bonus", "ascension_tier"]:
+                if k in base:
+                    item[k] = base[k]
+                    
+        elif base["type"] == "scroll":
+            item["target_rarity"] = rarity
         
     return item
 

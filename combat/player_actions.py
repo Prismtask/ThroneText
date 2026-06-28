@@ -12,6 +12,7 @@ from combat.action_menu import get_action_menu
 from combat.capture import is_monster_girl, attempt_capture
 from combat.stat_milestones import get_strength_bonus, get_wisdom_bonus
 from combat.skills import get_available_skills, execute_skill, set_skill_cooldown, format_mastery_label
+from inventory import remove_item_by_reference
 
 
 def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None, on_hit=None, _action_override=None):
@@ -206,7 +207,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                         return "retry", False
                 else:
                     target = mg_targets[0]
-                player["inventory"].pop(true_idx)
+                remove_item_by_reference(player, item)
                 if attempt_capture(player, target, net=item):
                     enemies.remove(target)
                 return "continue", False
@@ -286,7 +287,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 msg += f"The {target['name']} is blinded (reduced dexterity). "
             if "escape_bonus" in item:
                 print(msg)
-                player["inventory"].pop(true_idx)
+                remove_item_by_reference(player, item)
                 return "fled", False
 
             if item.get("fixed_flee"):
@@ -301,15 +302,15 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 success_chance = rarity_rates.get(item_rarity, 0.40)
                 if random.random() < success_chance:
                     print(f"\n✨ The {item['name']} tears open a rift! You successfully escape the fray!")
-                    player["inventory"].pop(true_idx)
+                    remove_item_by_reference(player, item)
                     return "fled", False
                 else:
                     print(f"\n💨 The {item['name']} sputters and fizzles out! Escape failed!")
-                    player["inventory"].pop(true_idx)
+                    remove_item_by_reference(player, item)
                     return "continue", False
 
             print(msg)
-            player["inventory"].pop(true_idx)
+            remove_item_by_reference(player, item)
 
             if not [e for e in enemies if e["hp"] > 0]:
                 return "victory", False
