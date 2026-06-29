@@ -1,3 +1,10 @@
+from combat.abyss_fang import (
+    apply_abyss_tempo_round_start,
+    tick_abyss_fang_cooldown,
+    tick_abyssal_tempo,
+    clear_abyss_fang_state,
+    get_abyssal_tempo_count,
+)
 # combat/superboss_common.py
 """Shared functions for superboss fights, extracted to break circular imports."""
 
@@ -66,7 +73,7 @@ def roll_initiative(player, enemies):
 
 
 def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill, print_hud_func):
-    triple_remaining = player.get("abyss_triple_actions", 0)
+    triple_remaining = get_abyssal_tempo_count(player)
     if triple_remaining <= 0:
         return None
 
@@ -122,15 +129,14 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         lambda target, elist: on_player_hit_hook(target, elist, context)
         if on_player_hit_hook else None
     )
+    player["tarnished_jade_pins"] = 0
+    player["tarnished_jade_weakened"] = False
     round_num = 0
 
     while True:
         round_num += 1
 
-        if player.get("abyss_tempo_pending", 0) > 0:
-            pending = player.pop("abyss_tempo_pending")
-            player["abyss_triple_actions"] = pending
-            print(f"⚔️  The Abyss awakens! Triple actions for {pending} turns!")
+        apply_abyss_tempo_round_start(player)
 
         enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
@@ -154,10 +160,21 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         else:
             print_combat_hud(player, enemies, header=f"Superboss: {boss_name}")
 
+        # --- Tarnished Jade: turn-start pin damage ---
+        from combat.tarnished_jade import apply_tarnished_jade_turn_start
+        tj_triggered = apply_tarnished_jade_turn_start(player, enemies)
+        if tj_triggered:
+            enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
+            if not enemies:
+                print("\n  All enemies have been defeated!")
+                input("  Press Enter to continue...")
+                return "victory"
+            print("\n  The divine sorrow subsides. The battle continues...")
+
         print("\nInitiative Phase\nRolling speeds...")
         turn_order = roll_initiative(player, enemies)
 
-        abyss_count = player.get("abyss_triple_actions", 0)
+        abyss_count = get_abyssal_tempo_count(player)
         if abyss_count > 0:
             first_p_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
             if first_p_idx is not None:
@@ -313,6 +330,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                             extra_logic=extra_logic,
                             armor_mult=armor_mult,
                             temp_str_bonus=temp_str,
+                            all_enemies=enemies,
+                            actual_player=player,
                         )
                         if outcome == "dead":
                             if target is player:
@@ -337,14 +356,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             input("  Press Enter to continue...")
             return "victory"
 
-        if player.get("abyss_fang_cooldown", 0) > 0:
-            player["abyss_fang_cooldown"] -= 1
-            if player["abyss_fang_cooldown"] == 0:
-                print("⚔️  The Abyss Fang hums — its hunger is renewed.")
-        if player.get("abyss_triple_actions", 0) > 0:
-            player["abyss_triple_actions"] -= 1
-            if player["abyss_triple_actions"] == 0:
-                print("⚔️  Nightmare Tempo fades. The triple-action fury ends.")
+        tick_abyss_fang_cooldown(player, prefix="")
+        tick_abyssal_tempo(player, prefix="")
 
 
         tick_skill_cooldowns(player)

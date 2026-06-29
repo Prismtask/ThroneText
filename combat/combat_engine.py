@@ -1,3 +1,10 @@
+from combat.abyss_fang import (
+    apply_abyss_tempo_round_start,
+    tick_abyss_fang_cooldown,
+    tick_abyssal_tempo,
+    clear_abyss_fang_state,
+    get_abyssal_tempo_count,
+)
 # combat_engine.py – main combat orchestrators
 import random
 from combat.stats import compute_player_stats, enemy_stats
@@ -89,7 +96,9 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
 
 def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
     """Generic combat loop supporting player + allies vs enemies."""
-    player["abyss_triple_actions"] = 0
+    clear_abyss_fang_state(player)
+    player["tarnished_jade_pins"] = 0
+    player["tarnished_jade_weakened"] = False
     enemies = [enemy_stats(k, player) for k in enemy_keys]
 
     # --- NEW: Buff the normal enemy acting as the Floor Boss ---
@@ -115,15 +124,12 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
     while True:
         round_num += 1
 
-        if player.get("abyss_tempo_pending", 0) > 0:
-            pending = player.pop("abyss_tempo_pending")
-            player["abyss_triple_actions"] = pending
-            print(f"⚔️  The Abyss awakens! Triple actions for {pending} turns!")
+        apply_abyss_tempo_round_start(player)
 
         enemies = prune_dead(enemies)
         if not enemies:
             print("All enemies have been defeated!")
-            player["abyss_triple_actions"] = 0
+            clear_abyss_fang_state(player)
             return "victory"
 
         p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
@@ -136,11 +142,22 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
 
         print_pre_initiative_enemies(enemies)
 
+        # --- Tarnished Jade: turn-start pin damage ---
+        from combat.tarnished_jade import apply_tarnished_jade_turn_start
+        tj_triggered = apply_tarnished_jade_turn_start(player, enemies)
+        if tj_triggered:
+            enemies = prune_dead(enemies)
+            if not enemies:
+                print("\n  All enemies have been defeated!")
+                clear_abyss_fang_state(player)
+                return "victory"
+            print("\n  The divine sorrow subsides. The battle continues...")
+
         print("\n  Rolling initiative...")
         turn_order = roll_initiative(player, enemies)
 
         # Abyss Tempo: add extra player turns
-        abyss_count = player.get("abyss_triple_actions", 0)
+        abyss_count = get_abyssal_tempo_count(player)
         if abyss_count > 0:
             first_p_idx = next((i for i, c in enumerate(turn_order)
                                 if c["type"] == "player"), None)
@@ -186,7 +203,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             alive_party = _get_alive_party(player)
             if player["current_hp"] <= 0:
                 print("\n  You have been slain.")
-                player["abyss_triple_actions"] = 0
+                clear_abyss_fang_state(player)
                 return "dead"
 
             # Skip dead allies
@@ -200,7 +217,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             if combatant["type"] == "player":
                 if player["current_hp"] <= 0:
                     print("  You have been slain.")
-                    player["abyss_triple_actions"] = 0
+                    clear_abyss_fang_state(player)
                     return "dead"
 
                 if combatant.get("extra_turn"):
@@ -218,15 +235,13 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                         defending = True
                     if not prune_dead(enemies):
                         print("\n  All enemies have been defeated!")
-                        player["abyss_triple_actions"] = 0
+                        clear_abyss_fang_state(player)
                         return "victory"
                 elif result == "victory":
-                    player["abyss_triple_actions"] = 0
-                    player.pop("abyss_tempo_pending", None)
+                    clear_abyss_fang_state(player)
                     return "victory"
                 elif result in ("fled", "dead"):
-                    player["abyss_triple_actions"] = 0
-                    player.pop("abyss_tempo_pending", None)
+                    clear_abyss_fang_state(player)
                     return result
 
             elif combatant["type"] == "ally":
@@ -245,11 +260,10 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 if result == "continue":
                     if not prune_dead(enemies):
                         print("\n  All enemies have been defeated!")
-                        player["abyss_triple_actions"] = 0
+                        clear_abyss_fang_state(player)
                         return "victory"
                 elif result == "victory":
-                    player["abyss_triple_actions"] = 0
-                    player.pop("abyss_tempo_pending", None)
+                    clear_abyss_fang_state(player)
                     return "victory"
                 elif result == "dead":
                     # Ally death doesn't end combat
@@ -268,7 +282,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 alive_party = _get_alive_party(player)
                 if not alive_party:
                     print("  Your entire party has fallen!")
-                    player["abyss_triple_actions"] = 0
+                    clear_abyss_fang_state(player)
                     return "dead"
 
                 # Target selection: weighted 50% player, 50% random ally
@@ -296,11 +310,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                     target_con = a_con
 
                 extra = get_race_extra_logic(enemy)
-                outcome = enemy_attack(enemy, target, target_con, is_defending, extra_logic=extra)
+                outcome = enemy_attack(enemy, target, target_con, is_defending, extra_logic=extra, all_enemies=enemies, actual_player=player)
                 if outcome == "dead":
                     if target is player:
                         print("  You have been slain.")
-                        player["abyss_triple_actions"] = 0
+                        clear_abyss_fang_state(player)
                         return "dead"
                     else:
                         print(f"  {target['name']} has fallen!")
@@ -308,23 +322,17 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         enemies = prune_dead(enemies)
         if not enemies:
             print("\n  All enemies have been defeated!")
-            player["abyss_triple_actions"] = 0
+            clear_abyss_fang_state(player)
             return "victory"
 
         # Check player death after round
         if player["current_hp"] <= 0:
             print("\n  You have been slain.")
-            player["abyss_triple_actions"] = 0
+            clear_abyss_fang_state(player)
             return "dead"
 
-        if player.get("abyss_fang_cooldown", 0) > 0:
-            player["abyss_fang_cooldown"] -= 1
-            if player["abyss_fang_cooldown"] == 0:
-                print("  ⚔️  The Abyss Fang hums — its hunger is renewed.")
-        if player.get("abyss_triple_actions", 0) > 0:
-            player["abyss_triple_actions"] -= 1
-            if player["abyss_triple_actions"] == 0:
-                print("  ⚔️  Nightmare Tempo fades. The triple-action fury ends.")
+        tick_abyss_fang_cooldown(player)
+        tick_abyssal_tempo(player)
 
         # Tick skill cooldowns
         from combat.skills import tick_skill_cooldowns
@@ -359,7 +367,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             print(m)
         if died:
             print("  You have been slain.")
-            player["abyss_triple_actions"] = 0
+            clear_abyss_fang_state(player)
             return "dead"
 
         for m in tick_player_buffs(player):

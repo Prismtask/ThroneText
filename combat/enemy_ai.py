@@ -16,7 +16,7 @@ from combat.wedding_specials import (
 )
  
 
-def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0):
+def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0, all_enemies=None, actual_player=None):
     # --- Check fear BEFORE ticking (so it applies this full turn) ---
     fear_mult = 1.0
     for debuff in enemy.get("active_debuffs", []):
@@ -138,9 +138,27 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     # Wedding fatal blow survival (bark_shield)
     enemy_dmg = apply_wedding_fatal_blow_survival(player, enemy_dmg)
 
+    # --- Tarnished Jade trigger check (before applying damage) ---
+    if actual_player and player is actual_player and _player_has_tarnished_jade(actual_player) and all_enemies:
+        from combat.tarnished_jade import check_tarnished_jade_trigger
+        should_apply, _ = check_tarnished_jade_trigger(actual_player, enemy_dmg, all_enemies, enemy, "enemy_attack")
+        if not should_apply:
+            print(f"  The {enemy['name']}'s attack is REPULSED by the Tarnished Jade!")
+            print(f"  {actual_player['name']} takes 0 damage! [Divine Intervention]")
+            if extra_logic:
+                msg = extra_logic(enemy, actual_player, 0)
+                if msg:
+                    print(msg)
+            return "hit"
+
     # Final floor
     enemy_dmg = max(0, enemy_dmg)
     player["current_hp"] -= enemy_dmg
+
+    # Tarnished Jade: pin on taking damage
+    if actual_player and _player_has_tarnished_jade(actual_player):
+        from combat.tarnished_jade import add_tarnished_jade_pin
+        add_tarnished_jade_pin(actual_player)
 
     elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
                       "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}

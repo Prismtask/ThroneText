@@ -74,6 +74,18 @@ ITEMS = {
         "elemental_dmg": {"dark": 1.5},
     },
 
+    "tarnished_jade": {
+        "name": "Tarnished Jade",
+        "type": "equipment",
+        "slot": "armor",
+        "unique": True,
+        "base_mods": {"Constitution": 5, "Wisdom": 4, "Strength": 3},
+        "elemental_res": {"light": 1.3, "thunder": 1.2, "fire": 1.1},
+        "special": "tarnished_jade",
+        "drop_source": "heaven_banished_dragon_yinglong",
+        "drop_rarity": "legendary",
+    },
+
     # === Armor ===
     "padded_armor": {"name": "Padded Armor","type": "equipment","slot": "armor","base_mods": {"Constitution": 2}, "elemental_res": {"earth": 1.1}},
     "leather_armor":{"name": "Leather Armor","type": "equipment","slot": "armor","base_mods": {"Dexterity": 2, "Constitution": 1}, "elemental_res": {"wind": 1.2, "thunder": 1.1}},

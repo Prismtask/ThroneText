@@ -576,4 +576,15 @@ def combat_yinglong(player, floor=None):
         print("a thousand years. You stand in it, breathing.")
         print("═" * 60)
 
+
+        # Award Tarnished Jade
+        from resources.items import build_item
+        from inventory import add_item_to_inventory
+        tj = build_item("tarnished_jade", "legendary")
+        if not add_item_to_inventory(player, tj):
+            player.setdefault("inventory", []).append(tj)
+            print("  (Your bag is full, but the Tarnished Jade forces itself in!)")
+        print("\n  ✦ You obtained: TARNISHED JADE (Legendary) ✦")
+        input("  Press Enter to continue...")
+
     return result

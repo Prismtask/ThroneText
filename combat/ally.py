@@ -399,6 +399,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         alive_before = {id(e) for e in enemies if e["hp"] > 0}
         msg, victory = execute_ally_skill(ally, player, skill_id, skill_def, enemies, all_allies)
         print(f"  {msg}")
+        # Tarnished Jade: pin on dealing damage
+        from combat.tarnished_jade import add_tarnished_jade_pin
+        add_tarnished_jade_pin(player)
         # Trigger on_kill for any enemies that died during this skill use
         if on_kill:
             for e in enemies:
@@ -468,6 +471,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             element = get_attack_element(ally, equipped_weapon)
         final_dmg = calculate_elemental_damage(dmg, ally, target, element)
         target["hp"] -= final_dmg
+        # Tarnished Jade: pin on dealing damage
+        from combat.tarnished_jade import add_tarnished_jade_pin
+        add_tarnished_jade_pin(player)
 
         verb = "strikes"
         if "Dexterity" in scaling_stats:
@@ -595,6 +601,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     msg += f"(ignores {item['armor_pierce']} armor) "
                 final_dmg = max(1, dmg - armor)
                 target["hp"] -= final_dmg
+                # Tarnished Jade: pin on dealing damage
+                from combat.tarnished_jade import add_tarnished_jade_pin
+                add_tarnished_jade_pin(player)
                 msg += f"{ally['name']} deals {final_dmg} damage to {target['name']}! "
 
             if "poison_damage" in item:

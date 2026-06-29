@@ -2,7 +2,7 @@
 from utils import clear_screen, format_time
 from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
-from combat.helpers import _player_has_abyss_fang
+from combat.abyss_fang import is_abyssal_tempo_active, get_abyss_fang_cooldown_display
 from combat.ally import get_alive_allies, format_ally_status_line, _ally_action_menu
 from combat.ally_skills import get_all_ally_skills
 from combat.skills import get_all_unlocked_skills
@@ -161,7 +161,7 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
 
     # Determine header context
     if not header:
-        if player.get("abyss_triple_actions", 0) > 0:
+        if is_abyssal_tempo_active(player):
             header = ">> ABYSSAL TEMPO ACTIVE <<"
 
     # 1. Top Border (Total inner width = 68 characters)
@@ -230,8 +230,8 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
 
     # Cooldown message (player only)
     if active_ally is None:
-        if _player_has_abyss_fang(player) and player.get('abyss_fang_cooldown', 0) > 0:
-            cd_msg = f"(Abyss Fang recharging: {player['abyss_fang_cooldown']} turn(s))"
+        cd_msg = get_abyss_fang_cooldown_display(player)
+        if cd_msg:
             print(f"|  {cd_msg:<66}|")
 
         # Skill cooldown messages
@@ -266,7 +266,7 @@ def print_superboss_header(player, floor, boss_name, extra_gimmick_line=""):
     if extra_gimmick_line:
         print(extra_gimmick_line)
     status_line = format_player_status_line(player)
-    tempo_str = " [Abyssal Tempo]" if player.get("abyss_triple_actions", 0) > 0 else ""
+    tempo_str = " [Abyssal Tempo]" if is_abyssal_tempo_active(player) else ""
     print(f"\n{player['name']}: {player['current_hp']} {status_line}{tempo_str}".rstrip())
 
 

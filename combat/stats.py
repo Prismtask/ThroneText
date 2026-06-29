@@ -100,6 +100,15 @@ def get_effective_attribute(player, attr_name):
     if pct_mult != 1.0:
         total = int(total * pct_mult)
 
+    # --- Tarnished Jade stat bonuses ---
+    from combat.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus
+    total += get_tarnished_jade_str_bonus(entity)
+    total += get_tarnished_jade_wis_bonus(entity)
+
+    # --- Tarnished Jade Wedge Backlash 50% debuff ---
+    if entity.get("tarnished_jade_weakened"):
+        total = int(total * 0.5)
+
     return total
 
 

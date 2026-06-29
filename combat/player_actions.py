@@ -2,7 +2,7 @@ import random
 from character import player_max_hp
 from combat.status_effects import cure_curse, apply_poison, is_silenced, is_dreaded, format_player_status_line
 from combat.combat_ui import print_combat_hud, format_enemy_status_line
-from combat.helpers import _player_has_abyss_fang
+from combat.abyss_fang import wield_abyss_fang
 from combat.wedding_specials import (
     apply_wedding_attack_bonus_procs,
     apply_wedding_on_hit,
@@ -55,6 +55,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         )
         print(msg)
         set_skill_cooldown(player, skill_id)
+        # Tarnished Jade: pin on dealing damage
+        from combat.tarnished_jade import add_tarnished_jade_pin
+        add_tarnished_jade_pin(player)
         if victory:
             return "victory", False
         return "continue", False
@@ -125,6 +128,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if on_hit:
             on_hit(target, enemies) 
         target["hp"] -= final_dmg
+        # Tarnished Jade: pin on dealing damage
+        from combat.tarnished_jade import add_tarnished_jade_pin
+        add_tarnished_jade_pin(player)
 
         # Wedding on-hit effects
         apply_wedding_on_hit(player, target, enemies, final_dmg)
@@ -272,7 +278,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     msg += f"(ignores {item['armor_pierce']} armor) "
                 final_dmg = max(1, dmg - armor)
                 target["hp"] -= final_dmg
-                # REMOVE the is_fake block entirely
+                # Tarnished Jade: pin on dealing damage
+                from combat.tarnished_jade import add_tarnished_jade_pin
+                add_tarnished_jade_pin(player)
                 msg += f"You deal {final_dmg} damage to the {target['name']}! "
             if "poison_damage" in item:
                 apply_poison(target, item["poison_damage"], item.get("poison_duration", 3))
@@ -332,43 +340,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
     # ----- WIELD THE ABYSS -----
     elif action == "w":
-        abyss_fang = _player_has_abyss_fang(player)
-        if not abyss_fang:
-            print("You have no weapon that responds to that command.")
-            return "retry", False
-        abyss_cd = player.get("abyss_fang_cooldown", 0)
-        if abyss_cd > 0:
-            print(f"The Abyss Fang is still recharging. ({abyss_cd} turn(s) remaining)")
-            return "retry", False
-
-        print("\n" + "≈" * 55)
-        print("The Abyss Fang SCREAMS. A void tears open across your")
-        print("vision — stolen faces from the Slitcurrent's body flash")
-        print("across the blade, mouthing silent warnings. You grip it")
-        print("anyway. Reality peels back. You are the wound now.")
-        print("≈" * 55)
-        input("Press Enter to unleash it...")
-
-        max_hp = player_max_hp(player)
-        hp_cost = int(max_hp * 0.40)
-        player["current_hp"] = max(1, player["current_hp"] - hp_cost)
-        print(f"\nThe blade drinks deep — you lose {hp_cost} HP ({player['current_hp']}/{max_hp} remaining).")
-
-        str_bonus = 8
-        player.setdefault("active_buffs", []).append({
-            "stat": "Strength",
-            "value": str_bonus,
-            "remaining": 4,
-            "source": "abyss_fang",
-        })
-        print(f"⚔️  Abyss-Tempered: Strength +{str_bonus} for 4 turns!")
-
-        player["abyss_tempo_pending"] = 4
-        print("⚔️  The Abyss stirs... its full fury will awaken next round!")
-
-        player["abyss_fang_cooldown"] = 6
-        print("(The blade will recharge in 6 turns.)\n")
-        return "continue", False
+        return wield_abyss_fang(player)
 
     # ----- FLEE -----
     elif action == "f":
