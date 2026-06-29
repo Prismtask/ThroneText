@@ -14,6 +14,7 @@ from combat.wedding_specials import (
     apply_wedding_enemy_accuracy_penalty,
     apply_wedding_enemy_attack_pre_damage,
 )
+from combat.helpers import _player_has_tarnished_jade
  
 
 def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0, all_enemies=None, actual_player=None):

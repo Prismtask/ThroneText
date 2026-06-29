@@ -1,7 +1,5 @@
 import os
 
-from combat.abyss_fang import clear_abyss_fang_state
-
 
 def handle_player_death(player):
     """Handle player death: offer continue or quit, apply penalties if continuing."""
@@ -53,7 +51,8 @@ def handle_player_death(player):
         player.pop(key, None)
 
     # Clear any lingering combat state
-    clear_abyss_fang_state(player)
+    player["abyss_triple_actions"] = 0
+    player.pop("abyss_tempo_pending", None)
 
     # Save game
     from save_load import save_game

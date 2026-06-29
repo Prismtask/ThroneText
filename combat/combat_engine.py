@@ -85,6 +85,64 @@ def _get_alive_party(player):
     return party
 
 
+def _tick_all_state(player):
+    """Tick all combat state for player and allies. Returns 'dead' if player died from DoT, else None."""
+    tick_abyss_fang_cooldown(player)
+    tick_abyssal_tempo(player)
+
+    from combat.skills import tick_skill_cooldowns
+    tick_skill_cooldowns(player)
+    for ally in player.get("allies", []):
+        tick_skill_cooldowns(ally)
+
+    if player.get("berserk_turns", 0) > 0:
+        player["berserk_turns"] -= 1
+        if player["berserk_turns"] == 0:
+            dmg = random.randint(1, 6)
+            player["current_hp"] = max(1, player["current_hp"] - dmg)
+            print(f"  Your berserk rage subsides. You take {dmg} exhaustion damage.")
+        else:
+            print(f"  Berserk active — {player['berserk_turns']} turn(s) remaining.")
+
+    if player.get("bloodlust_turns", 0) > 0:
+        player["bloodlust_turns"] -= 1
+        if player["bloodlust_turns"] == 0:
+            print("  Your bloodlust fades. The thirst for blood subsides.")
+        else:
+            print(f"  Bloodlust active — {player['bloodlust_turns']} turn(s) remaining.")
+
+    player.pop("smoke_bomb_flee", False)
+
+    msgs, died = tick_player_debuffs(player)
+    for m in msgs:
+        print(m)
+    if died:
+        print("  You have been slain.")
+        return "dead"
+
+    for m in tick_player_buffs(player):
+        print(m)
+
+    for ally in get_alive_allies(player):
+        ally_msgs, ally_died = tick_player_debuffs(ally)
+        for m in ally_msgs:
+            print(f"  {ally['name']}: {m}")
+        if ally_died:
+            print(f"  {ally['name']} succumbs to their wounds!")
+        for m in tick_player_buffs(ally):
+            print(f"  {ally['name']}: {m}")
+
+    apply_wedding_end_of_round(player)
+    return None
+
+
+def _end_combat_with_result(player, result):
+    """Tick all combat state and return the requested result, unless DoT kills the player."""
+    clear_abyss_fang_state(player)
+    tick_result = _tick_all_state(player)
+    return tick_result if tick_result == "dead" else result
+
+
 def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
     """Generic combat loop supporting player + allies vs enemies."""
     begin_wedding_combat(player, floor, room_num)
@@ -129,8 +187,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         enemies = prune_dead(enemies)
         if not enemies:
             print("All enemies have been defeated!")
-            clear_abyss_fang_state(player)
-            return "victory"
+            return _end_combat_with_result(player, "victory")
 
         p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
@@ -149,8 +206,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             enemies = prune_dead(enemies)
             if not enemies:
                 print("\n  All enemies have been defeated!")
-                clear_abyss_fang_state(player)
-                return "victory"
+                return _end_combat_with_result(player, "victory")
             print("\n  The divine sorrow subsides. The battle continues...")
 
         print("\n  Rolling initiative...")
@@ -203,8 +259,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             alive_party = _get_alive_party(player)
             if player["current_hp"] <= 0:
                 print("\n  You have been slain.")
-                clear_abyss_fang_state(player)
-                return "dead"
+                return _end_combat_with_result(player, "dead")
 
             # Skip dead allies
             if combatant["type"] == "ally":
@@ -217,8 +272,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             if combatant["type"] == "player":
                 if player["current_hp"] <= 0:
                     print("  You have been slain.")
-                    clear_abyss_fang_state(player)
-                    return "dead"
+                    return _end_combat_with_result(player, "dead")
 
                 if combatant.get("extra_turn"):
                     print(f"  ⚔️  ABYSS TEMPO — Extra Action {combatant['extra_turn']}/3!")
@@ -235,14 +289,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                         defending = True
                     if not prune_dead(enemies):
                         print("\n  All enemies have been defeated!")
-                        clear_abyss_fang_state(player)
-                        return "victory"
+                        return _end_combat_with_result(player, "victory")
                 elif result == "victory":
-                    clear_abyss_fang_state(player)
-                    return "victory"
+                    return _end_combat_with_result(player, "victory")
                 elif result in ("fled", "dead"):
-                    clear_abyss_fang_state(player)
-                    return result
+                    return _end_combat_with_result(player, result)
 
             elif combatant["type"] == "ally":
                 ally = combatant["entity"]
@@ -260,11 +311,9 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 if result == "continue":
                     if not prune_dead(enemies):
                         print("\n  All enemies have been defeated!")
-                        clear_abyss_fang_state(player)
-                        return "victory"
+                        return _end_combat_with_result(player, "victory")
                 elif result == "victory":
-                    clear_abyss_fang_state(player)
-                    return "victory"
+                    return _end_combat_with_result(player, "victory")
                 elif result == "dead":
                     # Ally death doesn't end combat
                     pass
@@ -282,8 +331,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 alive_party = _get_alive_party(player)
                 if not alive_party:
                     print("  Your entire party has fallen!")
-                    clear_abyss_fang_state(player)
-                    return "dead"
+                    return _end_combat_with_result(player, "dead")
 
                 # Target selection: weighted 50% player, 50% random ally
                 if len(alive_party) == 1:
@@ -314,77 +362,24 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 if outcome == "dead":
                     if target is player:
                         print("  You have been slain.")
-                        clear_abyss_fang_state(player)
-                        return "dead"
+                        return _end_combat_with_result(player, "dead")
                     else:
                         print(f"  {target['name']} has fallen!")
 
         enemies = prune_dead(enemies)
         if not enemies:
             print("\n  All enemies have been defeated!")
-            clear_abyss_fang_state(player)
-            return "victory"
+            return _end_combat_with_result(player, "victory")
 
         # Check player death after round
         if player["current_hp"] <= 0:
             print("\n  You have been slain.")
+            return _end_combat_with_result(player, "dead")
+
+        tick_result = _tick_all_state(player)
+        if tick_result == "dead":
             clear_abyss_fang_state(player)
             return "dead"
-
-        tick_abyss_fang_cooldown(player)
-        tick_abyssal_tempo(player)
-
-        # Tick skill cooldowns
-        from combat.skills import tick_skill_cooldowns
-        tick_skill_cooldowns(player)
-        for ally in player.get("allies", []):
-            tick_skill_cooldowns(ally)
-
-        # Tick Berserk (Barbarian skill)
-        if player.get("berserk_turns", 0) > 0:
-            player["berserk_turns"] -= 1
-            if player["berserk_turns"] == 0:
-                dmg = random.randint(1, 6)
-                player["current_hp"] = max(1, player["current_hp"] - dmg)
-                print(f"  Your berserk rage subsides. You take {dmg} exhaustion damage.")
-            else:
-                print(f"  Berserk active — {player['berserk_turns']} turn(s) remaining.")
-
-        # Tick Bloodlust (Barbarian skill)
-        if player.get("bloodlust_turns", 0) > 0:
-            player["bloodlust_turns"] -= 1
-            if player["bloodlust_turns"] == 0:
-                print("  Your bloodlust fades. The thirst for blood subsides.")
-            else:
-                print(f"  Bloodlust active — {player['bloodlust_turns']} turn(s) remaining.")
-
-        # Clear smoke bomb flee guarantee if it wasn't used this round
-        if player.pop("smoke_bomb_flee", False):
-            pass  # It was already consumed during the round if used
-
-        msgs, died = tick_player_debuffs(player)
-        for m in msgs:
-            print(m)
-        if died:
-            print("  You have been slain.")
-            clear_abyss_fang_state(player)
-            return "dead"
-
-        for m in tick_player_buffs(player):
-            print(m)
-
-        # Tick ally debuffs/buffs (allies use player-style ticking since they have current_hp)
-        for ally in get_alive_allies(player):
-            ally_msgs, ally_died = tick_player_debuffs(ally)
-            for m in ally_msgs:
-                print(f"  {ally['name']}: {m}")
-            if ally_died:
-                print(f"  {ally['name']} succumbs to their wounds!")
-            for m in tick_player_buffs(ally):
-                print(f"  {ally['name']}: {m}")
-
-        # Wedding end-of-round effects
-        apply_wedding_end_of_round(player)
 
         print("\n  " + "─" * 66)
         input("  Press Enter to continue...")

@@ -204,13 +204,47 @@ def save_house_data(player, girls_data, city_id=None):
 # ── Sub-menus ────────────────────────────────────────────────────────────────
 
 def _house_rest(player, city_id, house):
-    """Quick rest at home — free full heal, costs a small amount of time.
-    From Manor onward, also grants a Well-Rested stat buff that lasts for
-    dungeon rooms (duration = house level). Stat bonus: +1 (Manor–Villa),
-    +2 (Estate–Citadel), +3 (Sanctuary).
-    """
+    """Quick rest at home — free full heal, costs a small amount of time."""
     lvl_data   = _house_level_data(house)
     rest_mins  = lvl_data["rest_minutes"]
+    max_hp     = player_max_hp(player)
+
+    # Heal player
+    old_hp               = player["current_hp"]
+    player["current_hp"] = max_hp
+    healed               = max_hp - old_hp
+
+    # Heal allies too
+    for ally in player.get("allies", []):
+        if ally.get("current_hp", 0) > 0:
+            ally_old = ally["current_hp"]
+            ally["current_hp"] = ally["max_hp"]
+            ally_healed = ally["max_hp"] - ally_old
+            print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
+
+    advance_time(player, rest_mins)
+
+    home_name = lvl_data["name"].lower()
+    print(f"You take a quick rest in your {home_name}.")
+    if healed > 0:
+        print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
+    else:
+        print(f"  You were already at full health, but the brief rest feels nice.")
+    print(f"  ({rest_mins} minutes pass.)")
+    input("\nPress Enter...")
+
+
+def _house_sleep(player, city_id, house):
+    """Sleep at home — full heal + 8 hours pass. Only available between 20:00 and 04:00.
+    From Manor onward, also grants a Well-Rested stat buff that lasts for dungeon rooms.
+    Stat bonus: +1 (Manor–Villa), +2 (Estate–Citadel), +3 (Sanctuary)."""
+    current_hour = player.get("time_minutes", 0) // 60
+    if not (current_hour >= 20 or current_hour < 4):
+        print("You can only sleep at home between 20:00 and 04:00.")
+        input("\nPress Enter...")
+        return
+
+    lvl_data   = _house_level_data(house)
     buff_val   = lvl_data["bed_buff_value"]
     buff_rooms = lvl_data["bed_buff_floors"]
     max_hp     = player_max_hp(player)
@@ -250,51 +284,16 @@ def _house_rest(player, city_id, house):
                     "remaining": buff_rooms,
                 })
 
-    advance_time(player, rest_mins)
-
-    home_name = lvl_data["name"].lower()
-    print(f"You take a quick rest in your {home_name}.")
-    if healed > 0:
-        print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
-    else:
-        print(f"  You were already at full health, but the brief rest feels nice.")
-    if buff_val > 0:
-        print(f"  Well-Rested: +{buff_val} to all stats for {buff_rooms} dungeon room(s).")
-    print(f"  ({rest_mins} minutes pass.)")
-    input("\nPress Enter...")
-
-
-def _house_sleep(player, city_id, house):
-    """Sleep at home — full heal + 8 hours pass. Only available between 20:00 and 04:00."""
-    current_hour = player.get("time_minutes", 0) // 60
-    if not (current_hour >= 20 or current_hour < 4):
-        print("You can only sleep at home between 20:00 and 04:00.")
-        input("\nPress Enter...")
-        return
-
-    max_hp = player_max_hp(player)
-
-    # Heal player
-    old_hp               = player["current_hp"]
-    player["current_hp"] = max_hp
-    healed               = max_hp - old_hp
-
-    # Heal allies too
-    for ally in player.get("allies", []):
-        if ally.get("current_hp", 0) > 0:
-            ally_old = ally["current_hp"]
-            ally["current_hp"] = ally["max_hp"]
-            ally_healed = ally["max_hp"] - ally_old
-            print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
-
     advance_time(player, 480)
 
-    home_name = _house_level_data(house)["name"].lower()
+    home_name = lvl_data["name"].lower()
     print(f"You settle into a deep sleep in your {home_name}.")
     if healed > 0:
         print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
     else:
         print(f"  You were already at full health, but the sleep restores your spirit.")
+    if buff_val > 0:
+        print(f"  Well-Rested: +{buff_val} to all stats for {buff_rooms} dungeon room(s).")
     print("  (8 hours pass.)")
     input("\nPress Enter...")
 

@@ -102,11 +102,11 @@ def get_effective_attribute(player, attr_name):
 
     # --- Tarnished Jade stat bonuses ---
     from combat.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus
-    total += get_tarnished_jade_str_bonus(entity)
-    total += get_tarnished_jade_wis_bonus(entity)
+    total += get_tarnished_jade_str_bonus(player)
+    total += get_tarnished_jade_wis_bonus(player)
 
     # --- Tarnished Jade Wedge Backlash 50% debuff ---
-    if entity.get("tarnished_jade_weakened"):
+    if player.get("tarnished_jade_weakened"):
         total = int(total * 0.5)
 
     return total
