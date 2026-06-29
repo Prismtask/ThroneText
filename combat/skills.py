@@ -329,7 +329,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
     }
 
     # ── Damage Helper ──
-    def _calc_dmg(target, power, ignore_armor=False, element=None):
+    def _calc_dmg(target, power, ignore_armor=False, element=None, guaranteed_crit=False):
         armor = 0 if ignore_armor else target.get("con_mod", 0)
         # Apply sunder debuff reduction to armor
         for debuff in target.get("active_debuffs", []):
@@ -338,6 +338,13 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         # Apply Strength milestone bonus
         from combat.stat_milestones import get_strength_bonus
         power = power + get_strength_bonus(player)
+        # Random critical hit (skip if skill already guarantees a crit)
+        if not guaranteed_crit:
+            from combat.stats import roll_critical_hit, apply_critical_damage
+            is_crit, _ = roll_critical_hit(player, "player")
+            if is_crit:
+                power = apply_critical_damage(power, is_crit)
+                msg_parts.append("Critical hit!")
         dmg = max(1, power - armor)
         # Apply elemental damage if applicable
         if element is None and skill_id in SKILL_ELEMENTS:
@@ -555,10 +562,11 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                         if target.get("slowed") or target.get("stunned"):
                             power = int(power * (1 + passive["effect"]["value"]))
                     # Guaranteed crit
-                    if skill.get("guaranteed_crit"):
+                    guaranteed = skill.get("guaranteed_crit", False)
+                    if guaranteed:
                         power *= 2
                         msg_parts.append("Critical hit!")
-                    dmg = _calc_dmg(target, power, skill.get("ignore_armor", False))
+                    dmg = _calc_dmg(target, power, skill.get("ignore_armor", False), guaranteed_crit=guaranteed)
                     target["hp"] -= dmg
                     msg_parts.append(f"Hit {target['name']} for {dmg} damage!")
                     # Apply slow
@@ -599,9 +607,10 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 break
             if total_hits > 1:
                 power = int((base_power + scaling) * power_mult)
-                if skill.get("guaranteed_crit"):
+                guaranteed = skill.get("guaranteed_crit", False)
+                if guaranteed:
                     power *= 2
-                dmg = _calc_dmg(target, power, skill.get("ignore_armor", False))
+                dmg = _calc_dmg(target, power, skill.get("ignore_armor", False), guaranteed_crit=guaranteed)
                 target["hp"] -= dmg
                 msg_parts.append(f"Hit {target['name']} for {dmg} damage!")
                 if target["hp"] <= 0:

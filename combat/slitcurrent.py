@@ -109,7 +109,7 @@ def combat_slitcurrent(player, floor=None):
         ctx["turn_counter"] += 1
         return action
 
-    def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
+    def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         if enemy.get("key") == boss_key and ctx["boss_stun_turns"] > 0:
             print(f"The {enemy['name']} is stunned and cannot act! ({ctx['boss_stun_turns']} turns remain)")
             ctx["boss_stun_turns"] -= 1

@@ -226,7 +226,7 @@ def _inner_dragon_combat(player):
     def inner_on_kill(target, elist, ctx):
         pass
 
-    def inner_enemy_hook(enemy, ctx, pl, p_con, defending):
+    def inner_enemy_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         return 1, False, None, 1.0, 0
 
     result = superboss_combat_loop(
@@ -467,7 +467,7 @@ def combat_yinglong(player, floor=None):
             else:
                 print("SHATTERED HEAVEN refreshed — full damage for 3 more turns!")
 
-    def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
+    def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         if _is_pillar(enemy):
             print(f"  (The Heaven Pillar pulses — it does not attack.)")
             return 0, True, None, 1.0, 0

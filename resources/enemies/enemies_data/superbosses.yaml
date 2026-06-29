@@ -5,9 +5,12 @@ Superbosses:
     level: 20
     base_hp: 350
     mods:
-      Strength: 6
-      Constitution: 6
-      Dexterity: 4
+      Strength: 8
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: true
     super_boss: true
   dream_devouring_slitcurrent:
@@ -16,9 +19,12 @@ Superbosses:
     level: 21
     base_hp: 420
     mods:
-      Strength: 5
-      Constitution: 7
+      Strength: 8
+      Constitution: 8
       Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: true
     super_boss: true
   melt_forge_golem_ignis:
@@ -27,9 +33,12 @@ Superbosses:
     level: 21
     base_hp: 400
     mods:
-      Strength: 6
-      Constitution: 8
-      Dexterity: 1
+      Strength: 8
+      Constitution: 10
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: true
     super_boss: true
   queen_of_mirrors_sylvana:
@@ -38,10 +47,12 @@ Superbosses:
     level: 21
     base_hp: 380
     mods:
-      Dexterity: 7
-      Charisma: 5
-      Constitution: 3
-      Strength: 2
+      Strength: 3
+      Constitution: 4
+      Dexterity: 9
+      Wisdom: 4
+      Learning: 3
+      Charisma: 6
     boss: true
     super_boss: true
   heaven_banished_dragon_yinglong:
@@ -50,10 +61,12 @@ Superbosses:
     level: 45
     base_hp: 600
     mods:
-      Strength: 9
-      Constitution: 8
-      Dexterity: 5
-      Learning: 2
+      Strength: 15
+      Constitution: 14
+      Dexterity: 9
+      Wisdom: 5
+      Learning: 6
+      Charisma: 4
     boss: true
     super_boss: true
   rientrante_frostbound:
@@ -62,9 +75,12 @@ Superbosses:
     level: 25
     base_hp: 420
     mods:
-      Strength: 12
-      Constitution: 6
-      Dexterity: 5
+      Strength: 10
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 4
+      Charisma: 2
     boss: true
     super_boss: true
     elemental_dmg:
@@ -78,8 +94,12 @@ Superbosses:
     level: 15
     base_hp: 55
     mods:
-      Dexterity: 5
-      Strength: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 7
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   eye_of_truth:
@@ -88,9 +108,12 @@ Superbosses:
     level: 20
     base_hp: 180
     mods:
-      Dexterity: 4
-      Strength: 3
-      Constitution: 4
+      Strength: 4
+      Constitution: 5
+      Dexterity: 7
+      Wisdom: 4
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   frozen_arm:
@@ -99,8 +122,11 @@ Superbosses:
     level: 18
     base_hp: 120
     mods:
-      Strength: 4
-      Constitution: 3
-      Dexterity: 3
+      Strength: 7
+      Constitution: 7
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false

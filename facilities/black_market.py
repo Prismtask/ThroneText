@@ -32,7 +32,7 @@ def black_market_service(player, city_id):
 
     elif choice == "2":
         # Count how many capture nets the player already owns
-        current_nets = sum(1 for item in player.get("inventory", []) if item.get("capture_net"))
+        current_nets = sum(item.get("count", 1) for item in player.get("inventory", []) if item.get("capture_net"))
         if current_nets >= 5:
             print("The dealer smirks. 'You've already bought the maximum I can risk selling you (5 Max).'")
         else:

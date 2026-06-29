@@ -136,11 +136,13 @@ def consume_stackable_items(player, predicate, amount_needed):
         i += 1
     return consumed
 
-def equip_item(player, item):
+def equip_item(player, item, target_slot=None):
     item_slot = item["slot"]
     # Resolve dual accessory slots
     if item_slot == "accessory":
-        if player.get("equipped", {}).get("accessory1") is None:
+        if target_slot in ("accessory1", "accessory2"):
+            pass  # use caller-specified slot
+        elif player.get("equipped", {}).get("accessory1") is None:
             target_slot = "accessory1"
         elif player.get("equipped", {}).get("accessory2") is None:
             target_slot = "accessory2"

@@ -144,7 +144,7 @@ def combat_ignis(player, floor=None):
             if bleed_msg: print(bleed_msg)
         return action
 
-    def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
+    def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         actions = 2 if ctx["final_form"] else 1
         heat_mult = _heat_damage_bonus(ctx["heat_level"])
         

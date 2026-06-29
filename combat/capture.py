@@ -84,6 +84,41 @@ def store_captured_girl(player, mg):
     # Only one house allowed — use the player's home regardless of location
     house_city, house = next(iter(houses.items()))
 
+    # ── Duplicate check ──────────────────────────────────────────────────────
+    mg_key = mg.get("key", "")
+    existing = None
+    for girl in house.get("monster_girls", []):
+        if girl.get("key") == mg_key:
+            existing = girl
+            break
+    if not existing:
+        for ally in player.get("allies", []):
+            if ally.get("key") == mg_key:
+                existing = ally
+                break
+
+    if existing:
+        print(f"\nYou already have {mg.get('name', 'a girl')} in your household!")
+        sell_price = mg.get("level", 1) * 50 + 100
+        print(f"1. Sell her for {sell_price} gold")
+        print(f"2. Release her back to the wild")
+        print(f"3. Let her bond with your existing {existing.get('name', 'girl')} (+20 affection)")
+        dup_choice = input("Choice: ").strip()
+        if dup_choice == "1":
+            player["gold"] = player.get("gold", 0) + sell_price
+            print(f"Sold the captured {mg.get('name', 'girl')} for {sell_price} gold.")
+            print(f"  Gold: {player['gold']}")
+            return False
+        elif dup_choice == "3":
+            aff_cap = existing.get("affection_cap", 100)
+            existing["affection"] = min(aff_cap, existing.get("affection", 30) + 20)
+            print(f"Your {existing.get('name', 'girl')} bonded with the newcomer!")
+            print(f"  Affection +20 (now {existing['affection']}/{aff_cap})")
+            return False
+        else:
+            print(f"You release the captured {mg.get('name', 'girl')} back to the wild.")
+            return False
+
     max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house.get("level", 1), 2)
     total_girls = len(house.get("monster_girls", [])) + len(player.get("allies", []))
     if total_girls >= max_girls:

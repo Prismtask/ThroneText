@@ -25,16 +25,17 @@ def enemy_stats(enemy_key, player=None):
     attrs = compute_enemy_attributes(enemy_key)
 
     multiplier = get_difficulty_multiplier_from_time(player) if player else 1.0
+    pandemonium_mult = 1.7 if player and player.get("pandemonium_mode") else 1.0
 
     base_hp = template["base_hp"]
     str_mod = attrs["Strength"]
     con_mod = attrs["Constitution"]
     dex_mod = attrs["Dexterity"]
 
-    scaled_hp = int(base_hp * multiplier)
-    scaled_str = int(str_mod * (1 + (multiplier - 1) * 0.7))
-    scaled_con = int(con_mod * (1 + (multiplier - 1) * 0.6))
-    scaled_dex = int(dex_mod * (1 + (multiplier - 1) * 0.5))
+    scaled_hp = int(base_hp * multiplier * pandemonium_mult)
+    scaled_str = int(str_mod * (1 + (multiplier - 1) * 0.7) * pandemonium_mult)
+    scaled_con = int(con_mod * (1 + (multiplier - 1) * 0.6) * pandemonium_mult)
+    scaled_dex = int(dex_mod * (1 + (multiplier - 1) * 0.5) * pandemonium_mult)
 
     result = {
         "key": enemy_key,
@@ -129,3 +130,68 @@ def player_ler_mod(player):
 
 def player_chr_mod(player):
     return player["attributes"]["Charisma"]
+
+# ── Critical Hit System ─────────────────────────────────────────────────────
+
+import random
+
+CRIT_MULTIPLIER = 1.5
+
+
+def get_critical_chance(entity, entity_type="player", dex=None, lrn=None):
+    """Calculate critical hit chance with diminishing returns and hard caps.
+
+    Formula (Player / Ally):
+        Base 5% + min(DEX * 0.003, 8%) + min(LRN * 0.002, 5%)
+        Hard cap: 20%
+
+    Formula (Enemy):
+        Base 3% + min(DEX * 0.003, 6%)
+        Hard cap: 12%
+
+    Optional dex / lrn can be passed in to avoid circular imports for allies.
+    """
+    if entity_type == "enemy":
+        base = 0.03
+        dex_val = dex if dex is not None else entity.get("dex_mod", 0)
+        dex_bonus = min(dex_val * 0.003, 0.06)
+        cap = 0.12
+        crit_chance = base + dex_bonus
+    else:
+        base = 0.05
+        if dex is None:
+            dex = get_effective_attribute(entity, "Dexterity")
+        if lrn is None:
+            lrn = get_effective_attribute(entity, "Learning")
+        dex_bonus = min(dex * 0.003, 0.08)
+        lrn_bonus = min(lrn * 0.002, 0.05)
+        cap = 0.20
+        crit_chance = base + dex_bonus + lrn_bonus
+
+    # Temporary buffs / debuffs that affect crit chance
+    for buff in entity.get("active_buffs", []):
+        if buff.get("type") == "crit_chance":
+            crit_chance += buff.get("value", 0)
+    for debuff in entity.get("active_debuffs", []):
+        if debuff.get("type") == "crit_chance_down":
+            crit_chance -= debuff.get("value", 0)
+
+    return max(0.0, min(crit_chance, cap))
+
+
+def roll_critical_hit(entity, entity_type="player", dex=None, lrn=None):
+    """Roll for a critical hit. Returns (is_crit, crit_chance)."""
+    chance = get_critical_chance(entity, entity_type, dex, lrn)
+    return random.random() < chance, chance
+
+
+def apply_critical_damage(damage, is_crit, multiplier=CRIT_MULTIPLIER):
+    """Apply critical hit multiplier to damage."""
+    if is_crit:
+        return int(damage * multiplier)
+    return damage
+
+
+def format_critical_tag(is_crit):
+    """Return a combat message tag for critical hits."""
+    return " [CRITICAL!]" if is_crit else ""

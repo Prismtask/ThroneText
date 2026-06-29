@@ -60,7 +60,7 @@ def combat_broodmother(player, floor=None):
                     ctx["minion_timer"] = 3
                     break
 
-    def enemy_turn_hook(enemy, ctx, pl, p_con, defending):
+    def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         is_boss = (enemy.get("key") == "broodmother_vileheart")
         is_enraged = (is_boss and ctx["boss_enraged_turns"] > 0)
         

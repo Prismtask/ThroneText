@@ -99,6 +99,8 @@ from .dialogues import (
     BLACKWAKE_BLACK_MARKET_DIALOGUE,
 
     # Isle of Glass  (magical island — sea access only)
+    ISLE_OF_GLASS_RECEPTIONIST_DIALOGUE,
+    ISLE_OF_GLASS_PORTMASTER_DIALOGUE,
     ISLE_OF_GLASS_ARCANE_TOWER_DIALOGUE,
 
     # Mirefall  (NEW — deep swamp town)
@@ -581,10 +583,12 @@ CITIES = {
 
     "isle_of_glass": {
         "name": "Isle of Glass",
-        "biome": "magical",
+        "biome": "pandemonium",
         "description": "A crystalline island that does not appear on any mundane map. Mages and scholars make pilgrimage here; most never leave.",
         "services": ["arcane_tower", "port"],
         "dialogues": {
+            "receptionist": ISLE_OF_GLASS_RECEPTIONIST_DIALOGUE,
+            "port": ISLE_OF_GLASS_PORTMASTER_DIALOGUE,
             "arcane_tower": ISLE_OF_GLASS_ARCANE_TOWER_DIALOGUE,
         },
         "travel": {

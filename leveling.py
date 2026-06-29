@@ -79,6 +79,20 @@ def get_incomplete_biomes(player):
 def get_next_level_cap(current_cap):
     return ((current_cap // 10) + 1) * 10
 
+
+def is_pandemonium_unlocked(player):
+    """Check if the player has cleared Floor 40 in at least 4 unique biomes."""
+    required_floors = 40
+    required_biomes = 4
+    cleared_biomes = set()
+    for city_id in CITIES:
+        city_prog = player.get("city_floors", {}).get(city_id, {})
+        if city_prog.get("max_floor", 1) >= required_floors:
+            biome = CITIES[city_id].get("biome", "temperate")
+            cleared_biomes.add(biome)
+    return len(cleared_biomes) >= required_biomes
+
+
 def get_current_city_id(player):
     loc = player.get("location", "solmere")
     if loc == "dungeon":
@@ -178,8 +192,17 @@ def gain_exp(player, amount):
 def gain_exp_ally(ally, amount):
     """Award XP to an ally and handle level-ups using the same HUD as player."""
     from combat.ally import ally_max_hp
+    from combat.ally_skills import gain_skill_learning_exp
 
-    # If already at the level cap, silently discard XP
+    # ── Skill learning always progresses regardless of level cap ──
+    learned_skill = gain_skill_learning_exp(ally, amount)
+    if learned_skill:
+        from combat.ally_skills import get_learnable_skill_def
+        skill_def = get_learnable_skill_def(learned_skill)
+        skill_name = skill_def.get("name", learned_skill) if skill_def else learned_skill
+        print(f"*** {ally['name']} has mastered {skill_name}! ***")
+
+    # ── Level XP is blocked at level cap ──
     if ally["level"] >= ally.get("level_cap", 10):
         return False
 
@@ -221,5 +244,6 @@ def gain_exp_ally(ally, amount):
         ally["max_hp"] = new_max
         ally["current_hp"] += (new_max - old_max)
         print(f"Maximum HP increased by {new_max - old_max}. New max: {new_max}")
+
 
     return leveled

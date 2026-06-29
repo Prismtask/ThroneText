@@ -49,7 +49,8 @@ def sell_items(player):
         tag = f"[{item.get('rarity','common')}]"
         count_str = f" (x{count})" if count > 1 else ""
         if item.get("type") == "equipment":
-            print(f"{i+1}. {item['name']}{count_str} ({item['slot']}) {tag} — {stack_price} gold")
+            stat = _item_stat_line(item)
+            print(f"{i+1}. {item['name']}{count_str} ({item['slot']}) {stat} {tag} — {stack_price} gold")
         else:
             print(f"{i+1}. {item['name']}{count_str} ({item['type']}) {tag} — {stack_price} gold")
     print("\nEnter numbers to sell (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")

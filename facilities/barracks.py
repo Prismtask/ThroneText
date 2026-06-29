@@ -138,24 +138,25 @@ def select_skill_from_category(player, ally_data, category):
     confirm = input("\n(y/n): ").strip().lower()
     
     if confirm == 'y':
-        # Load the ally from house for real update
+        # Update the active party ally directly (recruited allies are not in house)
         from .house import get_house_data, save_house_data
         house_data = get_house_data(player)
         
-        # Find and update the ally
-        for girl in house_data:
-            if girl['name'] == ally_data['name']:
-                success = teach_ally_skill(girl, chosen_skill_id)
+        # Find and update the active party ally
+        success = False
+        for party_ally in player.get("allies", []):
+            if party_ally.get("name") == ally_data['name']:
+                success = teach_ally_skill(party_ally, chosen_skill_id)
                 if success:
                     print(f"\n{ally_data['name']} is now learning {skill_name}!")
-                    save_house_data(player, house_data)
-                    # Also update the active party copy so the skill appears immediately
-                    for party_ally in player.get("allies", []):
-                        if party_ally.get("name") == ally_data['name']:
-                            teach_ally_skill(party_ally, chosen_skill_id)
-                            break
-                else:
-                    print(f"\nFailed to teach skill (already learning or already knows it).")
                 break
-    
-    input("\nPress Enter...")
+        
+        # Also update the house copy if she exists there (for non-recruited girls)
+        if success:
+            for girl in house_data:
+                if girl['name'] == ally_data['name']:
+                    teach_ally_skill(girl, chosen_skill_id)
+                    break
+            save_house_data(player, house_data)
+        else:
+            print(f"\nFailed to teach skill (already learning or already knows it).")

@@ -8,7 +8,7 @@ A rich, story-driven text-based dungeon crawler RPG built in Python.
 
 **Throne of Plaintext** is a deep, classic-style text RPG where you explore dangerous dungeons, manage a growing adventuring party, build relationships with cities, and face increasingly powerful foes — including epic superbosses that change the battlefield with unique mechanics.
 
-You start as a fresh adventurer in the city of **Solmere** and gradually unlock more cities, better gear, houses, monster-girl companions, and powerful abilities. Time passes realistically, affecting difficulty, shop stock, and bounty deadlines. Every choice matters.
+You start as a fresh adventurer in the city of **Solmere** and gradually unlock more cities, better gear, a house, monster-girl companions, and powerful abilities. Time passes realistically, affecting travel danger, encounter rates, and inn prices. Every choice matters.
 
 ---
 
@@ -32,21 +32,21 @@ You start as a fresh adventurer in the city of **Solmere** and gradually unlock 
 
 ## How to Play
 
-1. **Run the game:** run TerminalRPG.exe
+1. **Run the game:** `python main.py` (or run `TerminalRPG.exe` if using the built release)
 2. **Create a new character** or load an existing save from multiple slots.
 3. You begin in your origin city. Use the city menu to rest, shop, gear up, or take bounties.
 4. When ready, **enter the dungeon** and descend floor by floor.
 5. Survive, grow stronger, and uncover the secrets of the world.
 
-> **Tip:** You can always `[S]ave` after clearing a floor or from any city menu.
+> **Tip:** You can always `[S]ave` after clearing a floor or from any city menu. You can also delete old saves from the main menu.
 
 ---
 
 ## Core Game Loop
 
-1. **Visit Cities** — Rest, shop, train, upgrade your house, take bounties, or buy ships.
+1. **Visit Cities** — Rest, shop, train, upgrade your house, take bounties, or buy ships and mounts.
 2. **Descend into Dungeons** — Clear floors filled with enemies and bosses. Each city has its own themed dungeon with biome-appropriate foes.
-3. **Grow Stronger** — Level up, craft/enhance gear, collect rare items, capture monster girls, and recruit allies.
+3. **Grow Stronger** — Level up, enhance gear, collect rare items, capture monster girls, recruit allies, and raise your level cap by clearing biomes.
 4. **Travel the World** — Journey between cities by land or sea. Random encounters and events keep every trip exciting.
 
 ---
@@ -63,8 +63,8 @@ When starting a new game, you will:
   - *Warrior, Mage, Rogue, Cleric, Ranger, Paladin, Warlock, Barbarian*
   - Each class provides unique passive skills, active skills, and elemental profiles.
 
-- **Allocate 15 Attribute Points** across six attributes and for each 5 points you will get a passive bonuses:
-  - **Strength** — Melee damage, physical attacks
+- **Allocate 15 Attribute Points** across six attributes. For every 5 points in a single attribute you unlock a passive milestone bonus:
+  - **Strength** — Melee damage, physical attacks, carry weight
   - **Constitution** — HP and durability
   - **Dexterity** — Speed, initiative, dodge
   - **Wisdom** — Healing, perception
@@ -77,7 +77,7 @@ When starting a new game, you will:
 
 ## World & Cities
 
-The world is divided into **five regions** with **18 unique cities**, each with its own biome, services, dialogue NPCs, and dungeon theme.
+The world is divided into **five regions** with **19 unique cities**, each with its own biome, services, dialogue NPCs, and dungeon theme.
 
 ### North Region
 | City | Biome | Notable Features |
@@ -88,7 +88,7 @@ The world is divided into **five regions** with **18 unique cities**, each with 
 ### Central Region
 | City | Biome | Notable Features |
 |------|-------|------------------|
-| **Solmere** | Temperate | *Starting hub*; most services including Guild |
+| **Solmere** | Temperate | *Starting hub*; most services including Guild & Blacksmith |
 | **Greyharbor** | Temperate | River trade city; Trade Hall, Guild |
 | **Elderfen** | Swamp | Herbalist hub; stilt-town atmosphere |
 
@@ -104,21 +104,21 @@ The world is divided into **five regions** with **18 unique cities**, each with 
 | City | Biome | Notable Features |
 |------|-------|------------------|
 | **Sunreach** | Savanna | Temple city; great radiant temple |
-| **Brinewatch** | Coastal | Major western port; Port, Shipyard, Trade Hall |
+| **Brinewatch** | Coastal | Major western port; Port, Shipyard, Trade Hall, Blacksmith |
 | **Mirefall** | Swamp | Deep swamp town; Herbalist, Black Market |
 | **Ashkara** | Desert | Desert oasis; Black Market, Blacksmith, Guild |
-| **Dunemar** | Desert | Trade post; Trade Hall, Black Market |
-| **Saltmarsh** | Coastal | Fishing village; minor port |
+| **Dunemar** | Desert | Trade post; Trade Hall, Black Market, sea route to Coralhaven |
+| **Saltmarsh** | Coastal | Fishing village; minor port, sea routes to Blackwake & Tidebreak |
 
 ### Far Reaches / Islands
 | City | Biome | Notable Features |
 |------|-------|------------------|
-| **Tidebreak** | Coastal | Great southern port hub; Port, Shipyard |
+| **Tidebreak** | Coastal | Great southern port hub; Port, Shipyard, Trade Hall |
 | **Coralhaven** | Tropical | Island paradise; Port, Temple, Herbalist, Guild, Gift Shop |
-| **Blackwake** | Coastal | *Hidden pirate cove*; sea-only; Black Market |
-| **Isle of Glass** | Magical | *Hidden island*; sea-only; Arcane Tower |
+| **Blackwake** | Coastal | *Hidden pirate cove*; sea-only, Inn, Port, Black Market |
+| **Isle of Glass** | Magical | *Hidden island*; sea-only; Arcane Tower, Port |
 
-> **Sea-only cities** (Coralhaven, Blackwake, Isle of Glass) can only be reached by ship from port cities.
+> **Sea-only cities** (Coralhaven, Blackwake, Isle of Glass) can only be reached by ship from port cities. Blackwake and Isle of Glass lack regular shops.
 
 ---
 
@@ -130,19 +130,19 @@ Each city offers a subset of the following services:
 |---------|-------------|
 | **Shop** | Buy consumables, equipment, and supplies. Stock size and prices vary by city. |
 | **Inn** | Rest to restore HP. Cost varies by city; free after a certain hour in some places. |
-| **Blacksmith** | Enhance equipment (+1 to +N) using gold. Prices scale with enhancement level. Charisma and city favor reduce costs. |
+| **Blacksmith** | Enhance equipment (+1 to +N) using gold, or **fuse Scrolls** onto equipment to set its rarity. Prices scale with enhancement level. Charisma and city favor reduce costs. |
 | **Temple** | Receive blessings that buff all attributes for several floors. Cures curses. |
-| **Guild** | Pick up **bounties** (hunt contracts). Bounties scale with your level and city **favor**. Higher favor = harder contracts, better rewards. |
-| **Trade Hall** | Buy and sell goods, acquire **mounts** that reduce travel time and encounter danger. |
-| **Port** | Pay for sea voyages to distant destinations. Requires a port city. |
-| **Shipyard** | Purchase ships that unlock certain sea routes permanently. |
+| **Guild** | Pick up **bounties** (hunt contracts). Bounties scale with your level and city **favor**. Higher favor = harder contracts, better rewards. Ranked Bronze → Silver → Gold → Platinum, with a 1–5 star difficulty. |
+| **Trade Hall** | Buy a **House Deed** (one per player), buy and sell goods, and acquire **mounts** that reduce travel time and encounter danger. |
+| **Port** | Pay for sea voyages to distant destinations. Requires a port city. If you own a ship, voyages are faster and free. |
+| **Shipyard** | Purchase ships (Merchant Sloop or War Frigate) that unlock sea routes and grant travel bonuses. |
 | **Barracks** | Train to gain temporary attribute buffs for your next dungeon run. |
 | **Herbalist** | Buy natural remedies, antidotes, and unique potions. |
-| **Arcane Tower** | Magical services: identify items, imbue gear, arcane training. |
+| **Arcane Tower** | Magical services: identify items, arcane training. |
 | **Black Market** | Rare and dangerous goods. Sells items not found in normal shops. Higher prices, unique stock. |
 | **Gift Shop** | Buy affection gifts for monster girls. |
 | **Skill Book** | View and manage your unlocked class skills and their mastery levels. |
-| **Your House** | *(Only if you own one in this city)* Manage storage, collect passive income, rest with bed buffs, and house monster girls. |
+| **Your House** | *(Only if you own one)* Manage storage, collect passive income, rest with bed buffs, and house monster girls. |
 | **View Stats / Inventory** | Inspect your character, allies, equipment, and manage items. |
 | **Travel** | Journey to connected cities by land. |
 | **Enter Dungeon** | Descend into that city's themed dungeon. You can choose any unlocked floor. |
@@ -161,7 +161,7 @@ Each city has its own **themed dungeon** with biome-appropriate enemies.
   - **Merchant** — Wandering shop with discounted goods
   - **Stat Check** — Narrative skill challenges (e.g., heal a wounded adventurer, scare off a beast)
   - **Treasure** — Guaranteed rare+ item cache
-  5. **Trap** — Avoidable hazard (DEX + WIS check to disarm)
+  - **Trap** — Avoidable hazard (DEX + WIS check to disarm)
 
 ### Boss Floors
 - Every **5th floor** is a **true boss fight** with a powerful enemy.
@@ -173,7 +173,6 @@ Each city has its own **themed dungeon** with biome-appropriate enemies.
 - **Per-city floor tracking**: each city remembers its own current floor and maximum cleared floor.
 - You can **descend to any unlocked floor** — no need to replay from Floor 1.
 - Mid-floor progress is saved: if you quit during a run, you resume in the same room.
-- Final non-boss rooms on non-milestone floors feature an **Empowered** enemy (buffed HP and stats).
 
 ### Difficulty
 - Enemy level scales with floor number (roughly ±6 to +3 range).
@@ -198,19 +197,20 @@ Combat is **turn-based** with an **initiative roll** each round.
 - Monster girls are marked with the `♀` symbol.
 
 ### Player Actions
-| Action | Description |
-|--------|-------------|
-| **Attack** | Basic attack. Target any enemy. Weapon scaling stat (STR, DEX, etc.) determines damage. |
-| **Skills** | Use unlocked class skills (numbered 1–9). Skills have cooldowns, mastery levels, and scale with your primary attribute + Learning. |
-| **Defend** | Reduce incoming damage for the round. |
-| **Use Item** | Consume potions, elixirs, or throwables from inventory. |
-| **Capture** | Throw a capture net at a weakened monster girl to add her to your house. |
-| **Flee** | Attempt to escape. Success chance based on DEX and enemy strength. |
-| **Wield the Abyss** | *(Legendary weapon action — only when Abyss Fang is equipped)* |
+| Action | Key | Description |
+|--------|-----|-------------|
+| **Attack** | `a` | Basic attack. Target any enemy. Weapon scaling stat (STR, DEX, etc.) determines damage. |
+| **Skills** | `1`–`9` | Use unlocked class skills. Skills have cooldowns, mastery levels, and scale with your primary attribute + Learning. |
+| **Defend** | `d` | Reduce incoming damage for the round. |
+| **Use Item** | `u` | Consume potions, elixirs, or throwables from inventory. |
+| **Capture** | `c` | Throw a capture net at a weakened monster girl to add her to your house. |
+| **Flee** | `f` | Attempt to escape. Success chance based on DEX and enemy strength. |
+| **Wield the Abyss** | `w` | *(Legendary weapon action — only when Abyss Fang is equipped)* Triggers the Dream Devour effect. |
 
 ### Ally Turns
 - All allies are **controlled by the player** — you choose their actions each turn.
 - Allies can attack, use innate skills, use items, or defend. They cannot capture or wield the Abyss.
+- Allies have their own **equipment slots** (weapon, armor, accessory1, accessory2) and can be geared up independently.
 
 ### Status Effects
 - **Poison** — Damage over time
@@ -239,7 +239,7 @@ Combat is **turn-based** with an **initiative roll** each round.
 - Success chance increases as HP drops.
 
 ### Housing & Affection
-- Captured monster girls are stored in your **House** (in whichever city you own one).
+- Captured monster girls are stored in your **House**.
 - Raise their **affection** by giving gifts (from Gift Shops) or through dungeon victories.
 - Each girl has a preferred gift type that grants bonus affection.
 
@@ -247,6 +247,12 @@ Combat is **turn-based** with an **initiative roll** each round.
 - Once a monster girl's affection reaches **50+**, you can **recruit** her as an active **ally**.
 - Allies join your combat party (max 3 active at a time).
 - Allies gain EXP from battles, level up, and unlock innate/learnable skills.
+
+### Marriage & Wedding Accessories
+- Once affection reaches a very high threshold, some monster girls can be **married**.
+- Married girls gift you a **Legendary Wedding Accessory** with unique combat effects.
+- If the married girl is in your active party, the accessory effects are **amplified (Bonded)**.
+- Wedding effects include: Bark Shield, Keening Wail, Shadow Cloak, Cosmic Gravity, Crimson Feast, and more.
 
 ### Ally Management
 - Allies have their own stats, equipment slots, and HP.
@@ -258,7 +264,9 @@ Combat is **turn-based** with an **initiative roll** each round.
 
 ## Player Housing
 
-Buy a house in any city to gain:
+You may own **one house globally** (placed in any city except Blackwake and Isle of Glass). Buy a deed at any Trade Hall to place it.
+
+Owning a house gives you:
 
 | Feature | Benefit |
 |---------|---------|
@@ -275,7 +283,7 @@ Buy a house in any city to gain:
 | 2 | Cottage | 600g | 20 | 18g | 4 |
 | 3 | Manor | 1,500g | 35 | 35g | 8 |
 
-> Wealthier cities (Skylume, Tidebreak, Isle of Glass) yield higher passive income.
+> Wealthier cities (Skylume, Tidebreak, Isle of Glass) yield higher passive income. You can move your house by buying a new deed, but you can only ever have one.
 
 ---
 
@@ -287,7 +295,13 @@ Buy a house in any city to gain:
   - **+HP** (Constitution-based formula)
   - **+1 Attribute Point** to allocate freely
   - **New class skills** unlocked at specific levels
-  - **Level cap** starts at 10 and can be raised through ascension mechanics.
+
+### Level Cap & Ascension
+- Your **level cap** starts at **10**.
+- To raise it, you must clear **unique biome dungeons** to the current cap:
+  - 10 → 20 requires 2 biomes cleared to Floor 10
+  - 20 → 30 requires 4 biomes, and so on.
+- This encourages exploring the world rather than grinding a single dungeon.
 
 ### Skill System
 - Each class has a unique skill tree defined in YAML data files.
@@ -299,9 +313,9 @@ Buy a house in any city to gain:
 - **Rarity tiers**: Common → Uncommon → Rare → Epic → Legendary
 - **Weapons** scale with STR, DEX, Learning, Wisdom, or Charisma depending on type.
 - **Armor** provides CON and elemental resistances.
-- **Accessories** grant unique bonuses.
+- **Accessories** grant unique bonuses and can be wedding items with special effects.
 - **Enhancement**: Blacksmiths can upgrade equipment to +1, +2, etc., increasing stats.
-- **Scrolls**: Apply permanent bonus stats to equipment.
+- **Scroll Fusion**: Use Fusion Scrolls at the blacksmith to force an item's rarity to Common, Uncommon, Rare, Epic, or Legendary.
 
 ### Inventory
 - Base inventory size can be expanded with upgrades.
@@ -318,9 +332,10 @@ Buy a house in any city to gain:
 - **Mounts** reduce travel time and encounter danger. Bought at Trade Halls.
 
 ### Sea Travel
-- Only available from **Port** cities (Brinewatch, Saltmarsh, Tidebreak, Coralhaven, Blackwake, Dunemar, Isle of Glass).
-- Pay a fee for passage. Some destinations require owning a ship from the **Shipyard**.
+- Only available from **Port** cities (Brinewatch, Saltmarsh, Tidebreak, Coralhaven, Blackwake, Isle of Glass, Dunemar).
+- Pay a fee for passage (100g per voyage). Some destinations require owning a ship from the **Shipyard**.
 - Island cities (Coralhaven, Blackwake, Isle of Glass) are **only reachable by sea**.
+- Owning a ship (Sloop or Frigate) makes sea voyages **free and 30% faster**.
 
 ### Travel Events
 - Random encounters during travel: merchants, ambushes, hazards, storms (at sea), and opportunities.
@@ -336,11 +351,11 @@ Most interactions use **numbered choices** (1, 2, 3, ...).
 ```
 1-9   Use unlocked class skills
 a     Attack
-b     Defend (brace)
+d     Defend (brace)
 f     Flee
-i     Use item
+u     Use item
 c     Capture (monster girls only, when available)
-x     Wield the Abyss (requires Abyss Fang equipped)
+w     Wield the Abyss (requires Abyss Fang equipped)
 ```
 
 ### General
@@ -353,8 +368,8 @@ x     Wield the Abyss (requires Abyss Fang equipped)
 ## Technical Info
 
 - **Language:** Pure Python 3 (no external dependencies required for the core game).
-- **Entry Point:** `main.py`
-- **Saves:** Stored in the `savefile/` folder. Multiple save slots supported.
+- **Entry Point:** `main.py` (or `TerminalRPG.exe`)
+- **Saves:** Stored in the `savefile/` folder. Multiple save slots supported; delete option available from main menu.
 - **Data:** Enemy and skill data are loaded from YAML files for easy modding.
 - **Modular Design:** Easy to extend with new cities, enemies, items, superbosses, or skills.
 - **Save Compatibility:** New fields are automatically added to old save files when loaded.

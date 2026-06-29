@@ -5,7 +5,12 @@ Human:
     level: 1
     base_hp: 15
     mods:
-      Dexterity: 1
+      Strength: 3
+      Constitution: 1
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   human_peasant_brigand:
@@ -13,7 +18,13 @@ Human:
     race: Human
     level: 1
     base_hp: 14
-    mods: {}
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   bandit:
@@ -22,7 +33,12 @@ Human:
     level: 2
     base_hp: 19
     mods:
-      Dexterity: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   thief:
@@ -31,7 +47,12 @@ Human:
     level: 2
     base_hp: 16
     mods:
-      Dexterity: 2
+      Strength: 2
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   coastal_raider:
@@ -40,7 +61,12 @@ Human:
     level: 3
     base_hp: 22
     mods:
+      Strength: 3
+      Constitution: 2
       Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   novice_mage:
@@ -49,7 +75,12 @@ Human:
     level: 3
     base_hp: 18
     mods:
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
       Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   temperate_bandit_leader:
@@ -58,8 +89,12 @@ Human:
     level: 3
     base_hp: 24
     mods:
-      Strength: 1
-      Dexterity: 1
+      Strength: 3
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   bandit_bruiser:
@@ -69,6 +104,11 @@ Human:
     base_hp: 30
     mods:
       Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   human_bounty_hunter:
@@ -77,8 +117,12 @@ Human:
     level: 4
     base_hp: 28
     mods:
+      Strength: 2
+      Constitution: 2
       Dexterity: 2
-      Strength: 1
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   cultist:
@@ -87,7 +131,12 @@ Human:
     level: 5
     base_hp: 26
     mods:
-      Learning: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   mercenary:
@@ -96,8 +145,12 @@ Human:
     level: 5
     base_hp: 32
     mods:
-      Strength: 1
-      Constitution: 1
+      Strength: 2
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   human_archer_captain:
@@ -106,8 +159,12 @@ Human:
     level: 6
     base_hp: 28
     mods:
-      Dexterity: 2
-      Wisdom: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   human_fencer:
@@ -116,7 +173,12 @@ Human:
     level: 6
     base_hp: 30
     mods:
-      Dexterity: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   elite_assassin:
@@ -125,7 +187,12 @@ Human:
     level: 7
     base_hp: 42
     mods:
-      Dexterity: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   veteran_swordsman:
@@ -134,8 +201,12 @@ Human:
     level: 7
     base_hp: 55
     mods:
-      Strength: 2
-      Dexterity: 1
+      Strength: 4
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   dark_knight:
@@ -144,8 +215,12 @@ Human:
     level: 8
     base_hp: 52
     mods:
-      Strength: 2
-      Constitution: 2
+      Strength: 4
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   human_imperial_knight:
@@ -154,8 +229,12 @@ Human:
     level: 9
     base_hp: 54
     mods:
-      Strength: 2
-      Constitution: 1
+      Strength: 5
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   rogue_assassin:
@@ -164,7 +243,12 @@ Human:
     level: 9
     base_hp: 60
     mods:
-      Dexterity: 3
+      Strength: 4
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   elven_blade_dancer:
@@ -173,8 +257,12 @@ Human:
     level: 10
     base_hp: 58
     mods:
-      Dexterity: 3
-      Strength: 1
+      Strength: 3
+      Constitution: 3
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   human_high_mage:
@@ -183,7 +271,12 @@ Human:
     level: 10
     base_hp: 48
     mods:
+      Strength: 4
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 3
       Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   human_swordmaster:
@@ -192,8 +285,12 @@ Human:
     level: 10
     base_hp: 60
     mods:
-      Dexterity: 3
-      Strength: 1
+      Strength: 3
+      Constitution: 3
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   warlord_general:
@@ -202,8 +299,12 @@ Human:
     level: 10
     base_hp: 62
     mods:
-      Strength: 3
-      Charisma: 2
+      Strength: 4
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   human_blackguard:
@@ -212,8 +313,12 @@ Human:
     level: 12
     base_hp: 72
     mods:
-      Strength: 2
-      Constitution: 2
+      Strength: 4
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
 Beast:
@@ -222,7 +327,13 @@ Beast:
     race: Beast
     level: 1
     base_hp: 9
-    mods: {}
+    mods:
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   cave_rat:
@@ -230,7 +341,13 @@ Beast:
     race: Beast
     level: 1
     base_hp: 10
-    mods: {}
+    mods:
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   forest_spider:
@@ -239,7 +356,12 @@ Beast:
     level: 1
     base_hp: 12
     mods:
+      Strength: 2
+      Constitution: 2
       Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   wild_dog:
@@ -247,7 +369,13 @@ Beast:
     race: Beast
     level: 1
     base_hp: 14
-    mods: {}
+    mods:
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   beast_feral_cat:
@@ -256,7 +384,12 @@ Beast:
     level: 2
     base_hp: 13
     mods:
-      Dexterity: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   swamp_mud_crawler:
@@ -265,7 +398,12 @@ Beast:
     level: 2
     base_hp: 16
     mods:
-      Constitution: 2
+      Strength: 2
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   desert_viper:
@@ -274,7 +412,12 @@ Beast:
     level: 3
     base_hp: 20
     mods:
-      Dexterity: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   forest_venom_spitter:
@@ -283,7 +426,12 @@ Beast:
     level: 3
     base_hp: 18
     mods:
-      Dexterity: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   beast_maned_hyena:
@@ -292,8 +440,12 @@ Beast:
     level: 4
     base_hp: 26
     mods:
-      Strength: 1
-      Dexterity: 1
+      Strength: 4
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   dire_wolf:
@@ -302,7 +454,12 @@ Beast:
     level: 4
     base_hp: 32
     mods:
-      Dexterity: 1
+      Strength: 4
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   gnoll_marauder:
@@ -311,7 +468,12 @@ Beast:
     level: 4
     base_hp: 30
     mods:
-      Strength: 2
+      Strength: 5
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   venom_wolf:
@@ -320,7 +482,12 @@ Beast:
     level: 4
     base_hp: 29
     mods:
-      Dexterity: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   battle_hound:
@@ -329,8 +496,12 @@ Beast:
     level: 5
     base_hp: 31
     mods:
-      Dexterity: 2
-      Strength: 1
+      Strength: 3
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   beast_snow_leopard:
@@ -339,7 +510,12 @@ Beast:
     level: 6
     base_hp: 32
     mods:
-      Dexterity: 3
+      Strength: 3
+      Constitution: 3
+      Dexterity: 5
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   beast_rock_crab:
@@ -348,7 +524,12 @@ Beast:
     level: 7
     base_hp: 44
     mods:
-      Constitution: 2
+      Strength: 3
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   beast_giant_wasp:
@@ -357,7 +538,12 @@ Beast:
     level: 8
     base_hp: 38
     mods:
-      Dexterity: 3
+      Strength: 3
+      Constitution: 3
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   beast_thunder_bird:
@@ -366,8 +552,12 @@ Beast:
     level: 9
     base_hp: 46
     mods:
-      Dexterity: 2
-      Strength: 1
+      Strength: 5
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   beast_alpha_wolf:
@@ -376,8 +566,12 @@ Beast:
     level: 10
     base_hp: 52
     mods:
-      Strength: 2
-      Dexterity: 2
+      Strength: 5
+      Constitution: 3
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   giant_frost_bear:
@@ -386,8 +580,12 @@ Beast:
     level: 12
     base_hp: 78
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 5
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   beast_cave_bear:
@@ -396,8 +594,12 @@ Beast:
     level: 13
     base_hp: 70
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 6
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   beast_sabertooth_tiger:
@@ -406,8 +608,12 @@ Beast:
     level: 14
     base_hp: 74
     mods:
-      Strength: 3
-      Dexterity: 2
+      Strength: 6
+      Constitution: 4
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   beast_alpha_thunder_bird:
@@ -416,8 +622,12 @@ Beast:
     level: 15
     base_hp: 110
     mods:
-      Strength: 4
-      Dexterity: 3
+      Strength: 6
+      Constitution: 5
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: true
     super_boss: false
   mutated_bear:
@@ -426,8 +636,12 @@ Beast:
     level: 15
     base_hp: 115
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 6
+      Constitution: 6
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   vileheart_spiderling:
@@ -436,18 +650,27 @@ Beast:
     level: 15
     base_hp: 45
     mods:
-      Dexterity: 5
-      Strength: 2
+      Strength: 5
+      Constitution: 5
+      Dexterity: 7
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
+    minion_only: true
   beast_mammoth:
     name: Mammoth
     race: Beast
     level: 16
     base_hp: 92
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 7
+      Constitution: 6
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   beast_great_wyvern:
@@ -456,8 +679,12 @@ Beast:
     level: 17
     base_hp: 85
     mods:
-      Strength: 3
-      Dexterity: 2
+      Strength: 8
+      Constitution: 5
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   beast_crag_wyrm:
@@ -466,8 +693,12 @@ Beast:
     level: 18
     base_hp: 98
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 7
+      Constitution: 6
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   minotaur_warrior:
@@ -476,7 +707,12 @@ Beast:
     level: 18
     base_hp: 145
     mods:
-      Strength: 5
+      Strength: 8
+      Constitution: 5
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   beast_desert_worm:
@@ -485,8 +721,12 @@ Beast:
     level: 20
     base_hp: 112
     mods:
-      Constitution: 4
-      Strength: 1
+      Strength: 6
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   broodmother_vileheart:
@@ -495,9 +735,12 @@ Beast:
     level: 20
     base_hp: 350
     mods:
-      Strength: 6
-      Constitution: 6
-      Dexterity: 4
+      Strength: 7
+      Constitution: 7
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: true
     super_boss: true
   beast_thunder_lizard:
@@ -506,8 +749,12 @@ Beast:
     level: 21
     base_hp: 110
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 8
+      Constitution: 7
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   beast_roc_chick:
@@ -516,8 +763,12 @@ Beast:
     level: 22
     base_hp: 105
     mods:
-      Strength: 3
-      Dexterity: 2
+      Strength: 8
+      Constitution: 6
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   beast_lightning_roc:
@@ -526,8 +777,12 @@ Beast:
     level: 23
     base_hp: 118
     mods:
-      Dexterity: 3
-      Strength: 2
+      Strength: 8
+      Constitution: 6
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   chimera_alpha:
@@ -536,8 +791,12 @@ Beast:
     level: 24
     base_hp: 190
     mods:
-      Strength: 4
-      Dexterity: 4
+      Strength: 8
+      Constitution: 7
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   beast_sea_serpent:
@@ -546,8 +805,12 @@ Beast:
     level: 25
     base_hp: 125
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 9
+      Constitution: 8
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   beast_titan_snake:
@@ -556,8 +819,12 @@ Beast:
     level: 26
     base_hp: 135
     mods:
-      Strength: 4
-      Dexterity: 2
+      Strength: 8
+      Constitution: 7
+      Dexterity: 8
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   beast_thunder_bird_elder:
@@ -566,8 +833,12 @@ Beast:
     level: 28
     base_hp: 145
     mods:
-      Dexterity: 4
-      Strength: 2
+      Strength: 9
+      Constitution: 7
+      Dexterity: 9
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   beast_ancient_wyrm:
@@ -576,8 +847,12 @@ Beast:
     level: 30
     base_hp: 170
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 10
+      Constitution: 9
+      Dexterity: 8
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   beast_sky_leviathan:
@@ -586,8 +861,12 @@ Beast:
     level: 32
     base_hp: 200
     mods:
-      Strength: 5
-      Constitution: 4
+      Strength: 11
+      Constitution: 9
+      Dexterity: 8
+      Wisdom: 4
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   beast_earth_breaker:
@@ -596,8 +875,12 @@ Beast:
     level: 36
     base_hp: 240
     mods:
-      Strength: 6
-      Constitution: 4
+      Strength: 11
+      Constitution: 10
+      Dexterity: 9
+      Wisdom: 5
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
 Fey:
@@ -607,7 +890,12 @@ Fey:
     level: 1
     base_hp: 10
     mods:
-      Dexterity: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   pixie_trickster:
@@ -616,7 +904,12 @@ Fey:
     level: 2
     base_hp: 13
     mods:
-      Dexterity: 3
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   fey_sprite:
@@ -625,8 +918,12 @@ Fey:
     level: 3
     base_hp: 14
     mods:
-      Dexterity: 2
-      Charisma: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   fey_leaf_whisper:
@@ -635,7 +932,12 @@ Fey:
     level: 4
     base_hp: 18
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   fey_moss_guardian:
@@ -644,7 +946,12 @@ Fey:
     level: 4
     base_hp: 20
     mods:
-      Constitution: 2
+      Strength: 1
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   forest_spirit:
@@ -653,8 +960,12 @@ Fey:
     level: 5
     base_hp: 22
     mods:
-      Dexterity: 2
-      Charisma: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: true
     super_boss: false
   fey_wisp_trickster:
@@ -663,8 +974,12 @@ Fey:
     level: 6
     base_hp: 28
     mods:
-      Dexterity: 2
-      Charisma: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   fey_trickster_lord:
@@ -673,7 +988,11 @@ Fey:
     level: 8
     base_hp: 48
     mods:
-      Dexterity: 3
+      Strength: 1
+      Constitution: 1
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 2
       Charisma: 3
     boss: true
     super_boss: false
@@ -683,8 +1002,12 @@ Fey:
     level: 9
     base_hp: 44
     mods:
-      Constitution: 2
-      Strength: 1
+      Strength: 2
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   fey_moon_dancer:
@@ -693,8 +1016,12 @@ Fey:
     level: 10
     base_hp: 48
     mods:
-      Dexterity: 3
-      Charisma: 2
+      Strength: 1
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   fey_blossom_sentry:
@@ -703,8 +1030,12 @@ Fey:
     level: 11
     base_hp: 52
     mods:
-      Dexterity: 2
-      Charisma: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   great_forest_guardian:
@@ -713,8 +1044,12 @@ Fey:
     level: 12
     base_hp: 70
     mods:
-      Dexterity: 3
-      Charisma: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   fey_lord:
@@ -723,8 +1058,12 @@ Fey:
     level: 13
     base_hp: 82
     mods:
-      Dexterity: 4
-      Charisma: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 6
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: true
     super_boss: false
   archfey_sentinel:
@@ -733,8 +1072,12 @@ Fey:
     level: 14
     base_hp: 75
     mods:
-      Dexterity: 3
-      Charisma: 4
+      Strength: 2
+      Constitution: 2
+      Dexterity: 6
+      Wisdom: 4
+      Learning: 3
+      Charisma: 5
     boss: false
     super_boss: false
   fey_ancient_dryad:
@@ -743,8 +1086,12 @@ Fey:
     level: 15
     base_hp: 74
     mods:
-      Wisdom: 3
-      Charisma: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   fey_mist_phantom:
@@ -753,8 +1100,12 @@ Fey:
     level: 16
     base_hp: 78
     mods:
-      Dexterity: 3
-      Charisma: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 7
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   fey_winter_queen:
@@ -763,8 +1114,12 @@ Fey:
     level: 18
     base_hp: 130
     mods:
-      Charisma: 5
-      Dexterity: 3
+      Strength: 2
+      Constitution: 3
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 4
+      Charisma: 6
     boss: true
     super_boss: false
   fey_dream_weaver:
@@ -773,8 +1128,12 @@ Fey:
     level: 19
     base_hp: 92
     mods:
-      Learning: 3
-      Charisma: 2
+      Strength: 2
+      Constitution: 3
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 5
+      Charisma: 5
     boss: false
     super_boss: false
   fey_wild_stalker:
@@ -783,7 +1142,12 @@ Fey:
     level: 19
     base_hp: 105
     mods:
-      Dexterity: 4
+      Strength: 2
+      Constitution: 3
+      Dexterity: 8
+      Wisdom: 6
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   queen_of_mirrors_sylvana:
@@ -792,10 +1156,12 @@ Fey:
     level: 21
     base_hp: 380
     mods:
+      Strength: 3
+      Constitution: 4
       Dexterity: 7
-      Charisma: 5
-      Constitution: 3
-      Strength: 2
+      Wisdom: 5
+      Learning: 4
+      Charisma: 6
     boss: true
     super_boss: true
   sylvana_mirror_copy:
@@ -804,21 +1170,27 @@ Fey:
     level: 21
     base_hp: 1
     mods:
+      Strength: 3
+      Constitution: 4
       Dexterity: 7
-      Charisma: 5
-      Constitution: 3
-      Strength: 2
+      Wisdom: 5
+      Learning: 4
+      Charisma: 6
     boss: false
     super_boss: false
+    minion_only: true
   fey_verdant_queen_guard:
     name: Verdant Queen Guard
     race: Fey
     level: 22
     base_hp: 108
     mods:
-      Strength: 2
-      Constitution: 2
-      Charisma: 2
+      Strength: 4
+      Constitution: 4
+      Dexterity: 5
+      Wisdom: 6
+      Learning: 5
+      Charisma: 6
     boss: false
     super_boss: false
   summer_court_knight:
@@ -827,8 +1199,12 @@ Fey:
     level: 22
     base_hp: 140
     mods:
-      Strength: 3
-      Charisma: 3
+      Strength: 4
+      Constitution: 3
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 5
+      Charisma: 6
     boss: false
     super_boss: false
 Gnome:
@@ -838,7 +1214,12 @@ Gnome:
     level: 1
     base_hp: 11
     mods:
-      Learning: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 1
+      Wisdom: 2
+      Learning: 3
+      Charisma: 1
     boss: false
     super_boss: false
   gnome_clockwork_helper:
@@ -847,7 +1228,12 @@ Gnome:
     level: 2
     base_hp: 12
     mods:
-      Learning: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 1
+      Wisdom: 2
+      Learning: 4
+      Charisma: 1
     boss: false
     super_boss: false
   gnome_mushroom_farmer:
@@ -856,7 +1242,12 @@ Gnome:
     level: 3
     base_hp: 14
     mods:
-      Constitution: 1
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_potion_thrower:
@@ -865,8 +1256,12 @@ Gnome:
     level: 4
     base_hp: 18
     mods:
-      Dexterity: 2
-      Learning: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 3
+      Charisma: 1
     boss: false
     super_boss: false
   gnome_saboteur:
@@ -875,8 +1270,12 @@ Gnome:
     level: 4
     base_hp: 25
     mods:
-      Dexterity: 2
-      Learning: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 3
+      Charisma: 1
     boss: false
     super_boss: false
   gnome_illusionist:
@@ -885,8 +1284,12 @@ Gnome:
     level: 5
     base_hp: 24
     mods:
-      Learning: 2
-      Charisma: 1
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 4
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_alchemist:
@@ -895,7 +1298,12 @@ Gnome:
     level: 7
     base_hp: 40
     mods:
-      Learning: 3
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 6
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_gear_master:
@@ -904,8 +1312,12 @@ Gnome:
     level: 7
     base_hp: 32
     mods:
-      Learning: 2
-      Constitution: 1
+      Strength: 1
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 5
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_skycaptain:
@@ -914,8 +1326,12 @@ Gnome:
     level: 8
     base_hp: 39
     mods:
-      Learning: 3
-      Dexterity: 2
+      Strength: 1
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 5
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_arcane_trickster:
@@ -924,8 +1340,12 @@ Gnome:
     level: 9
     base_hp: 38
     mods:
-      Learning: 2
-      Dexterity: 2
+      Strength: 1
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 6
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_elemental_binder:
@@ -934,8 +1354,12 @@ Gnome:
     level: 10
     base_hp: 44
     mods:
-      Learning: 3
-      Charisma: 1
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 3
+      Learning: 7
+      Charisma: 3
     boss: false
     super_boss: false
   master_artificer:
@@ -944,8 +1368,12 @@ Gnome:
     level: 11
     base_hp: 55
     mods:
-      Learning: 4
-      Dexterity: 2
+      Strength: 1
+      Constitution: 2
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 7
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_aether_engineer:
@@ -954,8 +1382,12 @@ Gnome:
     level: 12
     base_hp: 58
     mods:
-      Learning: 4
-      Dexterity: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 4
+      Learning: 7
+      Charisma: 2
     boss: false
     super_boss: false
   gnome_high_artificer:
@@ -964,8 +1396,12 @@ Gnome:
     level: 12
     base_hp: 68
     mods:
-      Learning: 5
-      Dexterity: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 6
+      Charisma: 2
     boss: true
     super_boss: false
   gnome_mecha_pilot:
@@ -974,8 +1410,12 @@ Gnome:
     level: 12
     base_hp: 75
     mods:
-      Learning: 2
-      Constitution: 2
+      Strength: 2
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 4
+      Learning: 6
+      Charisma: 2
     boss: false
     super_boss: false
 Goblin:
@@ -985,7 +1425,12 @@ Goblin:
     level: 1
     base_hp: 11
     mods:
-      Dexterity: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   goblin_scout:
@@ -994,7 +1439,12 @@ Goblin:
     level: 1
     base_hp: 13
     mods:
-      Dexterity: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   goblin_thief:
@@ -1003,7 +1453,12 @@ Goblin:
     level: 1
     base_hp: 11
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   goblin_archer:
@@ -1012,7 +1467,12 @@ Goblin:
     level: 2
     base_hp: 15
     mods:
-      Dexterity: 3
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   goblin_knifer:
@@ -1021,7 +1481,12 @@ Goblin:
     level: 2
     base_hp: 17
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   goblin_shaman:
@@ -1030,7 +1495,12 @@ Goblin:
     level: 2
     base_hp: 14
     mods:
-      Wisdom: 1
+      Strength: 1
+      Constitution: 1
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   goblin_whisperer:
@@ -1039,7 +1509,12 @@ Goblin:
     level: 2
     base_hp: 16
     mods:
-      Charisma: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 4
     boss: false
     super_boss: false
 Demon:
@@ -1049,7 +1524,12 @@ Demon:
     level: 1
     base_hp: 12
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   lesser_imp:
@@ -1058,7 +1538,12 @@ Demon:
     level: 1
     base_hp: 11
     mods:
-      Charisma: 1
+      Strength: 3
+      Constitution: 1
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   demon_cinder_spirit:
@@ -1067,7 +1552,12 @@ Demon:
     level: 2
     base_hp: 16
     mods:
-      Constitution: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   demon_brimstone_imp:
@@ -1076,7 +1566,12 @@ Demon:
     level: 3
     base_hp: 18
     mods:
+      Strength: 3
+      Constitution: 2
       Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   demon_hellcat:
@@ -1085,8 +1580,12 @@ Demon:
     level: 4
     base_hp: 24
     mods:
-      Dexterity: 2
-      Strength: 1
+      Strength: 3
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   demon_imp:
@@ -1095,7 +1594,12 @@ Demon:
     level: 6
     base_hp: 28
     mods:
-      Learning: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: true
     super_boss: false
   hellhound:
@@ -1104,7 +1608,12 @@ Demon:
     level: 6
     base_hp: 42
     mods:
-      Dexterity: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   demon_malebranche:
@@ -1113,8 +1622,12 @@ Demon:
     level: 7
     base_hp: 42
     mods:
-      Strength: 2
-      Constitution: 1
+      Strength: 4
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   greater_demon:
@@ -1123,8 +1636,12 @@ Demon:
     level: 9
     base_hp: 58
     mods:
-      Strength: 2
-      Charisma: 2
+      Strength: 3
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: false
     super_boss: false
   infernal_commander:
@@ -1133,8 +1650,12 @@ Demon:
     level: 9
     base_hp: 60
     mods:
-      Strength: 2
-      Charisma: 2
+      Strength: 3
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: true
     super_boss: false
   demon_knight:
@@ -1143,7 +1664,12 @@ Demon:
     level: 10
     base_hp: 68
     mods:
-      Strength: 3
+      Strength: 5
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: true
     super_boss: false
   infernal_hound:
@@ -1152,8 +1678,12 @@ Demon:
     level: 10
     base_hp: 65
     mods:
-      Strength: 2
-      Dexterity: 2
+      Strength: 4
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   infernal_priest:
@@ -1162,8 +1692,12 @@ Demon:
     level: 11
     base_hp: 60
     mods:
+      Strength: 3
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
       Learning: 3
-      Charisma: 2
+      Charisma: 5
     boss: false
     super_boss: false
   demon_pain_master:
@@ -1172,8 +1706,12 @@ Demon:
     level: 12
     base_hp: 68
     mods:
-      Strength: 2
-      Charisma: 2
+      Strength: 5
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 5
     boss: false
     super_boss: false
   demon_abyssal_knight:
@@ -1182,8 +1720,12 @@ Demon:
     level: 14
     base_hp: 80
     mods:
-      Strength: 3
-      Constitution: 1
+      Strength: 7
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: false
     super_boss: false
   incubus_infiltrator:
@@ -1192,8 +1734,12 @@ Demon:
     level: 14
     base_hp: 90
     mods:
-      Charisma: 4
-      Dexterity: 2
+      Strength: 4
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 7
     boss: false
     super_boss: false
   demon_lord:
@@ -1202,8 +1748,12 @@ Demon:
     level: 15
     base_hp: 115
     mods:
-      Strength: 4
-      Charisma: 3
+      Strength: 6
+      Constitution: 4
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 5
     boss: true
     super_boss: false
   demon_void_imp:
@@ -1212,7 +1762,12 @@ Demon:
     level: 16
     base_hp: 68
     mods:
-      Dexterity: 3
+      Strength: 4
+      Constitution: 4
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   demon_infernal_guardian:
@@ -1221,8 +1776,12 @@ Demon:
     level: 17
     base_hp: 95
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 7
+      Constitution: 6
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: false
     super_boss: false
   balor_demon:
@@ -1231,8 +1790,12 @@ Demon:
     level: 18
     base_hp: 140
     mods:
-      Strength: 5
-      Charisma: 4
+      Strength: 6
+      Constitution: 4
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 6
     boss: true
     super_boss: false
   chaos_fiend:
@@ -1241,8 +1804,12 @@ Demon:
     level: 19
     base_hp: 140
     mods:
-      Strength: 4
-      Dexterity: 3
+      Strength: 7
+      Constitution: 4
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
     boss: false
     super_boss: false
   demon_shadow_demon:
@@ -1251,8 +1818,12 @@ Demon:
     level: 19
     base_hp: 94
     mods:
-      Dexterity: 4
-      Wisdom: 1
+      Strength: 6
+      Constitution: 4
+      Dexterity: 5
+      Wisdom: 4
+      Learning: 3
+      Charisma: 5
     boss: false
     super_boss: false
   demon_gore_brute:
@@ -1261,8 +1832,12 @@ Demon:
     level: 20
     base_hp: 110
     mods:
-      Strength: 4
-      Dexterity: -1
+      Strength: 7
+      Constitution: 5
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
     boss: false
     super_boss: false
   demon_marilith:
@@ -1271,8 +1846,12 @@ Demon:
     level: 22
     base_hp: 110
     mods:
-      Strength: 4
-      Dexterity: 3
+      Strength: 7
+      Constitution: 5
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 3
+      Charisma: 6
     boss: false
     super_boss: false
   demon_pit_fiend:
@@ -1281,8 +1860,12 @@ Demon:
     level: 23
     base_hp: 125
     mods:
-      Strength: 4
-      Charisma: 2
+      Strength: 8
+      Constitution: 5
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 7
     boss: false
     super_boss: false
   abyssal_juggernaut:
@@ -1291,8 +1874,12 @@ Demon:
     level: 25
     base_hp: 210
     mods:
-      Strength: 6
-      Constitution: 5
+      Strength: 9
+      Constitution: 7
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 6
     boss: false
     super_boss: false
   demon_overlord_of_legions:
@@ -1301,8 +1888,12 @@ Demon:
     level: 25
     base_hp: 210
     mods:
-      Strength: 5
-      Charisma: 4
+      Strength: 9
+      Constitution: 5
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 8
     boss: true
     super_boss: false
   demon_arch_devil:
@@ -1311,8 +1902,12 @@ Demon:
     level: 28
     base_hp: 160
     mods:
-      Strength: 5
-      Charisma: 4
+      Strength: 8
+      Constitution: 6
+      Dexterity: 6
+      Wisdom: 4
+      Learning: 4
+      Charisma: 8
     boss: false
     super_boss: false
   demon_lord_of_ruin:
@@ -1321,8 +1916,12 @@ Demon:
     level: 30
     base_hp: 185
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 10
+      Constitution: 7
+      Dexterity: 6
+      Wisdom: 4
+      Learning: 4
+      Charisma: 7
     boss: false
     super_boss: false
 Lizardfolk:
@@ -1332,7 +1931,12 @@ Lizardfolk:
     level: 1
     base_hp: 14
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   lizardfolk_hunter:
@@ -1341,7 +1945,12 @@ Lizardfolk:
     level: 2
     base_hp: 18
     mods:
-      Dexterity: 1
+      Strength: 3
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   lizardfolk_scout:
@@ -1350,7 +1959,12 @@ Lizardfolk:
     level: 3
     base_hp: 20
     mods:
-      Dexterity: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   lizardfolk_spearman:
@@ -1359,7 +1973,12 @@ Lizardfolk:
     level: 4
     base_hp: 31
     mods:
-      Dexterity: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_warrior:
@@ -1368,7 +1987,12 @@ Lizardfolk:
     level: 5
     base_hp: 35
     mods:
-      Strength: 2
+      Strength: 4
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_shaman:
@@ -1377,7 +2001,12 @@ Lizardfolk:
     level: 6
     base_hp: 42
     mods:
-      Wisdom: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 5
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_swamp_witch:
@@ -1386,8 +2015,12 @@ Lizardfolk:
     level: 6
     base_hp: 34
     mods:
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 4
       Learning: 2
-      Wisdom: 1
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_champion:
@@ -1396,7 +2029,12 @@ Lizardfolk:
     level: 7
     base_hp: 48
     mods:
-      Strength: 2
+      Strength: 4
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_high_priest:
@@ -1405,8 +2043,12 @@ Lizardfolk:
     level: 8
     base_hp: 44
     mods:
+      Strength: 3
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 3
       Learning: 2
-      Wisdom: 1
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_venom_priest:
@@ -1415,8 +2057,12 @@ Lizardfolk:
     level: 9
     base_hp: 48
     mods:
+      Strength: 3
+      Constitution: 5
+      Dexterity: 3
+      Wisdom: 2
       Learning: 2
-      Constitution: 1
+      Charisma: 2
     boss: false
     super_boss: false
   greater_lizardfolk_brute:
@@ -1425,8 +2071,12 @@ Lizardfolk:
     level: 10
     base_hp: 72
     mods:
-      Strength: 3
-      Constitution: 1
+      Strength: 6
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_warlord:
@@ -1435,7 +2085,12 @@ Lizardfolk:
     level: 10
     base_hp: 70
     mods:
-      Strength: 3
+      Strength: 6
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_coastal_reaver:
@@ -1444,8 +2099,12 @@ Lizardfolk:
     level: 11
     base_hp: 62
     mods:
-      Strength: 2
-      Dexterity: 1
+      Strength: 6
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_ancient_guardian:
@@ -1454,8 +2113,12 @@ Lizardfolk:
     level: 12
     base_hp: 68
     mods:
-      Constitution: 2
-      Strength: 1
+      Strength: 4
+      Constitution: 4
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   lizardfolk_gladiator:
@@ -1464,8 +2127,12 @@ Lizardfolk:
     level: 12
     base_hp: 88
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 6
+      Constitution: 4
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   lizardfolk_king:
@@ -1474,8 +2141,12 @@ Lizardfolk:
     level: 13
     base_hp: 95
     mods:
-      Strength: 3
-      Constitution: 3
+      Strength: 4
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: true
     super_boss: false
   lizardfolk_death_gazer:
@@ -1484,8 +2155,12 @@ Lizardfolk:
     level: 14
     base_hp: 82
     mods:
-      Wisdom: 2
-      Constitution: 2
+      Strength: 4
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   lizardfolk_ancient_one:
@@ -1494,9 +2169,12 @@ Lizardfolk:
     level: 15
     base_hp: 98
     mods:
-      Strength: 3
-      Constitution: 3
-      Learning: 2
+      Strength: 5
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   lizardfolk_god_king:
@@ -1505,9 +2183,12 @@ Lizardfolk:
     level: 16
     base_hp: 130
     mods:
-      Strength: 4
-      Constitution: 3
-      Learning: 2
+      Strength: 6
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: true
     super_boss: false
 Elemental:
@@ -1517,7 +2198,12 @@ Elemental:
     level: 1
     base_hp: 11
     mods:
-      Dexterity: 1
+      Strength: 1
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   magical_rune_dust:
@@ -1526,7 +2212,12 @@ Elemental:
     level: 2
     base_hp: 14
     mods:
+      Strength: 3
+      Constitution: 2
+      Dexterity: 1
+      Wisdom: 1
       Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   elemental_pebble:
@@ -1535,7 +2226,12 @@ Elemental:
     level: 3
     base_hp: 18
     mods:
-      Constitution: 2
+      Strength: 2
+      Constitution: 4
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   elemental_sand_whirl:
@@ -1544,7 +2240,12 @@ Elemental:
     level: 3
     base_hp: 16
     mods:
+      Strength: 3
+      Constitution: 2
       Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   elemental_mud_geyser:
@@ -1553,7 +2254,12 @@ Elemental:
     level: 4
     base_hp: 24
     mods:
-      Constitution: 2
+      Strength: 2
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   fire_elemental:
@@ -1562,7 +2268,12 @@ Elemental:
     level: 5
     base_hp: 37
     mods:
-      Constitution: 2
+      Strength: 2
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   ice_elemental:
@@ -1571,7 +2282,12 @@ Elemental:
     level: 5
     base_hp: 35
     mods:
-      Constitution: 3
+      Strength: 2
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   tide_caller:
@@ -1580,8 +2296,12 @@ Elemental:
     level: 5
     base_hp: 26
     mods:
-      Constitution: 2
-      Learning: 1
+      Strength: 2
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 3
+      Charisma: 1
     boss: true
     super_boss: false
   elemental_steam_vent:
@@ -1590,7 +2310,12 @@ Elemental:
     level: 6
     base_hp: 32
     mods:
-      Dexterity: 1
+      Strength: 2
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   elemental_crystal_shard:
@@ -1599,8 +2324,12 @@ Elemental:
     level: 7
     base_hp: 38
     mods:
-      Learning: 2
-      Constitution: 1
+      Strength: 2
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   wind_elemental:
@@ -1609,7 +2338,12 @@ Elemental:
     level: 7
     base_hp: 55
     mods:
+      Strength: 2
+      Constitution: 4
       Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   earth_elemental:
@@ -1618,7 +2352,12 @@ Elemental:
     level: 8
     base_hp: 75
     mods:
-      Constitution: 4
+      Strength: 2
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   flame_salamander:
@@ -1627,7 +2366,12 @@ Elemental:
     level: 8
     base_hp: 56
     mods:
-      Dexterity: 2
+      Strength: 3
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   thunder_elemental:
@@ -1636,7 +2380,12 @@ Elemental:
     level: 9
     base_hp: 60
     mods:
-      Constitution: 2
+      Strength: 3
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   arcane_elemental:
@@ -1645,7 +2394,12 @@ Elemental:
     level: 10
     base_hp: 68
     mods:
-      Learning: 4
+      Strength: 3
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 6
+      Charisma: 2
     boss: false
     super_boss: false
   elemental_ash_wraith:
@@ -1654,7 +2408,12 @@ Elemental:
     level: 11
     base_hp: 58
     mods:
-      Dexterity: 2
+      Strength: 3
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   storm_elemental:
@@ -1663,8 +2422,12 @@ Elemental:
     level: 12
     base_hp: 95
     mods:
-      Learning: 3
-      Constitution: 2
+      Strength: 3
+      Constitution: 6
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 4
+      Charisma: 2
     boss: true
     super_boss: false
   magma_elemental:
@@ -1673,8 +2436,12 @@ Elemental:
     level: 13
     base_hp: 82
     mods:
-      Constitution: 4
-      Strength: 1
+      Strength: 4
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   crystal_golem_elemental:
@@ -1683,7 +2450,12 @@ Elemental:
     level: 14
     base_hp: 110
     mods:
-      Constitution: 4
+      Strength: 4
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   void_elemental:
@@ -1692,8 +2464,12 @@ Elemental:
     level: 14
     base_hp: 88
     mods:
-      Constitution: 3
-      Learning: 3
+      Strength: 3
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 4
+      Charisma: 2
     boss: false
     super_boss: false
   elemental_cataclysm:
@@ -1702,8 +2478,12 @@ Elemental:
     level: 15
     base_hp: 100
     mods:
-      Constitution: 4
-      Learning: 3
+      Strength: 4
+      Constitution: 6
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 5
+      Charisma: 2
     boss: true
     super_boss: false
   elemental_lightning_orb:
@@ -1712,8 +2492,12 @@ Elemental:
     level: 16
     base_hp: 86
     mods:
-      Dexterity: 3
-      Learning: 1
+      Strength: 4
+      Constitution: 6
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 5
+      Charisma: 2
     boss: false
     super_boss: false
   elemental_plasma_sphere:
@@ -1722,8 +2506,12 @@ Elemental:
     level: 17
     base_hp: 92
     mods:
-      Constitution: 2
-      Learning: 2
+      Strength: 4
+      Constitution: 6
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 5
+      Charisma: 3
     boss: false
     super_boss: false
   primordial_elemental:
@@ -1732,8 +2520,12 @@ Elemental:
     level: 17
     base_hp: 130
     mods:
-      Constitution: 5
-      Learning: 4
+      Strength: 4
+      Constitution: 7
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 5
+      Charisma: 2
     boss: true
     super_boss: false
   elemental_azure_whirl:
@@ -1742,7 +2534,12 @@ Elemental:
     level: 18
     base_hp: 98
     mods:
-      Dexterity: 3
+      Strength: 4
+      Constitution: 5
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 4
+      Charisma: 3
     boss: false
     super_boss: false
   plasma_elemental:
@@ -1751,8 +2548,12 @@ Elemental:
     level: 18
     base_hp: 120
     mods:
-      Constitution: 3
-      Dexterity: 3
+      Strength: 4
+      Constitution: 7
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 4
+      Charisma: 3
     boss: false
     super_boss: false
   elemental_magma_behemoth:
@@ -1761,8 +2562,12 @@ Elemental:
     level: 19
     base_hp: 108
     mods:
-      Constitution: 4
-      Strength: 1
+      Strength: 5
+      Constitution: 8
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 4
+      Charisma: 3
     boss: false
     super_boss: false
   void_walker:
@@ -1771,8 +2576,12 @@ Elemental:
     level: 20
     base_hp: 130
     mods:
-      Constitution: 4
-      Learning: 3
+      Strength: 5
+      Constitution: 7
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 6
+      Charisma: 3
     boss: false
     super_boss: false
 Giant:
@@ -1782,7 +2591,12 @@ Giant:
     level: 1
     base_hp: 20
     mods:
-      Strength: 1
+      Strength: 3
+      Constitution: 2
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   mountain_rock_thrower:
@@ -1791,7 +2605,12 @@ Giant:
     level: 4
     base_hp: 34
     mods:
-      Strength: 2
+      Strength: 5
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   mountain_troll:
@@ -1800,8 +2619,12 @@ Giant:
     level: 5
     base_hp: 38
     mods:
-      Strength: 2
-      Constitution: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: true
     super_boss: false
   giant_ogre_thug:
@@ -1810,7 +2633,12 @@ Giant:
     level: 6
     base_hp: 48
     mods:
-      Strength: 2
+      Strength: 6
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   troll_regenerator:
@@ -1819,7 +2647,12 @@ Giant:
     level: 7
     base_hp: 68
     mods:
-      Constitution: 3
+      Strength: 4
+      Constitution: 6
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   hill_giant:
@@ -1828,7 +2661,12 @@ Giant:
     level: 8
     base_hp: 75
     mods:
-      Strength: 3
+      Strength: 7
+      Constitution: 4
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   giant_cyclops:
@@ -1837,8 +2675,12 @@ Giant:
     level: 9
     base_hp: 68
     mods:
-      Strength: 3
-      Constitution: 1
+      Strength: 7
+      Constitution: 5
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   giant_frost_giant_brute:
@@ -1847,8 +2689,12 @@ Giant:
     level: 10
     base_hp: 78
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 7
+      Constitution: 6
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   storm_giant:
@@ -1857,8 +2703,12 @@ Giant:
     level: 11
     base_hp: 98
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 8
+      Constitution: 6
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   giant_fire_giant_forgemaster:
@@ -1867,8 +2717,12 @@ Giant:
     level: 12
     base_hp: 88
     mods:
-      Strength: 4
-      Constitution: 1
+      Strength: 8
+      Constitution: 5
+      Dexterity: 1
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   mountain_giant:
@@ -1877,7 +2731,12 @@ Giant:
     level: 13
     base_hp: 135
     mods:
-      Strength: 5
+      Strength: 9
+      Constitution: 5
+      Dexterity: 1
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: true
     super_boss: false
   giant_cloud_giant_thunderer:
@@ -1886,8 +2745,12 @@ Giant:
     level: 14
     base_hp: 102
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 7
+      Constitution: 7
+      Dexterity: 1
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   titanic_behemoth:
@@ -1896,8 +2759,12 @@ Giant:
     level: 15
     base_hp: 120
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 8
+      Constitution: 7
+      Dexterity: 1
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   giant_mountain_behemoth:
@@ -1906,8 +2773,12 @@ Giant:
     level: 16
     base_hp: 118
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 9
+      Constitution: 7
+      Dexterity: 1
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   giant_elder_cyclops:
@@ -1916,8 +2787,12 @@ Giant:
     level: 17
     base_hp: 112
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 9
+      Constitution: 7
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   frost_giant:
@@ -1926,8 +2801,12 @@ Giant:
     level: 19
     base_hp: 170
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 10
+      Constitution: 8
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   giant_crag_titan:
@@ -1936,8 +2815,12 @@ Giant:
     level: 19
     base_hp: 128
     mods:
-      Strength: 5
-      Constitution: 2
+      Strength: 10
+      Constitution: 8
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   giant_doom_giant:
@@ -1946,8 +2829,12 @@ Giant:
     level: 22
     base_hp: 145
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 11
+      Constitution: 9
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: false
     super_boss: false
   giant_king_of_the_peaks:
@@ -1956,8 +2843,12 @@ Giant:
     level: 22
     base_hp: 210
     mods:
-      Strength: 6
-      Constitution: 4
+      Strength: 11
+      Constitution: 9
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: true
     super_boss: false
   giant_thunder_titan:
@@ -1966,8 +2857,12 @@ Giant:
     level: 26
     base_hp: 168
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 12
+      Constitution: 10
+      Dexterity: 2
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   fire_giant_forge_master:
@@ -1976,8 +2871,12 @@ Giant:
     level: 28
     base_hp: 240
     mods:
-      Strength: 6
-      Constitution: 5
+      Strength: 12
+      Constitution: 11
+      Dexterity: 2
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
     boss: false
     super_boss: false
   giant_supreme_titan:
@@ -1986,8 +2885,12 @@ Giant:
     level: 32
     base_hp: 240
     mods:
-      Strength: 6
-      Constitution: 4
+      Strength: 13
+      Constitution: 11
+      Dexterity: 3
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   ancient_cyclops:
@@ -1996,8 +2899,12 @@ Giant:
     level: 35
     base_hp: 310
     mods:
-      Strength: 7
-      Constitution: 5
+      Strength: 13
+      Constitution: 13
+      Dexterity: 3
+      Wisdom: 4
+      Learning: 4
+      Charisma: 6
     boss: false
     super_boss: false
   elder_titan:
@@ -2006,8 +2913,12 @@ Giant:
     level: 36
     base_hp: 260
     mods:
-      Strength: 6
-      Constitution: 4
+      Strength: 14
+      Constitution: 13
+      Dexterity: 3
+      Wisdom: 4
+      Learning: 4
+      Charisma: 6
     boss: false
     super_boss: false
   giant_world_carrier:
@@ -2016,8 +2927,12 @@ Giant:
     level: 38
     base_hp: 310
     mods:
-      Strength: 7
-      Constitution: 5
+      Strength: 16
+      Constitution: 13
+      Dexterity: 3
+      Wisdom: 4
+      Learning: 4
+      Charisma: 6
     boss: false
     super_boss: false
 Undead:
@@ -2027,7 +2942,12 @@ Undead:
     level: 1
     base_hp: 12
     mods:
-      Strength: -1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   skeleton:
@@ -2035,7 +2955,13 @@ Undead:
     race: Undead
     level: 2
     base_hp: 18
-    mods: {}
+    mods:
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   rotten_carcass:
@@ -2044,7 +2970,12 @@ Undead:
     level: 3
     base_hp: 25
     mods:
-      Constitution: 2
+      Strength: 2
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   zombie_minion:
@@ -2053,7 +2984,12 @@ Undead:
     level: 3
     base_hp: 22
     mods:
-      Constitution: 1
+      Strength: 2
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   zombie:
@@ -2062,7 +2998,12 @@ Undead:
     level: 4
     base_hp: 33
     mods:
-      Strength: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   undead_banshee_wailer:
@@ -2071,8 +3012,12 @@ Undead:
     level: 5
     base_hp: 26
     mods:
-      Dexterity: 2
-      Charisma: -1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   undead_corpse_swarm:
@@ -2081,7 +3026,12 @@ Undead:
     level: 5
     base_hp: 28
     mods:
-      Constitution: 2
+      Strength: 2
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   ghoul:
@@ -2090,7 +3040,12 @@ Undead:
     level: 6
     base_hp: 38
     mods:
-      Strength: 2
+      Strength: 4
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   spectral_knight:
@@ -2099,7 +3054,12 @@ Undead:
     level: 6
     base_hp: 40
     mods:
-      Dexterity: 1
+      Strength: 2
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   wraith:
@@ -2108,7 +3068,12 @@ Undead:
     level: 7
     base_hp: 38
     mods:
-      Dexterity: 2
+      Strength: 2
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   undead_festering_zombie:
@@ -2117,8 +3082,12 @@ Undead:
     level: 8
     base_hp: 42
     mods:
-      Constitution: 2
-      Strength: 1
+      Strength: 3
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   bone_colossus:
@@ -2127,7 +3096,12 @@ Undead:
     level: 9
     base_hp: 65
     mods:
-      Constitution: 3
+      Strength: 3
+      Constitution: 5
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   skeletal_mage:
@@ -2136,7 +3110,12 @@ Undead:
     level: 9
     base_hp: 50
     mods:
+      Strength: 4
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
       Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   undead_war_behemoth:
@@ -2145,8 +3124,12 @@ Undead:
     level: 10
     base_hp: 75
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: true
     super_boss: false
   death_knight:
@@ -2155,8 +3138,12 @@ Undead:
     level: 11
     base_hp: 68
     mods:
-      Strength: 2
-      Dexterity: 2
+      Strength: 5
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   lich:
@@ -2165,7 +3152,12 @@ Undead:
     level: 11
     base_hp: 58
     mods:
-      Learning: 4
+      Strength: 3
+      Constitution: 3
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 6
+      Charisma: 2
     boss: true
     super_boss: false
   undead_drowned_captain:
@@ -2174,8 +3166,12 @@ Undead:
     level: 12
     base_hp: 58
     mods:
-      Strength: 2
-      Constitution: 2
+      Strength: 5
+      Constitution: 5
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   undead_phantom_archer:
@@ -2184,7 +3180,12 @@ Undead:
     level: 14
     base_hp: 62
     mods:
-      Dexterity: 3
+      Strength: 3
+      Constitution: 4
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   undead_crimson_knight:
@@ -2193,8 +3194,12 @@ Undead:
     level: 15
     base_hp: 84
     mods:
-      Strength: 2
-      Constitution: 2
+      Strength: 5
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   undead_rotting_giant:
@@ -2203,8 +3208,12 @@ Undead:
     level: 16
     base_hp: 88
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 6
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   arch_lich:
@@ -2213,8 +3222,12 @@ Undead:
     level: 17
     base_hp: 125
     mods:
+      Strength: 4
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
       Learning: 6
-      Constitution: 2
+      Charisma: 3
     boss: true
     super_boss: false
   undead_lich_servitor:
@@ -2223,7 +3236,12 @@ Undead:
     level: 18
     base_hp: 78
     mods:
-      Learning: 3
+      Strength: 4
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 7
+      Charisma: 3
     boss: false
     super_boss: false
   undead_death_guard:
@@ -2232,8 +3250,12 @@ Undead:
     level: 20
     base_hp: 90
     mods:
-      Strength: 2
-      Constitution: 3
+      Strength: 6
+      Constitution: 7
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 4
+      Charisma: 3
     boss: false
     super_boss: false
   undead_void_lich:
@@ -2242,8 +3264,12 @@ Undead:
     level: 25
     base_hp: 130
     mods:
-      Learning: 5
-      Constitution: 1
+      Strength: 5
+      Constitution: 7
+      Dexterity: 5
+      Wisdom: 4
+      Learning: 8
+      Charisma: 4
     boss: false
     super_boss: false
   bone_dragon:
@@ -2252,8 +3278,12 @@ Undead:
     level: 28
     base_hp: 230
     mods:
-      Strength: 5
-      Constitution: 4
+      Strength: 7
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 5
+      Charisma: 5
     boss: false
     super_boss: false
   undead_eternal_sentinel:
@@ -2262,8 +3292,12 @@ Undead:
     level: 28
     base_hp: 150
     mods:
-      Strength: 3
-      Constitution: 3
+      Strength: 7
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 5
+      Charisma: 5
     boss: false
     super_boss: false
   undead_dread_lich:
@@ -2272,8 +3306,12 @@ Undead:
     level: 30
     base_hp: 170
     mods:
-      Learning: 5
-      Constitution: 2
+      Strength: 6
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 8
+      Charisma: 5
     boss: false
     super_boss: false
   undead_dread_emperor:
@@ -2282,9 +3320,12 @@ Undead:
     level: 31
     base_hp: 340
     mods:
-      Strength: 4
-      Constitution: 5
-      Learning: 4
+      Strength: 8
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 7
+      Charisma: 5
     boss: true
     super_boss: false
   undead_spectral_dragon:
@@ -2293,8 +3334,12 @@ Undead:
     level: 32
     base_hp: 190
     mods:
-      Strength: 4
-      Dexterity: 2
+      Strength: 8
+      Constitution: 8
+      Dexterity: 8
+      Wisdom: 5
+      Learning: 6
+      Charisma: 5
     boss: false
     super_boss: false
   undead_soul_reaper:
@@ -2303,8 +3348,12 @@ Undead:
     level: 33
     base_hp: 185
     mods:
-      Dexterity: 4
-      Strength: 2
+      Strength: 8
+      Constitution: 8
+      Dexterity: 9
+      Wisdom: 5
+      Learning: 6
+      Charisma: 5
     boss: false
     super_boss: false
   death_bringer:
@@ -2313,8 +3362,12 @@ Undead:
     level: 34
     base_hp: 360
     mods:
-      Strength: 6
-      Constitution: 6
+      Strength: 9
+      Constitution: 10
+      Dexterity: 7
+      Wisdom: 5
+      Learning: 6
+      Charisma: 5
     boss: true
     super_boss: false
   undead_eternal_emperor:
@@ -2323,9 +3376,12 @@ Undead:
     level: 38
     base_hp: 230
     mods:
-      Strength: 4
-      Constitution: 4
-      Learning: 3
+      Strength: 9
+      Constitution: 9
+      Dexterity: 8
+      Wisdom: 6
+      Learning: 8
+      Charisma: 6
     boss: false
     super_boss: false
 Shadow:
@@ -2335,7 +3391,12 @@ Shadow:
     level: 2
     base_hp: 12
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 5
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   shadow_stalker:
@@ -2344,7 +3405,12 @@ Shadow:
     level: 3
     base_hp: 16
     mods:
-      Dexterity: 2
+      Strength: 2
+      Constitution: 1
+      Dexterity: 5
+      Wisdom: 1
+      Learning: 1
+      Charisma: 1
     boss: false
     super_boss: false
   shadow_creeper:
@@ -2353,7 +3419,12 @@ Shadow:
     level: 4
     base_hp: 20
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 1
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   shadow_fiend:
@@ -2362,7 +3433,12 @@ Shadow:
     level: 5
     base_hp: 30
     mods:
-      Dexterity: 3
+      Strength: 1
+      Constitution: 1
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   shadow_veil_hunter:
@@ -2371,7 +3447,12 @@ Shadow:
     level: 5
     base_hp: 24
     mods:
-      Dexterity: 3
+      Strength: 1
+      Constitution: 1
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   shadow_assassin:
@@ -2380,7 +3461,12 @@ Shadow:
     level: 6
     base_hp: 33
     mods:
-      Dexterity: 3
+      Strength: 1
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   shadow_wraithling:
@@ -2389,7 +3475,12 @@ Shadow:
     level: 6
     base_hp: 28
     mods:
-      Dexterity: 2
+      Strength: 1
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   shadow_night_terror:
@@ -2398,8 +3489,12 @@ Shadow:
     level: 7
     base_hp: 32
     mods:
-      Dexterity: 3
-      Wisdom: -1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   night_stalker:
@@ -2408,7 +3503,12 @@ Shadow:
     level: 8
     base_hp: 44
     mods:
-      Dexterity: 4
+      Strength: 2
+      Constitution: 2
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   shadow_lord:
@@ -2417,8 +3517,12 @@ Shadow:
     level: 9
     base_hp: 47
     mods:
-      Dexterity: 3
-      Charisma: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   shadow_reaver:
@@ -2427,7 +3531,12 @@ Shadow:
     level: 10
     base_hp: 52
     mods:
-      Dexterity: 4
+      Strength: 2
+      Constitution: 2
+      Dexterity: 8
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   void_shadow:
@@ -2436,7 +3545,12 @@ Shadow:
     level: 11
     base_hp: 58
     mods:
-      Dexterity: 4
+      Strength: 2
+      Constitution: 2
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   shadow_phantom_king:
@@ -2445,8 +3559,12 @@ Shadow:
     level: 12
     base_hp: 65
     mods:
-      Dexterity: 4
-      Charisma: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 2
+      Charisma: 4
     boss: true
     super_boss: false
   shadow_hunter:
@@ -2455,7 +3573,12 @@ Shadow:
     level: 13
     base_hp: 66
     mods:
-      Dexterity: 5
+      Strength: 2
+      Constitution: 2
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   shadow_umbral_blade:
@@ -2464,7 +3587,12 @@ Shadow:
     level: 14
     base_hp: 66
     mods:
-      Dexterity: 4
+      Strength: 2
+      Constitution: 3
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   greater_shadow_stalker:
@@ -2473,8 +3601,12 @@ Shadow:
     level: 15
     base_hp: 80
     mods:
-      Dexterity: 5
-      Charisma: 2
+      Strength: 2
+      Constitution: 3
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   eternal_shadow:
@@ -2483,8 +3615,12 @@ Shadow:
     level: 16
     base_hp: 95
     mods:
-      Dexterity: 6
-      Charisma: 3
+      Strength: 2
+      Constitution: 3
+      Dexterity: 9
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: true
     super_boss: false
   shadow_dragon:
@@ -2493,8 +3629,12 @@ Shadow:
     level: 16
     base_hp: 100
     mods:
-      Dexterity: 5
-      Charisma: 2
+      Strength: 2
+      Constitution: 3
+      Dexterity: 9
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: true
     super_boss: false
   shadow_dark_messenger:
@@ -2503,8 +3643,12 @@ Shadow:
     level: 17
     base_hp: 80
     mods:
-      Dexterity: 4
-      Charisma: 1
+      Strength: 2
+      Constitution: 3
+      Dexterity: 9
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   shadow_umbral_emperor:
@@ -2513,8 +3657,12 @@ Shadow:
     level: 18
     base_hp: 120
     mods:
-      Dexterity: 5
-      Charisma: 3
+      Strength: 3
+      Constitution: 3
+      Dexterity: 9
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: true
     super_boss: false
   shadow_umbral_hunter:
@@ -2523,8 +3671,12 @@ Shadow:
     level: 18
     base_hp: 86
     mods:
-      Dexterity: 4
-      Strength: 1
+      Strength: 4
+      Constitution: 3
+      Dexterity: 9
+      Wisdom: 4
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   eclipse_knight:
@@ -2533,8 +3685,12 @@ Shadow:
     level: 19
     base_hp: 130
     mods:
-      Dexterity: 4
-      Strength: 2
+      Strength: 4
+      Constitution: 3
+      Dexterity: 8
+      Wisdom: 4
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   shadow_abyssal_watcher:
@@ -2543,8 +3699,12 @@ Shadow:
     level: 19
     base_hp: 94
     mods:
-      Dexterity: 4
-      Wisdom: 2
+      Strength: 3
+      Constitution: 3
+      Dexterity: 8
+      Wisdom: 5
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   shadow_eclipse_bringer:
@@ -2553,8 +3713,12 @@ Shadow:
     level: 20
     base_hp: 100
     mods:
-      Dexterity: 4
-      Charisma: 2
+      Strength: 3
+      Constitution: 3
+      Dexterity: 9
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   shadow_void_lord:
@@ -2563,8 +3727,12 @@ Shadow:
     level: 21
     base_hp: 108
     mods:
-      Dexterity: 5
-      Wisdom: 1
+      Strength: 3
+      Constitution: 4
+      Dexterity: 9
+      Wisdom: 5
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   abyssal_stalker:
@@ -2573,8 +3741,12 @@ Shadow:
     level: 22
     base_hp: 118
     mods:
-      Dexterity: 5
-      Wisdom: 2
+      Strength: 3
+      Constitution: 4
+      Dexterity: 10
+      Wisdom: 5
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   darkness_incarnate:
@@ -2583,8 +3755,12 @@ Shadow:
     level: 22
     base_hp: 210
     mods:
-      Dexterity: 6
-      Charisma: 4
+      Strength: 3
+      Constitution: 4
+      Dexterity: 10
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: true
     super_boss: false
   shadow_abyss_lord:
@@ -2593,8 +3769,12 @@ Shadow:
     level: 24
     base_hp: 125
     mods:
-      Dexterity: 5
-      Charisma: 2
+      Strength: 3
+      Constitution: 4
+      Dexterity: 11
+      Wisdom: 5
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   shadow_void_spectre:
@@ -2603,8 +3783,12 @@ Shadow:
     level: 26
     base_hp: 135
     mods:
-      Dexterity: 5
-      Wisdom: 1
+      Strength: 4
+      Constitution: 4
+      Dexterity: 10
+      Wisdom: 6
+      Learning: 5
+      Charisma: 5
     boss: false
     super_boss: false
 Orc:
@@ -2614,7 +3798,12 @@ Orc:
     level: 4
     base_hp: 28
     mods:
-      Strength: 1
+      Strength: 4
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_half_breed_outcast:
@@ -2623,7 +3812,12 @@ Orc:
     level: 4
     base_hp: 26
     mods:
-      Strength: 1
+      Strength: 4
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_brute:
@@ -2632,7 +3826,12 @@ Orc:
     level: 5
     base_hp: 34
     mods:
-      Strength: 2
+      Strength: 5
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_shaman:
@@ -2641,8 +3840,12 @@ Orc:
     level: 5
     base_hp: 27
     mods:
+      Strength: 3
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 2
       Learning: 2
-      Wisdom: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_hunter:
@@ -2651,7 +3854,12 @@ Orc:
     level: 6
     base_hp: 40
     mods:
+      Strength: 5
+      Constitution: 3
       Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_raider:
@@ -2660,8 +3868,12 @@ Orc:
     level: 6
     base_hp: 36
     mods:
-      Strength: 2
-      Constitution: 1
+      Strength: 5
+      Constitution: 4
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_warlord:
@@ -2670,8 +3882,12 @@ Orc:
     level: 7
     base_hp: 48
     mods:
-      Strength: 3
-      Charisma: 1
+      Strength: 6
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 3
     boss: false
     super_boss: false
   orc_chieftain:
@@ -2680,8 +3896,12 @@ Orc:
     level: 8
     base_hp: 55
     mods:
-      Strength: 2
-      Constitution: 1
+      Strength: 6
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_war_priest:
@@ -2690,8 +3910,12 @@ Orc:
     level: 9
     base_hp: 44
     mods:
-      Learning: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 2
       Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   orc_berserker:
@@ -2700,7 +3924,12 @@ Orc:
     level: 10
     base_hp: 72
     mods:
-      Strength: 4
+      Strength: 8
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   orc_blade_dancer:
@@ -2709,8 +3938,12 @@ Orc:
     level: 11
     base_hp: 58
     mods:
-      Dexterity: 2
-      Strength: 2
+      Strength: 7
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 1
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   orc_blood_shaman:
@@ -2719,7 +3952,12 @@ Orc:
     level: 11
     base_hp: 75
     mods:
+      Strength: 6
+      Constitution: 4
+      Dexterity: 2
       Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   orc_berserker_chief:
@@ -2728,8 +3966,12 @@ Orc:
     level: 12
     base_hp: 72
     mods:
-      Strength: 4
-      Constitution: 1
+      Strength: 8
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   orc_gladiator:
@@ -2738,7 +3980,12 @@ Orc:
     level: 12
     base_hp: 85
     mods:
-      Strength: 4
+      Strength: 9
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   orc_war_matriarch:
@@ -2747,8 +3994,12 @@ Orc:
     level: 12
     base_hp: 68
     mods:
-      Strength: 3
-      Wisdom: 1
+      Strength: 8
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   orc_flesh_ripper:
@@ -2757,8 +4008,12 @@ Orc:
     level: 13
     base_hp: 76
     mods:
-      Strength: 4
-      Dexterity: -1
+      Strength: 8
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   orc_warbringer:
@@ -2767,8 +4022,12 @@ Orc:
     level: 13
     base_hp: 80
     mods:
-      Strength: 4
-      Constitution: 1
+      Strength: 8
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   orc_blood_chieftain:
@@ -2777,8 +4036,12 @@ Orc:
     level: 14
     base_hp: 100
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 8
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 3
     boss: true
     super_boss: false
 Vampire:
@@ -2788,7 +4051,12 @@ Vampire:
     level: 8
     base_hp: 32
     mods:
-      Dexterity: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   vampire_fledgling:
@@ -2797,8 +4065,12 @@ Vampire:
     level: 8
     base_hp: 50
     mods:
-      Dexterity: 2
-      Charisma: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   vampire_spawn:
@@ -2807,7 +4079,12 @@ Vampire:
     level: 8
     base_hp: 45
     mods:
-      Dexterity: 3
+      Strength: 2
+      Constitution: 2
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   blood_vampire:
@@ -2816,8 +4093,12 @@ Vampire:
     level: 9
     base_hp: 52
     mods:
-      Dexterity: 2
-      Charisma: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: false
     super_boss: false
   vampire_noble_brat:
@@ -2826,8 +4107,12 @@ Vampire:
     level: 10
     base_hp: 46
     mods:
-      Dexterity: 2
-      Charisma: 1
+      Strength: 2
+      Constitution: 2
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: false
     super_boss: false
   vampire_bloodknight:
@@ -2836,8 +4121,12 @@ Vampire:
     level: 11
     base_hp: 62
     mods:
-      Dexterity: 3
-      Strength: 1
+      Strength: 3
+      Constitution: 3
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   ancient_vampire:
@@ -2846,8 +4135,12 @@ Vampire:
     level: 12
     base_hp: 75
     mods:
-      Dexterity: 3
-      Charisma: 2
+      Strength: 3
+      Constitution: 3
+      Dexterity: 6
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
     boss: false
     super_boss: false
   vampire_blood_scribe:
@@ -2856,8 +4149,12 @@ Vampire:
     level: 13
     base_hp: 68
     mods:
-      Learning: 2
-      Charisma: 1
+      Strength: 3
+      Constitution: 3
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   vampire_mist_walker:
@@ -2866,7 +4163,12 @@ Vampire:
     level: 14
     base_hp: 72
     mods:
-      Dexterity: 3
+      Strength: 3
+      Constitution: 3
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   vampire_lord:
@@ -2875,8 +4177,12 @@ Vampire:
     level: 15
     base_hp: 102
     mods:
-      Dexterity: 4
-      Charisma: 3
+      Strength: 3
+      Constitution: 3
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
     boss: true
     super_boss: false
   vampire_night_claw:
@@ -2885,8 +4191,12 @@ Vampire:
     level: 16
     base_hp: 82
     mods:
-      Dexterity: 3
-      Strength: 1
+      Strength: 4
+      Constitution: 3
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   vampire_nosferatu_elder:
@@ -2895,8 +4205,12 @@ Vampire:
     level: 17
     base_hp: 88
     mods:
-      Dexterity: 3
-      Constitution: 2
+      Strength: 4
+      Constitution: 4
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   vampire_dread_visor:
@@ -2905,8 +4219,12 @@ Vampire:
     level: 19
     base_hp: 98
     mods:
-      Strength: 2
-      Charisma: 2
+      Strength: 6
+      Constitution: 4
+      Dexterity: 6
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
     boss: false
     super_boss: false
   nosferatu_stalker:
@@ -2915,8 +4233,12 @@ Vampire:
     level: 20
     base_hp: 135
     mods:
-      Dexterity: 5
-      Strength: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
     boss: false
     super_boss: false
   vampire_blood_duchess:
@@ -2925,8 +4247,12 @@ Vampire:
     level: 20
     base_hp: 108
     mods:
-      Charisma: 4
-      Dexterity: 2
+      Strength: 4
+      Constitution: 4
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 6
     boss: false
     super_boss: false
   vampire_nocturnal_king:
@@ -2935,8 +4261,12 @@ Vampire:
     level: 20
     base_hp: 145
     mods:
-      Dexterity: 4
-      Charisma: 4
+      Strength: 4
+      Constitution: 4
+      Dexterity: 8
+      Wisdom: 3
+      Learning: 3
+      Charisma: 6
     boss: true
     super_boss: false
   vampire_crimson_lord:
@@ -2945,8 +4275,12 @@ Vampire:
     level: 23
     base_hp: 122
     mods:
-      Strength: 3
-      Charisma: 3
+      Strength: 5
+      Constitution: 4
+      Dexterity: 7
+      Wisdom: 4
+      Learning: 4
+      Charisma: 7
     boss: false
     super_boss: false
 Clockwork:
@@ -2956,7 +4290,12 @@ Clockwork:
     level: 4
     base_hp: 29
     mods:
-      Strength: 1
+      Strength: 3
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_scout_drone:
@@ -2965,7 +4304,12 @@ Clockwork:
     level: 5
     base_hp: 26
     mods:
-      Dexterity: 2
+      Strength: 2
+      Constitution: 2
+      Dexterity: 4
+      Wisdom: 1
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_spy:
@@ -2974,7 +4318,12 @@ Clockwork:
     level: 6
     base_hp: 30
     mods:
+      Strength: 2
+      Constitution: 5
       Dexterity: 2
+      Wisdom: 1
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_repair_bot:
@@ -2983,7 +4332,12 @@ Clockwork:
     level: 7
     base_hp: 34
     mods:
-      Constitution: 1
+      Strength: 3
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_steam_juggernaut:
@@ -2992,8 +4346,12 @@ Clockwork:
     level: 8
     base_hp: 48
     mods:
-      Constitution: 2
-      Strength: 1
+      Strength: 3
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   arcane_clockwork:
@@ -3002,7 +4360,12 @@ Clockwork:
     level: 9
     base_hp: 52
     mods:
-      Learning: 3
+      Strength: 3
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 5
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_guardian:
@@ -3011,7 +4374,12 @@ Clockwork:
     level: 9
     base_hp: 58
     mods:
-      Constitution: 2
+      Strength: 3
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_warrior:
@@ -3020,8 +4388,12 @@ Clockwork:
     level: 10
     base_hp: 65
     mods:
-      Constitution: 2
-      Strength: 1
+      Strength: 5
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_heavy_sentinel:
@@ -3030,8 +4402,12 @@ Clockwork:
     level: 11
     base_hp: 64
     mods:
-      Constitution: 2
-      Strength: 2
+      Strength: 4
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_overlord:
@@ -3040,8 +4416,12 @@ Clockwork:
     level: 11
     base_hp: 70
     mods:
-      Constitution: 3
-      Learning: 2
+      Strength: 3
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 4
+      Charisma: 2
     boss: true
     super_boss: false
   clockwork_assassin_bot:
@@ -3050,7 +4430,12 @@ Clockwork:
     level: 12
     base_hp: 56
     mods:
-      Dexterity: 3
+      Strength: 3
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 4
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_executor:
@@ -3059,8 +4444,12 @@ Clockwork:
     level: 13
     base_hp: 78
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 6
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 4
+      Charisma: 2
     boss: false
     super_boss: false
   titan_clockwork:
@@ -3069,7 +4458,12 @@ Clockwork:
     level: 13
     base_hp: 88
     mods:
-      Constitution: 4
+      Strength: 3
+      Constitution: 7
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 5
+      Charisma: 2
     boss: false
     super_boss: false
   clockwork_titan:
@@ -3078,8 +4472,12 @@ Clockwork:
     level: 14
     base_hp: 110
     mods:
-      Strength: 4
-      Constitution: 4
+      Strength: 5
+      Constitution: 5
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 4
+      Charisma: 3
     boss: true
     super_boss: false
   clockwork_chrono_stabilizer:
@@ -3088,8 +4486,12 @@ Clockwork:
     level: 15
     base_hp: 78
     mods:
-      Learning: 3
-      Constitution: 1
+      Strength: 4
+      Constitution: 6
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 5
+      Charisma: 3
     boss: false
     super_boss: false
   clockwork_heavy_artillery:
@@ -3098,8 +4500,12 @@ Clockwork:
     level: 16
     base_hp: 90
     mods:
-      Constitution: 2
-      Strength: 2
+      Strength: 5
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 4
+      Charisma: 3
     boss: false
     super_boss: false
   clockwork_arcane_annihilator:
@@ -3108,8 +4514,12 @@ Clockwork:
     level: 18
     base_hp: 105
     mods:
-      Learning: 3
-      Constitution: 2
+      Strength: 4
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 6
+      Charisma: 3
     boss: false
     super_boss: false
   clockwork_doom_machine:
@@ -3118,8 +4528,12 @@ Clockwork:
     level: 20
     base_hp: 118
     mods:
-      Strength: 3
-      Constitution: 3
+      Strength: 6
+      Constitution: 8
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 5
+      Charisma: 3
     boss: false
     super_boss: false
   clockwork_apocalypse_engine:
@@ -3128,8 +4542,12 @@ Clockwork:
     level: 24
     base_hp: 140
     mods:
-      Constitution: 4
-      Learning: 2
+      Strength: 5
+      Constitution: 9
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 7
+      Charisma: 4
     boss: false
     super_boss: false
   clockwork_colossus:
@@ -3138,8 +4556,12 @@ Clockwork:
     level: 27
     base_hp: 175
     mods:
-      Constitution: 4
-      Strength: 3
+      Strength: 8
+      Constitution: 9
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 6
+      Charisma: 4
     boss: false
     super_boss: false
   clockwork_epoch_engine:
@@ -3148,8 +4570,12 @@ Clockwork:
     level: 30
     base_hp: 185
     mods:
-      Learning: 4
-      Constitution: 3
+      Strength: 6
+      Constitution: 9
+      Dexterity: 5
+      Wisdom: 4
+      Learning: 9
+      Charisma: 5
     boss: false
     super_boss: false
   clockwork_dragon:
@@ -3158,8 +4584,12 @@ Clockwork:
     level: 32
     base_hp: 290
     mods:
-      Constitution: 6
-      Strength: 5
+      Strength: 9
+      Constitution: 10
+      Dexterity: 5
+      Wisdom: 4
+      Learning: 7
+      Charisma: 5
     boss: false
     super_boss: false
   clockwork_genesis_device:
@@ -3168,8 +4598,12 @@ Clockwork:
     level: 34
     base_hp: 220
     mods:
-      Constitution: 5
-      Learning: 4
+      Strength: 7
+      Constitution: 11
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 9
+      Charisma: 5
     boss: false
     super_boss: false
   omega_clockwork_god:
@@ -3178,9 +4612,12 @@ Clockwork:
     level: 39
     base_hp: 490
     mods:
-      Strength: 6
-      Constitution: 7
-      Learning: 5
+      Strength: 9
+      Constitution: 11
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 10
+      Charisma: 6
     boss: true
     super_boss: false
 Abomination:
@@ -3190,7 +4627,12 @@ Abomination:
     level: 6
     base_hp: 48
     mods:
-      Strength: 2
+      Strength: 6
+      Constitution: 3
+      Dexterity: 1
+      Wisdom: 1
+      Learning: 1
+      Charisma: 2
     boss: false
     super_boss: false
   abomination_twisted_shambler:
@@ -3199,8 +4641,12 @@ Abomination:
     level: 7
     base_hp: 54
     mods:
-      Strength: 2
-      Constitution: 1
+      Strength: 4
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   abomination_flesh_reaver:
@@ -3209,8 +4655,12 @@ Abomination:
     level: 8
     base_hp: 62
     mods:
-      Strength: 3
-      Dexterity: -1
+      Strength: 4
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   abomination_brute:
@@ -3219,8 +4669,12 @@ Abomination:
     level: 9
     base_hp: 72
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   abomination_bone_weaver:
@@ -3229,8 +4683,12 @@ Abomination:
     level: 10
     base_hp: 72
     mods:
-      Constitution: 2
-      Learning: -1
+      Strength: 4
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   greater_abomination:
@@ -3239,8 +4697,12 @@ Abomination:
     level: 11
     base_hp: 85
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 6
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: true
     super_boss: false
   abomination_grunt:
@@ -3249,8 +4711,12 @@ Abomination:
     level: 12
     base_hp: 85
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 6
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   colossal_abomination:
@@ -3259,8 +4725,12 @@ Abomination:
     level: 13
     base_hp: 110
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 7
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   abomination_rotting_god:
@@ -3269,8 +4739,12 @@ Abomination:
     level: 14
     base_hp: 110
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 7
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: true
     super_boss: false
   greater_abomination_brute:
@@ -3279,8 +4753,12 @@ Abomination:
     level: 14
     base_hp: 105
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 7
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   abomination_eyestalk_horror:
@@ -3289,8 +4767,12 @@ Abomination:
     level: 15
     base_hp: 98
     mods:
-      Wisdom: 2
-      Constitution: 2
+      Strength: 6
+      Constitution: 7
+      Dexterity: 2
+      Wisdom: 3
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   abomination_titan:
@@ -3299,8 +4781,12 @@ Abomination:
     level: 16
     base_hp: 130
     mods:
-      Strength: 5
-      Constitution: 4
+      Strength: 9
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   abomination_maw_of_the_abyss:
@@ -3309,8 +4795,12 @@ Abomination:
     level: 17
     base_hp: 110
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 9
+      Constitution: 7
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
     boss: false
     super_boss: false
   abomination_overlord:
@@ -3319,9 +4809,12 @@ Abomination:
     level: 18
     base_hp: 160
     mods:
-      Strength: 6
-      Constitution: 5
-      Wisdom: -2
+      Strength: 7
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: true
     super_boss: false
   abomination_void_crawler:
@@ -3330,8 +4823,12 @@ Abomination:
     level: 19
     base_hp: 124
     mods:
-      Dexterity: 2
-      Constitution: 3
+      Strength: 6
+      Constitution: 8
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   abyssal_abomination:
@@ -3340,8 +4837,12 @@ Abomination:
     level: 20
     base_hp: 180
     mods:
-      Strength: 7
-      Constitution: 6
+      Strength: 8
+      Constitution: 8
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: true
     super_boss: false
   abomination_dream_eater:
@@ -3350,8 +4851,12 @@ Abomination:
     level: 21
     base_hp: 135
     mods:
-      Wisdom: 3
-      Constitution: 2
+      Strength: 7
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 5
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   dream_devouring_slitcurrent:
@@ -3360,9 +4865,12 @@ Abomination:
     level: 21
     base_hp: 420
     mods:
-      Strength: 5
+      Strength: 7
       Constitution: 7
-      Dexterity: 6
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: true
     super_boss: true
   abomination_hive_queen:
@@ -3371,8 +4879,12 @@ Abomination:
     level: 22
     base_hp: 145
     mods:
-      Constitution: 4
-      Wisdom: 2
+      Strength: 7
+      Constitution: 9
+      Dexterity: 3
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   abomination_abyssal_leviathan:
@@ -3381,8 +4893,12 @@ Abomination:
     level: 24
     base_hp: 160
     mods:
-      Strength: 5
-      Constitution: 4
+      Strength: 11
+      Constitution: 8
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   abomination_annihilation_beast:
@@ -3391,8 +4907,12 @@ Abomination:
     level: 25
     base_hp: 168
     mods:
-      Strength: 5
-      Constitution: 4
+      Strength: 10
+      Constitution: 10
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   flesh_amalgam:
@@ -3401,8 +4921,12 @@ Abomination:
     level: 25
     base_hp: 220
     mods:
-      Constitution: 6
-      Strength: 4
+      Strength: 9
+      Constitution: 11
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   abomination_chaos_spawn:
@@ -3411,8 +4935,12 @@ Abomination:
     level: 27
     base_hp: 180
     mods:
-      Strength: 4
-      Constitution: 4
+      Strength: 9
+      Constitution: 10
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   abomination_world_eater:
@@ -3421,8 +4949,12 @@ Abomination:
     level: 28
     base_hp: 195
     mods:
-      Strength: 6
-      Constitution: 4
+      Strength: 10
+      Constitution: 9
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   abomination_doom_of_worlds:
@@ -3431,8 +4963,12 @@ Abomination:
     level: 30
     base_hp: 220
     mods:
-      Strength: 6
-      Constitution: 5
+      Strength: 11
+      Constitution: 10
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   abomination_necro_titan:
@@ -3441,8 +4977,12 @@ Abomination:
     level: 31
     base_hp: 225
     mods:
-      Strength: 5
-      Constitution: 5
+      Strength: 10
+      Constitution: 12
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   planar_behemoth:
@@ -3451,8 +4991,12 @@ Abomination:
     level: 32
     base_hp: 240
     mods:
-      Strength: 5
-      Constitution: 5
+      Strength: 12
+      Constitution: 11
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   abomination_god_serpent:
@@ -3461,8 +5005,12 @@ Abomination:
     level: 34
     base_hp: 250
     mods:
-      Strength: 6
-      Constitution: 5
+      Strength: 11
+      Constitution: 11
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 5
+      Charisma: 5
     boss: false
     super_boss: false
   abomination_primordial_chaos:
@@ -3471,8 +5019,12 @@ Abomination:
     level: 37
     base_hp: 290
     mods:
-      Strength: 7
-      Constitution: 6
+      Strength: 12
+      Constitution: 12
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 5
+      Charisma: 6
     boss: false
     super_boss: false
   cosmic_abomination:
@@ -3481,8 +5033,12 @@ Abomination:
     level: 38
     base_hp: 270
     mods:
-      Strength: 6
-      Constitution: 5
+      Strength: 12
+      Constitution: 13
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 5
+      Charisma: 6
     boss: false
     super_boss: false
   abomination_doom_of_elders:
@@ -3491,8 +5047,12 @@ Abomination:
     level: 40
     base_hp: 320
     mods:
-      Strength: 7
-      Constitution: 6
+      Strength: 14
+      Constitution: 13
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 5
+      Charisma: 6
     boss: false
     super_boss: false
   apocalypse_bringer:
@@ -3501,8 +5061,12 @@ Abomination:
     level: 40
     base_hp: 520
     mods:
-      Strength: 8
-      Constitution: 7
+      Strength: 13
+      Constitution: 14
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 5
+      Charisma: 6
     boss: true
     super_boss: false
 Construct:
@@ -3512,7 +5076,12 @@ Construct:
     level: 8
     base_hp: 70
     mods:
-      Strength: 1
+      Strength: 4
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   stone_golem:
@@ -3520,7 +5089,13 @@ Construct:
     race: Construct
     level: 8
     base_hp: 62
-    mods: {}
+    mods:
+      Strength: 4
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   construct_bronze_sentinel:
@@ -3529,7 +5104,12 @@ Construct:
     level: 9
     base_hp: 52
     mods:
-      Strength: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   construct_silver_warden:
@@ -3538,7 +5118,12 @@ Construct:
     level: 10
     base_hp: 58
     mods:
-      Constitution: 2
+      Strength: 4
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   ancient_construct_sentinel:
@@ -3547,8 +5132,12 @@ Construct:
     level: 11
     base_hp: 80
     mods:
-      Strength: 2
-      Constitution: 2
+      Strength: 6
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   ancient_golem:
@@ -3557,7 +5146,12 @@ Construct:
     level: 12
     base_hp: 88
     mods:
-      Strength: 2
+      Strength: 5
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: true
     super_boss: false
   adamantine_golem:
@@ -3566,7 +5160,12 @@ Construct:
     level: 13
     base_hp: 95
     mods:
-      Constitution: 3
+      Strength: 4
+      Constitution: 7
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   construct_obsidian_guard:
@@ -3575,7 +5174,12 @@ Construct:
     level: 14
     base_hp: 78
     mods:
-      Strength: 3
+      Strength: 7
+      Constitution: 5
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   construct_mithril_golem:
@@ -3584,8 +5188,12 @@ Construct:
     level: 15
     base_hp: 88
     mods:
-      Constitution: 3
-      Strength: 2
+      Strength: 7
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   dream_floatsam:
@@ -3594,18 +5202,27 @@ Construct:
     level: 16
     base_hp: 55
     mods:
+      Strength: 5
+      Constitution: 7
       Dexterity: 4
-      Constitution: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
+    minion_only: true
   primeval_construct:
     name: Primeval Construct
     race: Construct
     level: 16
     base_hp: 115
     mods:
-      Strength: 4
-      Constitution: 5
+      Strength: 6
+      Constitution: 8
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   titanic_golem:
@@ -3614,8 +5231,12 @@ Construct:
     level: 16
     base_hp: 155
     mods:
-      Strength: 5
-      Constitution: 4
+      Strength: 8
+      Constitution: 6
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 3
+      Charisma: 3
     boss: true
     super_boss: false
   construct_rune_guardian:
@@ -3624,8 +5245,12 @@ Construct:
     level: 17
     base_hp: 92
     mods:
-      Learning: 2
-      Constitution: 2
+      Strength: 5
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 4
+      Charisma: 3
     boss: false
     super_boss: false
   construct_obsidian_colossus:
@@ -3634,8 +5259,12 @@ Construct:
     level: 18
     base_hp: 108
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 7
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   construct_colossal_statue:
@@ -3644,8 +5273,12 @@ Construct:
     level: 19
     base_hp: 110
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 7
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   construct_eternal_warden:
@@ -3654,8 +5287,12 @@ Construct:
     level: 20
     base_hp: 170
     mods:
-      Constitution: 5
-      Strength: 3
+      Strength: 7
+      Constitution: 8
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: true
     super_boss: false
   construct_titanic_guardian:
@@ -3664,8 +5301,12 @@ Construct:
     level: 20
     base_hp: 125
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 7
+      Constitution: 8
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 3
+      Charisma: 4
     boss: false
     super_boss: false
   melt_forge_golem_ignis:
@@ -3674,9 +5315,12 @@ Construct:
     level: 21
     base_hp: 400
     mods:
-      Strength: 6
+      Strength: 7
       Constitution: 8
-      Dexterity: 1
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 4
+      Charisma: 4
     boss: true
     super_boss: true
   construct_star_metal_golem:
@@ -3685,8 +5329,12 @@ Construct:
     level: 22
     base_hp: 125
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 7
+      Constitution: 9
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   construct_aurum_golem:
@@ -3695,8 +5343,12 @@ Construct:
     level: 25
     base_hp: 145
     mods:
-      Constitution: 4
-      Strength: 2
+      Strength: 8
+      Constitution: 11
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   construct_primal_guardian:
@@ -3705,8 +5357,12 @@ Construct:
     level: 28
     base_hp: 165
     mods:
-      Strength: 4
-      Constitution: 4
+      Strength: 9
+      Constitution: 9
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 5
+      Charisma: 5
     boss: false
     super_boss: false
   construct_primordial_golem:
@@ -3715,8 +5371,12 @@ Construct:
     level: 32
     base_hp: 210
     mods:
-      Strength: 5
-      Constitution: 5
+      Strength: 10
+      Constitution: 11
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 5
+      Charisma: 6
     boss: false
     super_boss: false
   ancient_chronos_golem:
@@ -3725,9 +5385,12 @@ Construct:
     level: 35
     base_hp: 410
     mods:
-      Strength: 5
-      Constitution: 6
-      Learning: 3
+      Strength: 10
+      Constitution: 10
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 7
+      Charisma: 6
     boss: true
     super_boss: false
   construct_celestial_automaton:
@@ -3736,8 +5399,12 @@ Construct:
     level: 36
     base_hp: 250
     mods:
-      Constitution: 5
-      Learning: 3
+      Strength: 9
+      Constitution: 12
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 7
+      Charisma: 6
     boss: false
     super_boss: false
   yinglong_heaven_pillar:
@@ -3745,7 +5412,13 @@ Construct:
     race: Construct
     level: 45
     base_hp: 40
-    mods: {}
+    mods:
+      Strength: 12
+      Constitution: 14
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 7
+      Charisma: 8
     boss: false
     super_boss: false
   yinglong_heaven_pinning_wedge:
@@ -3753,7 +5426,13 @@ Construct:
     race: Construct
     level: 45
     base_hp: 30
-    mods: {}
+    mods:
+      Strength: 12
+      Constitution: 14
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 7
+      Charisma: 8
     boss: false
     super_boss: false
 Dragonkin:
@@ -3763,7 +5442,12 @@ Dragonkin:
     level: 7
     base_hp: 50
     mods:
-      Strength: 3
+      Strength: 5
+      Constitution: 3
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 1
     boss: false
     super_boss: false
   elder_dragonkin:
@@ -3772,8 +5456,12 @@ Dragonkin:
     level: 9
     base_hp: 68
     mods:
-      Strength: 3
-      Constitution: 1
+      Strength: 5
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_scorched_zealot:
@@ -3782,8 +5470,12 @@ Dragonkin:
     level: 10
     base_hp: 58
     mods:
-      Strength: 2
-      Constitution: 2
+      Strength: 6
+      Constitution: 4
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_scout:
@@ -3792,8 +5484,12 @@ Dragonkin:
     level: 11
     base_hp: 68
     mods:
-      Dexterity: 2
-      Strength: 2
+      Strength: 5
+      Constitution: 4
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   mature_dragonkin:
@@ -3802,8 +5498,12 @@ Dragonkin:
     level: 11
     base_hp: 82
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 5
+      Constitution: 5
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_flame_weaver:
@@ -3812,8 +5512,12 @@ Dragonkin:
     level: 12
     base_hp: 68
     mods:
-      Learning: 2
-      Strength: 1
+      Strength: 6
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_ancient_wyrm:
@@ -3822,8 +5526,12 @@ Dragonkin:
     level: 13
     base_hp: 95
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 7
+      Constitution: 5
+      Dexterity: 3
+      Wisdom: 2
+      Learning: 2
+      Charisma: 2
     boss: true
     super_boss: false
   ancient_dragonkin:
@@ -3832,8 +5540,12 @@ Dragonkin:
     level: 14
     base_hp: 105
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 7
+      Constitution: 5
+      Dexterity: 3
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: true
     super_boss: false
   dragonkin_captain:
@@ -3842,9 +5554,12 @@ Dragonkin:
     level: 14
     base_hp: 92
     mods:
-      Strength: 3
-      Constitution: 2
-      Dexterity: 1
+      Strength: 6
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_storm_roarer:
@@ -3853,8 +5568,12 @@ Dragonkin:
     level: 15
     base_hp: 84
     mods:
-      Strength: 3
-      Dexterity: 1
+      Strength: 7
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   wyvern_rider:
@@ -3863,8 +5582,12 @@ Dragonkin:
     level: 16
     base_hp: 130
     mods:
-      Dexterity: 3
-      Strength: 3
+      Strength: 8
+      Constitution: 5
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_iron_scale:
@@ -3873,8 +5596,12 @@ Dragonkin:
     level: 17
     base_hp: 98
     mods:
-      Constitution: 3
-      Strength: 2
+      Strength: 8
+      Constitution: 6
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 2
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_flare_drake:
@@ -3883,8 +5610,12 @@ Dragonkin:
     level: 18
     base_hp: 102
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 8
+      Constitution: 6
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 2
     boss: false
     super_boss: false
   dragonkin_overlord:
@@ -3893,8 +5624,12 @@ Dragonkin:
     level: 19
     base_hp: 165
     mods:
-      Strength: 6
-      Constitution: 4
+      Strength: 9
+      Constitution: 6
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 2
     boss: true
     super_boss: false
   dragonkin_ancient_guardian:
@@ -3903,8 +5638,12 @@ Dragonkin:
     level: 20
     base_hp: 118
     mods:
-      Strength: 4
-      Constitution: 2
+      Strength: 8
+      Constitution: 7
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   dragonkin_ice_claw:
@@ -3913,8 +5652,12 @@ Dragonkin:
     level: 22
     base_hp: 125
     mods:
-      Strength: 3
-      Constitution: 2
+      Strength: 9
+      Constitution: 7
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   draconic_vanguard:
@@ -3923,8 +5666,12 @@ Dragonkin:
     level: 24
     base_hp: 155
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 9
+      Constitution: 8
+      Dexterity: 5
+      Wisdom: 4
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   dragonkin_sky_terror:
@@ -3933,8 +5680,12 @@ Dragonkin:
     level: 25
     base_hp: 138
     mods:
-      Strength: 4
-      Dexterity: 2
+      Strength: 10
+      Constitution: 7
+      Dexterity: 6
+      Wisdom: 4
+      Learning: 3
+      Charisma: 3
     boss: false
     super_boss: false
   dragonkin_storm_wing:
@@ -3943,8 +5694,12 @@ Dragonkin:
     level: 27
     base_hp: 148
     mods:
-      Dexterity: 3
-      Strength: 2
+      Strength: 10
+      Constitution: 7
+      Dexterity: 7
+      Wisdom: 4
+      Learning: 4
+      Charisma: 3
     boss: false
     super_boss: false
   dragon_knight_commander:
@@ -3953,8 +5708,12 @@ Dragonkin:
     level: 28
     base_hp: 240
     mods:
-      Strength: 5
-      Charisma: 4
+      Strength: 10
+      Constitution: 7
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 4
+      Charisma: 5
     boss: false
     super_boss: false
   dragonkin_elder_wyrm:
@@ -3963,8 +5722,12 @@ Dragonkin:
     level: 30
     base_hp: 185
     mods:
-      Strength: 5
-      Constitution: 3
+      Strength: 10
+      Constitution: 9
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   dragonkin_abyssal_drake:
@@ -3973,8 +5736,12 @@ Dragonkin:
     level: 32
     base_hp: 180
     mods:
-      Strength: 4
-      Constitution: 3
+      Strength: 12
+      Constitution: 9
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 4
+      Charisma: 4
     boss: false
     super_boss: false
   dragonkin_time_drake:
@@ -3983,8 +5750,12 @@ Dragonkin:
     level: 35
     base_hp: 240
     mods:
-      Learning: 4
-      Constitution: 3
+      Strength: 10
+      Constitution: 10
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 7
+      Charisma: 4
     boss: false
     super_boss: false
   heaven_banished_dragon_yinglong:
@@ -3993,9 +5764,11 @@ Dragonkin:
     level: 45
     base_hp: 600
     mods:
-      Strength: 9
-      Constitution: 8
-      Dexterity: 5
-      Learning: 2
+      Strength: 14
+      Constitution: 13
+      Dexterity: 9
+      Wisdom: 6
+      Learning: 6
+      Charisma: 5
     boss: true
     super_boss: true

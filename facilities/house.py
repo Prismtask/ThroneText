@@ -1,12 +1,11 @@
 # facilities/house.py
-"""
-Player House system.
+"""Player House system.
 
 Data layout in player dict
 ──────────────────────────
 player["houses"] = {
     city_id: {
-        "level":           int (1–3),
+        "level":           int (1–8),
         "storage":         list of item dicts,
         "last_income_day": int  (game day when income was last collected),
     }
@@ -14,14 +13,20 @@ player["houses"] = {
 
 House levels
 ────────────
-  Lv1 – Hovel     : storage 10 slots,  income  8 gold/day, rest time 90 min, bed buff +1 all / 1 floor
-  Lv2 – Cottage   : storage 20 slots,  income 18 gold/day, rest time 70 min, bed buff +2 all / 2 floors
-  Lv3 – Manor     : storage 35 slots,  income 35 gold/day, rest time 50 min, bed buff +3 all / 3 floors
+  Lv1 – Hovel       : storage 10 slots,  income  8 gold/day,  rest 30 min
+  Lv2 – Cottage     : storage 20 slots,  income 18 gold/day,  rest 25 min
+  Lv3 – Manor       : storage 35 slots,  income 35 gold/day,  rest 20 min
+  Lv4 – Villa       : storage 55 slots,  income 65 gold/day,  rest 15 min
+  Lv5 – Estate      : storage 80 slots,  income 110 gold/day, rest 10 min
+  Lv6 – Palace      : storage 120 slots, income 200 gold/day, rest 10 min
+  Lv7 – Citadel     : storage 170 slots, income 320 gold/day, rest 5 min
+  Lv8 – Sanctuary   : storage 230 slots, income 480 gold/day, rest 5 min
 
-Upgrade costs: Lv1→2 = 600 gold,  Lv2→3 = 1 500 gold
+Upgrade costs: Lv1→2 = 600, Lv2→3 = 1500, Lv3→4 = 3000, Lv4→5 = 6000,
+               Lv5→6 = 12000, Lv6→7 = 25000, Lv7→8 = 50000
 
-Bed buff uses the same active_buffs / "blessing" format as temple.py so
-get_effective_attribute() in stats.py picks it up automatically.
+Passive income now scales with your highest dungeon floor cleared across all
+regions so it stays relevant in late game.
 """
 
 from utils import clear_screen, advance_time
@@ -34,15 +39,25 @@ RECRUIT_AFFECTION_THRESHOLD = 50  # Minimum affection needed to recruit a girl
 # ── Constants ────────────────────────────────────────────────────────────────
 
 HOUSE_LEVELS = {
-    1: {"name": "Hovel",   "storage_cap": 10, "income_per_day": 8,  "rest_minutes": 90,  "upgrade_cost": 600,  "bed_buff_value": 1, "bed_buff_floors": 1},
-    2: {"name": "Cottage", "storage_cap": 20, "income_per_day": 18, "rest_minutes": 70,  "upgrade_cost": 1500, "bed_buff_value": 2, "bed_buff_floors": 2},
-    3: {"name": "Manor",   "storage_cap": 35, "income_per_day": 35, "rest_minutes": 50,  "upgrade_cost": None, "bed_buff_value": 3, "bed_buff_floors": 3},
+    1: {"name": "Hovel",     "storage_cap": 10,  "income_per_day": 8,   "rest_minutes": 30, "upgrade_cost": 600,   "bed_buff_value": 0, "bed_buff_floors": 1},
+    2: {"name": "Cottage",   "storage_cap": 20,  "income_per_day": 18,  "rest_minutes": 25, "upgrade_cost": 1500,  "bed_buff_value": 0, "bed_buff_floors": 2},
+    3: {"name": "Manor",     "storage_cap": 35,  "income_per_day": 35,  "rest_minutes": 20, "upgrade_cost": 3000,  "bed_buff_value": 1, "bed_buff_floors": 3},
+    4: {"name": "Villa",     "storage_cap": 55,  "income_per_day": 65,  "rest_minutes": 15, "upgrade_cost": 6000,  "bed_buff_value": 1, "bed_buff_floors": 4},
+    5: {"name": "Estate",    "storage_cap": 80,  "income_per_day": 110, "rest_minutes": 10, "upgrade_cost": 12000, "bed_buff_value": 2, "bed_buff_floors": 5},
+    6: {"name": "Palace",    "storage_cap": 120, "income_per_day": 200, "rest_minutes": 10, "upgrade_cost": 25000, "bed_buff_value": 2, "bed_buff_floors": 6},
+    7: {"name": "Citadel",   "storage_cap": 170, "income_per_day": 320, "rest_minutes": 5,  "upgrade_cost": 50000, "bed_buff_value": 2, "bed_buff_floors": 7},
+    8: {"name": "Sanctuary", "storage_cap": 230, "income_per_day": 480, "rest_minutes": 5,  "upgrade_cost": None,  "bed_buff_value": 3, "bed_buff_floors": 8},
 }
 
 HOUSE_MONSTER_GIRL_LIMITS = {
-    1: 2,   # Hovel: max 2 girls
-    2: 4,   # Cottage: max 4 girls
-    3: 8    # Manor: max 8 girls
+    1: 2,    # Hovel
+    2: 4,    # Cottage
+    3: 8,    # Manor
+    4: 14,   # Villa
+    5: 24,   # Estate
+    6: 50,   # Palace  (room for 48 current + future)
+    7: 75,   # Citadel
+    8: 100,  # Sanctuary
 }
 
 # Multiplier on income per day based on a city's wealth (derived from inn cost).
@@ -83,6 +98,14 @@ def _house_level_data(house):
     return HOUSE_LEVELS[house["level"]]
 
 
+def _get_highest_floor(player):
+    """Return the highest dungeon floor ever cleared across all cities."""
+    highest = player.get("max_floor", 1)
+    for cf in player.get("city_floors", {}).values():
+        highest = max(highest, cf.get("max_floor", 1))
+    return highest
+
+
 def _pending_income(player, city_id, house):
     """Calculate gold owed since last collection, capped at MAX_INCOME_DAYS."""
     current_day = player.get("day", 1)
@@ -92,7 +115,9 @@ def _pending_income(player, city_id, house):
         return 0
     base      = _house_level_data(house)["income_per_day"]
     mult      = CITY_INCOME_MULT.get(city_id, 1.0)
-    return int(days_passed * base * mult)
+    highest_floor = _get_highest_floor(player)
+    floor_mult = max(1.0, highest_floor / 3.0)
+    return int(days_passed * base * mult * floor_mult)
 
 
 def _reset_daily_limits(player):
@@ -178,19 +203,18 @@ def save_house_data(player, girls_data, city_id=None):
 # ── Sub-menus ────────────────────────────────────────────────────────────────
 
 def _house_rest(player, city_id, house):
-    """Rest at home — free full heal + well-rested buff, costs time based on house level.
-
-    Buff format mirrors temple.py's blessing so stats.py picks it up automatically:
-      { "type": "well_rested", "stat": "all", "value": N, "remaining": F }
-    Only one well-rested buff is allowed at a time; resting again refreshes it.
+    """Quick rest at home — free full heal, costs a small amount of time.
+    From Manor onward, also grants a Well-Rested stat buff that lasts for
+    dungeon rooms (duration = house level). Stat bonus: +1 (Manor–Villa),
+    +2 (Estate–Citadel), +3 (Sanctuary).
     """
     lvl_data   = _house_level_data(house)
     rest_mins  = lvl_data["rest_minutes"]
     buff_val   = lvl_data["bed_buff_value"]
-    buff_floors = lvl_data["bed_buff_floors"]
+    buff_rooms = lvl_data["bed_buff_floors"]
     max_hp     = player_max_hp(player)
 
-    # Heal
+    # Heal player
     old_hp               = player["current_hp"]
     player["current_hp"] = max_hp
     healed               = max_hp - old_hp
@@ -203,42 +227,74 @@ def _house_rest(player, city_id, house):
             ally_healed = ally["max_hp"] - ally_old
             print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
 
-    # Remove any existing well-rested buff before applying a fresh one
-    player.setdefault("active_buffs", [])
-    player["active_buffs"] = [
-        b for b in player["active_buffs"] if b.get("type") != "well_rested"
-    ]
+    # Apply / refresh Well-Rested buff (Manor and above)
+    if buff_val > 0:
+        player.setdefault("active_buffs", [])
+        player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "well_rested"]
+        player["active_buffs"].append({
+            "type":      "well_rested",
+            "stat":      "all",
+            "value":     buff_val,
+            "remaining": buff_rooms,
+        })
 
-    # Apply new well-rested buff (same structure as temple blessing)
-    player["active_buffs"].append({
-        "type":      "well_rested",
-        "stat":      "all",
-        "value":     buff_val,
-        "remaining": buff_floors,
-    })
-
-    # Also apply well-rested buff to allies
-    for ally in player.get("allies", []):
-        if ally.get("current_hp", 0) > 0:
-            ally.setdefault("active_buffs", [])
-            ally["active_buffs"] = [b for b in ally["active_buffs"] if b.get("type") != "well_rested"]
-            ally["active_buffs"].append({
-                "type":      "well_rested",
-                "stat":      "all",
-                "value":     buff_val,
-                "remaining": buff_floors,
-            })
+        for ally in player.get("allies", []):
+            if ally.get("current_hp", 0) > 0:
+                ally.setdefault("active_buffs", [])
+                ally["active_buffs"] = [b for b in ally["active_buffs"] if b.get("type") != "well_rested"]
+                ally["active_buffs"].append({
+                    "type":      "well_rested",
+                    "stat":      "all",
+                    "value":     buff_val,
+                    "remaining": buff_rooms,
+                })
 
     advance_time(player, rest_mins)
 
     home_name = lvl_data["name"].lower()
-    print(f"You sleep soundly in your {home_name}.")
+    print(f"You take a quick rest in your {home_name}.")
     if healed > 0:
         print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
     else:
-        print(f"  You were already at full health, but the rest still does you good.")
-    print(f"  Well-Rested: +{buff_val} to all stats for {buff_floors} dungeon floor(s).")
+        print(f"  You were already at full health, but the brief rest feels nice.")
+    if buff_val > 0:
+        print(f"  Well-Rested: +{buff_val} to all stats for {buff_rooms} dungeon room(s).")
     print(f"  ({rest_mins} minutes pass.)")
+    input("\nPress Enter...")
+
+
+def _house_sleep(player, city_id, house):
+    """Sleep at home — full heal + 8 hours pass. Only available between 20:00 and 04:00."""
+    current_hour = player.get("time_minutes", 0) // 60
+    if not (current_hour >= 20 or current_hour < 4):
+        print("You can only sleep at home between 20:00 and 04:00.")
+        input("\nPress Enter...")
+        return
+
+    max_hp = player_max_hp(player)
+
+    # Heal player
+    old_hp               = player["current_hp"]
+    player["current_hp"] = max_hp
+    healed               = max_hp - old_hp
+
+    # Heal allies too
+    for ally in player.get("allies", []):
+        if ally.get("current_hp", 0) > 0:
+            ally_old = ally["current_hp"]
+            ally["current_hp"] = ally["max_hp"]
+            ally_healed = ally["max_hp"] - ally_old
+            print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
+
+    advance_time(player, 480)
+
+    home_name = _house_level_data(house)["name"].lower()
+    print(f"You settle into a deep sleep in your {home_name}.")
+    if healed > 0:
+        print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
+    else:
+        print(f"  You were already at full health, but the sleep restores your spirit.")
+    print("  (8 hours pass.)")
     input("\nPress Enter...")
 
 
@@ -430,20 +486,21 @@ def _house_upgrade(player, city_id, house):
     lvl      = house["level"]
     lvl_data = HOUSE_LEVELS[lvl]
     cost     = lvl_data["upgrade_cost"]
+    max_level = max(HOUSE_LEVELS)
 
-    if cost is None:
-        print("Your Manor is already at its grandest — no further upgrades available.")
+    if cost is None or lvl >= max_level:
+        print(f"Your {_house_level_data(house)['name']} is already at its grandest — no further upgrades available.")
         input("\nPress Enter...")
         return
 
     next_data = HOUSE_LEVELS[lvl + 1]
+    from facilities.house import HOUSE_MONSTER_GIRL_LIMITS
     print(f"Upgrade to {next_data['name']}?")
-    print(f"  Cost         : {cost} gold")
-    print(f"  Storage      : {lvl_data['storage_cap']} → {next_data['storage_cap']} slots")
-    print(f"  Daily income : {lvl_data['income_per_day']} → {next_data['income_per_day']} gold")
-    print(f"  Rest time    : {lvl_data['rest_minutes']} → {next_data['rest_minutes']} min")
-    print(f"  Bed buff     : +{lvl_data['bed_buff_value']} all stats ({lvl_data['bed_buff_floors']} floor) "
-          f"→ +{next_data['bed_buff_value']} all stats ({next_data['bed_buff_floors']} floors)")
+    print(f"  Cost           : {cost} gold")
+    print(f"  Storage        : {lvl_data['storage_cap']} → {next_data['storage_cap']} slots")
+    print(f"  Daily income   : {lvl_data['income_per_day']} → {next_data['income_per_day']} gold")
+    print(f"  Rest time      : {lvl_data['rest_minutes']} → {next_data['rest_minutes']} min")
+    print(f"  Monster girls  : {HOUSE_MONSTER_GIRL_LIMITS[lvl]} → {HOUSE_MONSTER_GIRL_LIMITS[lvl + 1]}")
     confirm = input("\nProceed? (y/n): ").strip().lower()
 
     if confirm != "y":
@@ -574,6 +631,10 @@ def _house_lounge(player, city_id, house):
         print(f"  Affection: {aff}/{aff_cap}")
         status_label = "Married" if married else "Engaged" if engaged else "Active" if where == "active" else "At home"
         print(f"  Status: {status_label}")
+        ring_bonus = girl.get("ring_stat_bonus")
+        if ring_bonus:
+            bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
+            print(f"  Ring Blessing: {', '.join(bonus_lines)}")
         if where == "active":
             cap = girl.get("level_cap", 10)
             print(f"  Level: {girl['level']}/{cap}")
@@ -775,6 +836,17 @@ def _house_lounge(player, city_id, house):
 
             engaged_line = dialogue.get("house_engaged", f"{girl['name']} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
             print("\n" + (engaged_line.format(name=girl['name']) if "{name}" in engaged_line else engaged_line))
+            # Consume the ring
+            from inventory import remove_item_by_reference
+            remove_item_by_reference(player, ring)
+
+            # Store the ring's stat bonus on the girl (persisted in house save)
+            ring_bonus = ring.get("base_mods", {})
+            if ring_bonus:
+                girl["ring_stat_bonus"] = ring_bonus.copy()
+                bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
+                print(f"  The ring's power flows into {girl['name']}: {', '.join(bonus_lines)}.")
+
             girl["engaged"] = True
             girl["affection_cap"] = 200
             player.setdefault("engaged_girls", [])
@@ -910,29 +982,36 @@ def house_menu(player, city_id):
         input("\nPress Enter...")
         return
 
+    max_level = max(HOUSE_LEVELS)
+
     while True:
         clear_screen()
         lvl_data = _house_level_data(house)
         pending  = _pending_income(player, city_id, house)
+        total_girls = len(house.get("monster_girls", [])) + len(player.get("allies", []))
+        max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house["level"], 2)
 
         print(f"=== Your {lvl_data['name']} ===")
         print(f"  Level    : {house['level']} — {lvl_data['name']}")
+        print(f"  Girls    : {total_girls}/{max_girls}")
         print(f"  Storage  : {len(house['storage'])}/{lvl_data['storage_cap']} slots")
         print(f"  Pending  : {pending} gold")
         print(f"  Gold     : {player.get('gold', 0)}")
         print()
-        print("1. Rest (free heal)")
-        print("2. Storage chest")
-        print("3. Collect income")
-        print("4. Lounge")
-        if house["level"] < 3:
-            print("5. Upgrade house")
+        print("1. Rest (quick heal)")
+        print("2. Sleep (full heal + 8 hours) — Available 20:00–04:00")
+        print("3. Storage chest")
+        print("4. Collect income")
+        print("5. Lounge")
+        if house["level"] < max_level:
+            next_name = HOUSE_LEVELS[house["level"] + 1]["name"]
+            print(f"6. Upgrade to {next_name}")
+            print("7. Leave")
+            leave_opt = "7"
+            upgrade_opt = "6"
+        else:
             print("6. Leave")
             leave_opt = "6"
-            upgrade_opt = "5"
-        else:
-            print("5. Leave")
-            leave_opt = "5"
             upgrade_opt = None
 
         choice = input("\nChoice: ").strip()
@@ -940,10 +1019,12 @@ def house_menu(player, city_id):
         if choice == "1":
             _house_rest(player, city_id, house)
         elif choice == "2":
-            _house_storage(player, city_id, house)
+            _house_sleep(player, city_id, house)
         elif choice == "3":
-            _house_collect_income(player, city_id, house)
+            _house_storage(player, city_id, house)
         elif choice == "4":
+            _house_collect_income(player, city_id, house)
+        elif choice == "5":
             _house_lounge(player, city_id, house)
         elif upgrade_opt and choice == upgrade_opt:
             _house_upgrade(player, city_id, house)

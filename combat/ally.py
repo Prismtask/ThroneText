@@ -67,6 +67,12 @@ def create_ally_from_girl(girl):
         scaled = max(1, int(base * ALLY_STAT_MULTIPLIER + level_bonus))
         scaled_attrs[attr] = scaled
 
+    # Apply engagement ring stat bonus (from proposal)
+    ring_bonus = girl.get("ring_stat_bonus")
+    if ring_bonus:
+        for attr, val in ring_bonus.items():
+            scaled_attrs[attr] = scaled_attrs.get(attr, 0) + val
+
     ally = {
         "name": girl.get("name", template["name"]),
         "key": enemy_key,
@@ -203,13 +209,15 @@ def get_all_party_members(player):
     return party
 
 
-def equip_ally_item(ally, item, player):
+def equip_ally_item(ally, item, player, target_slot=None):
     """Equip an item on an ally from the player's inventory."""
     from inventory import add_item_to_inventory
     item_slot = item["slot"]
     # Resolve dual accessory slots
     if item_slot == "accessory":
-        if ally.get("equipped", {}).get("accessory1") is None:
+        if target_slot in ("accessory1", "accessory2"):
+            pass  # use caller-specified slot
+        elif ally.get("equipped", {}).get("accessory1") is None:
             target_slot = "accessory1"
         elif ally.get("equipped", {}).get("accessory2") is None:
             target_slot = "accessory2"
@@ -437,6 +445,11 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         dmg = random.randint(3, 8) + scaling_val - target["con_mod"]
         dmg = max(0, dmg)
 
+        # Critical hit check
+        from combat.stats import roll_critical_hit, apply_critical_damage, format_critical_tag
+        is_crit, _ = roll_critical_hit(ally, "ally", dex=a_dex, lrn=a_ler)
+        dmg = apply_critical_damage(dmg, is_crit)
+
         # Apply elemental damage
         from combat.elemental import calculate_elemental_damage
         element = None
@@ -456,10 +469,11 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
                           "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
         tag = elemental_tags.get(element, "")
+        crit_tag = format_critical_tag(is_crit)
         if tag:
-            print(f"  {ally['name']} {verb} {target['name']} for {final_dmg} damage! {tag}")
+            print(f"  {ally['name']} {verb} {target['name']} for {final_dmg} damage!{crit_tag} {tag}")
         else:
-            print(f"  {ally['name']} {verb} {target['name']} for {final_dmg} damage!")
+            print(f"  {ally['name']} {verb} {target['name']} for {final_dmg} damage!{crit_tag}")
         if target["hp"] <= 0:
             print(f"  {ally['name']} defeated {target['name']}!")
         return "continue"

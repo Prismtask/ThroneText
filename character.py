@@ -55,6 +55,10 @@ def ensure_player_fields(player):
         ally.setdefault("affection_cap", 100)
         ally.setdefault("engaged", False)
         ally.setdefault("married", False)
+        ally.setdefault("learned_skills", [])
+        ally.setdefault("learning", None)
+        ally.setdefault("skill_cooldowns", {})
+        ally.setdefault("skill_mastery", {})
         if "elemental_res" not in ally or "elemental_dmg" not in ally:
             from combat.elemental import compute_ally_elemental
             res, dmg = compute_ally_elemental(ally)
@@ -77,6 +81,10 @@ def ensure_player_fields(player):
             girl.setdefault("affection_cap", 100)
             girl.setdefault("engaged", False)
             girl.setdefault("married", False)
+            girl.setdefault("learned_skills", [])
+            girl.setdefault("learning", None)
+            girl.setdefault("skill_cooldowns", {})
+            girl.setdefault("skill_mastery", {})
 
 
 def player_max_hp(player_or_attrs):

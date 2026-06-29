@@ -326,11 +326,18 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
             pass
         return None
 
-    def _calc_dmg(target, power, ignore_armor=False):
+    def _calc_dmg(target, power, ignore_armor=False, guaranteed_crit=False):
         armor = 0 if ignore_armor else target.get("con_mod", 0)
         for debuff in target.get("active_debuffs", []):
             if debuff.get("type") == "sunder":
                 armor = max(0, armor - debuff.get("value", 0))
+        # Random critical hit (skip if skill already guarantees a crit)
+        if not guaranteed_crit:
+            from combat.stats import roll_critical_hit, apply_critical_damage
+            is_crit, _ = roll_critical_hit(ally, "ally", dex=a_dex, lrn=a_ler)
+            if is_crit:
+                power = apply_critical_damage(power, is_crit)
+                msg_parts.append("Critical hit!")
         return max(1, power - armor)
 
     # ── Determine Target ──
@@ -499,7 +506,8 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
 
     # ── Damage / Heal Calculation ──
     power = int((base_power + scaling) * power_mult)
-    if skill_def.get("guaranteed_crit"):
+    guaranteed = skill_def.get("guaranteed_crit", False)
+    if guaranteed:
         power *= 2
         msg_parts.append("Critical hit!")
 
@@ -508,7 +516,7 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         live = [e for e in enemies if e["hp"] > 0]
         total_dmg = 0
         for e in live:
-            dmg = _calc_dmg(e, power, skill_def.get("ignore_armor", False))
+            dmg = _calc_dmg(e, power, skill_def.get("ignore_armor", False), guaranteed_crit=guaranteed)
             e["hp"] -= dmg
             msg_parts.append(f"{skill_def['name']} hits {e['name']} for {dmg} damage!")
             total_dmg += dmg
@@ -554,7 +562,7 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
 
     # Single-target enemy damage
     elif target_type == "enemy" and target:
-        dmg = _calc_dmg(target, power, skill_def.get("ignore_armor", False))
+        dmg = _calc_dmg(target, power, skill_def.get("ignore_armor", False), guaranteed_crit=guaranteed)
         target["hp"] -= dmg
         msg_parts.append(f"{skill_def['name']} deals {dmg} damage to {target['name']}!")
         if target["hp"] <= 0:

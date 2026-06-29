@@ -16,6 +16,19 @@ def _slot_display_name(slot):
     return slot.title()
 
 
+def _format_equipment_stat_line(item):
+    """Format equipment mods for inventory display."""
+    if item.get("type") != "equipment":
+        return ""
+    slot = item.get("slot", "?").title()
+    mods = item.get("mods", {})
+    mod_s = ", ".join(
+        f"{stat[:3]} {'+' if v >= 0 else ''}{v}"
+        for stat, v in mods.items()
+    )
+    return f"[{slot}{(' | ' + mod_s) if mod_s else ''}]"
+
+
 def display_player_status(player):
     """Show player name, level, HP, attributes (with equipment and buff bonuses), and equipped items."""
     equip_mods = get_total_equipment_mods(player)
@@ -284,14 +297,26 @@ def manage_equipment_submenu(player):
                 input("Press Enter...")
                 continue
             for idx, itm in enumerate(equip_items):
-                print(f"{idx+1}. {itm['name']} (slot: {itm['slot']}) [{itm.get('rarity','common')}]")
+                stat = _format_equipment_stat_line(itm)
+                print(f"{idx+1}. {itm['name']} (slot: {itm['slot']}) {stat} [{itm.get('rarity','common')}]")
             try:
                 idx = int(input("Equip which? (0 cancel): ")) - 1
                 if idx >= 0:
                     item = equip_items[idx]
                     orig_idx = next(i for i, itm in enumerate(player["inventory"]) if itm is item)
                     player["inventory"].pop(orig_idx)
-                    equip_item(player, item)
+                    # Prompt for accessory slot if both are occupied
+                    target_slot = None
+                    if item["slot"] == "accessory":
+                        acc1 = player.get("equipped", {}).get("accessory1")
+                        acc2 = player.get("equipped", {}).get("accessory2")
+                        if acc1 and acc2:
+                            print("\nBoth accessory slots are occupied.")
+                            print(f"1. Replace {acc1['name']}")
+                            print(f"2. Replace {acc2['name']}")
+                            choice = input("Which slot? (1/2): ").strip()
+                            target_slot = "accessory2" if choice == "2" else "accessory1"
+                    equip_item(player, item, target_slot)
             except:
                 pass
         elif sub == "2":
@@ -322,11 +347,23 @@ def manage_equipment_submenu(player):
                     ally = allies[a_idx]
                     print(f"\nEquipping {ally['name']}:")
                     for idx, itm in enumerate(equip_items):
-                        print(f"{idx+1}. {itm['name']} (slot: {itm['slot']}) [{itm.get('rarity','common')}]")
+                        stat = _format_equipment_stat_line(itm)
+                        print(f"{idx+1}. {itm['name']} (slot: {itm['slot']}) {stat} [{itm.get('rarity','common')}]")
                     i_idx = int(input("Equip which? (0 cancel): ")) - 1
                     if i_idx >= 0:
                         item = equip_items[i_idx]
-                        print(equip_ally_item(ally, item, player))
+                        # Prompt for accessory slot if both are occupied
+                        target_slot = None
+                        if item["slot"] == "accessory":
+                            acc1 = ally.get("equipped", {}).get("accessory1")
+                            acc2 = ally.get("equipped", {}).get("accessory2")
+                            if acc1 and acc2:
+                                print(f"\nBoth accessory slots on {ally['name']} are occupied.")
+                                print(f"1. Replace {acc1['name']}")
+                                print(f"2. Replace {acc2['name']}")
+                                choice = input("Which slot? (1/2): ").strip()
+                                target_slot = "accessory2" if choice == "2" else "accessory1"
+                        print(equip_ally_item(ally, item, player, target_slot))
             except:
                 pass
             input("Press Enter...")
@@ -380,7 +417,8 @@ def manage_bag_submenu(player):
         if sorted_equip:
             print("-- Equipment --")
             for idx, itm in enumerate(sorted_equip):
-                print(f"  {idx+1}. {itm['name']} ({itm['slot']}) [{itm.get('rarity','common')}]")
+                stat = _format_equipment_stat_line(itm)
+                print(f"  {idx+1}. {itm['name']} ({itm['slot']}) {stat} [{itm.get('rarity','common')}]")
         if sorted_items:
             print("-- Items --")
             for idx, itm in enumerate(sorted_items):
@@ -450,7 +488,9 @@ def prompt_acquire_item(player, item):
     for idx, itm in enumerate(candidates):
         extra = f" ({itm['slot']})" if is_equip else f" ({itm['type']})"
         count_str = f" (x{itm.get('count', 1)})" if not is_equip and itm.get('count', 1) > 1 else ""
-        print(f"  {idx+1}. {itm['name']}{count_str}{extra} [{itm.get('rarity','common')}]")
+        stat = _format_equipment_stat_line(itm) if is_equip else ""
+        stat_part = f" {stat}" if stat else ""
+        print(f"  {idx+1}. {itm['name']}{count_str}{extra}{stat_part} [{itm.get('rarity','common')}]")
 
     print(f"\n[D]rop the new item  or  enter a number (1-{len(candidates)}) to discard that item instead.")
     choice = input("Choice: ").strip().lower()

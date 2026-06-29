@@ -81,7 +81,8 @@ def visit_city(player, city_id=None):
         _cf     = player.get("city_floors", {}).get(city_id, {})
         _cur_fl = _cf.get("floor", 1) 
         _max_fl = _cf.get("max_floor", player.get("max_floor", 1))
-        print(f"Adventurer: {player['name']} | {city['name']} Dungeon: {_cur_fl}/{_max_fl} | {format_date(player)} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{mount_field}{status_field}")
+        dungeon_name = "Pandemonium" if city_id == "isle_of_glass" else f"{city['name']} Dungeon"
+        print(f"Adventurer: {player['name']} | {dungeon_name}: {_cur_fl}/{_max_fl} | {format_date(player)} | Time: {current_time_str} | Gold: {player.get('gold', 0)}{mount_field}{status_field}")
 
         print("\nAvailable Services:")
         menu_options = {}
@@ -115,7 +116,13 @@ def visit_city(player, city_id=None):
         print(f"{option_num}. Travel to Another City")
         travel_option = str(option_num)
         option_num += 1
-        print(f"{option_num}. Enter the Dungeon")
+        if city_id == "isle_of_glass":
+            from leveling import is_pandemonium_unlocked
+            pandemonium_locked = not is_pandemonium_unlocked(player)
+            lock_icon = " 🔒" if pandemonium_locked else ""
+            print(f"{option_num}. Enter Pandemonium{lock_icon}")
+        else:
+            print(f"{option_num}. Enter the Dungeon")
         dungeon_option = str(option_num)
         option_num += 1
         print(f"{option_num}. Save & Return to Main Menu")
@@ -154,6 +161,27 @@ def visit_city(player, city_id=None):
         elif choice == dungeon_option:
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 30)
+
+            # ── Pandemonium lock check for Isle of Glass ───────────────────────
+            if city_id == "isle_of_glass":
+                from leveling import is_pandemonium_unlocked
+                if not is_pandemonium_unlocked(player):
+                    print("\n" + "=" * 50)
+                    print("  The crystalline gates of Pandemonium stand sealed.")
+                    print("  A voice echoes from the glass: 'Prove yourself across")
+                    print("   the breadth of this world before you dare tread here.'")
+                    print("=" * 50)
+                    print("\n  REQUIREMENT: Clear Floor 40 in at least 4 unique biomes.")
+                    print("  (Visit any Guild Hall to check your biome progress.)")
+                    input("\nPress Enter to return...")
+                    continue
+                else:
+                    print("\n" + "=" * 50)
+                    print("  The crystalline gates of Pandemonium shimmer open.")
+                    print("  A seething chaos churns beyond. The endgame awaits.")
+                    print("=" * 50)
+                    input("\nPress Enter to descend into Pandemonium...")
+                    player["pandemonium_mode"] = True
 
             # ── Per-city floor progress ──────────────────────────────────────
             if "city_floors" not in player:

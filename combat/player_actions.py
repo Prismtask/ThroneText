@@ -106,6 +106,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         dmg = random.randint(4, 10) + scaling_val + get_strength_bonus(player) - target["con_mod"]
         dmg = max(0, dmg)
 
+        # Critical hit check
+        from combat.stats import roll_critical_hit, apply_critical_damage, format_critical_tag
+        is_crit, _ = roll_critical_hit(player, "player")
+        dmg = apply_critical_damage(dmg, is_crit)
+
         # Wedding accessory attack bonuses
         is_first = not player.get("wedding_first_attack_done")
         wedding_bonus = apply_wedding_attack_bonus_procs(player, target, dmg, is_first)
@@ -135,10 +140,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
                           "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
         tag = elemental_tags.get(element, "")
+        crit_tag = format_critical_tag(is_crit)
         if tag:
-            print(f"{player['name']} {verb} {target['name']} for {final_dmg} damage! {tag}")
+            print(f"{player['name']} {verb} {target['name']} for {final_dmg} damage!{crit_tag} {tag}")
         else:
-            print(f"{player['name']} {verb} {target['name']} for {final_dmg} damage!")
+            print(f"{player['name']} {verb} {target['name']} for {final_dmg} damage!{crit_tag}")
         if target["hp"] <= 0:
             print(f"{player['name']} defeated {target['name']}!")
             if on_kill:

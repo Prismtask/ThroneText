@@ -75,6 +75,13 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     block = int(block * armor_mult)
 
     raw_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus
+
+    # Critical hit check
+    from combat.stats import roll_critical_hit, apply_critical_damage, format_critical_tag
+    is_crit, _ = roll_critical_hit(enemy, "enemy")
+    raw_dmg = apply_critical_damage(raw_dmg, is_crit)
+    crit_tag = format_critical_tag(is_crit)
+
     raw_dmg = int(raw_dmg * fear_mult)
     base_dmg = raw_dmg - block
     base_dmg = max(0, base_dmg)
@@ -141,9 +148,9 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
 
     if enemy_dmg > 0:
         if tag:
-            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage! {tag}")
+            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!{crit_tag} {tag}")
         else:
-            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!")
+            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!{crit_tag}")
         # Wedding retribution effects (pharaohs_curse, infernal_crown, keening_wail)
         apply_wedding_on_damage_taken(player, enemy, enemy_dmg, "hit")
     else:

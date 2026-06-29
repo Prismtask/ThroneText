@@ -36,6 +36,9 @@ def get_random_enemy_key(floor, boss=False, region=None):
         allowed_races = set(BIOME_RACES[region])
 
     for key, data in ENEMIES.items():
+        # Skip minion-only enemies in regular rooms
+        if data.get("minion_only", False):
+            continue
         # Skip superbosses on non‑milestone floors
         if floor % 10 != 0 and data.get("super_boss", False):
             continue
@@ -63,6 +66,8 @@ def get_random_enemy_key(floor, boss=False, region=None):
     # Fallback – ignore region but keep level and boss/superboss constraints
     if not pool:
         for key, data in ENEMIES.items():
+            if data.get("minion_only", False):
+                continue
             if floor % 10 != 0 and data.get("super_boss", False):
                 continue
             if boss != data.get("boss", False):
@@ -148,21 +153,39 @@ _EXCLUDED_ITEM_IDS = frozenset(
     if v.get("unique") or v.get("type") == "scroll"
 )
 
-def roll_drop(enemy_level):
-    if random.random() > 0.50:
-        return None
+def roll_drop(enemy_level, pandemonium=False):
+    if pandemonium:
+        # Pandemonium: 70% drop chance, rarity shifted toward epic/legendary
+        if random.random() > 0.70:
+            return None
+    else:
+        if random.random() > 0.50:
+            return None
 
     rarities = ["common", "uncommon", "rare", "epic", "legendary"]
-    if enemy_level <= 5:
-        weights = [0.45, 0.35, 0.15, 0.05, 0.00]
-    elif enemy_level <= 10:
-        weights = [0.30, 0.35, 0.22, 0.10, 0.03]
-    elif enemy_level <= 20:
-        weights = [0.20, 0.30, 0.28, 0.15, 0.07]
-    elif enemy_level <= 30:
-        weights = [0.10, 0.25, 0.30, 0.20, 0.15]
+    if pandemonium:
+        # Heavily skewed toward rare+ in Pandemonium
+        if enemy_level <= 5:
+            weights = [0.20, 0.30, 0.25, 0.15, 0.10]
+        elif enemy_level <= 10:
+            weights = [0.10, 0.20, 0.30, 0.25, 0.15]
+        elif enemy_level <= 20:
+            weights = [0.05, 0.15, 0.25, 0.30, 0.25]
+        elif enemy_level <= 30:
+            weights = [0.03, 0.10, 0.20, 0.32, 0.35]
+        else:
+            weights = [0.02, 0.08, 0.15, 0.30, 0.45]
     else:
-        weights = [0.05, 0.20, 0.25, 0.30, 0.20]
+        if enemy_level <= 5:
+            weights = [0.45, 0.35, 0.15, 0.05, 0.00]
+        elif enemy_level <= 10:
+            weights = [0.30, 0.35, 0.22, 0.10, 0.03]
+        elif enemy_level <= 20:
+            weights = [0.20, 0.30, 0.28, 0.15, 0.07]
+        elif enemy_level <= 30:
+            weights = [0.10, 0.25, 0.30, 0.20, 0.15]
+        else:
+            weights = [0.05, 0.20, 0.25, 0.30, 0.20]
 
     rarity = random.choices(rarities, weights=weights)[0]
     
@@ -172,12 +195,16 @@ def roll_drop(enemy_level):
     
     return (item_id, rarity)
 
-def roll_gold_drop(enemy_key, is_boss=False):
+def roll_gold_drop(enemy_key, is_boss=False, pandemonium=False):
     """Roll gold drop from defeated enemy."""
     enemy_level = ENEMIES[enemy_key]["level"]
     
     # Base gold
     base_gold = enemy_level * 8 + random.randint(5, 15)
+    
+    if pandemonium:
+        # Pandemonium: 2.5x gold multiplier + guaranteed bonus
+        base_gold = int(base_gold * 2.5) + random.randint(30, 60)
     
     if is_boss:
         base_gold = int(base_gold * 2.5) + random.randint(20, 40)
@@ -191,8 +218,8 @@ def roll_gold_drop(enemy_key, is_boss=False):
     return gold
 
 
-def add_drop_to_inventory(player, enemy_level):
-    drop = roll_drop(enemy_level)
+def add_drop_to_inventory(player, enemy_level, pandemonium=False):
+    drop = roll_drop(enemy_level, pandemonium=pandemonium)
     if drop:
         item_id, rarity = drop
         item = build_item(item_id, rarity)
@@ -203,10 +230,10 @@ def add_drop_to_inventory(player, enemy_level):
         return True
     return False
 
-def add_gold_drop(player, enemy_key):
+def add_gold_drop(player, enemy_key, pandemonium=False):
     """Add gold from enemy to player and print message."""
     is_boss = ENEMIES[enemy_key].get("boss", False)
-    gold = roll_gold_drop(enemy_key, is_boss)
+    gold = roll_gold_drop(enemy_key, is_boss, pandemonium=pandemonium)
     
     player["gold"] = player.get("gold", 0) + gold
     print(f"You found {gold} gold on the enemy!")
@@ -239,18 +266,11 @@ def explore_dungeon(player):
     floor = city_prog["floor"]
 
     # ----- Determine current dungeon region -----
-    if "dungeon_region" not in player or player["dungeon_region"] is None:
-        current_city = player.get("location")
-        if current_city and current_city != "dungeon":
-            city_data = CITIES.get(current_city, CITIES["solmere"])
-            player["dungeon_region"] = city_data.get("biome", "temperate")
-        else:
-            player["dungeon_region"] = "temperate"
+    region = player.get("dungeon_region", "temperate")
+    dungeon_display = "PANDEMONIUM" if player.get("pandemonium_mode") else region.upper()
 
-    region = player["dungeon_region"]
-    
-    # ----- SUPER BOSS ENCOUNTER (every 10th floor) -----
-    if floor % 20 == 0:
+    # ----- SUPER BOSS ENCOUNTER (every 20th floor, first time only) -----
+    if floor % 20 == 0 and city_prog["max_floor"] <= floor:
         print("\n" + "="*50)
         print("⚠️  A dark, suffocating energy fills the air...")
         
@@ -306,6 +326,10 @@ def explore_dungeon(player):
                 # Reward
                 super_boss_exp = 500 + (floor * 50)
                 super_boss_gold = 300 + (floor * 30)
+                if player.get("pandemonium_mode"):
+                    super_boss_gold = int(super_boss_gold * 2.5)
+                    super_boss_exp = int(super_boss_exp * 1.5)
+                    print("\n  Pandemonium surges — the reward is amplified!")
                 player["gold"] = player.get("gold", 0) + super_boss_gold
                 print(f"\n Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
                 gain_exp(player, super_boss_exp)
@@ -326,12 +350,14 @@ def explore_dungeon(player):
                 # Full heal and save
                 player["current_hp"] = player_max_hp(player)
                 save_game(player)
+                player.pop("pandemonium_mode", None)
                 return True   # floor cleared, outer loop will handle full heal
             elif result == "fled":
                 print("You cannot flee from a milestone Super Boss!")
                 input("Press Enter to continue the fight...")
                 continue
             elif result == "dead":
+                player.pop("pandemonium_mode", None)
                 return "dead"
 
     # ----- NORMAL FLOORS (non‑milestone) -----
@@ -345,12 +371,12 @@ def explore_dungeon(player):
         rooms = saved_rooms
         start_room = player.get("saved_dungeon_room_index", 0)
         if start_room > 0:
-            print(f"\n=== DESCENDING INTO {region.upper()} DUNGEON – FLOOR {floor} ===")
+            print(f"\n=== DESCENDING INTO {dungeon_display} DUNGEON – FLOOR {floor} ===")
             print(f"Resuming your exploration from Room {start_room + 1}...")
             input("Press Enter to continue...")
         clear_screen()
     else:
-        print(f"\n=== DESCENDING INTO {region.upper()} DUNGEON – FLOOR {floor} ===")
+        print(f"\n=== DESCENDING INTO {dungeon_display} DUNGEON – FLOOR {floor} ===")
         input("Press Enter to begin...")
         clear_screen()
         rooms = generate_floor(floor, region=region)
@@ -382,6 +408,7 @@ def explore_dungeon(player):
                 result = combat(player, room["enemies"], floor=floor, room_num=i+1, total_rooms=total_rooms)
 
                 if result == "victory":
+                    pandemonium = player.get("pandemonium_mode", False)
                     print("\n--- Room Victory Rewards ---")
                     for enemy_key in room["enemies"]:
                         enemy_level = ENEMIES[enemy_key]["level"]
@@ -389,8 +416,8 @@ def explore_dungeon(player):
                         for ally in player.get("allies", []):
                             if ally.get("current_hp", 0) > 0:
                                 gain_exp_ally(ally, enemy_level * 12)
-                        add_drop_to_inventory(player, enemy_level)
-                        add_gold_drop(player, enemy_key)
+                        add_drop_to_inventory(player, enemy_level, pandemonium=pandemonium)
+                        add_gold_drop(player, enemy_key, pandemonium=pandemonium)
                         
                         # BOUNTY TRACKING:
                         if "active_bounties" in player:
@@ -426,9 +453,11 @@ def explore_dungeon(player):
                     input("Press Enter to continue...")
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
+                    player.pop("pandemonium_mode", None)
                     return "fled"
                 elif result == "dead":
                     print("Your adventure ends here...")
+                    player.pop("pandemonium_mode", None)
                     return "dead"
 
             else:
@@ -447,12 +476,14 @@ def explore_dungeon(player):
                     result = "continue"
 
                 if result == "dead":
+                    player.pop("pandemonium_mode", None)
                     return "dead"
                 elif result == "fled":
                     print("You flee from the dungeon and return to the city.")
                     input("Press Enter to continue...")
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
+                    player.pop("pandemonium_mode", None)
                     return "fled"
                 
                 break
@@ -475,6 +506,7 @@ def explore_dungeon(player):
             elif cmd == "s":
                 save_game(player)
                 print("Game saved. Exiting to menu.")
+                player.pop("pandemonium_mode", None)
                 return "save_exit"
             else:
                 continue
@@ -483,22 +515,43 @@ def explore_dungeon(player):
         explored.add(i)
         render_ascii_map(rooms, explored, i, floor)
 
+        # ── Tick room-based buffs (well_rested) after every room ─────────────────
+        if player.get("active_buffs"):
+            expired = []
+            for buff in player.get("active_buffs", [])[:]:
+                if buff.get("type") == "well_rested":
+                    buff["remaining"] -= 1
+                    if buff["remaining"] <= 0:
+                        player["active_buffs"].remove(buff)
+                        expired.append("well-rested buff")
+            if expired:
+                print(f"\nYour {', '.join(expired)} wears off as you move deeper.")
+
+        for ally in player.get("allies", []):
+            if ally.get("active_buffs"):
+                for buff in ally.get("active_buffs", [])[:]:
+                    if buff.get("type") == "well_rested":
+                        buff["remaining"] -= 1
+                        if buff["remaining"] <= 0:
+                            ally["active_buffs"].remove(buff)
+                            print(f"  {ally['name']}'s well-rested buff wears off.")
+
     # Floor cleared (normal)
     # Wipe saved dungeon state so the next floor starts fresh
     for _key in ("saved_dungeon_floor", "saved_dungeon_rooms", "saved_dungeon_room_index"):
         player.pop(_key, None)
 
-    # ── Tick floor-based buffs (well_rested, floor_buff) ─────────────────────
+    # ── Tick floor-based buffs (floor_buff only) ───────────────────────────────
     if player.get("active_buffs"):
         expired = []
         for buff in player.get("active_buffs", [])[:]:
-            if buff.get("type") in ("well_rested", "floor_buff"):
+            if buff.get("type") == "floor_buff":
                 buff["remaining"] -= 1
                 if buff["remaining"] <= 0:
                     player["active_buffs"].remove(buff)
                     stat = buff.get("stat", "all")
                     if stat == "all":
-                        expired.append("well-rested/floor buff")
+                        expired.append("floor buff")
                     else:
                         expired.append(f"{stat} buff")
         if expired:
@@ -508,7 +561,7 @@ def explore_dungeon(player):
     for ally in player.get("allies", []):
         if ally.get("active_buffs"):
             for buff in ally.get("active_buffs", [])[:]:
-                if buff.get("type") in ("well_rested", "floor_buff"):
+                if buff.get("type") == "floor_buff":
                     buff["remaining"] -= 1
                     if buff["remaining"] <= 0:
                         ally["active_buffs"].remove(buff)
@@ -551,4 +604,5 @@ def explore_dungeon(player):
         ally["current_hp"] = ally["max_hp"]
 
     save_game(player)
+    player.pop("pandemonium_mode", None)
     return True

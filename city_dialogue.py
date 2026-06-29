@@ -103,6 +103,8 @@ from resources.dialogues import (
     BLACKWAKE_BLACK_MARKET_DIALOGUE,
 
     # Isle of Glass
+    ISLE_OF_GLASS_RECEPTIONIST_DIALOGUE,
+    ISLE_OF_GLASS_PORTMASTER_DIALOGUE,
     ISLE_OF_GLASS_ARCANE_TOWER_DIALOGUE,
 )
 
@@ -210,6 +212,8 @@ CITY_DIALOGUES = {
         "black_market": BLACKWAKE_BLACK_MARKET_DIALOGUE,
     },
     "isle_of_glass": {
+        "receptionist": ISLE_OF_GLASS_RECEPTIONIST_DIALOGUE,
+        "port": ISLE_OF_GLASS_PORTMASTER_DIALOGUE,
         "arcane_tower": ISLE_OF_GLASS_ARCANE_TOWER_DIALOGUE,
     },
 }
