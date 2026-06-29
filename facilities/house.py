@@ -29,7 +29,8 @@ Passive income now scales with your highest dungeon floor cleared across all
 regions so it stays relevant in late game.
 """
 
-from utils import clear_screen, advance_time
+from utils import clear_screen, advance_time, format_time
+from events import format_date
 from character import player_max_hp
 import random
 from resources.enemies import AFFECTION_GIFTS, ENEMIES
@@ -837,7 +838,6 @@ def _house_lounge(player, city_id, house):
             engaged_line = dialogue.get("house_engaged", f"{girl['name']} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
             print("\n" + (engaged_line.format(name=girl['name']) if "{name}" in engaged_line else engaged_line))
             # Consume the ring
-            from inventory import remove_item_by_reference
             remove_item_by_reference(player, ring)
 
             # Store the ring's stat bonus on the girl (persisted in house save)
@@ -997,6 +997,7 @@ def house_menu(player, city_id):
         print(f"  Storage  : {len(house['storage'])}/{lvl_data['storage_cap']} slots")
         print(f"  Pending  : {pending} gold")
         print(f"  Gold     : {player.get('gold', 0)}")
+        print(f"  Time     : {format_time(player.get('time_minutes', 0))} | {format_date(player)}")
         print()
         print("1. Rest (quick heal)")
         print("2. Sleep (full heal + 8 hours) — Available 20:00–04:00")

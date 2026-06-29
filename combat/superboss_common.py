@@ -241,7 +241,10 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     print(f"👁️  MIRROR CLONE — {ally['name']} mirrors the enemy!")
 
                 while True:
-                    result = handle_ally_turn(ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha)
+                    result = handle_ally_turn(
+                        ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
+                        on_kill=on_kill_fn,
+                    )
                     if result != "retry":
                         break
 
@@ -330,6 +333,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
         enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
+            print("\n  All enemies have been defeated!")
+            input("  Press Enter to continue...")
             return "victory"
 
         if player.get("abyss_fang_cooldown", 0) > 0:
@@ -343,6 +348,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
 
         tick_skill_cooldowns(player)
+        for ally in get_alive_allies(player):
+            tick_skill_cooldowns(ally)
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             print(m)

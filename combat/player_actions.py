@@ -173,7 +173,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
         print("\nYour Battle Inventory:")
         for display_idx, (_, itm) in enumerate(combat_inventory):
-            print(f"{display_idx+1}. {itm['name']} ({itm['type']})")
+            qty = itm.get("count", 1)
+            qty_str = f" x{qty}" if qty > 1 else ""
+            print(f"{display_idx+1}. {itm['name']}{qty_str} ({itm['type']})")
         try:
             choice = int(input("Use which item? (0 to cancel): ")) - 1
             if choice < 0 or choice >= len(combat_inventory):

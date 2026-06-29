@@ -47,7 +47,8 @@ def enemy_stats(enemy_key, player=None):
         "dex_mod": scaled_dex,
         "level": template["level"],
         "multiplier": round(multiplier, 2),
-        "monster_girl": template.get("monster_girl", False)
+        "monster_girl": template.get("monster_girl", False),
+        "dialogue": template.get("dialogue", {})
     }
 
     # Add elemental stats

@@ -4,7 +4,7 @@ def handle_player_death(player):
     """Handle player death: offer continue or quit, apply penalties if continuing."""
     clear_screen()
     print("\n" + "=" * 50)
-    print("     ☠  YOU HAVE BEEN DEFEATED  ☠")
+    print("         ☠  YOU HAVE BEEN DEFEATED  ☠")
     print("=" * 50)
 
     # Penalty calculation

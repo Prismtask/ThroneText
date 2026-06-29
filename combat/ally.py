@@ -348,7 +348,7 @@ def _ally_action_menu(ally, player, enemies):
     return menu_str, valid_keys
 
 
-def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha):
+def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None):
     """Handle an ally's turn in combat. Player chooses the ally's action.
 
     Returns: "continue", "victory", "dead", or "retry"
@@ -356,6 +356,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     from combat.combat_ui import print_combat_hud
     from combat.status_effects import is_silenced, is_dreaded
     from character import player_max_hp
+
+    # Reset defending flag each turn so it only applies if they choose Defend THIS turn
+    ally["defending_this_turn"] = False
 
     a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
 
@@ -392,8 +395,15 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         input("  Press Enter to use it...")
 
         all_allies = player.get("allies", [])
+        # Track alive enemies before skill so on_kill can fire for newly-dead ones
+        alive_before = {id(e) for e in enemies if e["hp"] > 0}
         msg, victory = execute_ally_skill(ally, player, skill_id, skill_def, enemies, all_allies)
         print(f"  {msg}")
+        # Trigger on_kill for any enemies that died during this skill use
+        if on_kill:
+            for e in enemies:
+                if e["hp"] <= 0 and id(e) in alive_before:
+                    on_kill(e, enemies)
         if victory:
             return "victory"
         return "continue"
@@ -475,6 +485,8 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         else:
             print(f"  {ally['name']} {verb} {target['name']} for {final_dmg} damage!{crit_tag}")
         if target["hp"] <= 0:
+            if on_kill:
+                on_kill(target, enemies)
             print(f"  {ally['name']} defeated {target['name']}!")
         return "continue"
 
@@ -496,7 +508,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
 
         print("\n  Shared Battle Inventory:")
         for display_idx, (_, itm) in enumerate(combat_items):
-            print(f"  {display_idx+1}. {itm['name']} ({itm['type']})")
+            qty = itm.get("count", 1)
+            qty_str = f" x{qty}" if qty > 1 else ""
+            print(f"  {display_idx+1}. {itm['name']}{qty_str} ({itm['type']})")
 
         try:
             choice = int(input("  Use which item? (0 to cancel): ")) - 1

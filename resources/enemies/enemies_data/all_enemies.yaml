@@ -5761,11 +5761,11 @@ Dragonkin:
   heaven_banished_dragon_yinglong:
     name: Yinglong, Heaven-Banished Dragon
     race: Dragonkin
-    level: 45
-    base_hp: 600
+    level: 25
+    base_hp: 400
     mods:
-      Strength: 14
-      Constitution: 13
+      Strength: 7
+      Constitution: 9
       Dexterity: 9
       Wisdom: 6
       Learning: 6
