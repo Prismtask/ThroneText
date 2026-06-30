@@ -125,8 +125,19 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         from combat.elemental import calculate_elemental_damage, get_attack_element
         element = get_attack_element(player, equipped_weapon)
         final_dmg = calculate_elemental_damage(dmg, player, target, element)
+        # Apply Hunter's Mark damage bonus
+        if target.get("hunters_mark"):
+            bonus = target.get("hunters_mark_bonus", 0.50)
+            final_dmg = int(final_dmg * (1 + bonus))
+
+        # Captain's Cutlass: High Tide + Rally attack bonuses
+        from combat.captain_cutlass import get_high_tide_attack_bonus, get_rally_attack_bonus
+        final_dmg += get_high_tide_attack_bonus(player, final_dmg)
+        final_dmg += get_rally_attack_bonus(player, final_dmg)
+        final_dmg = max(0, final_dmg)
+
         if on_hit:
-            on_hit(target, enemies) 
+            on_hit(target, enemies)
         target["hp"] -= final_dmg
         # Tarnished Jade: pin on dealing damage
         from combat.tarnished_jade import add_tarnished_jade_pin
@@ -156,6 +167,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             if on_kill:
                 on_kill(target, enemies)
             apply_wedding_on_kill(player, target, enemies)
+            # Captain's Cutlass: High Tide stack on kill
+            from combat.captain_cutlass import check_high_tide_kill
+            check_high_tide_kill(player, target)
         return "continue", False
 
     # ----- DEFEND -----
@@ -341,6 +355,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
     # ----- WIELD THE ABYSS -----
     elif action == "w":
         return wield_abyss_fang(player)
+
+    # ----- CREW RALLY -----
+    elif action == "r":
+        from combat.captain_cutlass import use_crew_rally
+        return use_crew_rally(player)
 
     # ----- FLEE -----
     elif action == "f":

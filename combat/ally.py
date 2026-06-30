@@ -97,6 +97,7 @@ def create_ally_from_girl(girl):
         "exp": girl.get("exp", 0),
         "level_hp_bonus": girl.get("level_hp_bonus", max(0, (girl.get("level", 1) - 1) * 4)),
         "level_cap": girl.get("level_cap", 10),
+        "defeated": False,
         # Skill system fields
         "passive_skill": girl.get("passive_skill", None),  # Race-based passive
         "innate_skills": girl.get("innate_skills", []),    # 2 innate skills unique to girl
@@ -162,6 +163,8 @@ def format_ally_status_line(ally, idx=None, is_active=False):
     prefix = f"[{idx}]" if idx is not None else "   "
     active_mark = " >" if is_active else ""
     mg_symbol = " ♀" if ally.get("monster_girl") else ""
+    if ally.get("defeated") or ally.get("current_hp", 0) <= 0:
+        return f"{prefix} {ally['name'][:12]:<12} [INCAPACITATED]{mg_symbol}{active_mark}"
     return f"{prefix} {ally['name'][:12]:<12} {ally['current_hp']:>3}/{ally['max_hp']:<3}{mg_symbol}{active_mark}"
 
 
@@ -198,8 +201,8 @@ def _hp_bar(current, max_hp, width=10):
 
 
 def get_alive_allies(player):
-    """Return list of alive allies from player."""
-    return [a for a in player.get("allies", []) if a.get("current_hp", 0) > 0]
+    """Return list of alive (non-defeated) allies from player."""
+    return [a for a in player.get("allies", []) if not a.get("defeated") and a.get("current_hp", 0) > 0]
 
 
 def get_all_party_members(player):
@@ -304,10 +307,55 @@ def dismiss_allies_back_to_house(player):
             })
 
 
+def _return_ally_to_house(player, ally, house):
+    """Return a single ally to the house's monster_girls list."""
+    from inventory import add_item_to_inventory
+    # Return equipped items to player
+    for slot in ["weapon", "armor", "accessory1", "accessory2"]:
+        item = ally.get("equipped", {}).get(slot)
+        if item:
+            if not add_item_to_inventory(player, item):
+                print(f"Your inventory is full! {item['name']} from {ally['name']} was dropped.")
+            ally["equipped"][slot] = None
+
+    # Add back to house (only if not already there)
+    existing = [g for g in house.get("monster_girls", []) if g.get("key") == ally.get("key") and g.get("name") == ally.get("name")]
+    if not existing:
+        house.setdefault("monster_girls", []).append({
+            "key": ally.get("key"),
+            "name": ally["name"],
+            "level": ally["level"],
+            "affection": ally.get("affection", 30),
+            "affection_cap": ally.get("affection_cap", 100),
+            "engaged": ally.get("engaged", False),
+            "married": ally.get("married", False),
+            "exp": ally.get("exp", 0),
+            "level_hp_bonus": ally.get("level_hp_bonus", 0),
+            "level_cap": ally.get("level_cap", 10),
+        })
+
+
 def recruit_ally_from_house(player, girl, house):
     """Recruit a monster girl from house to active party."""
-    if len(player.get("allies", [])) >= 3:
-        return None, "Your party is full (max 3 allies)."
+    allies = player.get("allies", [])
+    if len(allies) >= 3:
+        # Party is full — ask who to replace
+        print("\nYour party is full (3/3). Choose an ally to replace:")
+        for i, a in enumerate(allies):
+            if a.get("defeated") or a.get("current_hp", 0) <= 0:
+                status = "[INCAPACITATED]"
+            else:
+                status = f"HP {a['current_hp']}/{a['max_hp']}"
+            print(f"  {i+1}. {a['name']} — {status}")
+        try:
+            choice = int(input("Replace which ally? (0 to cancel): ").strip()) - 1
+            if choice < 0 or choice >= len(allies):
+                return None, "Recruitment cancelled."
+            replaced = allies[choice]
+            _return_ally_to_house(player, replaced, house)
+            allies.pop(choice)
+        except ValueError:
+            return None, "Recruitment cancelled."
 
     ally = create_ally_from_girl(girl)
     player.setdefault("allies", []).append(ally)
@@ -494,6 +542,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             if on_kill:
                 on_kill(target, enemies)
             print(f"  {ally['name']} defeated {target['name']}!")
+            # Captain's Cutlass: High Tide stack on kill
+            from combat.captain_cutlass import check_high_tide_kill
+            check_high_tide_kill(player, target)
         return "continue"
 
     # ----- DEFEND -----

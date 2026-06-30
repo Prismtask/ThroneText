@@ -3,7 +3,8 @@ from utils import clear_screen, format_time
 from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
 from combat.abyss_fang import is_abyssal_tempo_active, get_abyss_fang_cooldown_display
-from combat.ally import get_alive_allies, format_ally_status_line, _ally_action_menu
+from combat.captain_cutlass import get_captain_cutlass_cooldown_display
+from combat.ally import format_ally_status_line, _ally_action_menu
 from combat.ally_skills import get_all_ally_skills
 from combat.skills import get_all_unlocked_skills
 
@@ -74,6 +75,8 @@ def _get_entity_buff_tags(entity):
         statuses.append("DRD")
     if entity.get("cursed"):
         statuses.append("CRS")
+    if entity.get("hunters_mark"):
+        statuses.append("MRK")
 
     # Debuff types from active_debuffs
     debuff_map = {
@@ -157,7 +160,7 @@ def _wrap_menu_lines(menu_str, max_width=66):
 
 def print_combat_hud(player, enemies, active_ally=None, header=""):
     """Print the main combat HUD with a perfectly aligned party vs enemies layout."""
-    allies = get_alive_allies(player)
+    allies = player.get("allies", [])  # Show all allies including defeated in HUD
 
     # Determine header context
     if not header:
@@ -233,6 +236,10 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
         cd_msg = get_abyss_fang_cooldown_display(player)
         if cd_msg:
             print(f"|  {cd_msg:<66}|")
+
+        cd_msg2 = get_captain_cutlass_cooldown_display(player)
+        if cd_msg2:
+            print(f"|  {cd_msg2:<66}|")
 
         # Skill cooldown messages
         skill_cds = player.get('skill_cooldowns', {})

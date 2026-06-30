@@ -5,6 +5,10 @@ from combat.abyss_fang import (
     clear_abyss_fang_state,
     get_abyssal_tempo_count,
 )
+from combat.captain_cutlass import (
+    clear_captain_cutlass_state,
+    tick_captain_cutlass,
+)
 # combat/superboss_common.py
 """Shared functions for superboss fights, extracted to break circular imports."""
 
@@ -131,6 +135,12 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
     )
     player["tarnished_jade_pins"] = 0
     player["tarnished_jade_weakened"] = False
+    clear_captain_cutlass_state(player)
+
+    # Reset High Tide if floor changed
+    if floor is not None and player.get("cutlass_high_tide_floor") != floor:
+        player["cutlass_high_tide_stacks"] = 0
+        player["cutlass_high_tide_floor"] = floor
     round_num = 0
 
     while True:
@@ -338,7 +348,16 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                                 print(f"{player['name']} has been slain.")
                                 return "dead"
                             else:
-                                print(f"  {target['name']} has fallen!")
+                                target["defeated"] = True
+                                target["current_hp"] = 0
+                                # Print is_defeated dialogue if available
+                                from resources.enemies import ENEMIES
+                                template = ENEMIES.get(target.get("key", ""), {})
+                                dialogue = template.get("dialogue", {})
+                                defeated_line = dialogue.get("is_defeated", f"{target['name']} has fallen!")
+                                if "{name}" in defeated_line:
+                                    defeated_line = defeated_line.format(name=target['name'])
+                                print(f"  {defeated_line}")
 
             # Action Advance mechanic: insert extra turns for this entity
             entity = combatant["entity"]
@@ -358,6 +377,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
         tick_abyss_fang_cooldown(player, prefix="")
         tick_abyssal_tempo(player, prefix="")
+        tick_captain_cutlass(player, prefix="")
 
 
         tick_skill_cooldowns(player)

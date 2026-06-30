@@ -86,6 +86,19 @@ ITEMS = {
         "drop_rarity": "legendary",
     },
 
+    "cutlass_of_the_captain": {
+        "name": "Cutlass of the Captain",
+        "type": "equipment",
+        "slot": "weapon",
+        "unique": True,
+        "base_mods": {"Strength": 5, "Dexterity": 3},
+        "scaling_stat": "Strength",
+        "elemental_dmg": {"water": 1.3, "dark": 1.2},
+        "special": "captain_cutlass",
+        "drop_source": "captain_everlong_ship",
+        "drop_rarity": "legendary",
+    },
+
     # === Armor ===
     "padded_armor": {"name": "Padded Armor","type": "equipment","slot": "armor","base_mods": {"Constitution": 2}, "elemental_res": {"earth": 1.1}},
     "leather_armor":{"name": "Leather Armor","type": "equipment","slot": "armor","base_mods": {"Dexterity": 2, "Constitution": 1}, "elemental_res": {"wind": 1.2, "thunder": 1.1}},

@@ -214,9 +214,20 @@ def _house_rest(player, city_id, house):
     player["current_hp"] = max_hp
     healed               = max_hp - old_hp
 
-    # Heal allies too
+    # Heal allies too (including defeated allies — recovery)
     for ally in player.get("allies", []):
-        if ally.get("current_hp", 0) > 0:
+        if ally.get("defeated"):
+            ally["defeated"] = False
+            ally["current_hp"] = ally["max_hp"]
+            # Print is_recovered dialogue
+            from resources.enemies import ENEMIES
+            template = ENEMIES.get(ally.get("key", ""), {})
+            dialogue = template.get("dialogue", {})
+            recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
+            if "{name}" in recovered_line:
+                recovered_line = recovered_line.format(name=ally['name'])
+            print(f"  {recovered_line}")
+        elif ally.get("current_hp", 0) > 0:
             ally_old = ally["current_hp"]
             ally["current_hp"] = ally["max_hp"]
             ally_healed = ally["max_hp"] - ally_old
@@ -254,9 +265,20 @@ def _house_sleep(player, city_id, house):
     player["current_hp"] = max_hp
     healed               = max_hp - old_hp
 
-    # Heal allies too
+    # Heal allies too (including defeated allies — recovery)
     for ally in player.get("allies", []):
-        if ally.get("current_hp", 0) > 0:
+        if ally.get("defeated"):
+            ally["defeated"] = False
+            ally["current_hp"] = ally["max_hp"]
+            # Print is_recovered dialogue
+            from resources.enemies import ENEMIES
+            template = ENEMIES.get(ally.get("key", ""), {})
+            dialogue = template.get("dialogue", {})
+            recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
+            if "{name}" in recovered_line:
+                recovered_line = recovered_line.format(name=ally['name'])
+            print(f"  {recovered_line}")
+        elif ally.get("current_hp", 0) > 0:
             ally_old = ally["current_hp"]
             ally["current_hp"] = ally["max_hp"]
             ally_healed = ally["max_hp"] - ally_old
@@ -604,7 +626,11 @@ def _house_lounge(player, city_id, house):
         cap_tag = " [CAP]" if where == "active" and g["level"] >= g.get("level_cap", 10) else ""
         aff_str = f"{aff}/{aff_cap}"
         if where == "active":
-            print(f"  {i+1}. {g['name']} (Lv {g['level']}{cap_tag}){active_tag} — HP: {g['current_hp']}/{g['max_hp']} — {status} Affection: {aff_str}{ready}")
+            if g.get("defeated") or g.get("current_hp", 0) <= 0:
+                hp_str = "[INCAPACITATED]"
+            else:
+                hp_str = f"HP: {g['current_hp']}/{g['max_hp']}"
+            print(f"  {i+1}. {g['name']} (Lv {g['level']}{cap_tag}){active_tag} — {hp_str} — {status} Affection: {aff_str}{ready}")
         else:
             print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — {status} Affection: {aff_str}{ready}")
 

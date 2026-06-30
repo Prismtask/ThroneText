@@ -125,6 +125,37 @@ def _buy_ascension_stone(player, city_id):
     input("Press Enter...")
 
 
+def recover_allies(player, city_id):
+    """Revive all defeated (incapacitated) allies in the party."""
+    defeated = [ally for ally in player.get("allies", []) if ally.get("defeated")]
+    if not defeated:
+        print("\nAll of your allies are already in good health.")
+        input("Press Enter...")
+        return
+
+    cost = 50 * len(defeated)
+    if player.get("gold", 0) < cost:
+        print(f"\nYou need {cost} gold to perform the recovery ritual.")
+        input("Press Enter...")
+        return
+
+    player["gold"] -= cost
+    print(f"\nYou pay {cost} gold for the recovery ritual.")
+    for ally in defeated:
+        ally["defeated"] = False
+        ally["current_hp"] = ally["max_hp"]
+        # Print is_recovered dialogue
+        from resources.enemies import ENEMIES
+        template = ENEMIES.get(ally.get("key", ""), {})
+        dialogue = template.get("dialogue", {})
+        recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
+        if "{name}" in recovered_line:
+            recovered_line = recovered_line.format(name=ally['name'])
+        print(f"  {recovered_line}")
+    print("\nThe priestess finishes her prayers. Your party is whole once more.")
+    input("Press Enter...")
+
+
 # ── Main menu ────────────────────────────────────────────────────────────────
 
 def temple_menu(player, city_id="solmere"):
@@ -145,16 +176,24 @@ def temple_menu(player, city_id="solmere"):
         else:
             print("\nYou feel at peace in this sacred place.")
         
+        # Check for defeated allies
+        defeated_allies = [a for a in player.get("allies", []) if a.get("defeated")]
+        
         # Check if ascension stones are available
         stones_available = bool(_get_available_ascension_stones(player))
         
         print("\n1. Remove Curse (100 gold)")
         print("2. Receive Blessing (50 gold – temporary +2 to all stats for next dungeon floor)")
-        if stones_available:
-            print("3. Buy Ascension Stone")
-            print("4. Leave")
+        if defeated_allies:
+            cost = 50 * len(defeated_allies)
+            print(f"3. Recover Incapacitated Allies ({cost} gold)")
         else:
-            print("3. Leave")
+            print("3. Recover Allies — all healthy")
+        if stones_available:
+            print("4. Buy Ascension Stone")
+            print("5. Leave")
+        else:
+            print("4. Leave")
         
         choice = input("\nChoice: ").strip()
         
@@ -165,6 +204,9 @@ def temple_menu(player, city_id="solmere"):
             receive_blessing(player, city_id)
             advance_time(player, 30)
         elif choice == "3":
+            recover_allies(player, city_id)
+            advance_time(player, 30)
+        elif choice == "4":
             if stones_available:
                 _buy_ascension_stone(player, city_id)
                 advance_time(player, 15)
@@ -172,7 +214,7 @@ def temple_menu(player, city_id="solmere"):
                 service_dialogue(city_id, "temple", "leave")
                 advance_time(player, 30)
                 break
-        elif choice == "4" and stones_available:
+        elif choice == "5" and stones_available:
             service_dialogue(city_id, "temple", "leave")
             advance_time(player, 30)
             break

@@ -5,7 +5,7 @@ from inventory import (equip_item, unequip_slot, use_consumable, get_total_equip
 from character import player_max_hp
 from resources.races_classes import ATTRIBUTES
 from utils import clear_screen, format_time
-from combat.ally import get_alive_allies, format_ally_status_line
+from combat.ally import format_ally_status_line
 from combat.stat_milestones import format_milestone_label
 
 def _slot_display_name(slot):
@@ -86,11 +86,12 @@ def display_player_status(player):
     _display_player_skills(player)
 
     # Show allies
-    allies = get_alive_allies(player)
+    allies = player.get("allies", [])
     if allies:
         print("\n--- Allies ---")
         for i, ally in enumerate(allies):
-            print(f"\n  === {ally['name']} (Level {ally.get('level', 1)}) ===")
+            status = " [INCAPACITATED]" if ally.get("defeated") or ally.get("current_hp", 0) <= 0 else ""
+            print(f"\n  === {ally['name']} (Level {ally.get('level', 1)}){status} ===")
             print(f"  HP: {ally['current_hp']}/{ally['max_hp']}")
 
             # Calculate equipment and buff bonuses for ally
@@ -276,7 +277,7 @@ def manage_inventory_menu(player):
 
 def manage_equipment_submenu(player):
     """Submenu for equipping/unequipping items on player and allies."""
-    from combat.ally import get_alive_allies, equip_ally_item, unequip_ally_slot
+    from combat.ally import equip_ally_item, unequip_ally_slot
 
     while True:
         clear_screen()
@@ -328,7 +329,7 @@ def manage_equipment_submenu(player):
                 print("Invalid slot.")
             input("Press Enter...")
         elif sub == "3":
-            allies = get_alive_allies(player)
+            allies = player.get("allies", [])
             if not allies:
                 print("No allies in your party.")
                 input("Press Enter...")
@@ -340,7 +341,8 @@ def manage_equipment_submenu(player):
                 continue
             print("\nChoose ally:")
             for i, a in enumerate(allies):
-                print(f"{i+1}. {a['name']}")
+                status = " [INCAPACITATED]" if a.get("defeated") or a.get("current_hp", 0) <= 0 else ""
+                print(f"{i+1}. {a['name']}{status}")
             try:
                 a_idx = int(input("Ally: ")) - 1
                 if 0 <= a_idx < len(allies):
@@ -368,14 +370,15 @@ def manage_equipment_submenu(player):
                 pass
             input("Press Enter...")
         elif sub == "4":
-            allies = get_alive_allies(player)
+            allies = player.get("allies", [])
             if not allies:
                 print("No allies in your party.")
                 input("Press Enter...")
                 continue
             print("\nChoose ally:")
             for i, a in enumerate(allies):
-                print(f"{i+1}. {a['name']}")
+                status = " [INCAPACITATED]" if a.get("defeated") or a.get("current_hp", 0) <= 0 else ""
+                print(f"{i+1}. {a['name']}{status}")
             try:
                 a_idx = int(input("Ally: ")) - 1
                 if 0 <= a_idx < len(allies):

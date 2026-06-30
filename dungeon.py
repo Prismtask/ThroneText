@@ -10,6 +10,7 @@ from combat.sylvana import combat_sylvana
 from combat.ignis import combat_ignis
 from combat.yinglong import combat_yinglong
 from combat.rientrante import combat_rientrante
+from combat.everlong_ship import combat_everlong_ship
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
@@ -276,7 +277,7 @@ def explore_dungeon(player):
         
         # 1. Initialize or refill the superboss pool if it's empty or missing
         if not player.get("superboss_pool"):
-            pool = [0, 1, 2, 3, 4, 5]
+            pool = [0, 1, 2, 3, 4, 5, 6]
             # Use seed + floor to keep the shuffle consistent per run/floor 
             # but fall back to a random seed if missing to prevent crashes
             rng = random.Random(player.get("superboss_seed", random.randint(1, 99999)) + floor)
@@ -299,6 +300,10 @@ def explore_dungeon(player):
         elif tier == 5:
             print("The temperature plummets. Frost crawls across every surface.")
             print("A pale, merciless light glows from somewhere beyond the walls.")
+        elif tier == 6:
+            print("The scent of salt and rot fills the air. A ghostly fog rolls in.")
+            print("From the mist, a spectral vessel emerges — tattered sails, haunted hull.")
+            print("You hear the creak of timbers and a distant parrot's cry...")
         print("You have stumbled directly into a SUPER BOSS ARENA!")
         print("="*50)
         input("Press Enter to face the horror...")
@@ -318,6 +323,8 @@ def explore_dungeon(player):
                 result = combat_yinglong(player)
             elif tier == 5:
                 result = combat_rientrante(player)
+            elif tier == 6:
+                result = combat_everlong_ship(player)
                 
             if result == "victory":
                 # 3. Remove the defeated boss from the pool so it won't spawn again until reshuffled
@@ -454,10 +461,16 @@ def explore_dungeon(player):
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
                     player.pop("pandemonium_mode", None)
+                    # Reset High Tide when leaving dungeon
+                    player["cutlass_high_tide_stacks"] = 0
+                    player.pop("cutlass_high_tide_floor", None)
                     return "fled"
                 elif result == "dead":
                     print("Your adventure ends here...")
                     player.pop("pandemonium_mode", None)
+                    # Reset High Tide on death
+                    player["cutlass_high_tide_stacks"] = 0
+                    player.pop("cutlass_high_tide_floor", None)
                     return "dead"
 
             else:
@@ -477,6 +490,9 @@ def explore_dungeon(player):
 
                 if result == "dead":
                     player.pop("pandemonium_mode", None)
+                    # Reset High Tide on death
+                    player["cutlass_high_tide_stacks"] = 0
+                    player.pop("cutlass_high_tide_floor", None)
                     return "dead"
                 elif result == "fled":
                     print("You flee from the dungeon and return to the city.")
@@ -484,6 +500,9 @@ def explore_dungeon(player):
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
                     player.pop("pandemonium_mode", None)
+                    # Reset High Tide when leaving dungeon
+                    player["cutlass_high_tide_stacks"] = 0
+                    player.pop("cutlass_high_tide_floor", None)
                     return "fled"
                 
                 break
@@ -507,6 +526,9 @@ def explore_dungeon(player):
                 save_game(player)
                 print("Game saved. Exiting to menu.")
                 player.pop("pandemonium_mode", None)
+                # Reset High Tide when leaving dungeon
+                player["cutlass_high_tide_stacks"] = 0
+                player.pop("cutlass_high_tide_floor", None)
                 return "save_exit"
             else:
                 continue

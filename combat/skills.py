@@ -352,6 +352,10 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         if element:
             from combat.elemental import calculate_elemental_damage
             dmg = calculate_elemental_damage(dmg, player, target, element)
+        # Apply Hunter's Mark damage bonus
+        if target.get("hunters_mark"):
+            bonus = target.get("hunters_mark_bonus", 0.50)
+            dmg = int(dmg * (1 + bonus))
         return dmg
 
     # ── Life Steal Helper ──
@@ -434,6 +438,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         target["hunters_mark"] = True
         target["hunters_mark_bonus"] = bonus
         target["hunters_mark_source"] = player.get("name", "Ranger")
+        target["hunters_mark_turns"] = 3
         return f"You mark the {target['name']}! Your attacks against it deal +{int(bonus*100)}% damage for 3 turns.", False
 
     # Heal

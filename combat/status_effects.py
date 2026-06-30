@@ -264,6 +264,13 @@ def tick_enemy_debuffs(enemy):
                 enemy["active_debuffs"].remove(debuff)
                 messages.append(f"The {enemy['name']} shakes off the fear!")
 
+    # Handle Hunter's Mark expiration (stored as flat flag + counter)
+    if enemy.get("hunters_mark"):
+        enemy["hunters_mark_turns"] = enemy.get("hunters_mark_turns", 1) - 1
+        if enemy["hunters_mark_turns"] <= 0:
+            enemy["hunters_mark"] = False
+            messages.append(f"The mark on {enemy['name']} fades.")
+
     # Handle freeze (stored as flat flag + counter, not in active_debuffs list)
     messages, died_from_freeze = _tick_enemy_freeze(enemy, messages)
 

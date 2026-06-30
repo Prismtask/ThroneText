@@ -51,6 +51,11 @@ goblin_girl:
     ascension_post_ceremony: The {stone} bursts into a shower of golden sparks! {name}
       gasps as light swirls around her. 'I feel... stronger! No more Level {old_cap}!
       Thank you!'
+    is_defeated: The {name} stumbles back, tears welling up. 'O-ow... I can't... please
+      don't be mad at me...'
+    is_recovered: The {name} sniffles, then clutches her lucky coin tightly. 'Okay...
+      I'm better now! I won't let you down again!'
+
 harpy_scout:
   name: Harpy Scout
   race: Beast
@@ -105,6 +110,11 @@ harpy_scout:
     ascension_post_ceremony: The {stone} shatters, releasing a tempest of feathers!
       {name} shrieks joyfully as ancient currents surge through her. 'The sky just
       got bigger! Level {old_cap}... gone!'
+    is_defeated: The {name} crashes to the ground, wings askew. 'Nngh... my wings...
+      I can't fly like this...'
+    is_recovered: She shakes out her feathers and tests a wing, then chirps. 'The
+      wind feels right again! Up we go, wind-mate!'
+
 alraune_fledger:
   name: Alraune Fledger
   race: Fey
@@ -160,6 +170,11 @@ alraune_fledger:
     ascension_post_ceremony: The {stone} crumbles into glowing pollen! New vines spiral
       up {name}'s form as a sweet fragrance fills the air. 'I have broken my shell!
       Level {old_cap} is no more.'
+    is_defeated: The {name}'s petals droop and her leaves turn brown at the edges.
+      'I'm... wilting... need water...'
+    is_recovered: She drinks from a tiny dew-drop and her petals perk right up. 'Ahh,
+      the sun feels good again. Let's grow!'
+
 kobold_tinkerer:
   name: Kobold Tinkerer
   race: Dragonkin
@@ -216,6 +231,11 @@ kobold_tinkerer:
     ascension_post_ceremony: The {stone} detonates in a controlled explosion of gears
       and light! {name}'s tail frizzes as energy crackles over her. 'Haha! The calibrations
       worked! Farewell Level {old_cap}!'
+    is_defeated: A spring flies out of her pocket as she collapses. 'M-my gadgets... they
+      failed... I'm useless...'
+    is_recovered: She frantically repairs the last gadget, then holds it up. 'Fixed
+      it! And I added a new function! I'm back in action!'
+
 dryad_protector:
   name: Dryad Protector
   race: Fey
@@ -272,6 +292,11 @@ dryad_protector:
     ascension_post_ceremony: The {stone} splinters into shards of emerald light that
       rain down like leaves. {name}'s bark glistens, new branches sprouting. 'I feel
       the seasons turning... Level {old_cap} is just a memory.'
+    is_defeated: The {name} slumps against a tree, bark cracking. 'The grove... it
+      aches... I cannot stand...'
+    is_recovered: New moss and leaves sprout over the cracks as she rises. 'The earth
+      has healed me. I am ready to protect you again.'
+
 ghost_maid:
   name: Ghost Maid
   race: Shadow
@@ -328,6 +353,11 @@ ghost_maid:
     ascension_post_ceremony: The {stone} dissolves into ectoplasmic mist that floods
       into {name}. Her form crystallizes, brighter than ever. 'I feel... alive? Level
       {old_cap} has faded... Thank you, master.'
+    is_defeated: The {name} fades almost to nothingness, a faint wisp. 'Master... I'm
+      fading... please don't forget me...'
+    is_recovered: She re-materialises with a soft glow, curtsying. 'I've returned,
+      master. My spirit is as strong as my devotion.'
+
 centaur_scout:
   name: Centaur Scout
   race: Beast
@@ -382,6 +412,11 @@ centaur_scout:
     ascension_post_ceremony: The {stone} explodes into a galloping starlight herd!
       {name} rears with a triumphant whinny as power courses through her legs. 'No
       fence can hold me! Goodbye, Level {old_cap}!'
+    is_defeated: The {name} collapses onto her side, legs trembling. 'I can't... carry
+      on... the herd must go on without me...'
+    is_recovered: She scrambles to her hooves and shakes out her mane. 'I'm back on
+      my feet! Let's make up for lost ground!'
+
 moth_girl_flutterer:
   name: Moth Girl Flutterer
   race: Fey
@@ -438,6 +473,11 @@ moth_girl_flutterer:
     ascension_post_ceremony: The {stone} bursts into a spiral of moonbeams! {name}'s
       wings unfurl in prismatic glory, leaving trails of stardust. 'The night just
       became day! Level {old_cap}... forgotten.'
+    is_defeated: Her glow gutters like a dying candle, wings too weak to lift. 'Too
+      dark... can't find your light...'
+    is_recovered: A fresh dusting of silver light coats her wings. 'The flame is back!
+      I can see you clearly now!'
+
 slime_girl:
   name: Slime Girl
   race: Elemental
@@ -490,6 +530,11 @@ slime_girl:
     ascension_post_ceremony: The {stone} pops like a soap bubble into a rainbow of
       goo! {name} expands joyfully, shimmering with new colors. 'Bloop! Level {old_cap}
       is squished! I'm free!'
+    is_defeated: Her form loses shape, spreading into a weak puddle. 'Bloo... too
+      runny... can't hold together...'
+    is_recovered: She draws herself back into a bouncy blob and jiggles. 'Bloop! All
+      squished back together! Let's play!'
+
 lamia_constrictor:
   name: Lamia Constrictor
   race: Lizardfolk
@@ -548,6 +593,11 @@ lamia_constrictor:
     ascension_post_ceremony: The {stone} hisses, releasing a serpentine aurora! {name}'s
       tail lengthens and shimmering scales blaze. 'The old limit has shed its skin!
       Level {old_cap} is gone, darling.'
+    is_defeated: Her coils go limp and she hisses weakly. 'S-such a... poor hunter
+      I am... forgive me, darling...'
+    is_recovered: She flexes her tail and a new gleam enters her eye. 'That was just
+      a warm-up, darling. Now the real hunt begins.'
+
 lizard_queen:
   name: Lizard Queen
   race: Lizardfolk
@@ -602,6 +652,11 @@ lizard_queen:
     ascension_post_ceremony: The {stone} roars into a column of sunfire! {name}'s
       scales gleam like obsidian and gold as she rises. 'My kingdom grows! Level {old_cap}
       was a mere stepping stone.'
+    is_defeated: The {name} slumps upon her throne, crown askew. 'A queen... fallen...
+      how shameful...'
+    is_recovered: She rights her crown and stands tall. 'The queen rises. Kneel not
+      in sorrow but in readiness.'
+
 mimic_girl:
   name: Mimic Girl
   race: Abomination
@@ -655,6 +710,11 @@ mimic_girl:
     ascension_post_ceremony: The {stone} shatters with a jackpot chime, revealing
       a mimic-shaped constellation! {name} emerges sparkling, tongue lolling. 'Jackpot!
       Level {old_cap}? Eaten up!'
+    is_defeated: The {name} clunks onto her side, lid creaking open weakly. 'N-no
+      fair... my treasure... keep it safe...'
+    is_recovered: She snaps shut, then pops open with renewed energy. 'Hehe~ I'm back
+      and hungrier than ever!'
+
 umbral_weaver:
   name: Umbral Weaver
   race: Shadow
@@ -711,6 +771,11 @@ umbral_weaver:
     ascension_post_ceremony: The {stone} unravels into shadowy filaments that sew
       themselves into {name}'s form. The darkness deepens, then ignites with starry
       nodes. 'My new web is complete. Level {old_cap}... discarded.'
+    is_defeated: The shadows around her fray and thin until she is barely a silhouette.
+      'The pattern... is breaking... little moth...'
+    is_recovered: New threads spin out from the darkness, forming a stronger web.
+      'The tapestry is repaired. I will not unravel again.'
+
 winter_fairy:
   name: Winter Fairy
   race: Fey
@@ -767,6 +832,11 @@ winter_fairy:
     ascension_post_ceremony: The {stone} shatters into a flurry of diamond snow! {name}
       spins, her form growing sharp and crystalline. 'The eternal winter has arrived!
       Level {old_cap} is buried.'
+    is_defeated: She falls like a single snowflake, barely visible. 'So... cold...
+      even my frost is fading...'
+    is_recovered: She bursts upward in a swirl of ice crystals. 'The blizzard returns!
+      Nothing can freeze me out of this fight!'
+
 holstaur_brawler:
   name: Holstaur Brawler
   race: Beast
@@ -822,6 +892,11 @@ holstaur_brawler:
     ascension_post_ceremony: The {stone} detonates like a powder keg! {name} bellows
       as her physique surges with raw power. 'I could bench-press a mountain! Level
       {old_cap} is dust!'
+    is_defeated: She drops to one knee, arms shaking. 'D-damn... they punch harder
+      than a stampede... I need a breather...'
+    is_recovered: She pops back up and slams her fists together. 'Round two! I'm just
+      getting warmed up!'
+
 gargoyle_watcher:
   name: Gargoyle Watcher
   race: Construct
@@ -878,6 +953,11 @@ gargoyle_watcher:
     ascension_post_ceremony: The {stone} cracks, revealing a core of molten light
       that flows over {name}. Her stone skin shines like polished marble. 'I am awake!
       Level {old_cap} is ancient history.'
+    is_defeated: She cracks in several places, one wing breaking off. 'The stone...
+      crumbles... but I will... watch...'
+    is_recovered: The broken pieces fuse back together with a grind. 'Stone endures.
+      I am whole again.'
+
 vampire_seductress:
   name: Vampire Seductress
   race: Vampire
@@ -934,6 +1014,11 @@ vampire_seductress:
     ascension_post_ceremony: The {stone} dissolves into a sanguine mist that coils
       around {name}. Her fangs gleam, and her presence intensifies. 'Darker and deadlier...
       Level {old_cap} is a quaint memory.'
+    is_defeated: She collapses onto a chaise, a hand to her forehead. 'How... ungraceful...
+      a lady should never look this defeated...'
+    is_recovered: She rises gracefully, straightening her glove. 'That was merely a
+      pause. Now, where were we, my pet?'
+
 yuki_onna:
   name: Yuki-onna
   race: Elemental
@@ -988,6 +1073,11 @@ yuki_onna:
     ascension_post_ceremony: The {stone} bursts into a silent blizzard! {name} rises,
       her form wreathed in auroral frost. 'The cold is now my servant. Level {old_cap}
       is frozen solid.'
+    is_defeated: Her form grows thin and transparent, snow piling around her. 'I'm...
+      melting... don't let me disappear...'
+    is_recovered: She solidifies, fresh frost sparkling. 'You called me back. I will
+      always return to your warmth.'
+
 amazon_warrior:
   name: Amazon Warrior
   race: Human
@@ -1040,6 +1130,11 @@ amazon_warrior:
       limit and fight beside you forever.'
     ascension_post_ceremony: The {stone} erupts in a war cry of light! {name} leaps
       up, spear blazing. 'Victory is mine! Level {old_cap} has fallen in battle!'
+    is_defeated: She drops her spear and sinks to her knees, bloodied but unbowed.
+      'I... have failed you. A warrior's worst shame...'
+    is_recovered: She picks up her spear and stands tall. 'Shame washed away by blood.
+      I will fight again!'
+
 banshee_wailer:
   name: Banshee Wailer
   race: Undead
@@ -1096,6 +1191,11 @@ banshee_wailer:
     ascension_post_ceremony: The {stone} shatters with a note so pure it becomes a
       melody. {name}'s tears turn into glowing motes; she smiles. 'I can sing again...
       Level {old_cap} is a forgotten dirge.'
+    is_defeated: She covers her face and wails a soft, sorrowful note. 'Again... I
+      bring only loss...'
+    is_recovered: She lifts her head and hums a fragile tune. 'But you still stand
+      beside me. I'll sing for the living now.'
+
 neko_ninja:
   name: Neko Ninja
   race: Beast
@@ -1151,6 +1251,11 @@ neko_ninja:
     ascension_post_ceremony: The {stone} vanishes in a puff of smoke, and {name} reappears
       with twin tails of light. 'Nyahaha! I'm uncappable now! Level {old_cap} got
       pounced!'
+    is_defeated: She vanishes into smoke, then reappears flat on the floor. 'Nya...
+      that hurt... I lost my pounce...'
+    is_recovered: She poofs upright and stretches. 'Nya! All nine lives still intact!
+      Time to stalk!'
+
 arachne_weaver:
   name: Arachne Weaver
   race: Beast
@@ -1206,6 +1311,11 @@ arachne_weaver:
     ascension_post_ceremony: The {stone} unravels into glistening silk threads that
       weave into {name}'s carapace. Golden patterns emerge. 'Arachnae supreme! Level
       {old_cap} is just a loose thread.'
+    is_defeated: Several legs buckle and silk strands snap. 'My web... torn... I can't
+      hold you...'
+    is_recovered: New silk flows, stronger than before. 'The web is repaired. I will
+      never let you fall again.'
+
 mummy_princess:
   name: Mummy Princess
   race: Undead
@@ -1261,6 +1371,11 @@ mummy_princess:
     ascension_post_ceremony: The {stone} crumbles into golden sand that flows into
       {name}'s bandages. Her eyes ignite with royal flame. 'The tomb is opened! Level
       {old_cap} is buried forever.'
+    is_defeated: She slumps on her throne, bandages fraying. 'A pharaoh... fallen
+      in dishonor...'
+    is_recovered: She rises, new linen wrapping around her. 'The pharaoh is eternal.
+      I return stronger.'
+
 oni_bruiser:
   name: Oni Bruiser
   race: Demon
@@ -1314,6 +1429,11 @@ oni_bruiser:
     ascension_post_ceremony: The {stone} shatters under her fist, unleashing a shockwave
       of demonic fire! Her horns glow, muscles rippling. 'Now I'm a true calamity!
       Level {old_cap}? Obliterated!'
+    is_defeated: She crashes down, shaking the ground, and coughs. 'Hah... that... actually
+      hurt... you better win this...'
+    is_recovered: She roars and leaps to her feet, muscles bulging. 'PAIN IS JUST
+      FUEL! I'M BACK FOR MORE!'
+
 salamander_dancer:
   name: Salamander Dancer
   race: Elemental
@@ -1367,6 +1487,11 @@ salamander_dancer:
     ascension_post_ceremony: The {stone} combusts into a spiral of embers that wrap
       around {name}. She pirouettes, now wreathed in eternal flame. 'The dance never
       ends! Level {old_cap} is ash.'
+    is_defeated: Her flames sputter and go out, leaving her in the dark. 'My fire...
+      it's gone... I'm cold...'
+    is_recovered: A spark ignites in her palm, then flames roar back to life. 'The
+      ember never dies. Our dance continues!'
+
 succubus_seductress:
   name: Succubus Seductress
   race: Demon
@@ -1422,6 +1547,11 @@ succubus_seductress:
     ascension_post_ceremony: The {stone} melts into a seductive shadow that merges
       with {name}. Her tail curls with new power. 'Oh my... that's a delicious upgrade.
       Level {old_cap} is so last season.'
+    is_defeated: She crumples dramatically, a hand to her forehead. 'Master... I think
+      I need mouth-to-mouth... only from you...'
+    is_recovered: She sits up with a knowing smirk. 'What a rush. Now I really want
+      to play.'
+
 dullahan_knight:
   name: Dullahan Knight
   race: Undead
@@ -1478,6 +1608,11 @@ dullahan_knight:
     ascension_post_ceremony: The {stone} splits, revealing a phantom steed of light
       that merges with {name}. Her armor becomes spectral silver. 'My oath is unbound!
       Level {old_cap} is but a ghost.'
+    is_defeated: Her head rolls a few inches away, eyes still blinking. 'My liege...
+      pick me up... I cannot fall here...'
+    is_recovered: She sets her head back on her shoulders and draws her sword. 'The
+      knight stands again. Forward, for my liege!'
+
 kitsune_miko:
   name: Kitsune Miko
   race: Beast
@@ -1533,6 +1668,11 @@ kitsune_miko:
     ascension_post_ceremony: The {stone} dissolves into nine floating foxfires that
       enter {name}'s tails. Her fur gleams with celestial blessings. 'The old seal
       is broken. Level {old_cap} has been exorcised.'
+    is_defeated: She collapses, fan slipping from her fingers, tails drooping. 'Fufu...
+      even a fox... has bad days...'
+    is_recovered: She snaps her fan open and her tails fluff up. 'A kitsune always
+      has another trick. Let's continue, my dear.'
+
 siren_empress:
   name: Siren Empress
   race: Fey
@@ -1585,6 +1725,11 @@ siren_empress:
     ascension_post_ceremony: The {stone} crashes like a wave into a crescendo of light!
       {name}'s voice soars, coral crown blazing. 'A new aria begins! Level {old_cap}
       is but a silent rest.'
+    is_defeated: Her song cuts off into a choked gasp, and she sinks beneath the waves.
+      'The music... stopped...'
+    is_recovered: She surfaces with a ringing high note. 'The silence is broken! Hear
+      my aria once more!'
+
 crimson_countess:
   name: Crimson Countess
   race: Vampire
@@ -1640,6 +1785,11 @@ crimson_countess:
     ascension_post_ceremony: The {stone} shatters into a blood-red aurora that sinks
       into {name}. Her cloak billows with arcane power. 'The countess ascends! Level
       {old_cap} is merely dust in my wine.'
+    is_defeated: She stumbles, spilling her goblet. 'This... is unbecoming... of a
+      countess...'
+    is_recovered: She refills her goblet with a steady hand. 'The Crimson Countess
+      does not stay down. Let us continue, my consort.'
+
 demon_whip_master:
   name: Demon Whip Master
   race: Demon
@@ -1694,6 +1844,11 @@ demon_whip_master:
     ascension_post_ceremony: The {stone} lashes out in fiery cords that wrap around
       {name}. Her whip ignites with hellfire. 'The leash is broken! Level {old_cap}
       whipped into submission.'
+    is_defeated: Her whip falls slack and she drops to one knee. 'This... doesn't
+      feel like victory... master...'
+    is_recovered: She cracks the whip and rises with renewed fire. 'A true master
+      always gets back up. Now, where were we?'
+
 minotaur_gladiator:
   name: Minotaur Gladiator
   race: Giant
@@ -1745,6 +1900,11 @@ minotaur_gladiator:
     ascension_post_ceremony: The {stone} bursts into a roaring spectral bull that
       charges into {name}. Her frame bulges with mythic might. 'I am the arena! Level
       {old_cap} lies defeated at my hooves.'
+    is_defeated: She crashes to the arena floor, horn chipped. 'The crowd... goes
+      silent... I have failed...'
+    is_recovered: She rises with a roar that shakes the stands. 'The gladiator lives!
+      The fight isn't over!'
+
 vampire_matriarch:
   name: Vampire Matriarch
   race: Vampire
@@ -1803,6 +1963,11 @@ vampire_matriarch:
     ascension_post_ceremony: The {stone} melts into a crimson embrace that envelops
       {name}. She stands taller, more regal. 'My brood will fear nothing. Level {old_cap}
       is a forgotten lullaby.'
+    is_defeated: She clutches her doll, sinking to her knees. 'My children... I could
+      not... protect...'
+    is_recovered: She rises, eyes blazing with motherly fury. 'No one harms my family.
+      This matriarch is far from done.'
+
 centaur_champion:
   name: Centaur Champion
   race: Beast
@@ -1853,6 +2018,10 @@ centaur_champion:
     ascension_post_ceremony: The {stone} shatters into a galloping constellation that
       merges with {name}. She rears, mane blazing with starlight. 'I am legend! Level
       {old_cap} left in the dust.'
+    is_defeated: She stumbles, legs buckling. 'A champion... tripped... how humiliating...'
+    is_recovered: She rises, mane tossing. 'A fall is just a pause. Watch my dust
+      now!'
+
 infernal_empress:
   name: Infernal Empress
   race: Demon
@@ -1910,6 +2079,11 @@ infernal_empress:
     ascension_post_ceremony: The {stone} detonates into a nova of hellfire that crowns
       {name}. Her wings burst into existence. 'The abyss acknowledges a new order!
       Level {old_cap} is incinerated.'
+    is_defeated: Her flames gutter to mere smoke as she leans on her throne. 'An empress...
+      brought low... impossible...'
+    is_recovered: She ignites with a roar of hellfire. 'Impossible is just a word.
+      The Infernal Empress rises!'
+
 scylla_wrecker:
   name: Scylla Wrecker
   race: Abomination
@@ -1966,6 +2140,11 @@ scylla_wrecker:
     ascension_post_ceremony: The {stone} splits into a whirlpool of bioluminescence!
       {name}'s tentacles grow longer, shimmering with deep magic. 'The ocean is mine!
       Level {old_cap} drowned.'
+    is_defeated: She sinks into a shallow pool, tentacles limp. 'Too dry... can't...
+      move...'
+    is_recovered: She surges out of the water, tentacles thrashing with new life.
+      'The tide has turned! Back to the deep!'
+
 gorgon_petrifier:
   name: Gorgon Petrifier
   race: Lizardfolk
@@ -2021,6 +2200,11 @@ gorgon_petrifier:
     ascension_post_ceremony: The {stone} transforms into a mirror that reflects her
       eyes, then shatters into sparkling scales. {name}'s snakes calm, her face serene.
       'I see clearly now. Level {old_cap} is a statue of the past.'
+    is_defeated: Her veil slips, and she frantically covers her eyes. 'Don't look...
+      I can't control it... run...'
+    is_recovered: She carefully adjusts her veil and takes a calming breath. 'The
+      gaze is tamed again. I am safe for you now.'
+
 ninetales_fox:
   name: Ninetales Fox
   race: Beast
@@ -2076,6 +2260,11 @@ ninetales_fox:
     ascension_post_ceremony: The {stone} bursts into nine floating suns that merge
       with each tail. {name} glows with transcendent fire. 'The legend writes itself
       anew. Level {old_cap} is a forgotten verse.'
+    is_defeated: She fades slightly, tails going out one by one. 'My story... cannot
+      end... here...'
+    is_recovered: All nine tails reignite at once. 'A true legend knows no ending.
+      Our epic continues!'
+
 mermaid_siren_queen:
   name: Mermaid Siren Queen
   race: Fey
@@ -2130,6 +2319,11 @@ mermaid_siren_queen:
     ascension_post_ceremony: The {stone} dissolves into a whirl of sea foam and song.
       {name}'s tail shimmers with all the colors of the coral. 'The sea knows a new
       queen. Level {old_cap} washed away.'
+    is_defeated: Her song turns into a choked gasp and she sinks deeper. 'The tide...
+      pulls me away...'
+    is_recovered: She breaks the surface with a pure, clear note. 'The queen of the
+      sea answers to no undertow. I am here!'
+
 draconic_valkyrie:
   name: Draconic Valkyrie
   race: Dragonkin
@@ -2184,6 +2378,11 @@ draconic_valkyrie:
     ascension_post_ceremony: The {stone} roars into a spectral dragon that merges
       with {name}. Her wings flare with runic light. 'Valhalla's gates tremble! Level
       {old_cap} has been slain.'
+    is_defeated: She crashes down, wings pinned, spear broken. 'Even a valkyrie... can
+      fall...'
+    is_recovered: She rises on new wings, spear reforged. 'A valkyrie always rises
+      from the field! To glory!'
+
 sphinx_riddler:
   name: Sphinx Riddler
   race: Beast
@@ -2239,6 +2438,11 @@ sphinx_riddler:
     ascension_post_ceremony: The {stone} cracks open like an ancient scroll, releasing
       hieroglyphs of light that sink into {name}. She smirks. 'Riddle solved. Level
       {old_cap} was the question.'
+    is_defeated: She lies down, tail limp, and sighs. 'A riddle I could not solve...
+      myself...'
+    is_recovered: She springs up with a purr. 'The answer was to keep trying. Now
+      I have a new riddle for you.'
+
 lich_queen_avatar:
   name: Lich Queen Avatar
   race: Undead
@@ -2295,6 +2499,11 @@ lich_queen_avatar:
     ascension_post_ceremony: The {stone} unravels into mathematical sigils that orbit
       {name} before fusing. Her phylactery brightens. 'The new formula is complete.
       Level {old_cap} has been divided by zero.'
+    is_defeated: Her phylactery dims and she clutches her tome. 'An error... in the
+      calculation...'
+    is_recovered: The phylactery glows bright again as she re-opens the book. 'Recalculating.
+      The anomaly has been corrected.'
+
 valkyrie_commander:
   name: Valkyrie Commander
   race: Human
@@ -2348,6 +2557,11 @@ valkyrie_commander:
     ascension_post_ceremony: The {stone} shatters into wings of light that attach
       to {name}. She rises, spear blazing. 'Valhalla's armies are ready! Level {old_cap}
       is a fallen foe.'
+    is_defeated: She drives her spear into the ground to stay upright. 'Not... yet...
+      I will not fall...'
+    is_recovered: She pulls the spear free and raises it high. 'A commander never
+      stays down. Onward!'
+
 dragon_goddess_avatar:
   name: Dragon Goddess Avatar
   race: Dragonkin
@@ -2404,6 +2618,11 @@ dragon_goddess_avatar:
     ascension_post_ceremony: The {stone} erupts into a miniature supernova that flows
       into {name}. Her scales shimmer with nebulae. 'Creation bows. Level {old_cap}
       was a fleeting thought.'
+    is_defeated: She shrinks to a faint ember, her starfire nearly gone. 'This form...
+      is so frail...'
+    is_recovered: She expands back into blazing glory. 'A goddess cannot be dimmed
+      for long. The stars burn again!'
+
 arachne_brood_queen:
   name: Arachne Brood Queen
   race: Beast
@@ -2459,6 +2678,10 @@ arachne_brood_queen:
     ascension_post_ceremony: The {stone} bursts into a thousand tiny silk threads
       that knit a majestic pattern on {name}. Her brood chitters joyfully. 'The web
       of eternity is spun. Level {old_cap} is an empty egg.'
+    is_defeated: She curls around her brood, silk torn. 'My children... protect them...'
+    is_recovered: She rises, spinning fresh silk. 'The brood is safe and so am I.
+      The queen will weave again.'
+
 cosmic_slime_empress:
   name: Cosmic Slime Empress
   race: Elemental
@@ -2515,6 +2738,10 @@ cosmic_slime_empress:
     ascension_post_ceremony: The {stone} dissolves into cosmic jelly that expands
       and contracts, then merges with {name}. She glows with all the colors of spacetime.
       'I am boundless! Level {old_cap} was a tiny speck.'
+    is_defeated: She disperses into a dim cloud, barely holding together. 'So...
+      cold... the void... pulling me apart...'
+    is_recovered: She coalesces back into a brilliant nebula. 'The cosmos reforms.
+      I am infinite once more!'
 affection_gifts:
   goblin_girl:
     flowers: 25

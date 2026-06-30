@@ -44,11 +44,20 @@ def ensure_player_fields(player):
     player.setdefault("engaged_girls", [])
     player.setdefault("married_girls", [])
 
+    # Captain's Cutlass state
+    player.setdefault("cutlass_high_tide_stacks", 0)
+    player.setdefault("cutlass_high_tide_floor", None)
+    player.setdefault("cutlass_rally_cooldown", 0)
+    player.setdefault("cutlass_rally_active", False)
+    player.setdefault("cutlass_rally_turns", 0)
+    player.setdefault("cutlass_riposte_count", 0)
+
     # Ensure ally and house girl fields for leveling system
     for ally in player.get("allies", []):
         ally.setdefault("exp", 0)
         ally.setdefault("level_hp_bonus", 0)
         ally.setdefault("level_cap", 10)
+        ally.setdefault("defeated", False)
         ally.setdefault("cursed", False)
         ally.setdefault("dreaded", False)
         ally.setdefault("silenced", False)

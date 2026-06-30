@@ -1,6 +1,7 @@
 # combat/action_menu.py
 from combat.capture import is_monster_girl
 from combat.abyss_fang import is_abyss_fang_available
+from combat.captain_cutlass import is_captain_cutlass_available
 from combat.status_effects import is_silenced
 from combat.skills import get_available_skills
 
@@ -28,6 +29,10 @@ def get_action_menu(player, enemies):
     # Abyss Fang – only if equipped and not on cooldown
     if is_abyss_fang_available(player):
         actions.append(('w', 'Wield the Abyss'))
+
+    # Captain's Cutlass – Crew Rally
+    if is_captain_cutlass_available(player):
+        actions.append(('r', 'Crew Rally'))
 
     # Skills – add available class skills as numbered options
     available_skills = get_available_skills(player)

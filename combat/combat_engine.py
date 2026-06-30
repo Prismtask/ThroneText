@@ -5,6 +5,10 @@ from combat.abyss_fang import (
     clear_abyss_fang_state,
     get_abyssal_tempo_count,
 )
+from combat.captain_cutlass import (
+    clear_captain_cutlass_state,
+    tick_captain_cutlass,
+)
 # combat_engine.py – main combat orchestrators
 import random
 from combat.stats import compute_player_stats, enemy_stats
@@ -89,6 +93,7 @@ def _tick_all_state(player):
     """Tick all combat state for player and allies. Returns 'dead' if player died from DoT, else None."""
     tick_abyss_fang_cooldown(player)
     tick_abyssal_tempo(player)
+    tick_captain_cutlass(player)
 
     from combat.skills import tick_skill_cooldowns
     tick_skill_cooldowns(player)
@@ -155,9 +160,15 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
 def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=None):
     """Generic combat loop supporting player + allies vs enemies."""
     clear_abyss_fang_state(player)
+    clear_captain_cutlass_state(player)
     player["tarnished_jade_pins"] = 0
     player["tarnished_jade_weakened"] = False
     enemies = [enemy_stats(k, player) for k in enemy_keys]
+
+    # --- Reset High Tide if floor changed ---
+    if floor is not None and player.get("cutlass_high_tide_floor") != floor:
+        player["cutlass_high_tide_stacks"] = 0
+        player["cutlass_high_tide_floor"] = floor
 
     # --- NEW: Buff the normal enemy acting as the Floor Boss ---
     if floor is not None and room_num is not None and total_rooms is not None:
@@ -364,7 +375,16 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                         print("  You have been slain.")
                         return _end_combat_with_result(player, "dead")
                     else:
-                        print(f"  {target['name']} has fallen!")
+                        target["defeated"] = True
+                        target["current_hp"] = 0
+                        # Print is_defeated dialogue if available
+                        from resources.enemies import ENEMIES
+                        template = ENEMIES.get(target.get("key", ""), {})
+                        dialogue = template.get("dialogue", {})
+                        defeated_line = dialogue.get("is_defeated", f"{target['name']} has fallen!")
+                        if "{name}" in defeated_line:
+                            defeated_line = defeated_line.format(name=target['name'])
+                        print(f"  {defeated_line}")
 
         enemies = prune_dead(enemies)
         if not enemies:

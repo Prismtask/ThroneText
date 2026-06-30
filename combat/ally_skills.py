@@ -315,7 +315,7 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         for i, m in enumerate(party):
             name = m.get("name", "You") if m is player else m.get("name", "Ally")
             hp = m.get("current_hp", 0)
-            max_hp = m.get("max_hp", 1)
+            max_hp = player_max_hp(m) if m is player else m.get("max_hp", 1)
             status = " [FALLEN]" if m.get("current_hp", 1) <= 0 else ""
             print(f"    {i+1}. {name} ({hp}/{max_hp}){status}")
         try:

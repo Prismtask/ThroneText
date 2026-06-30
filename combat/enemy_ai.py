@@ -136,6 +136,12 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     is_elemental = element is not None
     enemy_dmg = apply_wedding_damage_reduction(player, enemy_dmg, is_elemental=is_elemental, element=element)
 
+    # Captain's Cutlass: High Tide vulnerability + Rally damage reduction
+    if actual_player and player is actual_player:
+        from combat.captain_cutlass import apply_high_tide_vulnerability, apply_rally_damage_reduction
+        enemy_dmg = apply_high_tide_vulnerability(actual_player, enemy_dmg)
+        enemy_dmg = apply_rally_damage_reduction(actual_player, enemy_dmg)
+
     # Wedding fatal blow survival (bark_shield)
     enemy_dmg = apply_wedding_fatal_blow_survival(player, enemy_dmg)
 
@@ -172,6 +178,10 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
             print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!{crit_tag}")
         # Wedding retribution effects (pharaohs_curse, infernal_crown, keening_wail)
         apply_wedding_on_damage_taken(player, enemy, enemy_dmg, "hit")
+        # Captain's Cutlass: Captain's Authority riposte
+        if actual_player and player is actual_player:
+            from combat.captain_cutlass import trigger_captain_riposte
+            trigger_captain_riposte(actual_player, enemy)
     else:
         print(f"The {enemy['name']} attacks but {player['name']} blocks all incoming damage!")
 
