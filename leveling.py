@@ -35,8 +35,8 @@ def get_biomes_cleared_to_cap(player, cap):
 def get_required_biomes_for_cap(current_cap):
     """How many biomes must be cleared to unlock the next cap."""
     total_biomes = len(_get_unique_biomes())
-    # 2 biomes at 10→20, 4 at 20→30, 6 at 30→40, 8 at 40→50, 10 at 50→60
-    required = (current_cap // 10) * 2
+    # 1 biome at 10→20, 2 at 20→30, 3 at 30→40, 4 at 40→50, 5 at 50→60
+    required = current_cap // 10
     return min(required, total_biomes)
 
 
