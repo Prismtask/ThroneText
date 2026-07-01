@@ -70,8 +70,8 @@ Superbosses:
     boss: true
     super_boss: true
   rientrante_frostbound:
-    name: Rientrante, the Frostbound
-    race: Elemental
+    name: Rientrante, the Administrator
+    race: Human
     level: 25
     base_hp: 420
     mods:

@@ -366,8 +366,11 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 _insert_extra_turn(turn_order, step_idx, combatant)
 
         if post_round_hook:
-            if post_round_hook(context, enemies) == "dead":
+            hook_result = post_round_hook(context, enemies)
+            if hook_result == "dead":
                 return "dead"
+            if hook_result == "spared":
+                return "spared"
 
         enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:

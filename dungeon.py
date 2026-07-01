@@ -298,8 +298,10 @@ def explore_dungeon(player):
         elif tier == 4:
             print("The sky above the dungeon cracks open. Something vast descends.")
         elif tier == 5:
-            print("The temperature plummets. Frost crawls across every surface.")
-            print("A pale, merciless light glows from somewhere beyond the walls.")
+            print("The dungeon flickers. The walls pixelate at the edges.")
+            print("For a moment you see fluorescent lights behind them.")
+            print("A man steps through the distortion — not a monster, but a human.")
+            print("He looks at you with tired eyes and says: 'You shouldn't be here.'")
         elif tier == 6:
             print("The scent of salt and rot fills the air. A ghostly fog rolls in.")
             print("From the mist, a spectral vessel emerges — tattered sails, haunted hull.")
@@ -359,6 +361,15 @@ def explore_dungeon(player):
                 save_game(player)
                 player.pop("pandemonium_mode", None)
                 return True   # floor cleared, outer loop will handle full heal
+            elif result == "spared":
+                # Rientrante spared you — remove from pool but no kill reward
+                player["superboss_pool"].pop(0)
+                print("\n  Rientrante spared you. The encounter ends.")
+                # Full heal and save
+                player["current_hp"] = player_max_hp(player)
+                save_game(player)
+                player.pop("pandemonium_mode", None)
+                return True
             elif result == "fled":
                 print("You cannot flee from a milestone Super Boss!")
                 input("Press Enter to continue the fight...")
