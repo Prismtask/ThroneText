@@ -357,6 +357,17 @@ def combat_rientrante(player, floor=None, enemies=None):
         # Phase 2 trigger at 50% HP
         if ctx["phase"] == 1 and not ctx["phase2_triggered"]:
             if b["hp"] <= int(b["max_hp"] * 0.50):
+                # ── Clean up any surviving shards BEFORE spawning Phase 2 ──
+                # minions, preventing the enemy list from exceeding 5 and
+                # breaking the combat menu.
+                surviving_shards = [e for e in elist if e.get("key") == SHARD_KEY and e["hp"] > 0]
+                if surviving_shards:
+                    c_print("\n💥 Lingering data fragments dissolve as reality shifts...")
+                    for s in surviving_shards:
+                        s["hp"] = 0
+                    ctx["shards_spawned"] = False
+                    ctx["shard_timer"] = 0
+                # ──────────────────────────────────────────────────────────
                 _trigger_phase2(ctx, elist, b, player)
 
         # Shard timer

@@ -434,9 +434,19 @@ def combat_yinglong(player, floor=None, enemies=None):
             c_print("!" * 60)
             c_input("Press Enter...")
 
-            wedge = _make_wedge()
-            elist.append(wedge)
-            ctx["wedge_active"] = True
+            try:
+                wedge = _make_wedge()
+                elist.append(wedge)
+                ctx["wedge_active"] = True
+                c_print("  ⚡ Heaven Pinning Wedge materialises in the arena!")
+            except Exception:
+                # If wedge creation fails, strip immortality so the player
+                # isn't permanently stuck.
+                c_print("\n  ⚠️  The divine energies flicker... Yinglong's immortality falters!")
+                ctx["immortal"] = False
+                ctx["wedge_active"] = False
+                b["str_mod"] = b["base_str_mod"]
+                c_input("Press Enter...")
 
         # Phase 1 Pillar
         if ctx["phase"] == 1 and not ctx["pillar_active"]:

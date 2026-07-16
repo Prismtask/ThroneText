@@ -945,9 +945,24 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
     # Check for saved room progress on this floor
     saved_floor = player.get("saved_dungeon_floor")
     saved_rooms = player.get("saved_dungeon_rooms")
-    if saved_floor == floor and saved_rooms:
+    saved_idx   = player.get("saved_dungeon_room_index", 0)
+
+    # ── Validate the saved state before trusting it ──────────────────
+    restore_ok = (
+        saved_floor == floor
+        and isinstance(saved_rooms, list)
+        and len(saved_rooms) == 10  # every floor has exactly 10 rooms
+        and isinstance(saved_idx, int)
+        and 0 <= saved_idx < 10
+    )
+    if not restore_ok:
+        # Wipe invalid saved state so it doesn't poison future runs
+        for _key in ("saved_dungeon_floor", "saved_dungeon_rooms", "saved_dungeon_room_index"):
+            player.pop(_key, None)
+
+    if restore_ok:
         rooms = saved_rooms
-        start_room = player.get("saved_dungeon_room_index", 0)
+        start_room = saved_idx
         if start_room > 0:
             _tprint("\n" + "─" * 50)
             _tprint(f"  RESUMING {dungeon_display} DUNGEON – FLOOR {floor}")

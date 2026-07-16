@@ -164,6 +164,17 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             if result in ("dead", "victory"):
                 return result
 
+        # ── Safety cap: never allow more than 5 enemies (HUD limit) ──
+        MAX_COMBAT_ENEMIES = 5
+        if len(enemies) > MAX_COMBAT_ENEMIES:
+            # Cull lowest-HP non-boss enemies first
+            non_boss = [e for e in enemies if not e.get("super_boss") and not e.get("boss")]
+            non_boss.sort(key=lambda e: e.get("hp", 0))
+            to_remove = len(enemies) - MAX_COMBAT_ENEMIES
+            for e in non_boss[:to_remove]:
+                c_print(f"\n  ⚠️  The arena cannot sustain so many foes — {e['name']} dissipates!")
+                e["hp"] = 0
+
         enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
             return "victory"

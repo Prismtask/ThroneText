@@ -82,6 +82,37 @@ class ChangelogScreen(BaseScreen):
         t = self.text_widget
         t.configure(state=tk.NORMAL)
 
+        self._add_version("v0.1.6.2")
+
+        self._add_section("Bug Fixes")
+        self._add_bullet("Fixed a bug where capturing or recruiting a monster girl in a new city "
+                         "would silently create a duplicate house instead of sending the girl to "
+                         "the player's existing house. The save_house_data() function now routes "
+                         "girls to the existing house across all cities, and only auto-creates a "
+                         "house as a fallback when the player has none at all.")
+        self._add_bullet("Fixed a bug where ally equipment, active buffs, and race passives were "
+                         "not counted during dungeon stat-check events (Wounded Adventurer, Ancient "
+                         "Corpse, Monster Approaching, trap disarm attempts, and all Wonderland "
+                         "encounters). Only raw base attributes were used — now compute_ally_stats() "
+                         "is called so allies contribute their full effective stats just like the player.")
+        self._add_bullet("Fixed a bug in the Rientrante superboss fight where rapidly pushing the "
+                         "boss from 65% to 50% HP caused Frost Shards to survive into Phase 2, "
+                         "resulting in 7 simultaneous enemies (boss + 3 shards + Eye + 2 Arms) that "
+                         "overflowed the combat menu and made actions unselectable. Lingering shards "
+                         "are now dissolved when Phase 2 triggers.")
+        self._add_bullet("Added a global enemy cap to all superboss fights: if any boss spawns more "
+                         "than 5 enemies, the lowest-HP non-boss enemies are automatically culled "
+                         "to prevent combat menu overflow.")
+        self._add_bullet("Fixed a rare soft-lock in the Yinglong superboss fight where the Heaven "
+                         "Pinning Wedge could fail to spawn during the Immortal Rage phase, leaving "
+                         "Yinglong permanently immortal. Wedge creation is now wrapped in error "
+                         "handling — if it fails, immortality is stripped so the fight can continue.")
+        self._add_bullet("Fixed a bug where corrupted or partial dungeon save state (saved floor, "
+                         "rooms, or room index) could cause the player to teleport to a lower floor "
+                         "or reset to Room 1 mid-run. Saved dungeon state is now validated before "
+                         "being restored — invalid state is auto-wiped and the floor regenerates "
+                         "fresh instead of silently corrupting the run.")
+
         self._add_version("v0.1.6")
 
         self._add_section("Elemental Profile Debuff System")

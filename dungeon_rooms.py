@@ -279,7 +279,17 @@ def _get_member_stat(member, stat_name, player):
             "Charisma": ch,
         }.get(stat_name, 0)
     else:
-        return member["attributes"].get(stat_name, 0)
+        # Use compute_ally_stats so equipment, buffs, and passives are counted
+        from combat.ally import compute_ally_stats
+        a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(member)
+        return {
+            "Strength": a_str,
+            "Constitution": a_con,
+            "Dexterity": a_dex,
+            "Learning": a_ler,
+            "Wisdom": a_wis,
+            "Charisma": a_cha,
+        }.get(stat_name, 0)
 
 
 def _roll_stat_check(member, stat_name, dc, player):

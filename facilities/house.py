@@ -189,14 +189,29 @@ def get_house_data(player, city_id=None):
 
 
 def save_house_data(player, girls_data, city_id=None):
-    """Save monster girl data back to the house."""
+    """Save monster girl data back to the house.
+
+    If the player already owns a house in another city, the girls are sent
+    there instead of auto-creating a new house.  A new house is only
+    auto-created when the player has no house at all (fallback for early
+    captures before buying a deed).
+    """
     if not city_id:
         city_id = player.get("origin_city", "solmere")
     if not player.get("houses"):
         player["houses"] = {}
-    if not player["houses"].get(city_id):
-        player["houses"][city_id] = {"level": 1, "storage": [], "last_income_day": player.get("day", 1)}
-    player["houses"][city_id]["monster_girls"] = girls_data
+
+    houses = player["houses"]
+    if city_id not in houses:
+        if houses:
+            # Player already owns a house — send girls there instead of
+            # silently creating a duplicate house in the current city.
+            city_id = next(iter(houses))
+        else:
+            # No house at all: auto-create a basic Hovel so the player
+            # isn't locked out of the monster-girl system.
+            houses[city_id] = {"level": 1, "storage": [], "last_income_day": player.get("day", 1)}
+    houses[city_id]["monster_girls"] = girls_data
 
 
 # ── Sub-menus ────────────────────────────────────────────────────────────────
