@@ -1,11 +1,142 @@
 import random
-from resources.constants import BASE_EXP_FOR_NEXT_LEVEL, EXP_SCALING
+from resources.constants import EXP_COEFF_A, EXP_COEFF_B, EXP_POWER
 from resources.cities import CITIES
 from character import player_max_hp
 from combat.skills import unlock_skills_for_level
 
+# ── GUI terminal detection (safe import for terminal mode) ──────────
+try:
+    from gui.terminal import get_terminal as _get_gui_terminal
+except ImportError:
+    _get_gui_terminal = lambda: None
+
+# ── GUI level-up dialog (safe import) ──────────────────────────────────
+try:
+    from gui.widgets.level_up_dialog import (
+        choose_level_up_attribute as _gui_choose_attr,
+        show_level_up_results as _gui_show_results,
+    )
+except ImportError:
+    _gui_choose_attr = None
+    _gui_show_results = None
+
+
+def _term():
+    """Return the GUI Terminal if running in GUI mode, else None."""
+    return _get_gui_terminal()
+
+
+def _tprint(*args, sep=" "):
+    """Print to GUI if available, else to terminal."""
+    t = _term()
+    text = sep.join(str(a) for a in args)
+    if t:
+        t.print(text)
+    else:
+        print(text)
+
+
+def _tpause(prompt="Press Enter to continue..."):
+    """Pause for user acknowledgement."""
+    t = _term()
+    if t:
+        t.pause(prompt)
+    else:
+        input(prompt)
+
+
+def _tmenu(options, prompt="Choose an option:", allow_cancel=False, cancel_label="Cancel"):
+    """Show a menu; returns 0-based index or -1."""
+    t = _term()
+    if t:
+        return t.menu(options, prompt=prompt, allow_cancel=allow_cancel, cancel_label=cancel_label)
+    else:
+        for i, opt in enumerate(options):
+            print(f"{i+1}. {opt}")
+        if allow_cancel:
+            print(f"0. {cancel_label}")
+        try:
+            choice = input(prompt + " ").strip()
+            idx = int(choice) - 1
+            if allow_cancel and idx == -1:
+                return -1
+            if 0 <= idx < len(options):
+                return idx
+        except (ValueError, IndexError):
+            pass
+        return -1
+
+
+# ── Level-up I/O helpers (GUI-first, terminal fallback) ──────────────
+
+def _choose_level_attr(entity_name, level, attributes):
+    """
+    Ask the user to pick an attribute to increase.
+
+    Tries the GUI dialog first. If unavailable or cancelled, falls back
+    to the terminal menu. Returns (attr_key, used_gui) where used_gui
+    indicates whether the GUI was used for the pick (and thus whether
+    results should also be shown via GUI).
+    """
+    # Try GUI dialog first
+    if _gui_choose_attr is not None:
+        try:
+            chosen = _gui_choose_attr(entity_name, level, attributes)
+            if chosen is not None:
+                return chosen, True
+        except Exception:
+            pass  # Fall through to terminal
+
+    # Terminal fallback
+    _tprint(f"\n*** LEVEL UP! {entity_name} is now level {level} ***")
+    _tprint("Choose an attribute to increase by 1:")
+    attrs = ["Strength", "Constitution", "Dexterity", "Wisdom", "Learning", "Charisma"]
+    attr_options = [f"{a} (current: {attributes[a]})" for a in attrs]
+    choice_idx = _tmenu(attr_options, prompt="Choose attribute:")
+    if 0 <= choice_idx < len(attrs):
+        return attrs[choice_idx], False
+    else:
+        chosen = random.choice(attrs)
+        _tprint(f"Invalid choice, {chosen} was chosen.")
+        return chosen, False
+
+
+def _show_level_results(entity_name, level, chosen_attr, new_value,
+                        hp_increase, new_max_hp, new_skills, milestones,
+                        used_gui):
+    """
+    Display level-up results.
+
+    If the attribute was chosen via GUI dialog, shows results in a
+    matching GUI dialog. Otherwise prints to the terminal.
+    """
+    if used_gui and _gui_show_results is not None:
+        try:
+            _gui_show_results(
+                entity_name=entity_name,
+                level=level,
+                chosen_attr=chosen_attr,
+                new_value=new_value,
+                hp_increase=hp_increase,
+                new_max_hp=new_max_hp,
+                new_skills=new_skills if new_skills else None,
+                milestones=milestones if milestones else None,
+            )
+            return
+        except Exception:
+            pass  # Fall through to terminal
+
+    # Terminal fallback
+    _tprint(f"{chosen_attr} increased to {new_value}.")
+    if hp_increase > 0:
+        _tprint(f"Maximum HP increased by {hp_increase}. New max: {new_max_hp}")
+    if new_skills:
+        _tprint(f"\n*** NEW SKILL(S) UNLOCKED: {', '.join(new_skills)} ***")
+    for msg in (milestones or []):
+        _tprint(msg)
+
 def exp_needed_for_next_level(level):
-    return int(BASE_EXP_FOR_NEXT_LEVEL * (EXP_SCALING ** (level - 1)))
+    return int(EXP_COEFF_A * (level ** EXP_POWER) + EXP_COEFF_B * level)
 
 def get_city_dungeon_progress(player, city_id):
     """Return list of (dungeon_name, max_floor) for all dungeons in a city.
@@ -17,17 +148,22 @@ def get_city_dungeon_progress(player, city_id):
 
 
 def _get_unique_biomes():
-    """Return the set of all unique biome names across all cities."""
-    return {CITIES[c].get("biome", "temperate") for c in CITIES}
+    """Return the set of all unique biome names across all cities.
+    Wonderland is excluded — it is a hidden realm that does not count toward ascension."""
+    return {CITIES[c].get("biome", "temperate") for c in CITIES
+            if CITIES[c].get("biome", "") != "wonderland"}
 
 
 def get_biomes_cleared_to_cap(player, cap):
-    """Return set of unique biomes with at least one city dungeon cleared to `cap`."""
+    """Return set of unique biomes with at least one city dungeon cleared to `cap`.
+    Wonderland is excluded — it does not count toward ascension requirements."""
     cleared = set()
     for city_id in CITIES:
+        biome = CITIES[city_id].get("biome", "temperate")
+        if biome == "wonderland":
+            continue
         city_prog = player.get("city_floors", {}).get(city_id, {})
         if city_prog.get("max_floor", 1) >= cap:
-            biome = CITIES[city_id].get("biome", "temperate")
             cleared.add(biome)
     return cleared
 
@@ -53,10 +189,12 @@ def get_incomplete_biomes(player):
     current_cap = player.get("level_cap", 10)
     cleared_biomes = get_biomes_cleared_to_cap(player, current_cap)
 
-    # Group cities by biome
+    # Group cities by biome (exclude Wonderland)
     biome_cities = {}
     for city_id, data in CITIES.items():
         biome = data.get("biome", "temperate")
+        if biome == "wonderland":
+            continue
         biome_cities.setdefault(biome, []).append((city_id, data["name"]))
 
     incomplete = []
@@ -81,14 +219,17 @@ def get_next_level_cap(current_cap):
 
 
 def is_pandemonium_unlocked(player):
-    """Check if the player has cleared Floor 40 in at least 4 unique biomes."""
+    """Check if the player has cleared Floor 40 in at least 4 unique biomes.
+    Wonderland is excluded — it does not count toward pandemonium unlock."""
     required_floors = 40
     required_biomes = 4
     cleared_biomes = set()
     for city_id in CITIES:
+        biome = CITIES[city_id].get("biome", "temperate")
+        if biome == "wonderland":
+            continue
         city_prog = player.get("city_floors", {}).get(city_id, {})
         if city_prog.get("max_floor", 1) >= required_floors:
-            biome = CITIES[city_id].get("biome", "temperate")
             cleared_biomes.add(biome)
     return len(cleared_biomes) >= required_biomes
 
@@ -114,12 +255,12 @@ def check_level_cap_milestone(player, city_id):
     if can_ascend_level_cap(player):
         cleared = len(get_biomes_cleared_to_cap(player, current_cap))
         city_name = CITIES.get(city_id, {}).get("name", city_id)
-        print(f"\n{'='*50}")
-        print(f"  A surge of primal energy flows through you!")
-        print(f"  {cleared} biomes have been conquered to Floor {current_cap}.")
-        print(f"  You feel ready to become stronger.")
-        print(f"  Visit any Guild to Ascend!")
-        print(f"{'='*50}")
+        _tprint(f"\n{'='*50}")
+        _tprint(f"  A surge of primal energy flows through you!")
+        _tprint(f"  {cleared} biomes have been conquered to Floor {current_cap}.")
+        _tprint(f"  You feel ready to become stronger.")
+        _tprint(f"  Visit any Guild to Ascend!")
+        _tprint(f"{'='*50}")
         notified[global_key] = True
 
 def gain_exp(player, amount):
@@ -140,52 +281,54 @@ def gain_exp(player, amount):
             required = get_required_biomes_for_cap(current_cap)
             cleared = len(get_biomes_cleared_to_cap(player, current_cap))
             if can_ascend_level_cap(player):
-                print(f"\n*** LEVEL CAP REACHED: Level {player['level_cap']} ***")
-                print(f"You have conquered enough biomes — but your potential remains sealed.")
-                print("Visit any Guild to Ascend and break through!")
+                _tprint(f"\n*** LEVEL CAP REACHED: Level {player['level_cap']} ***")
+                _tprint("You have conquered enough biomes — but your potential remains sealed.")
+                _tprint("Visit any Guild to Ascend and break through!")
             else:
-                print(f"\n*** LEVEL CAP REACHED: Level {player['level_cap']} ***")
-                print(f"Biomes conquered to Floor {current_cap}: {cleared}/{required}")
-                print(f"Clear dungeons in {required - cleared} more biome(s) to grow stronger.")
+                _tprint(f"\n*** LEVEL CAP REACHED: Level {player['level_cap']} ***")
+                _tprint(f"Biomes conquered to Floor {current_cap}: {cleared}/{required}")
+                _tprint(f"Clear dungeons in {required - cleared} more biome(s) to grow stronger.")
             break
         
         player["exp"] -= exp_needed_for_next_level(player["level"])
         player["level"] += 1
         leveled = True
-        print(f"\n*** LEVEL UP! You are now level {player['level']} ***")
         
         old_max = player_max_hp(player)
         
-        # Choose attribute
-        print("Choose an attribute to increase by 1:")
-        attrs = ["Strength", "Constitution", "Dexterity", "Wisdom", "Learning", "Charisma"]
-        for i, a in enumerate(attrs, 1):
-            print(f"{i}. {a} (current: {player['attributes'][a]})")
-        try:
-            idx = int(input("Enter number: ").strip()) - 1
-            chosen = attrs[idx]
-        except:
-            chosen = random.choice(attrs)
-            print(f"Invalid choice, {chosen} was chosen.")
+        # Choose attribute (GUI dialog or terminal menu)
+        chosen, used_gui = _choose_level_attr(
+            player.get("name", "You"), player["level"], player["attributes"]
+        )
         
         player["attributes"][chosen] += 1
-        print(f"{chosen} increased to {player['attributes'][chosen]}.")
+        new_val = player["attributes"][chosen]
         
         # HP Rewards
         player["level_hp_bonus"] = player.get("level_hp_bonus", 0) + 4   # ← HP BUFF
         
         new_max = player_max_hp(player)
-        player["current_hp"] += (new_max - old_max)
-        print(f"Maximum HP increased by {new_max - old_max}. New max: {new_max}")
+        hp_increase = new_max - old_max
+        player["current_hp"] += hp_increase
         
         # Check for new skill unlocks
         new_skills = unlock_skills_for_level(player)
-        if new_skills:
-            print(f"\n*** NEW SKILL(S) UNLOCKED: {', '.join(new_skills)} ***")
         
         # Check for stat milestone notifications
-        for msg in check_milestone_notification(player, old_attributes):
-            print(msg)
+        milestones = check_milestone_notification(player, old_attributes)
+        
+        # Show results (GUI dialog or terminal)
+        _show_level_results(
+            entity_name=player.get("name", "You"),
+            level=player["level"],
+            chosen_attr=chosen,
+            new_value=new_val,
+            hp_increase=hp_increase,
+            new_max_hp=new_max,
+            new_skills=new_skills if new_skills else None,
+            milestones=milestones if milestones else None,
+            used_gui=used_gui,
+        )
     
     return leveled
 
@@ -193,6 +336,7 @@ def gain_exp_ally(ally, amount):
     """Award XP to an ally and handle level-ups using the same HUD as player."""
     from combat.ally import ally_max_hp
     from combat.ally_skills import gain_skill_learning_exp
+    from combat.stat_milestones import get_learning_bonus, check_milestone_notification
 
     # ── Skill learning always progresses regardless of level cap ──
     learned_skill = gain_skill_learning_exp(ally, amount)
@@ -200,50 +344,63 @@ def gain_exp_ally(ally, amount):
         from combat.ally_skills import get_learnable_skill_def
         skill_def = get_learnable_skill_def(learned_skill)
         skill_name = skill_def.get("name", learned_skill) if skill_def else learned_skill
-        print(f"*** {ally['name']} has mastered {skill_name}! ***")
+        _tprint(f"*** {ally['name']} has mastered {skill_name}! ***")
 
     # ── Level XP is blocked at level cap ──
     if ally["level"] >= ally.get("level_cap", 10):
         return False
+
+    # Apply Learning milestone bonus (same as player)
+    amount = int(amount * get_learning_bonus(ally))
+    old_attributes = ally.get("attributes", {}).copy()
 
     ally["exp"] = ally.get("exp", 0) + amount
     leveled = False
     while ally["exp"] >= exp_needed_for_next_level(ally["level"]):
         # Level cap check
         if ally["level"] >= ally.get("level_cap", 10):
-            print(f"\n*** LEVEL CAP REACHED: {ally['name']} is at Level {ally['level_cap']} ***")
-            print("An Ascension Stone is needed to break through their limit.")
+            _tprint(f"\n*** LEVEL CAP REACHED: {ally['name']} is at Level {ally['level_cap']} ***")
+            _tprint("An Ascension Stone is needed to break through their limit.")
             break
 
         ally["exp"] -= exp_needed_for_next_level(ally["level"])
         ally["level"] += 1
         leveled = True
-        print(f"\n*** LEVEL UP! {ally['name']} is now level {ally['level']} ***")
 
         old_max = ally_max_hp(ally)
 
-        # Choose attribute
-        print("Choose an attribute to increase by 1:")
-        attrs = ["Strength", "Constitution", "Dexterity", "Wisdom", "Learning", "Charisma"]
-        for i, a in enumerate(attrs, 1):
-            print(f"{i}. {a} (current: {ally['attributes'][a]})")
-        try:
-            idx = int(input("Enter number: ").strip()) - 1
-            chosen = attrs[idx]
-        except:
-            chosen = random.choice(attrs)
-            print(f"Invalid choice, {chosen} was chosen.")
+        # Choose attribute (GUI dialog or terminal menu)
+        chosen, used_gui = _choose_level_attr(
+            ally["name"], ally["level"], ally.get("attributes", {})
+        )
 
         ally["attributes"][chosen] += 1
-        print(f"{chosen} increased to {ally['attributes'][chosen]}.")
+        new_val = ally["attributes"][chosen]
+
+        # Check for stat milestone notifications
+        milestones = check_milestone_notification(ally, old_attributes)
+        old_attributes = ally["attributes"].copy()
 
         # HP Rewards
         ally["level_hp_bonus"] = ally.get("level_hp_bonus", 0) + 4
 
         new_max = ally_max_hp(ally)
+        hp_increase = new_max - old_max
         ally["max_hp"] = new_max
-        ally["current_hp"] += (new_max - old_max)
-        print(f"Maximum HP increased by {new_max - old_max}. New max: {new_max}")
+        ally["current_hp"] += hp_increase
+
+        # Show results (GUI dialog or terminal)
+        _show_level_results(
+            entity_name=ally["name"],
+            level=ally["level"],
+            chosen_attr=chosen,
+            new_value=new_val,
+            hp_increase=hp_increase,
+            new_max_hp=new_max,
+            new_skills=None,
+            milestones=milestones if milestones else None,
+            used_gui=used_gui,
+        )
 
 
     return leveled

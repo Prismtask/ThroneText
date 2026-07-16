@@ -134,3 +134,21 @@ DUNEMAR_BLACK_MARKET_DIALOGUE = {
         "The black market always has a spot for you.",
     ],
 }
+
+DUNEMAR_ARCANE_TOWER_DIALOGUE = {
+    "enter": [
+        "The Amber Spire rises from the desert sands, its walls carved from crystallized dune-glass. What arcane need brings you here?",
+        "Desert winds hum through the tower's resonance chambers. The ley lines beneath the dunes are old and deep. Speak your purpose.",
+        "The Spire's astronomers chart fates in the desert stars. What knowledge do you seek, traveler?",
+    ],
+    "research": [
+        "You study sand-etched tablets recovered from buried ruins. Ancient wisdom flows like water in the desert.",
+        "The Spire's astrolabe aligns with a forgotten constellation. Secrets of the deep desert unveil themselves.",
+        "A sand-sage shares a riddle wrapped in prophecy. Its meaning slowly dawns on you.",
+    ],
+    "leave": [
+        "May the desert stars guide your research.",
+        "Return when the sands whisper of new secrets.",
+        "The Amber Spire watches the dunes. As will you, in time.",
+    ],
+}

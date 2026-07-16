@@ -23,8 +23,10 @@ from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
 from combat.superboss_common import superboss_combat_loop
-from combat.ally import get_alive_allies
+from combat.ally import get_alive_allies, get_active_allies
 from character import player_max_hp
+from combat.combat_io import c_print, c_input, c_clear
+from combat.helpers import format_damage_msg
 
 
 BOSS_KEY = "captain_everlong_ship"
@@ -48,7 +50,7 @@ class CaptainDict(dict):
                 dmg = self["hp"] - value
                 reduced_dmg = int(dmg * (1.0 - dmg_reduction))
                 if reduced_dmg < dmg:
-                    print(f"  [GHOSTLY HULL] The Captain's cursed form deflects the blow! ({int(dmg_reduction*100)}% reduced)")
+                    c_print(f"  [GHOSTLY HULL] The Captain's cursed form deflects the blow! ({int(dmg_reduction*100)}% reduced)")
                 value = self["hp"] - reduced_dmg
         super().__setitem__(key, value)
 
@@ -75,39 +77,70 @@ def _get_captain(elist):
 
 
 def _pick_parrot_target(player):
-    """Pick a random alive party member for the parrot to mark."""
-    party = [player] + get_alive_allies(player)
+    """Pick a random alive party member (active row) for the parrot to mark."""
+    party = [player] + get_active_allies(player)
     if not party:
         return None
     return random.choice(party)
 
 
-def combat_everlong_ship(player, floor=None):
-    """Main Everlong Ship superboss encounter."""
+def combat_everlong_ship(player, floor=None, enemies=None):
+    """Superboss: The Everlong Ship (Captain + Ghostly Crew).
+
+    Args:
+        enemies: Optional pre-created enemy list for GUI mode state sharing.
+                 If provided, the first entry matching BOSS_KEY is wrapped in
+                 CaptainDict and used as the boss. Otherwise a new boss and
+                 crew are created.
+    """
     if floor is None:
         loc = player.get("location", "")
         floor = player.get("city_floors", {}).get(loc, {}).get("floor")
 
-    base_boss = enemy_stats(BOSS_KEY, player)
-    boss = CaptainDict(base_boss)
-    boss["max_hp"] = boss["hp"]
-    boss["captain_damage_reduction"] = 1.0  # 100% reduction
-    boss["base_str_mod"] = boss.get("str_mod", 0)
+    if enemies is None:
+        base_boss = enemy_stats(BOSS_KEY, player)
+        boss = CaptainDict(base_boss)
+        boss["max_hp"] = boss["hp"]
+        boss["captain_damage_reduction"] = 1.0  # 100% reduction
+        boss["base_str_mod"] = boss.get("str_mod", 0)
+        enemies = [boss]
+        # Spawn initial crew
+        for _ in range(4):
+            enemies.append(_spawn_crew(player))
+    else:
+        # GUI mode: enemies list is shared with the CombatScreen renderer.
+        # Find the boss, wrap in CaptainDict, and spawn crew if needed.
+        boss = None
+        for i, e in enumerate(enemies):
+            if e.get("key") == BOSS_KEY:
+                wrapped = CaptainDict(e)
+                wrapped["max_hp"] = wrapped["hp"]
+                wrapped["captain_damage_reduction"] = 1.0
+                wrapped["base_str_mod"] = wrapped.get("str_mod", 0)
+                enemies[i] = wrapped
+                boss = wrapped
+                break
+        if boss is None:
+            # Fallback: create the boss if not found in the shared list
+            base_boss = enemy_stats(BOSS_KEY, player)
+            boss = CaptainDict(base_boss)
+            boss["max_hp"] = boss["hp"]
+            boss["captain_damage_reduction"] = 1.0
+            boss["base_str_mod"] = boss.get("str_mod", 0)
+            enemies.append(boss)
+        # Spawn initial crew alongside the shared boss
+        for _ in range(4):
+            enemies.append(_spawn_crew(player))
 
-    # Spawn initial crew
-    enemies = [boss]
-    for _ in range(4):
-        enemies.append(_spawn_crew(player))
-
-    print("\n" + "~" * 60)
-    print("The air grows thick with salt and rot. Through the fog,")
-    print("a ghostly vessel materializes — its sails tattered, its")
-    print("hull gleaming with spectral light. A figure stands at the")
-    print("prow, cutlass in hand, surrounded by a crew that should")
-    print("have drowned centuries ago.")
-    print(f"\nCaptain of the Everlong Ship — HP: {boss['hp']}")
-    print("~" * 60)
-    input("\nPress Enter to face the Everlong Ship...")
+    c_print("\n" + "~" * 60)
+    c_print("The air grows thick with salt and rot. Through the fog,")
+    c_print("a ghostly vessel materializes — its sails tattered, its")
+    c_print("hull gleaming with spectral light. A figure stands at the")
+    c_print("prow, cutlass in hand, surrounded by a crew that should")
+    c_print("have drowned centuries ago.")
+    c_print(f"\nCaptain of the Everlong Ship — HP: {boss['hp']}")
+    c_print("~" * 60)
+    c_input("\nPress Enter to face the Everlong Ship...")
 
     context = {
         "phase": 1,
@@ -130,9 +163,9 @@ def combat_everlong_ship(player, floor=None):
             ctx["riposte_count"] = ctx.get("riposte_count", 0) + 1
             riposte_dmg = max(1, target.get("str_mod", 0) + random.randint(3, 6))
             player["current_hp"] -= riposte_dmg
-            print(f"\n  ⚔ [RIPOSTE] The Captain's spectral blade lashes back! You take {riposte_dmg} damage!")
+            c_print(f"\n  ⚔ [RIPOSTE] " + format_damage_msg("Captain", player['name'], riposte_dmg, skill_name="Riposte"))
             if player["current_hp"] <= 0:
-                print(f"  {player['name']} has been slain by the Captain's riposte!")
+                c_print(f"  {player['name']} has been slain by the Captain's riposte!")
 
     # ── on_kill_hook: Crew death tracking and replacement ─────────────
     def on_kill_hook(target, elist, ctx):
@@ -145,20 +178,26 @@ def combat_everlong_ship(player, floor=None):
             new_reduction = max(0.0, 1.0 - (ctx["crew_defeated"] * 0.10))
             captain["captain_damage_reduction"] = new_reduction
             if new_reduction == 0.0:
-                print(f"\n  [HULL BROKEN] The Captain's ghostly protection shatters! He is fully exposed!")
+                c_print(f"\n  [HULL BROKEN] The Captain's ghostly protection shatters! He is fully exposed!")
             else:
-                print(f"\n  [CREW FALLS] A crewman falls! The Captain's hull weakens! ({int(new_reduction*100)}% reduction remaining)")
+                c_print(f"\n  [CREW FALLS] A crewman falls! The Captain's hull weakens! ({int(new_reduction*100)}% reduction remaining)")
 
         # Replace crew in Phase 1
         if ctx["phase"] == 1:
             new_crew = _spawn_crew(player)
-            elist.append(new_crew)
-            print(f"  [REINFORCEMENT] A {new_crew['name']} clambers aboard from the spectral depths!")
+            enemies.append(new_crew)
+            c_print(f"  [REINFORCEMENT] A {new_crew['name']} clambers aboard from the spectral depths!")
 
     # ── pre_player_hook: Parrot marks target, reset riposte ───────────
     def pre_player_hook(ctx, elist):
         # Reset riposte count at start of each round
         ctx["riposte_count"] = 0
+
+        # Clear previous parrot target tags
+        if ctx.get("parrot_target_entity"):
+            ctx["parrot_target_entity"]["parrot_target"] = False
+        for ally in get_active_allies(player):
+            ally["parrot_target"] = False
 
         # Parrot picks a new target
         target = _pick_parrot_target(player)
@@ -169,8 +208,12 @@ def combat_everlong_ship(player, floor=None):
         ctx["parrot_target_entity"] = target
         ctx["parrot_target_defended"] = False
 
+        # Mark the target with a visible tag
+        if target:
+            target["parrot_target"] = True
+
         if ctx["parrot_target_name"]:
-            print(f"\n  🦜 [PARROT] SQUAWK! 'Fire the cannon! Fire at {target['name']}!'")
+            c_print(f"\n  🦜 [PARROT] SQUAWK! 'Fire the cannon! Fire at {target['name']}!'")
 
     # ── custom_hud_hook ──────────────────────────────────────────────
     def custom_hud_hook(ctx, elist):
@@ -191,16 +234,16 @@ def combat_everlong_ship(player, floor=None):
             target_name = "You" if ctx["parrot_target_name"] == "player" else ctx["parrot_target_name"]
             lines.append(f"🦜 CANNON → {target_name}")
         if lines:
-            print("  " + " | ".join(lines))
+            c_print("  " + " | ".join(lines))
         print_combat_hud(player, elist, header="Superboss: The Everlong Ship")
 
     # ── player_action_override: Track defending for parrot ────────────
     def player_action_override(ctx):
-        action = input("Choose: ").strip().lower()
+        action = c_input("Choose: ").strip().lower()
         # Check if the marked target is the player and they chose defend
         if ctx.get("parrot_target_name") == "player" and action == "d":
             ctx["parrot_target_defended"] = True
-            print("  🦜 [PARROT] You brace for the cannon shot — the cannonball SPLASHES harmlessly!")
+            c_print("  🦜 [PARROT] You brace for the cannon shot — the cannonball SPLASHES harmlessly!")
         return action
 
     # ── enemy_turn_hook: Captain rally + crew behavior ───────────────
@@ -214,8 +257,8 @@ def combat_everlong_ship(player, floor=None):
                 ctx["rally_cooldown"] = 5
                 ctx["rally_active"] = True
                 ctx["rally_turns_remaining"] = 2
-                print("\n  ⚓ [CREW RALLY] The Captain raises his cutlass!")
-                print("  'Stand fast, ye dogs! For the Everlong!'")
+                c_print("\n  ⚓ [CREW RALLY] The Captain raises his cutlass!")
+                c_print("  'Stand fast, ye dogs! For the Everlong!'")
                 # Buff all enemies: +2 STR, +2 DEX for 2 turns
                 for e in enemies:
                     if e.get("key") in ([BOSS_KEY] + CREW_KEYS) and e["hp"] > 0:
@@ -231,7 +274,7 @@ def combat_everlong_ship(player, floor=None):
                             "remaining": 2,
                             "source": "captain_rally",
                         })
-                print("  The crew's spectral morale surges — +2 STR, +2 DEX for all undead sailors!")
+                c_print("  The crew's spectral morale surges — +2 STR, +2 DEX for all undead sailors!")
 
             actions = ctx.get("captain_actions", 1)
             extra = None
@@ -259,7 +302,7 @@ def combat_everlong_ship(player, floor=None):
                 # Check if ally defended on their turn
                 if target is not player and target.get("defending_this_turn"):
                     ctx["parrot_target_defended"] = True
-                    print(f"\n  🦜 [PARROT] {target['name']} braces for the cannon shot — the cannonball SPLASHES harmlessly!")
+                    c_print(f"\n  🦜 [PARROT] {target['name']} braces for the cannon shot — the cannonball SPLASHES harmlessly!")
 
         if ctx.get("parrot_target_entity") and not ctx.get("parrot_target_defended"):
             target = ctx["parrot_target_entity"]
@@ -270,24 +313,30 @@ def combat_everlong_ship(player, floor=None):
                 cannon_dmg = CANNON_BASE_DAMAGE + str_bonus * 2 + random.randint(0, 6)
                 if target is player:
                     player["current_hp"] -= cannon_dmg
-                    print(f"\n  💥 [CANNON FIRE] The parrot's cannon ROARS! You take {cannon_dmg} damage!")
-                    print(f"  You are STUNNED by the blast and lose your next turn!")
+                    c_print(f"\n  💥 [CANNON FIRE] " + format_damage_msg("Parrot's Cannon", "You", cannon_dmg, skill_name="Cannon Fire"))
+                    c_print(f"  You are STUNNED by the blast and lose your next turn!")
                     ctx["skip_player_turn"] = True
                     if player["current_hp"] <= 0:
-                        print(f"  {player['name']} has been slain by the cannon fire!")
+                        c_print(f"  {player['name']} has been slain by the cannon fire!")
                         return "dead"
                 else:
                     target["current_hp"] -= cannon_dmg
                     target["stunned"] = True
-                    print(f"\n  💥 [CANNON FIRE] The parrot's cannon ROARS! {target['name']} takes {cannon_dmg} damage!")
-                    print(f"  {target['name']} is STUNNED by the blast and loses their next turn!")
+                    c_print(f"\n  💥 [CANNON FIRE] " + format_damage_msg("Parrot's Cannon", target['name'], cannon_dmg, skill_name="Cannon Fire"))
+                    c_print(f"  {target['name']} is STUNNED by the blast and loses their next turn!")
+
+        # Clear parrot target tag at end of round
+        if ctx.get("parrot_target_entity"):
+            ctx["parrot_target_entity"]["parrot_target"] = False
+        for ally in get_active_allies(player):
+            ally["parrot_target"] = False
 
         # Rally tick
         if ctx.get("rally_active") and ctx.get("rally_turns_remaining", 0) > 0:
             ctx["rally_turns_remaining"] -= 1
             if ctx["rally_turns_remaining"] <= 0:
                 ctx["rally_active"] = False
-                print("\n  [RALLY FADES] The Captain's rally cry echoes into silence.")
+                c_print("\n  [RALLY FADES] The Captain's rally cry echoes into silence.")
                 # Remove rally buffs from enemies
                 for e in elist:
                     if e.get("active_buffs"):
@@ -297,18 +346,18 @@ def combat_everlong_ship(player, floor=None):
         if ctx["phase"] == 1 and ctx["crew_defeated"] >= 10:
             ctx["phase"] = 2
             ctx["captain_actions"] = 2
-            print("\n" + "!" * 60)
-            print("[PHASE 2] The Captain's crew is shattered!")
-            print("The ghostly sailors fade into mist, their wails swallowed")
-            print("by the fog. The Captain stands alone, his eyes burning")
-            print("with a fury that has sailed ten thousand storms.")
-            print()
-            print("'The captain goes down with the ship...")
-            print(" and so his men followed him.'")
-            print()
-            print("The Everlong Ship begins its journey again...")
-            print("!" * 60)
-            input("Press Enter to continue the final confrontation...")
+            c_print("\n" + "!" * 60)
+            c_print("[PHASE 2] The Captain's crew is shattered!")
+            c_print("The ghostly sailors fade into mist, their wails swallowed")
+            c_print("by the fog. The Captain stands alone, his eyes burning")
+            c_print("with a fury that has sailed ten thousand storms.")
+            c_print()
+            c_print("'The captain goes down with the ship...")
+            c_print(" and so his men followed him.'")
+            c_print()
+            c_print("The Everlong Ship begins its journey again...")
+            c_print("!" * 60)
+            c_input("Press Enter to continue the final confrontation...")
 
             # Remove remaining crew
             for e in elist[:]:
@@ -322,7 +371,7 @@ def combat_everlong_ship(player, floor=None):
 
         # Safety: check player death
         if player["current_hp"] <= 0:
-            print(f"\n  {player['name']} has been slain.")
+            c_print(f"\n  {player['name']} has been slain.")
             return "dead"
 
         return None
@@ -339,22 +388,24 @@ def combat_everlong_ship(player, floor=None):
     )
 
     if result == "victory":
-        print("\n" + "~" * 60)
-        print("The Captain's spectral form dissolves into sea-spray and mist.")
-        print("The Everlong Ship groans, its haunted timbers finally at rest.")
-        print("As the vessel fades beneath the waves, a single cutlass")
-        print("glows with an eerie light — the Captain's authority,")
-        print("now yours to wield.")
-        print("~" * 60)
+        # Guard: only award loot once per save
+        if not player.get("boss_defeated_everlong_ship"):
+            c_print("\n" + "~" * 60)
+            c_print("The Captain's spectral form dissolves into sea-spray and mist.")
+            c_print("The Everlong Ship groans, its haunted timbers finally at rest.")
+            c_print("As the vessel fades beneath the waves, a single cutlass")
+            c_print("glows with an eerie light — the Captain's authority,")
+            c_print("now yours to wield.")
+            c_print("~" * 60)
 
-        # Award Cutlass of the Captain
-        from resources.items import build_item
-        from inventory import add_item_to_inventory
-        cutlass = build_item("cutlass_of_the_captain", "legendary")
-        if not add_item_to_inventory(player, cutlass):
-            player.setdefault("inventory", []).append(cutlass)
-            print("  (Your bag is full, but the Cutlass forces itself in!)")
-        print("\n  ⚓ You obtained: CUTLASS OF THE CAPTAIN (Legendary) ⚓")
-        input("  Press Enter to continue...")
+            # Award Cutlass of the Captain
+            from resources.items import build_item
+            from inventory_ui import prompt_acquire_item
+            cutlass = build_item("cutlass_of_the_captain", "unique")
+            c_print("\n  ⚓ You obtained: CUTLASS OF THE CAPTAIN (Unique) ⚓")
+            prompt_acquire_item(player, cutlass)
+            # Set defeated flag AFTER awarding loot
+            player["boss_defeated_everlong_ship"] = True
+        c_input("  Press Enter to continue...")
 
     return result

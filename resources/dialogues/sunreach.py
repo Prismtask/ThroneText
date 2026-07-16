@@ -119,3 +119,18 @@ SUNREACH_TEMPLE_DIALOGUE = {
         "Farewell. Stay hydrated.",
     ],
 }
+
+SUNREACH_TRADE_HALL_DIALOGUE = {
+    "enter": [
+        "Sunreach Trade Bazaar. Caravans from three directions converge here.",
+        "The desert trade routes are profitable — if you can handle the heat.",
+        "Spices, silks, and sun-steel. What are you looking to move?",
+        "Welcome to the Golden Exchange. Everything under the sun is for sale.",
+    ],
+    "leave": [
+        "May your caravans find water and your deals find profit.",
+        "Return when the trade winds shift.",
+        "The bazaar never truly sleeps — neither do its merchants.",
+        "Farewell. Watch for sandstorms and price gougers.",
+    ],
+}

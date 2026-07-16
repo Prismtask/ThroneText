@@ -90,9 +90,35 @@ def get_month_day(global_day):
     return month, day_of_month
 
 
+# ── Wonderland date flavours ────────────────────────────────────────────
+_WL_DATE_FLAVORS = [
+    ("Unbirthday", "Happy Unbirthday to you!"),
+    ("Jam Yesterday, Jam Tomorrow", "But never jam today."),
+    ("The 32nd of Never", "The calendar has given up."),
+    ("Tuesday (allegedly)", "It's always Tuesday. Or is it Thursday?"),
+    ("⏳:⌛", "The hourglass has unionized."),
+    ("Chapter VII, Page 42", "The book is still being written."),
+    ("Teatime", "The eternal hour of tea."),
+    ("Curiouser Day", "Days get curiouser and curiouser."),
+    ("Yesterday's Tomorrow", "Or perhaps tomorrow's yesterday."),
+    ("???", "The caterpillar asks: 'Who are you?'"),
+    ("Croquet Season", "The Queen plays croquet. Forever."),
+    ("Half a Day Late", "The White Rabbit will be late."),
+    ("The Endless Afternoon", "The Dormouse hasn't woken up yet."),
+    ("Month of Madness", "We're all mad here."),
+    ("Once Upon a Time", "…and they're still living."),
+]
+
+
 def format_date(player_or_day):
-    """Return a compact date string, e.g. 'Day 45 (M2-D15)'."""
+    """Return a compact date string, e.g. 'Day 45 (M2-D15)'.
+
+    When the player is in Wonderland, returns a whimsical date flavour instead.
+    """
     if isinstance(player_or_day, dict):
+        if player_or_day.get("wonderland_active"):
+            date_str, flavor = random.choice(_WL_DATE_FLAVORS)
+            return f"{date_str}  — {flavor}"
         day = player_or_day.get("day", 1)
     else:
         day = player_or_day
@@ -194,20 +220,120 @@ def queue_event_alerts(player, events):
     queue.extend(events)
 
 
-def flush_event_queue(player):
-    """Display and clear all queued events. Returns count shown."""
+def get_event_queue_messages(player):
+    """Pop and return formatted event messages without displaying them.
+
+    Returns a list of formatted strings (one per event), or empty list if no events.
+    The events are cleared from the player's queue by this call.
+    """
     queue = player.pop("event_queue", [])
     if not queue:
+        return []
+
+    messages = []
+    messages.append("=" * 50)
+    messages.append("  [EVENT]  EVENTS WHILE YOU WERE AWAY")
+    messages.append("=" * 50)
+    for evt in queue:
+        messages.append(format_event_alert(evt))
+    messages.append("=" * 50)
+    return messages
+
+
+def flush_event_queue(player):
+    """Display and clear all queued events. Returns count shown.
+
+    In GUI mode, this only prints the events (no blocking input).
+    In terminal mode, this prints and waits for Enter.
+    """
+    # Capture count before popping
+    event_count = len(player.get("event_queue", []))
+    if event_count == 0:
         return 0
 
-    print("\n" + "=" * 50)
-    print("  [EVENT]  EVENTS WHILE YOU WERE AWAY")
-    print("=" * 50)
-    for evt in queue:
-        print(format_event_alert(evt))
-    print("=" * 50)
+    messages = get_event_queue_messages(player)
+    if not messages:
+        return 0
+
+    # Check if we're in GUI mode (tkinter root active)
+    try:
+        import tkinter as tk
+        # If there's an active tkinter root, we're in GUI mode
+        # — just print without blocking input.
+        if tk._default_root and tk._default_root.winfo_exists():
+            for msg in messages:
+                print(msg)
+            return event_count
+    except (ImportError, AttributeError):
+        pass
+
+    # Terminal mode: print and wait for user acknowledgement
+    for msg in messages:
+        print(msg)
     input("\nPress Enter to continue...")
-    return len(queue)
+    return event_count
+
+
+# ── Wonderland Unlock ───────────────────────────────────────────────────
+
+def check_wonderland_unlock_conditions(player):
+    """Return True if all Wonderland unlock conditions are met.
+
+    Conditions:
+      1. Floor 20+ cleared in at least 2 different city dungeons
+      2. Day 60+ (2 in-game months)
+      3. Player possesses a Looking Glass Shard in inventory
+    """
+    if player.get("wonderland_unlocked"):
+        return False
+
+    # Condition 1: Floor 20+ cleared in ≥2 city dungeons
+    city_floors = player.get("city_floors", {})
+    cities_f20 = sum(
+        1 for cid, prog in city_floors.items()
+        if prog.get("max_floor", 1) >= 20
+    )
+    if cities_f20 < 2:
+        return False
+
+    # Condition 2: Day 60+
+    if player.get("day", 1) < 60:
+        return False
+
+    # Condition 3: Looking Glass Shard in inventory
+    has_shard = any(
+        item.get("id") == "looking_glass_shard"
+        for item in player.get("inventory", [])
+    )
+    if not has_shard:
+        return False
+
+    return True
+
+
+def trigger_wonderland_unlock(player):
+    """Display the Wonderland unlock event and set the flag.
+
+    Returns the formatted event text so callers can display it.
+    Call this once on the player's next city visit after conditions are met.
+    """
+    player["wonderland_unlocked"] = True
+
+    lines = [
+        "",
+        "=" * 56,
+        "  \u2728  A SHIMMERING PORTAL HAS APPEARED  \u2728",
+        "=" * 56,
+        "",
+        '  "A shimmering portal has appeared in the Veilholt forest.',
+        "   The locals whisper of a realm that exists between",
+        '   pages \u2014 Wonderland."',
+        "",
+        "   (Visit the Veilholt Arcane Tower to investigate.)",
+        "",
+        "=" * 56,
+    ]
+    return "\n".join(lines)
 
 
 # ── Day rollover (called by advance_time) ───────────────────────────────

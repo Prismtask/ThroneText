@@ -100,6 +100,10 @@ def get_effective_attribute(player, attr_name):
     if pct_mult != 1.0:
         total = int(total * pct_mult)
 
+    # --- Author's Pen passive: +4 all stats while in Wonderland ---
+    from combat.authors_pen import get_authors_pen_stat_bonus
+    total += get_authors_pen_stat_bonus(player, attr_name)
+
     # --- Tarnished Jade stat bonuses ---
     from combat.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus
     total += get_tarnished_jade_str_bonus(player)
@@ -124,22 +128,27 @@ def compute_player_stats(player):
     return p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
 def player_str_mod(player):
-    return player["attributes"]["Strength"]
+    return get_effective_attribute(player, "Strength")
+
 
 def player_con_mod(player):
-    return player["attributes"]["Constitution"]
+    return get_effective_attribute(player, "Constitution")
+
 
 def player_dex_mod(player):
-    return player["attributes"]["Dexterity"]
+    return get_effective_attribute(player, "Dexterity")
+
 
 def player_wis_mod(player):
-    return player["attributes"]["Wisdom"]
+    return get_effective_attribute(player, "Wisdom")
+
 
 def player_ler_mod(player):
-    return player["attributes"]["Learning"]
+    return get_effective_attribute(player, "Learning")
+
 
 def player_chr_mod(player):
-    return player["attributes"]["Charisma"]
+    return get_effective_attribute(player, "Charisma")
 
 # ── Critical Hit System ─────────────────────────────────────────────────────
 
@@ -205,3 +214,84 @@ def apply_critical_damage(damage, is_crit, multiplier=CRIT_MULTIPLIER):
 def format_critical_tag(is_crit):
     """Return a combat message tag for critical hits."""
     return " [CRITICAL!]" if is_crit else ""
+
+# ── Unified Dodge System ───────────────────────────────────────────────────
+
+PLAYER_DODGE_CAP = 0.80
+ENEMY_DODGE_CAP = 0.50
+
+
+def _get_dodge_dex(entity):
+    """Get effective Dexterity for dodge calculations."""
+    if "dex_mod" in entity and "attributes" not in entity:
+        return entity.get("dex_mod", 0)
+    return get_effective_attribute(entity, "Dexterity")
+
+
+def _get_dodge_wis(entity):
+    """Get effective Wisdom for dodge calculations."""
+    if "dex_mod" in entity and "attributes" not in entity:
+        return 0  # enemies don't have Wisdom
+    return get_effective_attribute(entity, "Wisdom")
+
+
+def get_dodge_chance(defender, attacker):
+    """Calculate dodge chance based on defender vs attacker DEX & WIS.
+
+    Core formula:
+        dex_diff = defender_DEX - attacker_DEX
+        wis_diff = defender_WIS - attacker_WIS
+        base = max(0, dex_diff * 0.03 + wis_diff * 0.02)
+
+    A highly dexterous / wise defender is hard to hit.
+    A highly dexterous / wise attacker is hard to dodge.
+
+    Modifiers (applied before cap):
+        Attacker blinded  → +25% dodge (can't aim)
+        Attacker dreaded  → +40% dodge (shaky hands)
+        Defender blinded  → -25% dodge (can't see to dodge)
+        Defender evasion buffs
+
+    Caps: 80% for player / allies, 50% for enemies.
+    Wedding bonuses are NOT included — callers add those separately.
+    """
+    def_dex = _get_dodge_dex(defender)
+    att_dex = _get_dodge_dex(attacker)
+    def_wis = _get_dodge_wis(defender)
+    att_wis = _get_dodge_wis(attacker)
+
+    dex_diff = def_dex - att_dex
+    wis_diff = def_wis - att_wis
+
+    base = max(0.0, dex_diff * 0.03 + wis_diff * 0.02)
+
+    # Status-effect modifiers
+    if attacker.get("blinded"):
+        base += 0.25
+    if attacker.get("dreaded"):
+        base += 0.40
+    if defender.get("blinded"):
+        base -= 0.25
+
+    # Evasion buffs on defender
+    for buff in defender.get("active_buffs", []):
+        if buff.get("type") == "evasion":
+            base += buff.get("value", 0)
+
+    # Black Silence Gloves: +8% dodge when equipped
+    from combat.black_silence_gloves import get_gloves_dodge_bonus
+    base += get_gloves_dodge_bonus(defender)
+
+    # Determine cap by defender type
+    is_player_or_ally = "attributes" in defender
+    cap = PLAYER_DODGE_CAP if is_player_or_ally else ENEMY_DODGE_CAP
+
+    return max(0.0, min(base, cap))
+
+
+def roll_dodge(defender, attacker):
+    """Roll for dodge. Returns (is_dodged, dodge_chance)."""
+    chance = get_dodge_chance(defender, attacker)
+    if chance <= 0:
+        return False, chance
+    return random.random() < chance, chance

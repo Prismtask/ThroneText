@@ -113,3 +113,18 @@ GREYHARBOR_TRADE_HALL_DIALOGUE = {
         "Farewell. Speak of this place to no one.",
     ],
 }
+
+GREYHARBOR_GUILD_DIALOGUE = {
+    "enter": [
+        "Greyharbor Guild. We keep a low profile, but our contracts are solid.",
+        "The fog hides much — including the best jobs. What are you after?",
+        "Quiet work for quiet people. The guild board is in the back.",
+        "State your business. The mist has ears.",
+    ],
+    "leave": [
+        "Keep your contracts in the shadows.",
+        "Return when the fog brings you back.",
+        "The guild remembers those who deliver.",
+        "Farewell. Speak of your work to no one.",
+    ],
+}

@@ -6,6 +6,8 @@ from combat.combat_ui import print_combat_hud
 from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_bleed, apply_blind
 from combat.ally import get_alive_allies
+from combat.combat_io import c_print, c_input, c_clear
+from combat.helpers import format_damage_msg
 
 BOSS_KEY = "rientrante_frostbound"
 SHARD_KEY = "frost_shard"
@@ -31,12 +33,12 @@ class FrostboundDict(dict):
                 self["shell_hp"] = shell - absorbed
                 remaining = dmg - absorbed
                 if self["shell_hp"] <= 0 and shell > 0:
-                    print(
+                    c_print(
                         "\n[CRACK] The frozen shell shatters! "
                         "Rientrante staggers forward, exposed!"
                     )
                 if absorbed > 0:
-                    print(f"  [Frozen Shell absorbs {absorbed} damage]")
+                    c_print(f"  [Frozen Shell absorbs {absorbed} damage]")
                 if remaining > 0:
                     value = self["hp"] - remaining
                 else:
@@ -122,7 +124,7 @@ def _create_clone_from_enemy(enemy):
 
 def _glacial_pulse(boss, player):
     """Phase 1: Every 3rd boss turn, AoE frost damage + blind chance."""
-    print("\n❄️  GLACIAL PULSE! The air itself freezes solid!")
+    c_print("\n❄️  GLACIAL PULSE! The air itself freezes solid!")
     allies = get_alive_allies(player)
     p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
     targets = [player] + allies
@@ -134,10 +136,10 @@ def _glacial_pulse(boss, player):
         water_res = t_res.get("water", 1.0)
         dmg = max(1, int(dmg * water_res))
         t["current_hp"] -= dmg
-        print(f"  {t.get('name', 'You')} takes {dmg} frost damage!")
+        c_print("  " + format_damage_msg("Rientrante", t.get('name', 'You'), dmg, element="water", skill_name="Glacial Pulse"))
         if random.random() < 0.5:
             apply_blind(t, duration=1)
-            print(f"  {t.get('name', 'You')}'s vision ices over!")
+            c_print(f"  {t.get('name', 'You')}'s vision ices over!")
         if t["current_hp"] <= 0 and t is player:
             return "dead"
     return None
@@ -145,7 +147,7 @@ def _glacial_pulse(boss, player):
 
 def _shard_explosion(shards, player):
     """Shards explode, dealing damage and applying bleed to all party."""
-    print("\n💥 [GIMMICK] The Frost Shards destabilize and explode!")
+    c_print("\n💥 [GIMMICK] The Frost Shards destabilize and explode!")
     allies = get_alive_allies(player)
     p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
     targets = [player] + allies
@@ -154,9 +156,9 @@ def _shard_explosion(shards, player):
             continue
         dmg = random.randint(5, 10)
         t["current_hp"] -= dmg
-        print(f"  {t.get('name', 'You')} takes {dmg} shrapnel damage!")
+        c_print("  " + format_damage_msg("Frost Shard", t.get('name', 'You'), dmg, skill_name="Shard Explosion"))
         apply_bleed(t, damage=3, duration=3)
-        print(f"  {t.get('name', 'You')} is bleeding from frost wounds!")
+        c_print(f"  {t.get('name', 'You')} is bleeding from frost wounds!")
         if t["current_hp"] <= 0 and t is player:
             return "dead"
     return None
@@ -164,7 +166,7 @@ def _shard_explosion(shards, player):
 
 def _revelation_beam(eye, player):
     """Eye of Truth attacks and blinds a random target."""
-    print(f"\n👁️  {eye['name']} unleashes a REVELATION BEAM!")
+    c_print(f"\n👁️  {eye['name']} unleashes a REVELATION BEAM!")
     allies = get_alive_allies(player)
     targets = [player] + allies
     alive_targets = [t for t in targets if t.get("current_hp", 0) > 0]
@@ -178,9 +180,9 @@ def _revelation_beam(eye, player):
         t_con = target["attributes"].get("Constitution", 0)
     dmg = max(1, random.randint(4, 10) + eye["str_mod"] - t_con)
     target["current_hp"] -= dmg
-    print(f"  The beam strikes {target.get('name', 'You')} for {dmg} damage!")
+    c_print("  " + format_damage_msg(eye['name'], target.get('name', 'You'), dmg, skill_name="Revelation Beam"))
     apply_blind(target, duration=2)
-    print(f"  {target.get('name', 'You')} is blinded by terrible truth!")
+    c_print(f"  {target.get('name', 'You')} is blinded by terrible truth!")
     if target["current_hp"] <= 0 and target is player:
         return "dead"
     return None
@@ -188,7 +190,7 @@ def _revelation_beam(eye, player):
 
 def _frozen_burst(arm, player):
     """An arm explodes on death, dealing AoE damage."""
-    print(f"\n💨 {arm['name']} shatters in a FROZEN BURST!")
+    c_print(f"\n💨 {arm['name']} shatters in a FROZEN BURST!")
     allies = get_alive_allies(player)
     p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
     targets = [player] + allies
@@ -197,7 +199,7 @@ def _frozen_burst(arm, player):
             continue
         dmg = max(1, random.randint(3, 8) + arm["str_mod"] * 2 - p_con // 2)
         t["current_hp"] -= dmg
-        print(f"  {t.get('name', 'You')} takes {dmg} frost burst damage!")
+        c_print("  " + format_damage_msg(arm['name'], t.get('name', 'You'), dmg, element="water", skill_name="Frozen Burst"))
         if t["current_hp"] <= 0 and t is player:
             return "dead"
     return None
@@ -205,19 +207,19 @@ def _frozen_burst(arm, player):
 
 def _trigger_phase2(ctx, elist, boss, player):
     """Transition to Phase 2."""
-    print("\n" + "!" * 60)
-    print("[PHASE 2] The 'ice' cracks like broken glass.")
-    print("The truth reveals itself.")
-    print()
-    print("'Nice try,' Rientrante says, brushing dust from his shoulder.")
-    print("'I'm not some elemental. I wrote the code for this place.'")
-    print("'You think you can kill me with a sword? I don't even have HP.'")
-    print("'I have a health bar because you expect one.'")
-    print()
-    print("He snaps his fingers. The Eye of Truth materializes — a debug")
-    print("window floating in the air. Frozen Arms rise as security drones.")
-    print("!" * 60)
-    input("Press Enter to confront the truth...")
+    c_print("\n" + "!" * 60)
+    c_print("[PHASE 2] The 'ice' cracks like broken glass.")
+    c_print("The truth reveals itself.")
+    c_print()
+    c_print("'Nice try,' Rientrante says, brushing dust from his shoulder.")
+    c_print("'I'm not some elemental. I wrote the code for this place.'")
+    c_print("'You think you can kill me with a sword? I don't even have HP.'")
+    c_print("'I have a health bar because you expect one.'")
+    c_print()
+    c_print("He snaps his fingers. The Eye of Truth materializes — a debug")
+    c_print("window floating in the air. Frozen Arms rise as security drones.")
+    c_print("!" * 60)
+    c_input("Press Enter to confront the truth...")
 
     ctx["phase"] = 2
     ctx["phase2_triggered"] = True
@@ -239,37 +241,64 @@ def _trigger_phase2(ctx, elist, boss, player):
 
     # Truth Shield: 50% damage reduction while Eye is alive
     boss["damage_taken_mult"] = 0.5
-    print(
+    c_print(
         "\n[TRUTH SHIELD] The Eye of Truth protects Rientrante! "
         "(50% damage reduction)"
     )
 
 
-def combat_rientrante(player, floor=None):
-    """Main Rientrante superboss encounter."""
-    boss = enemy_stats(BOSS_KEY, player)
-    boss = FrostboundDict(boss)
-    boss["max_hp"] = boss["hp"]
-    boss["shell_hp"] = int(boss["max_hp"] * 0.30)
-    enemies = [boss]
+def combat_rientrante(player, floor=None, enemies=None):
+    """Superboss: Rientrante, the Administrator / Truth Unveiled.
 
-    print("\n" + "=" * 60)
-    print("The dungeon flickers. Not with cold — with wrongness.")
-    print("The stone walls pixelate at the edges, and for a moment you see")
-    print("fluorescent lights behind them. An office ceiling. A different world.")
-    print()
-    print("A man steps through the distortion. Not a monster. A human.")
-    print("Tall. Tired eyes. A uniform from a place you've never been.")
-    print()
-    print("'You're persistent,' he says, not unkindly.")
-    print("'Most don't make it this far. Most don't even realize.'")
-    print()
-    print("He cracks his knuckles. The air around him warps.")
-    print("'I'm Rientrante. I run the server. And you?'")
-    print("'You're just a guest who overstayed.'")
-    print(f"\nRientrante, the Administrator — HP: {boss['hp']} (Barrier: {boss['shell_hp']})")
-    print("=" * 60)
-    input("\nPress Enter to face the truth...")
+    Args:
+        enemies: Optional pre-created enemy list for GUI mode state sharing.
+                 If provided, the first entry matching BOSS_KEY is wrapped in
+                 FrostboundDict and used as the boss. Otherwise a new boss
+                 is created.
+    """
+    if enemies is None:
+        boss = enemy_stats(BOSS_KEY, player)
+        boss = FrostboundDict(boss)
+        boss["max_hp"] = boss["hp"]
+        boss["shell_hp"] = int(boss["max_hp"] * 0.30)
+        enemies = [boss]
+    else:
+        # GUI mode: enemies list is shared with the CombatScreen renderer.
+        # Find the boss, wrap it in FrostboundDict, and set up shell_hp.
+        boss = None
+        for i, e in enumerate(enemies):
+            if e.get("key") == BOSS_KEY:
+                wrapped = FrostboundDict(e)
+                wrapped["max_hp"] = wrapped["hp"]
+                wrapped["shell_hp"] = int(wrapped["max_hp"] * 0.30)
+                enemies[i] = wrapped
+                boss = wrapped
+                break
+        if boss is None:
+            # Fallback: create the boss if not found in the shared list
+            boss = enemy_stats(BOSS_KEY, player)
+            boss = FrostboundDict(boss)
+            boss["max_hp"] = boss["hp"]
+            boss["shell_hp"] = int(boss["max_hp"] * 0.30)
+            enemies.append(boss)
+
+    c_print("\n" + "=" * 60)
+    c_print("The dungeon flickers. Not with cold — with wrongness.")
+    c_print("The stone walls pixelate at the edges, and for a moment you see")
+    c_print("fluorescent lights behind them. An office ceiling. A different world.")
+    c_print()
+    c_print("A man steps through the distortion. Not a monster. A human.")
+    c_print("Tall. Tired eyes. A uniform from a place you've never been.")
+    c_print()
+    c_print("'You're persistent,' he says, not unkindly.")
+    c_print("'Most don't make it this far. Most don't even realize.'")
+    c_print()
+    c_print("He cracks his knuckles. The air around him warps.")
+    c_print("'I'm Rientrante. I run the server. And you?'")
+    c_print("'You're just a guest who overstayed.'")
+    c_print(f"\nRientrante, the Administrator — HP: {boss['hp']} (Barrier: {boss['shell_hp']})")
+    c_print("=" * 60)
+    c_input("\nPress Enter to face the truth...")
 
     context = {
         "phase": 1,
@@ -302,7 +331,7 @@ def combat_rientrante(player, floor=None):
             b["str_mod"] = b.get("str_mod", 0) + 2
             b["con_mod"] = max(0, b.get("con_mod", 0) - 2)
             ctx["shell_cracked_turns"] = 3
-            print(
+            c_print(
                 "\n[BARRIER BROKEN] Rientrante's system barrier falters! "
                 "His code compiles with errors — he fights with desperate fury!"
             )
@@ -317,8 +346,8 @@ def combat_rientrante(player, floor=None):
             and not ctx["phase2_triggered"]
         ):
             if b["hp"] <= int(b["max_hp"] * 0.65):
-                print("\n[GIMMICK] Rientrante's barrier glitches!")
-                print("Three corrupted data fragments manifest!")
+                c_print("\n[GIMMICK] Rientrante's barrier glitches!")
+                c_print("Three corrupted data fragments manifest!")
                 ctx["shards_spawned"] = True
                 ctx["shard_timer"] = 4
                 shards = _spawn_shards(player, 3)
@@ -345,7 +374,7 @@ def combat_rientrante(player, floor=None):
                     # Boss empowered by explosion
                     b["str_mod"] = b.get("str_mod", 0) + 2
                     ctx["shell_cracked_turns"] = 3
-                    print("Rientrante absorbs the explosion — empowered!")
+                    c_print("Rientrante absorbs the explosion — empowered!")
             else:
                 ctx["shards_spawned"] = False
                 ctx["shard_timer"] = 0
@@ -370,7 +399,7 @@ def combat_rientrante(player, floor=None):
             if ctx["truth_shattered_turns"] > 0:
                 lines.append(f"💔 Truth: {ctx['truth_shattered_turns']}t")
         if lines:
-            print("  " + " | ".join(lines))
+            c_print("  " + " | ".join(lines))
         print_combat_hud(player, elist, header="Superboss: Rientrante")
 
     # ── on_kill_hook ───────────────────────────────────────────────────────
@@ -384,12 +413,12 @@ def combat_rientrante(player, floor=None):
             if not shards_alive and ctx["shards_spawned"]:
                 ctx["shards_spawned"] = False
                 ctx["shard_timer"] = 0
-                print("\n[GIMMICK] All data fragments purged!")
+                c_print("\n[GIMMICK] All data fragments purged!")
                 b = next(
                     (e for e in elist if e.get("key") == BOSS_KEY), None
                 )
                 if b and ctx["phase"] == 1:
-                    print("Rientrante is exposed! Vulnerable core revealed!")
+                    c_print("Rientrante is exposed! Vulnerable core revealed!")
                     b["damage_taken_mult"] = 1.25
                     ctx["shell_cracked_turns"] = 2
 
@@ -400,7 +429,7 @@ def combat_rientrante(player, floor=None):
                 1 for e in elist if e.get("key") == ARM_KEY and e["hp"] > 0
             )
             if arms_alive == 0 and ctx["phase"] == 2:
-                print(
+                c_print(
                     "\n[GIMMICK] Both security drones destroyed! "
                     "Rientrante's core is exposed!"
                 )
@@ -412,26 +441,26 @@ def combat_rientrante(player, floor=None):
                     ctx["core_exposed_turns"] = 3
                     # Action Advance: Rientrante gains extra turn
                     b["action_advances"] = b.get("action_advances", 0) + 1
-                    print("Rientrante's fury surges — he gains an extra action!")
+                    c_print("Rientrante's fury surges — he gains an extra action!")
 
                 eye = next(
                     (e for e in elist if e.get("key") == EYE_KEY), None
                 )
                 if eye:
                     eye["action_advances"] = eye.get("action_advances", 0) + 1
-                    print("The Eye of Truth flickers — it gains an extra action!")
+                    c_print("The Eye of Truth flickers — it gains an extra action!")
 
                 # Resummon 2 arms (Phase 2 1st Skill adaptation)
                 if not ctx.get("arms_resummoned"):
                     ctx["arms_resummoned"] = True
-                    print("The system reboots! Two new security drones deploy!")
+                    c_print("The system reboots! Two new security drones deploy!")
                     for _ in range(2):
                         arm = _spawn_arm(player)
                         elist.append(arm)
                         ctx["arms_alive"] += 1
                     if b:
                         b["damage_taken_mult"] = b.get("damage_taken_mult", 1.0) * 1.2
-                        print("Rientrante's vulnerability increases! (+20% damage taken)")
+                        c_print("Rientrante's vulnerability increases! (+20% damage taken)")
 
             if result == "dead":
                 # Signal via context; end-of-round check will catch it
@@ -439,7 +468,7 @@ def combat_rientrante(player, floor=None):
 
         elif key == EYE_KEY:
             ctx["eye_alive"] = False
-            print("\n[GIMMICK] The Eye of Truth crashes! The debug window goes dark!")
+            c_print("\n[GIMMICK] The Eye of Truth crashes! The debug window goes dark!")
             b = next(
                 (e for e in elist if e.get("key") == BOSS_KEY), None
             )
@@ -509,7 +538,7 @@ def combat_rientrante(player, floor=None):
                 eye = next((e for e in enemies if e.get("key") == EYE_KEY and e["hp"] > 0), None)
                 if eye:
                     eye["action_advances"] = eye.get("action_advances", 0) + 1
-                    print(f"\n⚡ {enemy['name']} propels the Eye of Truth forward!")
+                    c_print(f"\n⚡ {enemy['name']} propels the Eye of Truth forward!")
 
             return actions, False, extra, 1.0, 0
 
@@ -529,8 +558,8 @@ def combat_rientrante(player, floor=None):
                         target = random.choice(clone_targets)
                         clone = _create_clone_from_enemy(target)
                         pl.setdefault("allies", []).append(clone)
-                        print(f"\n👁️  {enemy['name']} gazes at {target['name']} — a mirror image rises!")
-                        print(f"   Mirror {target['name']} joins your side!")
+                        c_print(f"\n👁️  {enemy['name']} gazes at {target['name']} — a mirror image rises!")
+                        c_print(f"   Mirror {target['name']} joins your side!")
                         # Insert clone directly into turn order right after Eye's turn
                         turn_order = kwargs.get("turn_order")
                         step_idx = kwargs.get("step_idx")
@@ -552,7 +581,7 @@ def combat_rientrante(player, floor=None):
                     boss = next((e for e in enemies if e.get("key") == BOSS_KEY), None)
                     if boss:
                         boss["action_advances"] = boss.get("action_advances", 0) + 1
-                        print(f"\n👁️  The Eye trembles! Rientrante surges forward!")
+                        c_print(f"\n👁️  The Eye trembles! Rientrante surges forward!")
                     return 0, True, None, 1.0, 0
 
             # Phase 1: Original revelation beam every 2 turns
@@ -588,7 +617,7 @@ def combat_rientrante(player, floor=None):
                 )
                 if b:
                     _recalc_damage_mult(ctx, b)
-                    print("\n[CRACK FADES] Rientrante's vulnerability fades.")
+                    c_print("\n[CRACK FADES] Rientrante's vulnerability fades.")
 
         # Core exposed countdown
         if ctx.get("core_exposed_turns", 0) > 0:
@@ -599,7 +628,7 @@ def combat_rientrante(player, floor=None):
                 )
                 if b:
                     _recalc_damage_mult(ctx, b)
-                    print("\n[CORE] Rientrante's core vulnerability fades.")
+                    c_print("\n[CORE] Rientrante's core vulnerability fades.")
 
         # Truth shattered countdown
         if ctx.get("truth_shattered_turns", 0) > 0:
@@ -610,7 +639,7 @@ def combat_rientrante(player, floor=None):
                 )
                 if b:
                     _recalc_damage_mult(ctx, b)
-                    print("\n[TRUTH] The shattered truth mends partially.")
+                    c_print("\n[TRUTH] The shattered truth mends partially.")
 
         # Safety: check if player died from burst
         if ctx.get("player_dead_from_burst"):
@@ -620,7 +649,7 @@ def combat_rientrante(player, floor=None):
         # Remove any lingering clones (should be destroyed after 1 turn)
         for ally in list(player.get("allies", [])):
             if ally.get("is_clone"):
-                print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
+                c_print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
                 if ally in player["allies"]:
                     player["allies"].remove(ally)
 
@@ -652,33 +681,32 @@ def combat_rientrante(player, floor=None):
                                 t_name = t["name"]
                             dmg = int(max_hp * 0.70)
                             t["current_hp"] = max(0, t["current_hp"] - dmg)
-                            print(
-                                f"\n💥 Rientrante's final judgment strikes {t_name} for {dmg} damage!"
-                            )
+                            from combat.helpers import format_damage_msg
+                            c_print("\n💥 " + format_damage_msg("Rientrante", t_name, dmg, skill_name="Final Judgment"))
                             if t.get("current_hp", 0) <= 0:
                                 if t is player:
-                                    print("You have been slain.")
+                                    c_print("You have been slain.")
                                     return "dead"
                                 else:
-                                    print(f"{t['name']} has fallen!")
+                                    c_print(f"{t['name']} has fallen!")
 
                 # Spare ending
-                print("\n" + "=" * 55)
-                print("Rientrante lowers his hand.")
-                print("'Five turns. You're persistent... but you don't belong here.'")
-                print("He looks at you with something like pity.")
-                print()
-                print("'The only way to tell a real person from a fake?'")
-                print("'Check your body. Every real soul has a mark.'")
-                print("'An item. Something the system couldn't generate.'")
-                print("'I have mine. You have yours. Find it when you wake up.'")
-                print()
-                print("He turns away, waving a hand dismissively.")
-                print("'Go. I'll reset the encounter. Next time, don't try so hard to win.'")
-                print("'You're not meant to.'")
-                print("The dungeon fades. The encounter ends.")
-                print("=" * 55)
-                input("Press Enter to continue...")
+                c_print("\n" + "=" * 55)
+                c_print("Rientrante lowers his hand.")
+                c_print("'Five turns. You're persistent... but you don't belong here.'")
+                c_print("He looks at you with something like pity.")
+                c_print()
+                c_print("'The only way to tell a real person from a fake?'")
+                c_print("'Check your body. Every real soul has a mark.'")
+                c_print("'An item. Something the system couldn't generate.'")
+                c_print("'I have mine. You have yours. Find it when you wake up.'")
+                c_print()
+                c_print("He turns away, waving a hand dismissively.")
+                c_print("'Go. I'll reset the encounter. Next time, don't try so hard to win.'")
+                c_print("'You're not meant to.'")
+                c_print("The dungeon fades. The encounter ends.")
+                c_print("=" * 55)
+                c_input("Press Enter to continue...")
                 return "spared"
 
         return None
@@ -697,18 +725,18 @@ def combat_rientrante(player, floor=None):
     )
 
     if result == "victory":
-        print("\n" + "~" * 55)
-        print("Rientrante staggers. His uniform rips at the seams.")
-        print("Blood — real blood, not game blood — pools beneath him.")
-        print()
-        print("'You... actually did it.' He coughs, laughing.")
-        print("'You killed the admin. Do you understand what that means?'")
-        print()
-        print("The sky tears open. The dungeon dissolves into raw code,")
-        print("then into nothing. The world blacks out.")
-        print()
-        print("'There can only be one player now. And it can't be me...'")
-        print("Darkness swallows everything.")
-        print("~" * 55)
+        c_print("\n" + "~" * 55)
+        c_print("Rientrante staggers. His uniform rips at the seams.")
+        c_print("Blood — real blood, not game blood — pools beneath him.")
+        c_print()
+        c_print("'You... actually did it.' He coughs, laughing.")
+        c_print("'You killed the admin. Do you understand what that means?'")
+        c_print()
+        c_print("The sky tears open. The dungeon dissolves into raw code,")
+        c_print("then into nothing. The world blacks out.")
+        c_print()
+        c_print("'There can only be one player now. And it can't be me...'")
+        c_print("Darkness swallows everything.")
+        c_print("~" * 55)
 
     return result

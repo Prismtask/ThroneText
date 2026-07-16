@@ -644,21 +644,6 @@ Beast:
       Charisma: 2
     boss: false
     super_boss: false
-  vileheart_spiderling:
-    name: Vileheart Spiderling
-    race: Beast
-    level: 15
-    base_hp: 45
-    mods:
-      Strength: 5
-      Constitution: 5
-      Dexterity: 7
-      Wisdom: 2
-      Learning: 2
-      Charisma: 2
-    boss: false
-    super_boss: false
-    minion_only: true
   beast_mammoth:
     name: Mammoth
     race: Beast
@@ -729,20 +714,6 @@ Beast:
       Charisma: 3
     boss: false
     super_boss: false
-  broodmother_vileheart:
-    name: Broodmother Vileheart
-    race: Beast
-    level: 20
-    base_hp: 350
-    mods:
-      Strength: 7
-      Constitution: 7
-      Dexterity: 6
-      Wisdom: 3
-      Learning: 2
-      Charisma: 3
-    boss: true
-    super_boss: true
   beast_thunder_lizard:
     name: Thunder Lizard
     race: Beast
@@ -1150,35 +1121,6 @@ Fey:
       Charisma: 4
     boss: false
     super_boss: false
-  queen_of_mirrors_sylvana:
-    name: Queen of Mirrors Sylvana
-    race: Fey
-    level: 21
-    base_hp: 380
-    mods:
-      Strength: 3
-      Constitution: 4
-      Dexterity: 7
-      Wisdom: 5
-      Learning: 4
-      Charisma: 6
-    boss: true
-    super_boss: true
-  sylvana_mirror_copy:
-    name: Sylvana Mirror Copy
-    race: Fey
-    level: 21
-    base_hp: 1
-    mods:
-      Strength: 3
-      Constitution: 4
-      Dexterity: 7
-      Wisdom: 5
-      Learning: 4
-      Charisma: 6
-    boss: false
-    super_boss: false
-    minion_only: true
   fey_verdant_queen_guard:
     name: Verdant Queen Guard
     race: Fey
@@ -4859,20 +4801,6 @@ Abomination:
       Charisma: 4
     boss: false
     super_boss: false
-  dream_devouring_slitcurrent:
-    name: Dream-Devouring Slitcurrent
-    race: Abomination
-    level: 21
-    base_hp: 420
-    mods:
-      Strength: 7
-      Constitution: 7
-      Dexterity: 5
-      Wisdom: 3
-      Learning: 3
-      Charisma: 4
-    boss: true
-    super_boss: true
   abomination_hive_queen:
     name: Hive Queen
     race: Abomination
@@ -5196,21 +5124,6 @@ Construct:
       Charisma: 3
     boss: false
     super_boss: false
-  dream_floatsam:
-    name: Dream Floatsam
-    race: Construct
-    level: 16
-    base_hp: 55
-    mods:
-      Strength: 5
-      Constitution: 7
-      Dexterity: 4
-      Wisdom: 2
-      Learning: 3
-      Charisma: 3
-    boss: false
-    super_boss: false
-    minion_only: true
   primeval_construct:
     name: Primeval Construct
     race: Construct
@@ -5309,20 +5222,6 @@ Construct:
       Charisma: 4
     boss: false
     super_boss: false
-  melt_forge_golem_ignis:
-    name: Ignis, the Melt-Forge Golem
-    race: Construct
-    level: 21
-    base_hp: 400
-    mods:
-      Strength: 7
-      Constitution: 8
-      Dexterity: 3
-      Wisdom: 3
-      Learning: 4
-      Charisma: 4
-    boss: true
-    super_boss: true
   construct_star_metal_golem:
     name: Star Metal Golem
     race: Construct
@@ -5405,34 +5304,6 @@ Construct:
       Wisdom: 5
       Learning: 7
       Charisma: 6
-    boss: false
-    super_boss: false
-  yinglong_heaven_pillar:
-    name: Heaven Pillar
-    race: Construct
-    level: 45
-    base_hp: 40
-    mods:
-      Strength: 12
-      Constitution: 14
-      Dexterity: 6
-      Wisdom: 6
-      Learning: 7
-      Charisma: 8
-    boss: false
-    super_boss: false
-  yinglong_heaven_pinning_wedge:
-    name: Heaven Pinning Wedge
-    race: Construct
-    level: 45
-    base_hp: 30
-    mods:
-      Strength: 12
-      Constitution: 14
-      Dexterity: 6
-      Wisdom: 6
-      Learning: 7
-      Charisma: 8
     boss: false
     super_boss: false
 Dragonkin:
@@ -5758,17 +5629,3 @@ Dragonkin:
       Charisma: 4
     boss: false
     super_boss: false
-  heaven_banished_dragon_yinglong:
-    name: Yinglong, Heaven-Banished Dragon
-    race: Dragonkin
-    level: 25
-    base_hp: 400
-    mods:
-      Strength: 7
-      Constitution: 9
-      Dexterity: 9
-      Wisdom: 6
-      Learning: 6
-      Charisma: 5
-    boss: true
-    super_boss: true

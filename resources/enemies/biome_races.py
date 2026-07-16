@@ -9,4 +9,5 @@ BIOME_RACES = {
     "volcanic":  ["Demon", "Elemental", "Dragonkin", "Construct", "Giant"],
     "magical":   ["Fey", "Construct", "Clockwork", "Elemental", "Gnome", "Shadow", "Abomination"],
     "pandemonium": ["Human", "Goblin", "Orc", "Undead", "Beast", "Demon", "Construct", "Dragonkin", "Fey", "Elemental", "Giant", "Vampire", "Lizardfolk", "Gnome", "Shadow", "Clockwork", "Abomination"],
+    "wonderland": ["Storybook", "Fey", "Beast", "Construct", "Abomination", "Demon", "Shadow"],
 }

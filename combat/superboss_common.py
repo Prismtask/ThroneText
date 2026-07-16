@@ -18,13 +18,13 @@ from combat.player_actions import handle_player_turn
 from combat.combat_ui import print_combat_hud, print_superboss_header, print_player_mini_hud, format_enemy_status_line
 from combat.status_effects import tick_player_debuffs, tick_player_buffs
 from combat.skills import tick_skill_cooldowns
-from combat.ally import get_alive_allies, compute_ally_stats, handle_ally_turn
-from utils import clear_screen
+from combat.ally import get_alive_allies, get_active_allies, compute_ally_stats, handle_ally_turn
+from combat.combat_io import c_print, c_input, c_clear
 import random
 
 
 def prune_dead(enemies):
-    return [e for e in enemies if e["hp"] > 0]
+    return [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
 
 
 def roll_initiative(player, enemies):
@@ -33,7 +33,8 @@ def roll_initiative(player, enemies):
     combatants = []
 
     # Player
-    player_speed = random.randint(1, 20) + p_dex
+    from combat.black_silence_gloves import get_gloves_initiative_bonus
+    player_speed = random.randint(1, 20) + p_dex + get_gloves_initiative_bonus(player)
     combatants.append({
         "type": "player",
         "speed": player_speed,
@@ -42,14 +43,14 @@ def roll_initiative(player, enemies):
         "extra_turn": None,
     })
 
-    # Allies
-    allies = get_alive_allies(player)
+    # Allies (active combat row only)
+    allies = get_active_allies(player)
     for idx, ally in enumerate(allies):
         a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
         eff_dex = a_dex
         if ally.get("slowed"):
             eff_dex = max(-10, eff_dex - 3)
-        speed = random.randint(1, 20) + eff_dex
+        speed = random.randint(1, 20) + eff_dex + get_gloves_initiative_bonus(ally)
         combatants.append({
             "type": "ally",
             "speed": speed,
@@ -86,10 +87,10 @@ def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, p_ler, p_
         if not enemies:
             return "victory"
 
-        print(f"\n⚔️  ABYSS TEMPO — extra action ({extra_num + 2}/3)!")
+        c_print(f"\n⚔️  ABYSS TEMPO — extra action ({extra_num + 2}/3)!")
         print_hud_func()
 
-        action = input("Choose: ").strip().lower()
+        action = c_input("Choose: ").strip().lower()
         result, _ = handle_player_turn(
             player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
             on_kill=on_kill,
@@ -133,7 +134,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         lambda target, elist: on_player_hit_hook(target, elist, context)
         if on_player_hit_hook else None
     )
-    player["tarnished_jade_pins"] = 0
+    player["tarnished_jade_pins"] = 1
     player["tarnished_jade_weakened"] = False
     clear_captain_cutlass_state(player)
 
@@ -154,7 +155,9 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
         p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
-        clear_screen()
+        c_clear()
+
+        c_print(f"  >> ROUND {round_num}")
 
         if pre_player_hook:
             result = pre_player_hook(context, enemies)
@@ -176,13 +179,33 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if tj_triggered:
             enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
             if not enemies:
-                print("\n  All enemies have been defeated!")
-                input("  Press Enter to continue...")
+                c_print("\n  All enemies have been defeated!")
+                c_input("  Press Enter to continue...")
                 return "victory"
-            print("\n  The divine sorrow subsides. The battle continues...")
+            c_print("\n  The divine sorrow subsides. The battle continues...")
 
-        print("\nInitiative Phase\nRolling speeds...")
+        c_print("\nInitiative Phase\nRolling speeds...")
         turn_order = roll_initiative(player, enemies)
+
+        # Black Silence Gloves: First Strike detection
+        from combat.black_silence_gloves import set_first_strike, _actor_has_black_silence_gloves
+        if _actor_has_black_silence_gloves(player):
+            player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
+            enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
+            is_first = player_idx is not None and (not enemy_indices or player_idx < min(enemy_indices))
+            set_first_strike(player, is_first)
+            if is_first:
+                c_print("  🖤 Silence strikes first! +15% damage this round.")
+
+        # Ally Black Silence Gloves: First Strike detection
+        for ally in player.get("allies", []):
+            if ally.get("current_hp", 0) > 0 and _actor_has_black_silence_gloves(ally):
+                ally_idx = next((i for i, c in enumerate(turn_order) if c.get("entity") is ally), None)
+                enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
+                is_first = ally_idx is not None and (not enemy_indices or ally_idx < min(enemy_indices))
+                set_first_strike(ally, is_first)
+                if is_first:
+                    c_print(f"  🖤 {ally['name']} strikes first! +15% damage this round.")
 
         abyss_count = get_abyssal_tempo_count(player)
         if abyss_count > 0:
@@ -198,14 +221,14 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         "extra_turn": extra_num + 1,
                     })
 
-        print("\nTurn Order for this Round:")
+        c_print("\nTurn Order for this Round:")
         stunned_this_round = context.get("skip_player_turn", False)
         for i, c in enumerate(turn_order):
             suffix = " [STUNNED — will skip]" if stunned_this_round and c["type"] == "player" and not c.get("extra_turn") else ""
-            print(f"  {i + 1:>2}. {c['label']} (Speed: {c['speed']}){suffix}")
-        input("\nPress Enter to start the round...")
+            c_print(f"  {i + 1:>2}. {c['label']} (Speed: {c['speed']}){suffix}")
+        c_input("\nPress Enter to start the round...")
 
-        print(f"\n⚔️  Round {round_num}: Action Phase")
+        c_print(f"\n⚔️  Round {round_num}: Action Phase")
         defending = False
 
         for step_idx, combatant in enumerate(turn_order):
@@ -213,23 +236,23 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             if not live_enemies:
                 break
 
-            print(f"\n[{step_idx + 1}/{len(turn_order)}] {combatant['label']}'s Turn:")
+            c_print(f"\n[{step_idx + 1}/{len(turn_order)}] {combatant['label']}'s Turn:")
 
             if combatant["type"] == "player":
                 if player["current_hp"] <= 0:
-                    print(f"{player['name']} has been slain.")
+                    c_print(f"{player['name']} has been slain.")
                     return "dead"
 
                 if context.get("skip_player_turn") and not combatant.get("extra_turn"):
-                    print(f"{player['name']} is stunned and cannot act!")
+                    c_print(f"{player['name']} is stunned and cannot act!")
                     context["skip_player_turn"] = False
                     continue
 
                 if combatant.get("extra_turn"):
                     if combatant["extra_turn"] == "advance":
-                        print(f"⚡ ACTION ADVANCE — {combatant['label']} surges forward!")
+                        c_print(f"⚡ ACTION ADVANCE — {combatant['label']} surges forward!")
                     else:
-                        print(f"⚔️  ABYSS TEMPO — Extra Action {combatant['extra_turn']}/3!")
+                        c_print(f"⚔️  ABYSS TEMPO — Extra Action {combatant['extra_turn']}/3!")
 
                 print_player_mini_hud(player, live_enemies)
 
@@ -237,7 +260,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     action = (
                         player_action_override(context)
                         if player_action_override
-                        else input("Choose: ").strip().lower()
+                        else c_input("Choose: ").strip().lower()
                     )
                     result, new_def = handle_player_turn(
                         player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
@@ -247,11 +270,14 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     )
                     if result != "retry":
                         break
-                    print("[A]ttack  [D]efend  [F]lee  [U]se item")
+                    c_print("[A]ttack  [D]efend  [F]lee  [U]se item")
 
                 if result == "continue":
                     if new_def:
                         defending = True
+                    enemies[:] = prune_dead(enemies)
+                    if not enemies:
+                        break
                 elif result == "victory":
                     break
                 elif result in ("fled", "dead"):
@@ -263,9 +289,9 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     continue
 
                 if combatant.get("extra_turn") == "advance":
-                    print(f"⚡ ACTION ADVANCE — {ally['name']} surges forward!")
+                    c_print(f"⚡ ACTION ADVANCE — {ally['name']} surges forward!")
                 elif combatant.get("extra_turn") == "clone":
-                    print(f"👁️  MIRROR CLONE — {ally['name']} mirrors the enemy!")
+                    c_print(f"👁️  MIRROR CLONE — {ally['name']} mirrors the enemy!")
 
                 while True:
                     result = handle_ally_turn(
@@ -276,7 +302,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         break
 
                 if result == "continue":
-                    if not prune_dead(enemies):
+                    enemies[:] = prune_dead(enemies)
+                    if not enemies:
                         break
                 elif result == "victory":
                     break
@@ -285,17 +312,17 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
                 # Clean up clones after their turn
                 if ally.get("is_clone"):
-                    print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
+                    c_print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
                     if ally in player.get("allies", []):
                         player["allies"].remove(ally)
 
             else:  # enemy
                 enemy = combatant["entity"]
                 if enemy["hp"] <= 0:
-                    print(f"  ({enemy['name']} is already defeated.)")
+                    c_print(f"  ({enemy['name']} is already defeated.)")
                     continue
                 if enemy.get("captured"):
-                    print(f"  ({enemy['name']} is captured and cannot act.)")
+                    c_print(f"  ({enemy['name']} is captured and cannot act.)")
                     continue
 
                 actions = 1
@@ -314,12 +341,12 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 if not skip_atk:
                     for action_idx in range(actions):
                         if actions > 1:
-                            print(f"\n⚡ FAST ACTION! {enemy['name']} unleashes Action {action_idx + 1}/{actions}!")
+                            c_print(f"\n⚡ FAST ACTION! {enemy['name']} unleashes Action {action_idx + 1}/{actions}!")
 
-                        # Target selection from alive party
-                        alive_party = [player] + get_alive_allies(player)
+                        # Target selection from alive party (active combat row only)
+                        alive_party = [player] + get_active_allies(player)
                         if not alive_party:
-                            print("Your entire party has fallen!")
+                            c_print("Your entire party has fallen!")
                             return "dead"
 
                         if len(alive_party) == 1:
@@ -345,7 +372,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         )
                         if outcome == "dead":
                             if target is player:
-                                print(f"{player['name']} has been slain.")
+                                c_print(f"{player['name']} has been slain.")
                                 return "dead"
                             else:
                                 target["defeated"] = True
@@ -357,7 +384,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                                 defeated_line = dialogue.get("is_defeated", f"{target['name']} has fallen!")
                                 if "{name}" in defeated_line:
                                     defeated_line = defeated_line.format(name=target['name'])
-                                print(f"  {defeated_line}")
+                                c_print(f"  {defeated_line}")
 
             # Action Advance mechanic: insert extra turns for this entity
             entity = combatant["entity"]
@@ -374,37 +401,43 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
         enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
-            print("\n  All enemies have been defeated!")
-            input("  Press Enter to continue...")
+            c_print("\n  All enemies have been defeated!")
+            c_input("  Press Enter to continue...")
             return "victory"
 
         tick_abyss_fang_cooldown(player, prefix="")
         tick_abyssal_tempo(player, prefix="")
         tick_captain_cutlass(player, prefix="")
 
+        # Tick ally weapon specials (Abyss Fang, Captain's Cutlass, Abyssal Tempo)
+        from combat.captain_cutlass import _tick_captain_cutlass_actor
+        for ally in get_alive_allies(player):
+            tick_abyss_fang_cooldown(ally, prefix="")
+            tick_abyssal_tempo(ally, prefix="")
+            _tick_captain_cutlass_actor(ally, player_ref=player)
 
         tick_skill_cooldowns(player)
         for ally in get_alive_allies(player):
             tick_skill_cooldowns(ally)
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
-            print(m)
+            c_print(m)
         if died:
-            print(f"{player['name']} has been slain.")
+            c_print(f"{player['name']} has been slain.")
             return "dead"
 
         for m in tick_player_buffs(player):
-            print(m)
+            c_print(m)
 
         # Tick ally debuffs/buffs
         for ally in get_alive_allies(player):
             ally_msgs, ally_died = tick_player_debuffs(ally)
             for m in ally_msgs:
-                print(f"  {ally['name']}: {m}")
+                c_print(f"  {ally['name']}: {m}")
             if ally_died:
-                print(f"  {ally['name']} succumbs to their wounds!")
+                c_print(f"  {ally['name']} succumbs to their wounds!")
             for m in tick_player_buffs(ally):
-                print(f"  {ally['name']}: {m}")
+                c_print(f"  {ally['name']}: {m}")
 
-        print("\n" + "-" * 50)
-        input("Press Enter to continue...")
+        c_print("\n" + "-" * 50)
+        c_input("Press Enter to continue...")

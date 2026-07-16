@@ -167,3 +167,18 @@ CORALHAVEN_GIFT_SHOP_DIALOGUE = {
         "The Reef Treasures will be here when you return.",
     ],
 }
+
+CORALHAVEN_GUILD_DIALOGUE = {
+    "enter": [
+        "Coralhaven Adventurer's Guild. The reef protects, but it also hides dangers.",
+        "Bounties from across the archipelago. Some are... unusual.",
+        "Welcome to the island guild. Our contracts are as colorful as the coral.",
+        "State your business. The guild here handles both sea and land threats.",
+    ],
+    "leave": [
+        "May the reef guide your contracts to completion.",
+        "Return with trophies from the deep.",
+        "The guild remembers every seashell of proof you bring.",
+        "Farewell. Watch for riptides — and contract deadlines.",
+    ],
+}

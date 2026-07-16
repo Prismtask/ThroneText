@@ -68,21 +68,23 @@ class_skills:
       target: enemies
       power_type: str
       base_power: 6
+      elemental: physical
     war_battlecry:
       name: Battle Cry
       description: Roar with fury, gaining +2 Strength and +2 Constitution for 3 turns.
       unlock_level: 5
       cooldown: 5
       target: self
+      elemental: physical
     war_execute:
       name: Execute
-      description: Deal devastating damage to a weakened enemy. 3x damage if target
-        is below 30% HP.
+      description: Deal devastating damage to a weakened enemy. 3x damage if target is below 30% HP.
       unlock_level: 8
       cooldown: 4
       target: enemy
       power_type: str
       base_power: 10
+      elemental: physical
     war_shield_slam:
       name: Shield Slam
       description: Slam your shield into an enemy, dealing damage and stunning it.
@@ -92,13 +94,15 @@ class_skills:
       power_type: con
       base_power: 12
       stun_chance: 0.75
+      elemental: earth
     war_second_wind:
       name: Second Wind
-      description: Recover 25% of your maximum HP instantly.
+      description: Recover 30% of your maximum HP instantly.
       unlock_level: 12
       cooldown: 6
       target: self
-      heal_percent: 0.25
+      heal_percent: 0.30
+      elemental: physical
     war_bladestorm:
       name: Bladestorm
       description: Become a whirlwind of steel, striking all enemies 3 times.
@@ -108,6 +112,7 @@ class_skills:
       power_type: str
       base_power: 6
       hits: 3
+      elemental: wind
   Mage:
     mage_fireball:
       name: Fireball
@@ -117,6 +122,7 @@ class_skills:
       target: enemy
       power_type: ler
       base_power: 16
+      elemental: fire
     mage_frostnova:
       name: Frost Nova
       description: Unleash a blast of freezing energy that damages and slows all enemies.
@@ -125,6 +131,7 @@ class_skills:
       target: enemies
       power_type: ler
       base_power: 10
+      elemental: water
     mage_arcane:
       name: Arcane Barrage
       description: Unleash 3 arcane missiles that strike random enemies.
@@ -134,6 +141,7 @@ class_skills:
       power_type: ler
       base_power: 8
       hits: 3
+      elemental: magical
     mage_meteor:
       name: Meteor
       description: Call down a meteor that deals massive fire damage to all enemies.
@@ -142,6 +150,7 @@ class_skills:
       target: enemies
       power_type: ler
       base_power: 22
+      elemental: fire
     mage_timewarp:
       name: Time Warp
       description: Bend time to reduce all your skill cooldowns by 2 turns.
@@ -149,6 +158,7 @@ class_skills:
       cooldown: 7
       target: self
       cooldown_reduction: 2
+      elemental: magical
     mage_overload:
       name: Mana Overload
       description: Deal devastating damage to a single enemy. Take 10% max HP as recoil.
@@ -158,32 +168,33 @@ class_skills:
       power_type: ler
       base_power: 35
       recoil_percent: 0.1
+      elemental: thunder
   Rogue:
     rog_backstab:
       name: Backstab
-      description: Strike a vital point. Double damage if the target is slowed or
-        stunned.
+      description: Strike a vital point. Double damage if the target is slowed or stunned.
       unlock_level: 3
       cooldown: 2
       target: enemy
       power_type: dex
       base_power: 10
+      elemental: dark
     rog_smoke:
       name: Smoke Bomb
-      description: Blind all enemies and guarantee a successful escape on your next
-        flee attempt.
+      description: Blind all enemies and guarantee a successful escape on your next flee attempt.
       unlock_level: 5
       cooldown: 5
       target: enemies
+      elemental: dark
     rog_assassinate:
       name: Assassinate
-      description: Attempt to instantly kill a target below 15% HP. Otherwise deals
-        heavy damage.
+      description: Attempt to instantly kill a target below 15% HP. Otherwise deals heavy damage.
       unlock_level: 8
       cooldown: 5
       target: enemy
       power_type: dex
       base_power: 14
+      elemental: dark
     rog_shadow_strike:
       name: Shadow Strike
       description: Strike from the shadows for guaranteed double damage.
@@ -193,6 +204,7 @@ class_skills:
       power_type: dex
       base_power: 10
       guaranteed_crit: true
+      elemental: dark
     rog_venom:
       name: Venomous Blade
       description: Coat your blade in poison. The target takes damage over 5 turns.
@@ -203,6 +215,7 @@ class_skills:
       base_power: 8
       poison_damage: 5
       poison_duration: 5
+      elemental: water
     rog_death_dance:
       name: Death Dance
       description: Unleash a flurry of strikes on 3 random enemies.
@@ -212,6 +225,7 @@ class_skills:
       power_type: dex
       base_power: 12
       hits: 3
+      elemental: dark
   Cleric:
     clr_heal:
       name: Heal
@@ -220,22 +234,24 @@ class_skills:
       cooldown: 3
       target: ally_or_self
       power_type: wis
-      base_power: 20
+      base_power: 28
+      elemental: light
     clr_shield:
       name: Divine Shield
       description: Become immune to all damage for 2 turns.
       unlock_level: 5
       cooldown: 6
       target: self
+      elemental: light
     clr_smite:
       name: Holy Smite
-      description: Smite an enemy with divine light and heal yourself for half the
-        damage dealt.
+      description: Smite an enemy with divine light and heal yourself for half the damage dealt.
       unlock_level: 8
       cooldown: 4
       target: enemy
       power_type: wis
       base_power: 14
+      elemental: light
     clr_mass_heal:
       name: Mass Heal
       description: Restore health to all party members.
@@ -243,7 +259,8 @@ class_skills:
       cooldown: 5
       target: all_allies
       power_type: wis
-      base_power: 15
+      base_power: 22
+      elemental: light
     clr_resurrection:
       name: Resurrection
       description: Revive a fallen ally with 50% of their max HP.
@@ -251,16 +268,17 @@ class_skills:
       cooldown: 8
       target: dead_ally
       revive_percent: 0.5
+      elemental: light
     clr_divine_wrath:
       name: Divine Wrath
-      description: Smite all enemies with holy fire. Heal the party for total damage
-        dealt.
+      description: Smite all enemies with holy fire. Heal the party for total damage dealt.
       unlock_level: 15
       cooldown: 6
       target: enemies
       power_type: wis
       base_power: 18
       party_heal: true
+      elemental: light
   Ranger:
     rng_pierce:
       name: Piercing Shot
@@ -271,13 +289,14 @@ class_skills:
       power_type: dex
       base_power: 12
       ignore_armor: true
+      elemental: wind
     rng_mark:
       name: Hunter's Mark
-      description: Mark an enemy. All your attacks against it deal +50% damage for
-        3 turns.
+      description: Mark an enemy. All your attacks against it deal +50% damage for 3 turns.
       unlock_level: 5
       cooldown: 4
       target: enemy
+      elemental: wind
     rng_rain:
       name: Rain of Arrows
       description: Fire a volley of arrows, damaging all enemies.
@@ -286,6 +305,7 @@ class_skills:
       target: enemies
       power_type: dex
       base_power: 10
+      elemental: wind
     rng_rapid:
       name: Rapid Fire
       description: Fire 3 quick shots at a single target.
@@ -295,6 +315,7 @@ class_skills:
       power_type: dex
       base_power: 8
       hits: 3
+      elemental: wind
     rng_trueshot:
       name: Trueshot
       description: A perfectly aimed shot that ignores armor and deals triple damage.
@@ -305,16 +326,17 @@ class_skills:
       base_power: 10
       ignore_armor: true
       guaranteed_crit: true
+      elemental: physical
     rng_nature:
       name: Nature's Grasp
-      description: Entangle all enemies in vines, damaging and slowing them for 3
-        turns.
+      description: Entangle all enemies in vines, damaging and slowing them for 3 turns.
       unlock_level: 15
       cooldown: 5
       target: enemies
       power_type: wis
       base_power: 12
       apply_slow: true
+      elemental: earth
   Paladin:
     pal_strike:
       name: Holy Strike
@@ -325,12 +347,14 @@ class_skills:
       power_type: str
       base_power: 10
       stun_chance: 0.5
+      elemental: light
     pal_layhands:
       name: Lay on Hands
       description: Fully restore your own HP or an ally's HP.
       unlock_level: 5
       cooldown: 6
       target: ally_or_self
+      elemental: light
     pal_judgment:
       name: Divine Judgment
       description: Deal massive damage to an enemy. 2x damage if it is stunned.
@@ -339,6 +363,7 @@ class_skills:
       target: enemy
       power_type: str
       base_power: 18
+      elemental: light
     pal_consecrate:
       name: Consecrate
       description: Consecrate the ground, damaging all enemies and weakening them.
@@ -348,6 +373,7 @@ class_skills:
       power_type: str
       base_power: 14
       apply_weaken: true
+      elemental: light
     pal_bastion:
       name: Bastion of Light
       description: You and all allies gain a defense buff for 3 turns.
@@ -356,16 +382,17 @@ class_skills:
       target: all_allies
       defense_buff: 3
       buff_duration: 3
+      elemental: light
     pal_avenging:
       name: Avenging Wrath
-      description: Deal holy damage to all enemies. Heal yourself for the total damage
-        dealt.
+      description: Deal holy damage to all enemies. Heal yourself for the total damage dealt.
       unlock_level: 15
       cooldown: 6
       target: enemies
       power_type: str
       base_power: 16
       self_heal_damage: true
+      elemental: light
   Warlock:
     lck_drain:
       name: Drain Life
@@ -375,13 +402,14 @@ class_skills:
       target: enemy
       power_type: ler
       base_power: 10
+      elemental: dark
     lck_curse:
       name: Dark Curse
-      description: Curse an enemy, reducing its Strength and Constitution by 2 for
-        3 turns.
+      description: Curse an enemy, reducing its Strength and Constitution by 2 for 3 turns.
       unlock_level: 5
       cooldown: 4
       target: enemy
+      elemental: dark
     lck_pact:
       name: Demonic Pact
       description: Sacrifice 20% of your max HP to deal devastating damage to an enemy.
@@ -390,6 +418,7 @@ class_skills:
       target: enemy
       power_type: cha
       base_power: 30
+      elemental: fire
     lck_fear:
       name: Soul Fear
       description: Terrorize all enemies, reducing their damage by 20% for 3 turns.
@@ -399,12 +428,14 @@ class_skills:
       apply_fear: true
       fear_value: 0.2
       fear_duration: 3
+      elemental: dark
     lck_empower:
       name: Dark Empowerment
       description: Gain +3 Learning and +3 Charisma for 3 turns.
       unlock_level: 12
       cooldown: 5
       target: self
+      elemental: dark
     lck_soul_fire:
       name: Soul Fire
       description: Burn an enemy's soul for massive damage and apply a burning debuff.
@@ -415,6 +446,7 @@ class_skills:
       base_power: 25
       burn_damage: 6
       burn_duration: 3
+      elemental: fire
   Barbarian:
     bar_rage:
       name: Feral Rage
@@ -422,6 +454,7 @@ class_skills:
       unlock_level: 3
       cooldown: 4
       target: self
+      elemental: fire
     bar_whirl:
       name: Whirlwind
       description: Spin wildly, striking all enemies around you.
@@ -430,16 +463,17 @@ class_skills:
       target: enemies
       power_type: str
       base_power: 8
+      elemental: wind
     bar_berserk:
       name: Berserk
       description: Attack twice per turn for 3 turns. Take 1d6 damage after it ends.
       unlock_level: 8
       cooldown: 6
       target: self
+      elemental: fire
     bar_sunder:
       name: Sunder Armor
-      description: Smash an enemy's armor, dealing damage and reducing its defense
-        for 3 turns.
+      description: Smash an enemy's armor, dealing damage and reducing its defense for 3 turns.
       unlock_level: 10
       cooldown: 4
       target: enemy
@@ -448,6 +482,7 @@ class_skills:
       apply_sunder: true
       sunder_value: 3
       sunder_duration: 3
+      elemental: earth
     bar_bloodlust:
       name: Bloodlust
       description: Heal for 50% of damage dealt for 3 turns.
@@ -455,21 +490,17 @@ class_skills:
       cooldown: 5
       target: self
       bloodlust_duration: 3
+      elemental: physical
     bar_earth_shatter:
       name: Earth Shatter
-      description: Slam the ground, dealing massive damage to all enemies and stunning
-        them.
+      description: Slam the ground, dealing massive damage to all enemies and stunning them.
       unlock_level: 15
       cooldown: 6
       target: enemies
       power_type: str
       base_power: 18
       stun_chance: 0.5
-
-# ============================================================================
-# RACE-BASED PASSIVE SKILLS FOR ALLIES
-# ============================================================================
-
+      elemental: earth
 race_passives:
   Beast:
     id: beast_passive
@@ -502,6 +533,20 @@ race_passives:
     effect:
       stat: Strength
       value: 2
+  Demon:
+    id: demon_passive
+    name: Infernal Blood
+    description: +2 Charisma and +10% fire damage.
+    effect:
+      stat: Charisma
+      value: 2
+  Giant:
+    id: giant_passive
+    name: Colossal Might
+    description: +3 Strength.
+    effect:
+      stat: Strength
+      value: 3
   Shadow:
     id: shadow_passive
     name: Shadow Step
@@ -569,60 +614,153 @@ race_passives:
       - Learning
       - Charisma
 
-# ============================================================================
-# LEARNABLE SKILLS FOR ALLIES - OFFENSIVE
-# ============================================================================
+# ── Wonderland Heroine Passives (Phase 17) ──────────────────────────────────
 
+heroine_passives:
+  wonderland_logic:
+    id: wonderland_logic
+    name: Wonderland Logic
+    description: +1 Wisdom per Storybook enemy on the field.
+    effect:
+      type: scaling_stat
+      stat: Wisdom
+      per_enemy_race: Storybook
+      value: 1
+  woodcutter_training:
+    id: woodcutter_training
+    name: Woodcutter Training
+    description: +1 Strength per consecutive attack on the same target (max +3).
+    effect:
+      type: consecutive_attack_bonus
+      stat: Strength
+      value: 1
+      max_stacks: 3
+  totos_nose:
+    id: totos_nose
+    name: Toto's Nose
+    description: +15% chance to find non-combat rooms (fountain, treasure, merchant) in the dungeon.
+    effect:
+      type: non_combat_room_chance
+      value: 0.15
+  vorpal_instinct:
+    id: vorpal_instinct
+    name: Vorpal Instinct
+    description: +20% damage vs Dragonkin and Storybook races. (Permanent unlock)
+    effect:
+      type: damage_bonus_vs_race
+      races:
+      - Dragonkin
+      - Storybook
+      value: 0.20
+  grandmothers_lesson:
+    id: grandmothers_lesson
+    name: Grandmother's Lesson
+    description: Immune to Fear. +10% crit chance vs Beasts and Abominations. (Permanent unlock)
+    effect:
+      type: multi
+      effects:
+      - type: fear_immunity
+      - type: crit_bonus_vs_race
+        races:
+        - Beast
+        - Abomination
+        value: 0.10
+  somewhere_over_rainbow:
+    id: somewhere_over_rainbow
+    name: Somewhere Over the Rainbow
+    description: Party gains +10% XP from all sources. (Permanent unlock)
+    effect:
+      type: xp_boost
+      value: 0.10
+      target: party
 learnable_skills:
   offensive:
     slash:
       name: Slash
       description: A basic melee slash.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
       category: offensive
       cooldown: 2
       target: enemy
       power_type: str
       base_power: 8
-      mastery_thresholds: [10, 25, 50]
-    power_strike:
-      name: Power Strike
-      description: A strong downward strike.
-      category: offensive
-      cooldown: 3
-      target: enemy
-      power_type: str
-      base_power: 12
-      mastery_thresholds: [15, 35, 70]
-    fireball:
-      name: Fireball
-      description: Hurl a ball of flame at a single enemy.
-      category: offensive
-      cooldown: 3
-      target: enemy
-      power_type: ler
-      base_power: 14
-      mastery_thresholds: [12, 30, 60]
-    ice_shards:
-      name: Ice Shards
-      description: Launch sharp ice projectiles at all enemies.
-      category: offensive
-      cooldown: 4
-      target: enemies
-      power_type: ler
-      base_power: 10
-      mastery_thresholds: [15, 35, 70]
+      elemental: physical
+      mastery_thresholds:
+      - 10
+      - 25
+      - 50
     quick_strike:
       name: Quick Strike
       description: A fast, nimble attack.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
       category: offensive
       cooldown: 1
       target: enemy
       power_type: dex
       base_power: 6
-      mastery_thresholds: [10, 25, 50]
+      elemental: wind
+      mastery_thresholds:
+      - 10
+      - 25
+      - 50
+    arcane_bolt:
+      name: Arcane Bolt
+      description: Fire a bolt of pure magic.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
+      category: offensive
+      cooldown: 2
+      target: enemy
+      power_type: ler
+      base_power: 10
+      elemental: magical
+      mastery_thresholds:
+      - 12
+      - 30
+      - 60
+    power_strike:
+      name: Power Strike
+      description: A strong downward strike.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
+      category: offensive
+      cooldown: 3
+      target: enemy
+      power_type: str
+      base_power: 12
+      elemental: physical
+      mastery_thresholds:
+      - 15
+      - 35
+      - 70
+    fireball:
+      name: Fireball
+      description: Hurl a ball of flame at a single enemy.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
+      category: offensive
+      cooldown: 3
+      target: enemy
+      power_type: ler
+      base_power: 14
+      elemental: fire
+      mastery_thresholds:
+      - 12
+      - 30
+      - 60
     poison_strike:
       name: Poison Strike
       description: Strike with poison. Target takes damage over time.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
       category: offensive
       cooldown: 3
       target: enemy
@@ -630,41 +768,119 @@ learnable_skills:
       base_power: 8
       poison_damage: 4
       poison_duration: 4
-      mastery_thresholds: [15, 35, 70]
-    arcane_bolt:
-      name: Arcane Bolt
-      description: Fire a bolt of pure magic.
+      elemental: water
+      mastery_thresholds:
+      - 15
+      - 35
+      - 70
+    ice_shards:
+      name: Ice Shards
+      description: Launch sharp ice projectiles at all enemies.
+      tier: 3
+      exp_cost: 1200
+      required_level: 10
       category: offensive
-      cooldown: 2
-      target: enemy
+      cooldown: 4
+      target: enemies
       power_type: ler
       base_power: 10
-      mastery_thresholds: [12, 30, 60]
+      elemental: water
+      mastery_thresholds:
+      - 15
+      - 35
+      - 70
     multi_hit:
       name: Multi Hit
       description: Strike 3 times in quick succession.
+      tier: 3
+      exp_cost: 1200
+      required_level: 10
       category: offensive
       cooldown: 4
       target: enemy
       power_type: dex
       base_power: 6
       hits: 3
-      mastery_thresholds: [20, 40, 80]
+      elemental: physical
+      mastery_thresholds:
+      - 20
+      - 40
+      - 80
     whirlwind:
       name: Whirlwind
       description: Spin and hit all enemies.
+      tier: 3
+      exp_cost: 1200
+      required_level: 10
       category: offensive
       cooldown: 4
       target: enemies
       power_type: str
       base_power: 9
-      mastery_thresholds: [18, 36, 72]
-
-  # DEFENSIVE SKILLS
+      elemental: wind
+      mastery_thresholds:
+      - 18
+      - 36
+      - 72
+    annihilate:
+      name: Annihilate
+      description: A devastating blow that shatters the target's defenses.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
+      category: offensive
+      cooldown: 5
+      target: enemy
+      power_type: str
+      base_power: 25
+      elemental: dark
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    inferno:
+      name: Inferno
+      description: Unleash a torrent of flame that scorches all enemies.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
+      category: offensive
+      cooldown: 5
+      target: enemies
+      power_type: ler
+      base_power: 18
+      burn_damage: 8
+      burn_duration: 3
+      elemental: fire
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    shadow_dance:
+      name: Shadow Dance
+      description: Strike from the shadows twice, ignoring armor.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
+      category: offensive
+      cooldown: 5
+      target: enemy
+      power_type: dex
+      base_power: 12
+      hits: 2
+      ignore_armor: true
+      elemental: dark
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
   defensive:
     protect:
       name: Protect
       description: Reduce damage taken by 30% for 2 turns.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
       category: defensive
       cooldown: 3
       target: self
@@ -672,21 +888,17 @@ learnable_skills:
         type: damage_reduction
         value: 0.3
         duration: 2
-      mastery_thresholds: [10, 25, 50]
-    shield_wall:
-      name: Shield Wall
-      description: Take reduced damage and protect an ally for 2 turns.
-      category: defensive
-      cooldown: 4
-      target: ally_or_self
-      effect:
-        type: damage_reduction
-        value: 0.4
-        duration: 2
-      mastery_thresholds: [15, 35, 70]
+      elemental: earth
+      mastery_thresholds:
+      - 10
+      - 25
+      - 50
     dodge:
       name: Dodge
       description: Gain +2 Dexterity and evade 50% of attacks for 2 turns.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
       category: defensive
       cooldown: 3
       target: self
@@ -694,10 +906,35 @@ learnable_skills:
         type: evasion
         value: 0.5
         duration: 2
-      mastery_thresholds: [12, 30, 60]
+      elemental: wind
+      mastery_thresholds:
+      - 12
+      - 30
+      - 60
+    shield_wall:
+      name: Shield Wall
+      description: Take reduced damage and protect an ally for 2 turns.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
+      category: defensive
+      cooldown: 4
+      target: ally_or_self
+      effect:
+        type: damage_reduction
+        value: 0.4
+        duration: 2
+      elemental: earth
+      mastery_thresholds:
+      - 15
+      - 35
+      - 70
     hardened_skin:
       name: Hardened Skin
       description: Strengthen your body, taking 25% less damage for 3 turns.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
       category: defensive
       cooldown: 4
       target: self
@@ -705,10 +942,17 @@ learnable_skills:
         type: damage_reduction
         value: 0.25
         duration: 3
-      mastery_thresholds: [14, 32, 64]
+      elemental: earth
+      mastery_thresholds:
+      - 14
+      - 32
+      - 64
     counter:
       name: Counter
       description: Parry and riposte. Reflect 40% of damage taken back to attacker.
+      tier: 3
+      exp_cost: 1200
+      required_level: 10
       category: defensive
       cooldown: 3
       target: self
@@ -716,42 +960,72 @@ learnable_skills:
         type: reflection
         value: 0.4
         duration: 2
-      mastery_thresholds: [16, 38, 76]
-
-  # SUPPORT SKILLS
+      elemental: physical
+      mastery_thresholds:
+      - 16
+      - 38
+      - 76
+    perfect_guard:
+      name: Perfect Guard
+      description: Fortify your stance. Take 60% less damage and reflect 30% for 2 turns.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
+      category: defensive
+      cooldown: 4
+      target: self
+      effect:
+        type: perfect_guard
+        value: 0.6
+        reflect_value: 0.3
+        duration: 2
+      elemental: light
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    phantom_dodge:
+      name: Phantom Dodge
+      description: Become a phantom. Evade 75% of attacks and gain +3 Dexterity for 2 turns.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
+      category: defensive
+      cooldown: 4
+      target: self
+      effect:
+        type: phantom_dodge
+        value: 0.75
+        dex_bonus: 3
+        duration: 2
+      elemental: dark
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
   support:
     heal:
       name: Heal
       description: Restore health to yourself or an ally.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
       category: support
       cooldown: 3
       target: ally_or_self
       power_type: wis
       base_power: 16
-      mastery_thresholds: [12, 30, 60]
-    group_heal:
-      name: Group Heal
-      description: Restore health to all allies.
-      category: support
-      cooldown: 5
-      target: all_allies
-      power_type: wis
-      base_power: 10
-      mastery_thresholds: [15, 35, 70]
-    regenerate:
-      name: Regenerate
-      description: Grant an ally 10% HP recovery each turn for 4 turns.
-      category: support
-      cooldown: 4
-      target: ally_or_self
-      effect:
-        type: regen
-        value: 0.1
-        duration: 4
-      mastery_thresholds: [14, 32, 64]
+      elemental: light
+      mastery_thresholds:
+      - 12
+      - 30
+      - 60
     strength_buff:
       name: Strength Buff
       description: Increase an ally's Strength by 2 for 3 turns.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
       category: support
       cooldown: 3
       target: ally_or_self
@@ -760,33 +1034,68 @@ learnable_skills:
         stat: Strength
         value: 2
         duration: 3
-      mastery_thresholds: [10, 25, 50]
-    wisdom_buff:
-      name: Wisdom Buff
-      description: Increase an ally's Wisdom by 2 for 3 turns.
+      elemental: physical
+      mastery_thresholds:
+      - 10
+      - 25
+      - 50
+    slow:
+      name: Slow
+      description: Reduce an enemy's speed and attack frequency for 3 turns.
+      tier: 1
+      exp_cost: 300
+      required_level: 1
       category: support
       cooldown: 3
-      target: ally_or_self
+      target: enemy
       effect:
-        type: stat_buff
-        stat: Wisdom
-        value: 2
+        type: slow
         duration: 3
-      mastery_thresholds: [10, 25, 50]
-    haste:
-      name: Haste
-      description: Grant an ally -2 cooldown on next skill use for 2 turns.
+      elemental: water
+      mastery_thresholds:
+      - 12
+      - 30
+      - 60
+    group_heal:
+      name: Group Heal
+      description: Restore health to all allies.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
+      category: support
+      cooldown: 5
+      target: all_allies
+      power_type: wis
+      base_power: 10
+      elemental: light
+      mastery_thresholds:
+      - 15
+      - 35
+      - 70
+    regenerate:
+      name: Regenerate
+      description: Grant an ally 10% HP recovery each turn for 4 turns.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
       category: support
       cooldown: 4
       target: ally_or_self
       effect:
-        type: cooldown_reduction
-        value: 2
-        duration: 2
-      mastery_thresholds: [14, 32, 64]
+        type: regen
+        value: 0.1
+        duration: 4
+      elemental: earth
+      mastery_thresholds:
+      - 14
+      - 32
+      - 64
     weakening_curse:
       name: Weakening Curse
       description: Reduce an enemy's Strength by 2 for 3 turns.
+      tier: 2
+      exp_cost: 600
+      required_level: 5
       category: support
       cooldown: 3
       target: enemy
@@ -795,10 +1104,54 @@ learnable_skills:
         stat: Strength
         value: 2
         duration: 3
-      mastery_thresholds: [12, 30, 60]
+      elemental: dark
+      mastery_thresholds:
+      - 12
+      - 30
+      - 60
+    wisdom_buff:
+      name: Wisdom Buff
+      description: Increase an ally's Wisdom by 2 for 3 turns.
+      tier: 3
+      exp_cost: 1200
+      required_level: 10
+      category: support
+      cooldown: 3
+      target: ally_or_self
+      effect:
+        type: stat_buff
+        stat: Wisdom
+        value: 2
+        duration: 3
+      elemental: magical
+      mastery_thresholds:
+      - 10
+      - 25
+      - 50
+    haste:
+      name: Haste
+      description: Grant an ally -2 cooldown on next skill use for 2 turns.
+      tier: 3
+      exp_cost: 1200
+      required_level: 10
+      category: support
+      cooldown: 4
+      target: ally_or_self
+      effect:
+        type: cooldown_reduction
+        value: 2
+        duration: 2
+      elemental: thunder
+      mastery_thresholds:
+      - 14
+      - 32
+      - 64
     blind:
       name: Blind
       description: Reduce an enemy's accuracy. 40% chance to miss attacks for 3 turns.
+      tier: 3
+      exp_cost: 1200
+      required_level: 10
       category: support
       cooldown: 3
       target: enemy
@@ -806,19 +1159,64 @@ learnable_skills:
         type: blind
         value: 0.4
         duration: 3
-      mastery_thresholds: [12, 30, 60]
-    slow:
-      name: Slow
-      description: Reduce an enemy's speed and attack frequency for 3 turns.
+      elemental: dark
+      mastery_thresholds:
+      - 12
+      - 30
+      - 60
+    mass_regenerate:
+      name: Mass Regenerate
+      description: Grant all allies 8% HP recovery each turn for 3 turns.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
       category: support
-      cooldown: 3
-      target: enemy
+      cooldown: 5
+      target: all_allies
       effect:
-        type: slow
+        type: regen
+        value: 0.08
         duration: 3
-      mastery_thresholds: [12, 30, 60]
-
-# ============================================================================
-# INNATE SKILLS FOR MONSTER GIRLS
-# ============================================================================
-
+      elemental: earth
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    heroic_onslaught:
+      name: Heroic Onslaught
+      description: Raise the party's strength. All allies gain +3 Strength for 3 turns.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
+      category: support
+      cooldown: 5
+      target: all_allies
+      effect:
+        type: stat_buff
+        stat: Strength
+        value: 3
+        duration: 3
+      elemental: fire
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    aura_of_despair:
+      name: Aura of Despair
+      description: Drain the enemy's will. All enemies lose 3 Constitution for 3 turns.
+      tier: 4
+      exp_cost: 2400
+      required_level: 15
+      category: support
+      cooldown: 5
+      target: enemies
+      effect:
+        type: stat_debuff
+        stat: Constitution
+        value: 3
+        duration: 3
+      elemental: dark
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100

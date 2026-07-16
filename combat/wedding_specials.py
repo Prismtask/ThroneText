@@ -1,6 +1,7 @@
+from combat.combat_io import c_print, c_input, c_clear
 """Wedding accessory special effect engine.
 
-Wedding items are Legendary accessories gifted by married monster girls.
+Wedding items are Unique accessories gifted by married monster girls.
 Their 'special' field triggers unique effects. If the married girl is in the
 active party, the effect is amplified (Bonded).
 
@@ -82,7 +83,7 @@ def _is_boss(target):
 
 
 def _msg(text):
-    print(f"  ♥ {text}")
+    c_print(f"  ♥ {text}")
 
 
 # ── Combat Start ───────────────────────────────────────────────────────────
@@ -330,15 +331,16 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
 
     # flame_dance: 30% burn 3 turns (5/turn); bonded 8/turn and spread
     if special == "flame_dance" and random.random() < 0.30:
-        from combat.status_effects import apply_burn
+        from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
         burn_dmg = 8 if bonded else 5
-        apply_burn(target, burn_dmg, 3)
-        _msg(f"Emberwaltz Ring — {target['name']} is set ablaze! ({burn_dmg}/turn)")
+        b_tier = damage_to_burn_tier(burn_dmg)
+        apply_burn(target, b_tier, 3)
+        _msg(f"Emberwaltz Ring — {target['name']} is set ablaze! ({get_burn_tier_name(b_tier)})")
         if bonded and enemies:
             adjacent = [e for e in enemies if e is not target and e.get("hp", 0) > 0]
             if adjacent:
                 spread = random.choice(adjacent)
-                apply_burn(spread, burn_dmg, 3)
+                apply_burn(spread, b_tier, 3)
                 _msg(f"Emberwaltz Ring — flames spread to {spread['name']}!")
 
     # dream_drain: 20% dread 2 turns; bonded dreaded enemies 40% miss
@@ -436,14 +438,15 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
 
     # legendary_flame: burn 3 turns (6/turn); bonded 10/turn and spread to all
     if special == "legendary_flame":
-        from combat.status_effects import apply_burn
+        from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
         burn_dmg = 10 if bonded else 6
-        apply_burn(target, burn_dmg, 3)
-        _msg(f"Sunfire Band — {target['name']} is engulfed in legendary flame! ({burn_dmg}/turn)")
+        b_tier = damage_to_burn_tier(burn_dmg)
+        apply_burn(target, b_tier, 3)
+        _msg(f"Sunfire Band — {target['name']} is engulfed in legendary flame! ({get_burn_tier_name(b_tier)})")
         if bonded:
             for e in enemies:
                 if e is not target and e.get("hp", 0) > 0:
-                    apply_burn(e, burn_dmg, 3)
+                    apply_burn(e, b_tier, 3)
             _msg("Sunfire Band — the flame spreads to all enemies!")
 
     # infernal_crown: +15% fire/dark damage (handled by elemental stats), melee burn 5
@@ -579,7 +582,8 @@ def apply_wedding_on_dodge(player, enemy):
         p_str = get_effective_attribute(player, "Strength")
         counter_dmg = max(1, int((random.randint(4, 10) + p_str) * 0.5))
         enemy["hp"] = max(0, enemy["hp"] - counter_dmg)
-        _msg(f"Nekomata Bell — you counter-strike {enemy['name']} for {counter_dmg} damage!")
+        from combat.helpers import format_damage_msg
+        _msg(format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Nekomata Bell"))
 
 
 # ── Damage Taken ───────────────────────────────────────────────────────────
@@ -641,9 +645,10 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
     # infernal_crown: melee attackers take 5 burn; bonded 10 and 1-turn dread
     if special == "infernal_crown" and damage > 0:
         burn = 10 if bonded else 5
-        from combat.status_effects import apply_burn
-        apply_burn(enemy, burn, 2)
-        _msg(f"Infernal Throne Seal — {enemy['name']} is scorched by hellfire! ({burn} burn)")
+        from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
+        b_tier = damage_to_burn_tier(burn)
+        apply_burn(enemy, b_tier, 2)
+        _msg(f"Infernal Throne Seal — {enemy['name']} is scorched by hellfire! ({get_burn_tier_name(b_tier)})")
         if bonded:
             enemy.setdefault("active_debuffs", []).append({
                 "type": "fear", "value": 0.25, "remaining": 1
@@ -662,7 +667,8 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
             from combat.combat_engine import prune_dead
             # We can't easily access the enemies list here, so we'll apply to the attacker
             enemy["hp"] = max(0, enemy["hp"] - wail_dmg)
-            _msg(f"Wailing Spirit Locket — a keening wail tears through {enemy['name']} for {wail_dmg} damage!")
+            from combat.helpers import format_damage_msg
+            _msg(format_damage_msg(player['name'], enemy['name'], wail_dmg, skill_name="Keening Wail"))
             if random.random() < 0.30:
                 enemy.setdefault("active_debuffs", []).append({
                     "type": "fear", "value": 0.30, "remaining": 1

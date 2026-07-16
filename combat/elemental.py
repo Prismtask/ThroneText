@@ -1,16 +1,224 @@
 # combat/elemental.py – Elemental damage/resistance system
-"""Dynamic elemental system. Every entity has elemental_res and elemental_dmg.
+"""Dynamic elemental / type system. Every entity has elemental_res and elemental_dmg.
+
+Includes the 7 classic elements (fire, water, thunder, wind, earth, light, dark)
+plus two damage-type axes:
+  physical  – melee/weapon-based damage
+  magical   – spell/arcane-based damage
 
 res  < 1.0 = resistant (take less damage)
 res  = 1.0 = neutral
 res  > 1.0 = weak (take more damage)
 
-dmg  < 1.0 = weak output with that element
+dmg  < 1.0 = weak output with that element/type
 dmg  = 1.0 = neutral
-dmg  > 1.0 = strong output with that element
+dmg  > 1.0 = strong output with that element/type
 """
 
-ELEMENTS = ["fire", "water", "thunder", "wind", "earth", "light", "dark"]
+ELEMENTS = ["fire", "water", "thunder", "wind", "earth", "light", "dark", "physical", "magical"]
+
+# ── Keyword-based elemental specialisation ─────────────────────────────────
+# When an enemy/ally name contains one of these keywords (case-insensitive),
+# the corresponding elemental_dmg and elemental_res overrides are applied on
+# top of the racial profile.  This lets "Lightning Orb" feel like thunder
+# even though its race (Elemental) is generic.
+#
+# Format: keyword_lowercase → {"elemental_dmg": {...}, "elemental_res": {...}}
+# Values follow the same convention: >1.0 = stronger, <1.0 = weaker.
+
+ELEMENTAL_KEYWORDS = {
+    # ── Thunder / Lightning ──
+    "lightning": {
+        "elemental_dmg": {"thunder": 1.4, "water": 1.1},
+        "elemental_res": {"thunder": 1.3, "earth": 0.7},
+    },
+    "thunder": {
+        "elemental_dmg": {"thunder": 1.4},
+        "elemental_res": {"thunder": 1.3, "earth": 0.7},
+    },
+    "plasma": {
+        "elemental_dmg": {"thunder": 1.3, "fire": 1.2},
+        "elemental_res": {"thunder": 1.3, "fire": 1.2, "water": 0.7},
+    },
+
+    # ── Fire / Flame / Magma ──
+    "flame": {
+        "elemental_dmg": {"fire": 1.4},
+        "elemental_res": {"fire": 1.3, "water": 0.7},
+    },
+    "magma": {
+        "elemental_dmg": {"fire": 1.3, "earth": 1.2},
+        "elemental_res": {"fire": 1.3, "earth": 1.2, "water": 0.7},
+    },
+    "fire": {
+        "elemental_dmg": {"fire": 1.4},
+        "elemental_res": {"fire": 1.3, "water": 0.7},
+    },
+
+    # ── Water / Frost / Ice ──
+    "frost": {
+        "elemental_dmg": {"water": 1.4},
+        "elemental_res": {"water": 1.3, "fire": 0.7},
+    },
+    "ice": {
+        "elemental_dmg": {"water": 1.4},
+        "elemental_res": {"water": 1.3, "fire": 0.7},
+    },
+    "water": {
+        "elemental_dmg": {"water": 1.3},
+        "elemental_res": {"water": 1.3, "thunder": 0.7},
+    },
+
+    # ── Wind / Storm ──
+    "storm": {
+        "elemental_dmg": {"wind": 1.3, "thunder": 1.3},
+        "elemental_res": {"wind": 1.2, "thunder": 1.2, "earth": 0.7},
+    },
+    "wind": {
+        "elemental_dmg": {"wind": 1.4},
+        "elemental_res": {"wind": 1.3, "earth": 0.7},
+    },
+
+    # ── Earth / Stone / Crystal ──
+    "earth": {
+        "elemental_dmg": {"earth": 1.4},
+        "elemental_res": {"earth": 1.3, "wind": 0.7},
+    },
+    "stone": {
+        "elemental_dmg": {"earth": 1.4},
+        "elemental_res": {"earth": 1.3, "wind": 0.7},
+    },
+    "crystal": {
+        "elemental_dmg": {"earth": 1.3, "light": 1.1},
+        "elemental_res": {"earth": 1.3, "light": 1.2, "dark": 0.7},
+    },
+
+    # ── Dark / Shadow / Void / Abyss ──
+    "abyss": {
+        "elemental_dmg": {"dark": 1.5},
+        "elemental_res": {"dark": 1.4, "light": 0.6},
+    },
+    "abyssal": {
+        "elemental_dmg": {"dark": 1.5},
+        "elemental_res": {"dark": 1.4, "light": 0.6},
+    },
+    "void": {
+        "elemental_dmg": {"dark": 1.4},
+        "elemental_res": {"dark": 1.3, "light": 0.6},
+    },
+    "shadow": {
+        "elemental_dmg": {"dark": 1.4},
+        "elemental_res": {"dark": 1.3, "light": 0.6},
+    },
+    "dark": {
+        "elemental_dmg": {"dark": 1.4},
+        "elemental_res": {"dark": 1.3, "light": 0.7},
+    },
+    "darkness": {
+        "elemental_dmg": {"dark": 1.4},
+        "elemental_res": {"dark": 1.3, "light": 0.6},
+    },
+
+    # ── Light / Holy / Radiant ──
+    "holy": {
+        "elemental_dmg": {"light": 1.4},
+        "elemental_res": {"light": 1.3, "dark": 0.6},
+    },
+    "radiant": {
+        "elemental_dmg": {"light": 1.4},
+        "elemental_res": {"light": 1.3, "dark": 0.6},
+    },
+    "light": {
+        "elemental_dmg": {"light": 1.4},
+        "elemental_res": {"light": 1.3, "dark": 0.7},
+    },
+
+    # ── Physical / Brute Force ──
+    "brute": {
+        "elemental_dmg": {"physical": 1.4},
+        "elemental_res": {"physical": 1.3, "magical": 0.7},
+    },
+    "savage": {
+        "elemental_dmg": {"physical": 1.4},
+        "elemental_res": {"physical": 1.3, "magical": 0.7},
+    },
+    "iron": {
+        "elemental_dmg": {"physical": 1.3},
+        "elemental_res": {"physical": 1.3, "magical": 0.8},
+    },
+    "steel": {
+        "elemental_dmg": {"physical": 1.4},
+        "elemental_res": {"physical": 1.3, "magical": 0.8},
+    },
+    "blade": {
+        "elemental_dmg": {"physical": 1.3},
+        "elemental_res": {"magical": 0.85},
+    },
+
+    # ── Magical / Arcane ──
+    "arcane": {
+        "elemental_dmg": {"magical": 1.4},
+        "elemental_res": {"magical": 1.3, "physical": 0.7},
+    },
+    "sorcerer": {
+        "elemental_dmg": {"magical": 1.4},
+        "elemental_res": {"magical": 1.3, "physical": 0.7},
+    },
+    "sorceress": {
+        "elemental_dmg": {"magical": 1.4},
+        "elemental_res": {"magical": 1.3, "physical": 0.7},
+    },
+    "wizard": {
+        "elemental_dmg": {"magical": 1.4},
+        "elemental_res": {"magical": 1.3, "physical": 0.7},
+    },
+    "witch": {
+        "elemental_dmg": {"magical": 1.4},
+        "elemental_res": {"magical": 1.3, "physical": 0.7},
+    },
+    "mage": {
+        "elemental_dmg": {"magical": 1.4},
+        "elemental_res": {"magical": 1.3, "physical": 0.7},
+    },
+    "enchant": {
+        "elemental_dmg": {"magical": 1.3},
+        "elemental_res": {"magical": 1.3, "physical": 0.8},
+    },
+    "runic": {
+        "elemental_dmg": {"magical": 1.3},
+        "elemental_res": {"magical": 1.3, "physical": 0.75},
+    },
+    "mystic": {
+        "elemental_dmg": {"magical": 1.3},
+        "elemental_res": {"magical": 1.3, "physical": 0.8},
+    },
+}
+
+
+def _get_keyword_elemental(name):
+    """Check an entity name for known elemental keywords (whole-word match).
+    
+    Returns (elemental_dmg dict, elemental_res dict) with values to merge
+    on top of the racial profile.
+    """
+    if not name:
+        return {}, {}
+    import re
+    lower = name.lower()
+    dmg = {}
+    res = {}
+    for keyword, profile in ELEMENTAL_KEYWORDS.items():
+        # Use word-boundary regex so "light" doesn't match inside "lightning"
+        if re.search(r'\b' + re.escape(keyword) + r'\b', lower):
+            for el, val in profile.get("elemental_dmg", {}).items():
+                # Take the highest dmg override if multiple keywords match
+                dmg[el] = max(dmg.get(el, 1.0), val)
+            for el, val in profile.get("elemental_res", {}).items():
+                # For res, take the most extreme (furthest from 1.0)
+                existing = res.get(el, 1.0)
+                if abs(val - 1.0) > abs(existing - 1.0):
+                    res[el] = val
+    return dmg, res
 
 
 def neutral_profile():
@@ -98,23 +306,30 @@ def compute_player_elemental(player):
 
 
 def compute_enemy_elemental(enemy):
-    """Compute enemy's total elemental profile from race + individual overrides."""
+    """Compute enemy's total elemental profile from race + keyword + individual overrides."""
     from resources.enemies import ENEMIES, ENEMY_RACES
     
     key = enemy.get("key")
     if key:
         template = ENEMIES.get(key, {})
         race_name = template.get("race", "Human")
+        enemy_name = template.get("name", enemy.get("name", ""))
     else:
         template = {}
         race_name = "Human"
+        enemy_name = enemy.get("name", "")
     
     race_data = ENEMY_RACES.get(race_name, {})
     
     res = merge_profiles(neutral_profile(), race_data.get("elemental_res", {}))
     dmg = merge_profiles(neutral_profile(), race_data.get("elemental_dmg", {}))
     
-    # Apply individual overrides from enemy template
+    # Apply keyword-based specialisation (e.g. "Lightning Orb" → thunder)
+    kw_dmg, kw_res = _get_keyword_elemental(enemy_name)
+    res = merge_profiles(res, kw_res)
+    dmg = merge_profiles(dmg, kw_dmg)
+    
+    # Apply individual overrides from enemy template (highest priority)
     res = merge_profiles(res, template.get("elemental_res", {}))
     dmg = merge_profiles(dmg, template.get("elemental_dmg", {}))
     
@@ -122,20 +337,27 @@ def compute_enemy_elemental(enemy):
 
 
 def compute_ally_elemental(ally):
-    """Compute ally's total elemental profile from enemy race + equipment."""
+    """Compute ally's total elemental profile from enemy race + keyword + equipment."""
     from resources.enemies import ENEMIES, ENEMY_RACES
     
     key = ally.get("key")
     if key:
         template = ENEMIES.get(key, {})
         race_name = template.get("race", "Human")
+        ally_name = template.get("name", ally.get("name", ""))
     else:
         race_name = "Human"
+        ally_name = ally.get("name", "")
     
     race_data = ENEMY_RACES.get(race_name, {})
     
     base_res = merge_profiles(neutral_profile(), race_data.get("elemental_res", {}))
     base_dmg = merge_profiles(neutral_profile(), race_data.get("elemental_dmg", {}))
+    
+    # Apply keyword-based specialisation
+    kw_dmg, kw_res = _get_keyword_elemental(ally_name)
+    base_res = merge_profiles(base_res, kw_res)
+    base_dmg = merge_profiles(base_dmg, kw_dmg)
     
     # Add equipment
     equip_res = _get_equipment_elemental(ally, "elemental_res")
@@ -185,9 +407,22 @@ def calculate_elemental_damage(base_dmg, attacker, target, element=None):
     attacker_dmg = attacker.get("elemental_dmg", {})
     dmg_mult = attacker_dmg.get(element, 1.0)
     
+    # Arcane Blessing: Elemental Attunement boost
+    from facilities.arcane_tower import get_arcane_elemental_boost
+    boost = get_arcane_elemental_boost(attacker)
+    if boost > 0:
+        dmg_mult += boost
+    
     # Get target's resistance to this element
     target_res = target.get("elemental_res", {})
     res_mult = target_res.get(element, 1.0)
+    
+    # Apply elemental_weakness debuff (reduces all resistances)
+    for debuff in target.get("active_debuffs", []):
+        if debuff.get("type") == "elemental_weakness":
+            weakness = debuff.get("value", 0)
+            res_mult -= weakness
+            break
     
     final_dmg = int(base_dmg * dmg_mult * res_mult)
     return max(0, final_dmg)

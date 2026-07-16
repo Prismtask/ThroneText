@@ -1,3 +1,4 @@
+from combat.combat_io import c_print, c_input, c_clear
 # enemy_ai.py – enemy turn logic and racial status effects
 import random
 from combat.status_effects import (
@@ -28,33 +29,71 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     # Tick enemy debuffs (poison, burn, blind, fear, etc.)
     msgs, died = tick_enemy_debuffs(enemy)
     for m in msgs:
-        print(m)
+        c_print(m)
     if died:
         return "died"
 
+    if enemy.get("asleep"):
+        c_print(f"The {enemy['name']} is fast asleep...")
+        return "asleep"
+
+    if enemy.get("paralyzed"):
+        c_print(f"The {enemy['name']} is paralyzed and cannot move!")
+        return "paralyzed"
+
     if enemy.get("stunned"):
-        print(f"The {enemy['name']} is stunned and cannot act!")
+        c_print(f"The {enemy['name']} is stunned and cannot act!")
         enemy["stunned"] = False
         return "stunned"
 
     if enemy.get("frozen"):
-        print(f"The {enemy['name']} is frozen solid and cannot act!")
+        c_print(f"The {enemy['name']} is frozen solid and cannot act!")
         return "stunned"
 
+    # --- BLIND CHECK ---
+    if enemy.get("blinded"):
+        blind_chance = 0.40
+        for debuff in enemy.get("active_debuffs", []):
+            if debuff.get("type") == "blind":
+                blind_chance = debuff.get("value", 0.40)
+                break
+        if random.random() < blind_chance:
+            c_print(f"The {enemy['name']} is blinded and flails wildly — it misses!")
+            return "missed"
+
+    # --- CONFUSION CHECK ---
+    if enemy.get("confused"):
+        confusion_chance = 0.30
+        for debuff in enemy.get("active_debuffs", []):
+            if debuff.get("type") == "confusion":
+                confusion_chance = debuff.get("value", 0.30)
+                break
+        if random.random() < confusion_chance:
+            if all_enemies and len(all_enemies) > 1:
+                other_enemies = [e for e in all_enemies if e is not enemy and e["hp"] > 0]
+                if other_enemies:
+                    victim = random.choice(other_enemies)
+                    c_print(f"The {enemy['name']} is confused and attacks {victim['name']} instead!")
+                    raw_dmg = random.randint(2, 7) + enemy.get("str_mod", 0)
+                    victim["hp"] -= raw_dmg
+                    from combat.helpers import format_damage_msg
+                    c_print("  " + format_damage_msg(enemy['name'], victim['name'], raw_dmg, skill_name="Confused"))
+                    if victim["hp"] <= 0:
+                        c_print(f"  {victim['name']} is defeated by friendly fire!")
+                    return "confused"
+            c_print(f"The {enemy['name']} is confused and stumbles — it misses!")
+            return "missed"
+
     # --- DODGE CHECK ---
-    from combat.stat_milestones import get_dexterity_bonus
-    dodge_chance = get_dexterity_bonus(player)
-    # Add evasion buffs
-    for buff in player.get("active_buffs", []):
-        if buff.get("type") == "evasion":
-            dodge_chance += buff.get("value", 0)
-    # Wedding dodge bonuses + enemy accuracy penalty
+    from combat.stats import get_dodge_chance
+    dodge_chance = get_dodge_chance(player, enemy)
+    # Wedding dodge bonuses + enemy accuracy penalty (player only)
     dodge_chance += apply_wedding_dodge_bonus(player)
     dodge_chance += apply_wedding_enemy_accuracy_penalty(player)
     # Cap dodge at 80% to prevent absolute immunity
     dodge_chance = min(dodge_chance, 0.80)
     if dodge_chance > 0 and random.random() < dodge_chance:
-        print(f"The {enemy['name']} lunges at {player['name']} — but {player['name']} dodges out of the way!")
+        c_print(f"The {enemy['name']} lunges at {player['name']} — but {player['name']} dodges out of the way!")
         apply_wedding_on_dodge(player, enemy)
         return "dodged"
 
@@ -68,14 +107,22 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         for b in player.get("active_buffs", [])
     )
     if divine_shield:
-        print(f"The {enemy['name']}'s attack glances off {player['name']}'s divine shield!")
+        c_print(f"The {enemy['name']}'s attack glances off {player['name']}'s divine shield!")
         return "blocked"
 
     # --- BASE DAMAGE ---
-    block = p_con + (5 if defending else 0)
+    block = p_con // 2 + (5 if defending else 0)
     block = int(block * armor_mult)
 
-    raw_dmg = random.randint(2, 7) + enemy["str_mod"] + temp_str_bonus
+    # Apply weaken/curse penalties to enemy attack damage
+    effective_str = enemy.get("str_mod", 0)
+    for debuff in enemy.get("active_debuffs", []):
+        if debuff.get("type") == "weaken":
+            effective_str = max(0, effective_str - debuff.get("value", 0))
+        elif debuff.get("type") == "curse" and "Strength" in debuff.get("stats", []):
+            effective_str = max(0, effective_str - debuff.get("penalty", 0))
+    
+    raw_dmg = random.randint(2, 7) + effective_str + temp_str_bonus
 
     # Critical hit check
     from combat.stats import roll_critical_hit, apply_critical_damage, format_critical_tag
@@ -117,10 +164,22 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     # --- DEFENSE BUFFS (flat reduction) ---
     defense_reduction = 0
     for buff in player.get("active_buffs", []):
-        if buff.get("type") == "defense":
+        if buff.get("type") in ("defense", "arcane_ward"):
             defense_reduction += buff.get("value", 0)
     if defense_reduction > 0:
         enemy_dmg = max(0, enemy_dmg - defense_reduction)
+
+    # --- PERCENTAGE DEFENSE BUFFS (multiplicative reduction) ---
+    defense_pct = 0.0
+    for buff in player.get("active_buffs", []):
+        if buff.get("type") in ("defense_pct", "arcane_ward"):
+            # arcane_ward may also have a percentage component
+            if buff.get("type") == "arcane_ward":
+                continue  # arcane_ward is flat only
+            defense_pct += buff.get("value", 0)
+    if defense_pct > 0 and enemy_dmg > 0:
+        defense_pct = min(defense_pct, 0.8)  # Cap at 80% total reduction
+        enemy_dmg = int(enemy_dmg * (1 - defense_pct))
 
     # Apply Constitution milestone damage reduction
     from combat.stat_milestones import get_constitution_bonus
@@ -128,9 +187,33 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     if con_reduction > 0 and enemy_dmg > 0:
         enemy_dmg = max(0, enemy_dmg - con_reduction)
 
+    # Constitution weapon defense: +Con//2 flat damage reduction when wielding a con_defense weapon
+    equipped_weapon = player.get("equipped", {}).get("weapon")
+    if equipped_weapon and equipped_weapon.get("con_defense") and enemy_dmg > 0:
+        con_val = player.get("attributes", {}).get("Constitution", 0)
+        if player.get("is_ally"):
+            from combat.ally import get_ally_effective_attribute
+            con_val = get_ally_effective_attribute(player, "Constitution")
+        else:
+            from combat.stats import get_effective_attribute
+            con_val = get_effective_attribute(player, "Constitution")
+        con_def = con_val // 2
+        if con_def > 0:
+            enemy_dmg = max(0, enemy_dmg - con_def)
+
     # Apply Barbarian passive damage reduction
     from combat.skills import apply_passive_to_damage_taken
     enemy_dmg = apply_passive_to_damage_taken(player, enemy_dmg)
+
+    # Apply ally race passive damage reduction (Abomination, etc.)
+    if player.get("is_ally"):
+        from combat.ally_skills import get_race_passive
+        race_passive = get_race_passive(player.get("race"))
+        if race_passive:
+            effect = race_passive.get("effect", {})
+            if effect.get("type") == "damage_reduction":
+                reduction = effect.get("value", 0)
+                enemy_dmg = int(enemy_dmg * (1 - reduction))
 
     # Wedding damage reduction (slime_absorb, stone_endurance, etc.)
     is_elemental = element is not None
@@ -150,45 +233,96 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         from combat.tarnished_jade import check_tarnished_jade_trigger
         should_apply, _ = check_tarnished_jade_trigger(actual_player, enemy_dmg, all_enemies, enemy, "enemy_attack")
         if not should_apply:
-            print(f"  The {enemy['name']}'s attack is REPULSED by the Tarnished Jade!")
-            print(f"  {actual_player['name']} takes 0 damage! [Divine Intervention]")
+            c_print(f"  The {enemy['name']}'s attack is REPULSED by the Tarnished Jade!")
+            c_print(f"  {actual_player['name']} takes 0 damage! [Divine Intervention]")
             if extra_logic:
                 msg = extra_logic(enemy, actual_player, 0)
                 if msg:
-                    print(msg)
+                    c_print(msg)
             return "hit"
 
     # Final floor
     enemy_dmg = max(0, enemy_dmg)
+
+    # Wonderland: Cheshire Cat's Favor — enemies may miss entirely
+    if actual_player:
+        from wonderland_curses import get_cheshire_dodge_chance
+        dodge_chance = get_cheshire_dodge_chance(actual_player)
+        if dodge_chance > 0 and random.random() < dodge_chance:
+            c_print(f"  😸 The Cheshire Cat's grin flickers — the {enemy['name']} swings at empty air!")
+            return "hit"  # no damage dealt, but still counts as a "hit" for combat flow
+
+    # Pandemonium: Crystal Fragility curse — player & allies take more damage
+    if actual_player and actual_player.get("pandemonium_curse"):
+        from pandemonium_curses import apply_damage_taken_multiplier
+        enemy_dmg = apply_damage_taken_multiplier(actual_player, enemy_dmg)
+
+    # Wonderland Shadow: Off With Their Heads — player takes more damage
+    if actual_player:
+        from wonderland_curses import get_shadow_damage_taken_multiplier
+        shadow_dmg_mult = get_shadow_damage_taken_multiplier(actual_player)
+        if shadow_dmg_mult > 0:
+            enemy_dmg = int(enemy_dmg * (1.0 + shadow_dmg_mult))
+
+    # --- BARRIER ABSORPTION ---
+    from combat.status_effects import absorb_damage
+    enemy_dmg, barrier_absorbed = absorb_damage(player, enemy_dmg)
+    if barrier_absorbed > 0:
+        c_print(f"  Your barrier absorbs {barrier_absorbed} damage!")
+
     player["current_hp"] -= enemy_dmg
+
+    # --- REFLECTION DAMAGE ---
+    if enemy_dmg > 0:
+        total_reflect = 0.0
+        for buff in player.get("active_buffs", []):
+            if buff.get("type") == "reflection" and buff.get("remaining", 0) > 0:
+                total_reflect += buff.get("value", 0)
+        if total_reflect > 0:
+            reflect_dmg = int(enemy_dmg * total_reflect)
+            if reflect_dmg > 0:
+                enemy["hp"] -= reflect_dmg
+                c_print("  " + format_damage_msg(player['name'], enemy['name'], reflect_dmg, skill_name="Reflect"))
+                if enemy["hp"] <= 0:
+                    c_print(f"  The {enemy['name']} is shattered by the backlash!")
 
     # Tarnished Jade: pin on taking damage
     if actual_player and _player_has_tarnished_jade(actual_player):
         from combat.tarnished_jade import add_tarnished_jade_pin
         add_tarnished_jade_pin(actual_player)
+        pins = actual_player.get("tarnished_jade_pins", 0)
+        c_print(f"  📌 Your Tarnished Jade embeds a pin! ({pins}/10)")
 
     elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
                       "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
     tag = elemental_tags.get(element, "")
 
     if enemy_dmg > 0:
-        if tag:
-            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!{crit_tag} {tag}")
-        else:
-            print(f"The {enemy['name']} hits {player['name']} for {enemy_dmg} damage!{crit_tag}")
+        from combat.helpers import format_damage_msg
+        c_print(format_damage_msg(enemy['name'], player['name'], enemy_dmg, element=element, crit=bool(crit_tag)))
         # Wedding retribution effects (pharaohs_curse, infernal_crown, keening_wail)
         apply_wedding_on_damage_taken(player, enemy, enemy_dmg, "hit")
-        # Captain's Cutlass: Captain's Authority riposte
+        # Captain's Cutlass: Captain's Authority riposte (player or ally)
+        from combat.captain_cutlass import trigger_captain_riposte
         if actual_player and player is actual_player:
-            from combat.captain_cutlass import trigger_captain_riposte
             trigger_captain_riposte(actual_player, enemy)
+        elif player is not actual_player and player is not None:
+            # Target is an ally — check if ally has Cutlass
+            trigger_captain_riposte(player, enemy, is_player=False)
     else:
-        print(f"The {enemy['name']} attacks but {player['name']} blocks all incoming damage!")
+        c_print(f"The {enemy['name']} attacks but {player['name']} blocks all incoming damage!")
 
     if extra_logic:
         msg = extra_logic(enemy, player, enemy_dmg)
         if msg:
-            print(msg)
+            c_print(msg)
+
+    # ── Elemental Profile Debuff (secondary channel) ──
+    if enemy_dmg > 0:
+        from combat.elemental_debuffs import try_apply_elemental_debuff
+        elem_msg = try_apply_elemental_debuff(enemy, player, enemy_dmg)
+        if elem_msg:
+            c_print(elem_msg)
 
     if player["current_hp"] <= 0:
         return "dead"
@@ -196,7 +330,23 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
 
 
 def get_race_extra_logic(enemy):
-    race = ENEMIES[enemy["key"]]["race"]
+    key = enemy.get("key")
+    if not key or key not in ENEMIES:
+        return None
+
+    # ── Wonderland floor boss AI (Phase 19) ───────────────────────
+    try:
+        from combat.wl_floor_bosses import WL_FLOOR_BOSS_MAP
+        for floor, (boss_name, boss_key, ai_fn) in WL_FLOOR_BOSS_MAP.items():
+            if key == boss_key:
+                # Return the boss-specific AI wrapped for extra_logic signature
+                def wl_boss_wrapper(e, player, dmg, _ai=ai_fn):
+                    return _ai(e, player, dmg)
+                return wl_boss_wrapper
+    except ImportError:
+        pass
+
+    race = ENEMIES[key]["race"]
 
     if race == "Beast":
         def beast_bleed(e, player, dmg):
@@ -301,5 +451,49 @@ def get_race_extra_logic(enemy):
                     return f"The {e['name']}'s radiance deepens {player['name']}'s blindness!"
             return None
         return elemental_blind
+
+    # ── Storybook (Wonderland) ──────────────────────────────────────
+    if race == "Storybook":
+        def storybook_twist(e, player, dmg):
+            """Storybook enemies can rewrite their own narrative."""
+            hp_pct = e["hp"] / e["max_hp"]
+            roll = random.random()
+
+            # Narrative Rewrite: heal + buff at low HP
+            if hp_pct < 0.35 and roll < 0.25:
+                heal = random.randint(4, 10)
+                e["hp"] = min(e["max_hp"], e["hp"] + heal)
+                return (f"The {e['name']}'s story rewrites itself — "
+                        f"it recovers {heal} HP! (A new chapter begins...)")
+
+            # Plot Twist: random debuff on player
+            if dmg > 0 and roll < 0.22:
+                twist = random.choice(["confusion", "dread", "silence"])
+                if twist == "confusion":
+                    from combat.status_effects import apply_confusion
+                    result = apply_confusion(player, duration=2)
+                    if result == "applied":
+                        return (f"The {e['name']} warps the narrative — "
+                                f"{player['name']} is confused for 2 turns!")
+                elif twist == "dread":
+                    from combat.status_effects import apply_dread
+                    result = apply_dread(player, duration=2)
+                    if result == "applied":
+                        return (f"Reality bends around the {e['name']} — "
+                                f"{player['name']} is filled with dread!")
+                elif twist == "silence":
+                    from combat.status_effects import apply_silence
+                    result = apply_silence(player, duration=2)
+                    if result == "applied":
+                        return (f"The {e['name']} closes the book on your voice — "
+                                f"{player['name']} is silenced!")
+
+            # Happily Ever After: self-buff when winning
+            if hp_pct > 0.60 and roll < 0.15:
+                e["str_mod"] = e.get("str_mod", 0) + 1
+                return (f"The {e['name']} believes in its happy ending — "
+                        f"its strength grows!")
+            return None
+        return storybook_twist
 
     return None

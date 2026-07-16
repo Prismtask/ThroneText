@@ -3341,3 +3341,42 @@ affection_gifts:
       Wisdom: 2
       Learning: 1
       Charisma: 1
+  wonderland_alice:
+    book: 35
+    candy: 25
+    flowers: 20
+    jewelry: 10
+    weapon: -15
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  wonderland_red_hood:
+    weapon: 35
+    candy: 20
+    book: 10
+    flowers: -5
+    jewelry: -15
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  wonderland_dorothy:
+    flowers: 30
+    candy: 25
+    book: 20
+    jewelry: 10
+    weapon: 5
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1

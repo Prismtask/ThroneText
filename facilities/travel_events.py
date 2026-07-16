@@ -25,6 +25,7 @@ from combat.combat_engine import combat
 from combat.stats import get_effective_attribute
 from leveling import gain_exp
 from character import player_max_hp
+from gui.terminal import term
 
 # Prefer the proper inventory helper (handles capacity / stacking if implemented)
 try:
@@ -67,14 +68,15 @@ SEA_EVENTS = [
 # Thematic enemy races for sea lanes
 _SEA_RACES = set(BIOME_RACES.get("coastal", []))
 
-# Keys excluded from all random item rolls: uniques (e.g. Abyss Fang) and Scrolls of Fusion
+# Keys excluded from all random item rolls: uniques (e.g. Abyss Fang), Scrolls of Fusion, and Wonderland-only items
 _SKIP_IDS = frozenset(
     k for k, v in ITEMS.items()
-    if v.get("unique") or v.get("type") == "scroll"
+    if v.get("unique") or v.get("type") in ("scroll", "ascension") or v.get("wonderland_only") or v.get("black_market_only")
 )
 
-# Superboss-minion keys — never appear in open travel encounter pools
-_MINION_ONLY_KEYS = frozenset({"dream_floatsam", "sylvana_mirror_copy", "vileheart_spiderling"})
+# Superboss-minion keys are now filtered dynamically via d.get("minion_only", False)
+# and shadow copies via d.get("_shadow", False) inside _pick_travel_enemy.
+# No hardcoded key list needed.
 
 # Rarity order used by all weighted-choice tables below
 _RARITIES = ["common", "uncommon", "rare", "epic", "legendary"]
@@ -98,29 +100,36 @@ def _discovery_rarity(player):
     Floor-scaled rarity table for roadside finds.
     Slightly more conservative than the dungeon's roll_drop table —
     road finds are windfalls, not rewards.
+
+    Uses the new narrower rarity system (Phase 5).
     """
     floor = max(1, player.get("floor", 1))
     if floor <= 3:
-        weights = [0.70, 0.25, 0.05, 0.00, 0.00]
+        weights = [0.72, 0.23, 0.05, 0.00, 0.00]
     elif floor <= 6:
-        weights = [0.50, 0.35, 0.12, 0.03, 0.00]
+        weights = [0.52, 0.33, 0.13, 0.02, 0.00]
     elif floor <= 9:
-        weights = [0.30, 0.40, 0.22, 0.07, 0.01]
+        weights = [0.32, 0.38, 0.23, 0.06, 0.01]
     else:
-        weights = [0.15, 0.32, 0.33, 0.15, 0.05]
+        weights = [0.18, 0.30, 0.32, 0.15, 0.05]
     return random.choices(_RARITIES, weights=weights)[0]
 
 
 def _combat_drop_rarity(enemy_level):
-    """Enemy-level-scaled rarity for post-combat drops (mirrors dungeon logic)."""
+    """
+    Enemy-level-scaled rarity for post-combat drops (mirrors dungeon logic,
+    but slightly more conservative for open-world encounters).
+
+    Uses the new narrower rarity system (Phase 5).
+    """
     if enemy_level <= 3:
-        weights = [0.55, 0.32, 0.10, 0.03, 0.00]
+        weights = [0.56, 0.30, 0.11, 0.03, 0.00]
     elif enemy_level <= 6:
-        weights = [0.40, 0.38, 0.16, 0.05, 0.01]
+        weights = [0.42, 0.36, 0.16, 0.05, 0.01]
     elif enemy_level <= 9:
-        weights = [0.25, 0.38, 0.26, 0.09, 0.02]
+        weights = [0.28, 0.35, 0.26, 0.09, 0.02]
     else:
-        weights = [0.12, 0.28, 0.35, 0.18, 0.07]
+        weights = [0.14, 0.26, 0.34, 0.18, 0.08]
     return random.choices(_RARITIES, weights=weights)[0]
 
 
@@ -129,12 +138,16 @@ def _merchant_stock_rarity(player):
     Floor-influenced rarity for merchant stock.
     Caps at epic — road merchants don't carry legendaries.
     Matches city shop's rarity_bias logic.
+
+    Uses the new narrower rarity system (Phase 5).
     """
     floor = max(1, player.get("floor", 1))
     if floor <= 5:
-        weights = [40, 35, 20, 5]   # common … epic
+        weights = [42, 33, 20, 5]   # common … epic
+    elif floor <= 15:
+        weights = [28, 34, 26, 12]
     else:
-        weights = [25, 35, 28, 12]
+        weights = [20, 32, 32, 16]
     return random.choices(["common", "uncommon", "rare", "epic"], weights=weights)[0]
 
 
@@ -245,19 +258,39 @@ def _pick_travel_enemy(player, travel_type="land", region=None):
     def _build_pool(race_filter):
         return [
             k for k, d in ENEMIES.items()
-            if k not in _MINION_ONLY_KEYS
+            if not d.get("minion_only", False)
+            and not d.get("_shadow", False)
+            and not d.get("_heroine")
+            and d.get("secondary_race") != "Storybook"
             and not d.get("boss")
             and not d.get("super_boss")
             and lo <= d["level"] <= hi
-            and (race_filter is None or d.get("race") in race_filter)
+            and (race_filter is None or d.get("race") in race_filter
+                 or d.get("secondary_race") in race_filter)
         ]
 
     pool = _build_pool(allowed_races)
     if not pool:
         pool = _build_pool(None)
     if not pool:
+        # ── Diagnostic: log what went wrong ──────────────────────────────
+        import sys
+        print(f"\n[DEBUG _pick_travel_enemy] FALLBACK triggered!", file=sys.stderr)
+        print(f"  player floor key: {player.get('floor', 'NOT SET')!r}", file=sys.stderr)
+        print(f"  computed floor={floor}  lo={lo}  hi={hi}", file=sys.stderr)
+        print(f"  region={region!r}  travel_type={travel_type!r}", file=sys.stderr)
+        print(f"  allowed_races={allowed_races}", file=sys.stderr)
+        # Check if ENEMIES is healthy
+        total = len(ENEMIES)
+        in_range = sum(1 for d in ENEMIES.values() if lo <= d.get("level", 0) <= hi)
+        print(f"  ENEMIES total={total}  in level range [{lo},{hi}]={in_range}", file=sys.stderr)
+        print(f"  Pool sizes: primary=0  secondary=0  fallback=...", file=sys.stderr)
+        # ─────────────────────────────────────────────────────────────────
         pool = [k for k, d in ENEMIES.items()
-                if k not in _MINION_ONLY_KEYS
+                if not d.get("minion_only", False)
+                and not d.get("_shadow", False)
+                and not d.get("_heroine")
+                and d.get("secondary_race") != "Storybook"
                 and not d.get("boss") and not d.get("super_boss")]
 
     return random.choice(pool) if pool else None
@@ -306,11 +339,14 @@ def _weighted_choice(pool):
 # EVENT HANDLERS
 # ═══════════════════════════════════════════════════════════════
 
-def _handle_combat(player, travel_type, region):
+def _handle_combat(player, travel_type, region, combat_override=None):
     """
     Spawn 1-3 enemies and run a full combat encounter.
     On victory: award gold, XP, and a 40 % per-enemy item drop (level-scaled rarity).
     On flee: inflict an HP penalty.
+
+    If combat_override is provided, it is called instead of combat().
+    This lets the GUI inject a CombatScreen overlay while the facility thread waits.
     """
     floor      = max(1, player.get("floor", 1))
     num        = random.randint(1, min(3, max(1, floor // 2 + 1)))
@@ -318,15 +354,25 @@ def _handle_combat(player, travel_type, region):
                   (_pick_travel_enemy(player, travel_type, region) for _ in range(num))
                   if k]
 
+    # ── Diagnostic: log travel combat spawn ─────────────────────────────
+    import sys as _sys
+    names = [(ENEMIES[k]["name"], ENEMIES[k]["level"]) for k in enemy_keys] if enemy_keys else []
+    print(f"[DEBUG _handle_combat] floor={floor} num={num} region={region!r} enemies={names}", file=_sys.stderr)
+    # ─────────────────────────────────────────────────────────────────────
+
     if not enemy_keys:
-        print("  A shadow crosses the road... and vanishes. Nothing to fight.")
-        input("  Press Enter to continue...")
+        term.print("  A shadow crosses the road... and vanishes. Nothing to fight.")
+        term.pause("  Press Continue...")
         return "skipped"
 
-    result = combat(player, enemy_keys)   # no floor/room args → no dungeon header
+    if combat_override:
+        result = combat_override(player, enemy_keys,
+                                 floor=floor, room_num=None, total_rooms=None)
+    else:
+        result = combat(player, enemy_keys)   # no floor/room args → no dungeon header
 
     if result == "victory":
-        print("\n  --- Road Encounter Rewards ---")
+        term.print("\n  --- Road Encounter Rewards ---")
 
         # Gold and XP
         total_xp   = sum(ENEMIES[k]["level"] * 10 for k in enemy_keys)
@@ -334,7 +380,7 @@ def _handle_combat(player, travel_type, region):
                          for k in enemy_keys)
         player["gold"] = player.get("gold", 0) + total_gold
         gain_exp(player, total_xp)
-        print(f"  +{total_gold} gold  |  +{total_xp} XP")
+        term.print(f"  +{total_gold} gold  |  +{total_xp} XP")
 
         # Per-enemy item drops (40 % chance each, level-scaled rarity)
         for key in enemy_keys:
@@ -344,22 +390,22 @@ def _handle_combat(player, travel_type, region):
                 item_id     = _random_item_id()
                 item        = build_item(item_id, rarity)
                 if not _add_to_inv(player, item.copy()):
-                    print(f"  Found: {item['name']}  {_item_stat_line(item)} (but your bag is full — dropped!)")
+                    term.print(f"  Found: {item['name']}  {_item_stat_line(item)} (but your bag is full — dropped!)")
                 else:
-                    print(f"  Found: {item['name']}  {_item_stat_line(item)}")
+                    term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
 
         # Wedding end-of-combat rewards
         from combat.wedding_specials import apply_wedding_combat_end
         apply_wedding_combat_end(player, victory=True)
 
-        input("  Press Enter to continue your journey...")
+        term.pause("  Press Continue your journey...")
 
     elif result == "fled":
         penalty = random.randint(15, 30)
         player["current_hp"] = max(1, player.get("current_hp", 1) - penalty)
-        print(f"\n  You flee, but not cleanly — {penalty} damage taken in the scramble.")
-        print(f"  HP: {player['current_hp']}/{player_max_hp(player)}")
-        input("  Press Enter to keep moving...")
+        term.print(f"\n  You flee, but not cleanly — {penalty} damage taken in the scramble.")
+        term.print(f"  HP: {player['current_hp']}/{player_max_hp(player)}")
+        term.pause("  Press Continue to keep moving...")
 
     return result   # "victory" | "fled" | "dead"
 
@@ -376,63 +422,63 @@ def _handle_discovery(player, travel_type):
         if find_gold:
             gold = random.randint(20, 80)
             player["gold"] = player.get("gold", 0) + gold
-            print(f"\n  A barnacled crate bobs alongside. Inside: {gold} gold in waxed pouches!")
+            term.print(f"\n  A barnacled crate bobs alongside. Inside: {gold} gold in waxed pouches!")
         else:
             rarity  = _discovery_rarity(player)
             item    = build_item(_random_item_id(), rarity)
-            print(f"\n  A waterlogged satchel surfaces from the deep. You haul it aboard.")
-            print(f"  Found: {item['name']}  {_item_stat_line(item)}")
+            term.print(f"\n  A waterlogged satchel surfaces from the deep. You haul it aboard.")
+            term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
             from inventory_ui import prompt_acquire_item
             prompt_acquire_item(player, item.copy())
     else:
         if find_gold:
             gold = random.randint(10, 50)
             player["gold"] = player.get("gold", 0) + gold
-            print(f"\n  A traveler's purse lies abandoned at the roadside. You pocket {gold} gold.")
+            term.print(f"\n  A traveler's purse lies abandoned at the roadside. You pocket {gold} gold.")
         else:
             rarity  = _discovery_rarity(player)
             item    = build_item(_random_item_id(), rarity)
-            print(f"\n  A hollow tree stump — something's wedged inside.")
-            print(f"  Found: {item['name']}  {_item_stat_line(item)}")
+            term.print(f"\n  A hollow tree stump — something's wedged inside.")
+            term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
             from inventory_ui import prompt_acquire_item
             prompt_acquire_item(player, item.copy())
 
-    input("  Press Enter to continue...")
+    term.pause("  Press Continue...")
 
 
 def _sell_to_merchant(player):
     """Let the player offload items to the traveling merchant at 75 % of city sell rate."""
     inv = player.get("inventory", [])
     if not inv:
-        print('  "Nothing I want off you — yet." The merchant shrugs.')
-        input("  Press Enter...")
+        term.print('  "Nothing I want off you — yet." The merchant shrugs.')
+        term.pause("  Press Continue...")
         return
 
-    print("\n  The merchant eyes your pack with practiced interest.")
-    print("  (Road sell rate: ~75 % of city shop value)\n")
+    term.print("\n  The merchant eyes your pack with practiced interest.")
+    term.print("  (Road sell rate: ~75 % of city shop value)\n")
 
     for i, item in enumerate(inv):
         unit_price = _sell_price(player, item)
         count = item.get("count", 1)
         stack_price = unit_price * count
         count_str = f" (x{count})" if count > 1 else ""
-        print(f"  {i+1:>2}. {item['name']}{count_str}  {_item_stat_line(item)}  —  {stack_price}g")
-    print("   0. Never mind")
+        term.print(f"  {i+1:>2}. {item['name']}{count_str}  {_item_stat_line(item)}  —  {stack_price}g")
 
     try:
-        idx = int(input("\n  Sell which item? ").strip()) - 1
+        raw = term.input("\n  Sell which item number? (0 to cancel): ")
+        idx = int(raw.strip()) - 1
         if 0 <= idx < len(inv):
             item = inv[idx]
             gold = _sell_price(player, item) * item.get("count", 1)
             remove_item_by_reference(player, item, item.get("count", 1))
             player["gold"] = player.get("gold", 0) + gold
-            print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
+            term.print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
         else:
-            print('  "Changing your mind is free."')
+            term.print('  "Changing your mind is free."')
     except (ValueError, IndexError):
-        print("  Nothing sold.")
+        term.print("  Nothing sold.")
 
-    input("  Press Enter...")
+    term.pause("  Press Continue...")
 
 
 def _handle_merchant(player):
@@ -441,8 +487,8 @@ def _handle_merchant(player):
     a road markdown (75-90 % of base), and a Charisma discount.
     Also offers to buy items from the player at 75 % of city sell rate.
     """
-    print("\n  A road-worn merchant steps out from beside a laden cart.")
-    print('  "Wares! Quality goods — fair price for a fellow traveler!"')
+    term.print("\n  A road-worn merchant steps out from beside a laden cart.")
+    term.print('  "Wares! Quality goods — fair price for a fellow traveler!"')
 
     # Build stock: filtered item pool, floor-influenced rarity
     stock = []
@@ -455,60 +501,55 @@ def _handle_merchant(player):
 
     # Display
     cha_disc = _charisma_discount(player)
-    print(f"\n  Your gold: {player.get('gold', 0)}g", end="")
+    gold_info = f"\n  Your gold: {player.get('gold', 0)}g"
     if cha_disc > 0:
-        print(f"  |  Charisma discount: {cha_disc:.0f}%")
-    else:
-        print()
+        gold_info += f"  |  Charisma discount: {cha_disc:.0f}%"
+    term.print(gold_info)
 
-    print()
+    term.print("")
     for i, (item, your_price, road_price) in enumerate(stock, 1):
         stat = _item_stat_line(item)
         if cha_disc > 0 and your_price < road_price:
             price_str = f"{your_price}g  (road: {road_price}g)"
         else:
             price_str = f"{your_price}g"
-        print(f"  {i}. {item['name']}  {stat}  —  {price_str}")
+        term.print(f"  {i}. {item['name']}  {stat}  —  {price_str}")
 
-    sell_opt = len(stock) + 1
-    leave_opt = len(stock) + 2
-    print(f"  {sell_opt}. Sell an item")
-    print(f"  {leave_opt}. Move on")
+    # Build menu options
+    options = [f"Buy: {item['name']} — {price}g" for item, price, _ in stock]
+    for i, (item, your_price, _) in enumerate(stock):
+        options[i] = f"Buy: {item['name']}  {_item_stat_line(item)}  —  {your_price}g"
+    options.append("Sell an item")
+    options.append("Move on")
 
     while True:
-        choice = input("\n  Choice: ").strip()
+        choice = term.menu(options, prompt="What will you do?")
 
-        if choice == str(sell_opt):
+        if choice == len(options) - 2:  # Sell
             _sell_to_merchant(player)
             break
 
-        if choice == str(leave_opt) or choice == "":
-            print('  "Safe roads, traveler!"')
+        if choice == len(options) - 1 or choice == -1:  # Move on / Cancel
+            term.print('  "Safe roads, traveler!"')
             break
 
-        try:
-            idx = int(choice) - 1
-            if 0 <= idx < len(stock):
-                item, your_price, _ = stock[idx]
-                if player.get("gold", 0) >= your_price:
-                    player["gold"] -= your_price
-                    if _add_to_inv(player, item.copy()):
-                        print(f'  You purchase [{item["name"]}] for {your_price}g.')
-                        print('  "Pleasure doing business!" The merchant tips his hat.')
-                    else:
-                        print('  "Your bag looks stuffed, friend. Make room and come back!"')
-                        player["gold"] += your_price  # refund
+        if 0 <= choice < len(stock):
+            item, your_price, _ = stock[choice]
+            if player.get("gold", 0) >= your_price:
+                player["gold"] -= your_price
+                if _add_to_inv(player, item.copy()):
+                    term.print(f'  You purchase [{item["name"]}] for {your_price}g.')
+                    term.print('  "Pleasure doing business!" The merchant tips his hat.')
                 else:
-                    print(f'  "You\'re {your_price - player.get("gold", 0)}g short, friend."')
+                    term.print('  "Your bag looks stuffed, friend. Make room and come back!"')
+                    player["gold"] += your_price  # refund
             else:
-                print("  Invalid choice.")
-                continue
-        except (ValueError, IndexError):
-            print("  Invalid choice.")
+                term.print(f'  "You\'re {your_price - player.get("gold", 0)}g short, friend."')
+        else:
             continue
         break
 
-    input("\n  Press Enter to continue...")
+    term.pause("  Press Continue...")
 
 
 def _handle_hazard(player, travel_type, difficulty_mult):
@@ -532,33 +573,33 @@ def _handle_hazard(player, travel_type, difficulty_mult):
             "Loose shale shifts underfoot on the mountain pass. The fall is brutal.",
         ])
 
-    print(f"\n  ! {desc}")
+    term.print(f"\n  ! {desc}")
     player["current_hp"] = max(1, player.get("current_hp", 1) - damage)
-    print(f"  You take {damage} damage.  (HP: {player['current_hp']}/{max_hp})")
+    term.print(f"  You take {damage} damage.  (HP: {player['current_hp']}/{max_hp})")
 
     if player["current_hp"] <= max_hp * 0.25:
-        print("  ⚠  Critically wounded — consider resting before your next descent.")
+        term.print("  ⚠  Critically wounded — consider resting before your next descent.")
 
-    input("  Press Enter to continue...")
+    term.pause("  Press Continue...")
 
 
 def _handle_storm(player, difficulty_mult):
     """Sea-only: storm that delays travel and may also deal HP damage."""
     max_hp = player_max_hp(player)
-    print("\n  A black wall of clouds swallows the horizon — the storm hits fast.")
+    term.print("\n  A black wall of clouds swallows the horizon — the storm hits fast.")
 
     if random.random() < 0.45 * difficulty_mult:
         damage = max(6, int(max_hp * 0.18 * difficulty_mult))
         player["current_hp"] = max(1, player.get("current_hp", 1) - damage)
         advance_time(player, 90)
-        print(f"  Mountainous waves batter the hull for an hour and a half.")
-        print(f"  You take {damage} damage and arrive late.")
-        print(f"  HP: {player['current_hp']}/{max_hp}")
+        term.print(f"  Mountainous waves batter the hull for an hour and a half.")
+        term.print(f"  You take {damage} damage and arrive late.")
+        term.print(f"  HP: {player['current_hp']}/{max_hp}")
     else:
         advance_time(player, 30)
-        print("  You reef the sails and ride out the squall. Unharmed — but delayed 30 minutes.")
+        term.print("  You reef the sails and ride out the squall. Unharmed — but delayed 30 minutes.")
 
-    input("  Press Enter to continue...")
+    term.pause("  Press Continue...")
 
 
 def _handle_calm_seas(player):
@@ -566,16 +607,17 @@ def _handle_calm_seas(player):
     regen  = random.randint(5, 15)
     max_hp = player_max_hp(player)
     player["current_hp"] = min(player.get("current_hp", max_hp) + regen, max_hp)
-    print(f"\n  The sea lies flat as polished obsidian. The crew rests.")
-    print(f"  You recover {regen} HP.  (HP: {player['current_hp']}/{max_hp})")
-    input("  Press Enter to continue...")
+    term.print(f"\n  The sea lies flat as polished obsidian. The crew rests.")
+    term.print(f"  You recover {regen} HP.  (HP: {player['current_hp']}/{max_hp})")
+    term.pause("  Press Continue...")
 
 
 # ═══════════════════════════════════════════════════════════════
 # PUBLIC ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 
-def run_travel_events(player, travel_time, travel_type="land", region=None):
+def run_travel_events(player, travel_time, travel_type="land", region=None,
+                      combat_override=None):
     """
     Resolve all random events for a single journey.
 
@@ -585,6 +627,8 @@ def run_travel_events(player, travel_time, travel_type="land", region=None):
     travel_time  : journey duration in minutes
     travel_type  : "land" or "sea"
     region       : biome string for enemy theming (ignored for sea; uses coastal pool)
+    combat_override : Optional function(player, enemy_keys, **kwargs) -> str
+        If provided, called instead of combat() for combat encounters.
 
     Returns
     -------
@@ -612,14 +656,16 @@ def run_travel_events(player, travel_time, travel_type="land", region=None):
 
         quiet_stretch = False
         event_type    = _weighted_choice(event_pool)["type"]
-        print("\n" + "─" * 52)
+        term.print("\n" + "─" * 52)
 
         if event_type == "combat":
             if travel_type == "sea":
-                print("  A vessel flying no flag banks hard toward you — pirates!")
+                term.print("  A vessel flying no flag banks hard toward you — pirates!", flush=True)
             else:
-                print("  Movement in the treeline. Your hand reaches for your weapon.")
-            result = _handle_combat(player, travel_type, region)
+                term.print("  Movement in the treeline. Your hand reaches for your weapon.", flush=True)
+            # Brief pause so the player sees the encounter text before combat overlay appears
+            term.sleep(0.2)
+            result = _handle_combat(player, travel_type, region, combat_override)
             if result == "dead":
                 return "dead"
 
@@ -640,8 +686,8 @@ def run_travel_events(player, travel_time, travel_type="land", region=None):
 
     if quiet_stretch:
         if travel_type == "sea":
-            print("\n  The voyage passes without incident. Steady winds, clear skies.")
+            term.print("\n  The voyage passes without incident. Steady winds, clear skies.")
         else:
-            print("\n  The road is quiet. You make good time without trouble.")
+            term.print("\n  The road is quiet. You make good time without trouble.")
 
     return "safe"

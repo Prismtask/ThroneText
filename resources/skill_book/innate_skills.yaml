@@ -69,6 +69,96 @@ innate_skills:
   arachne_weaver:
     - web_throw
     - spider_dance
+  mummy_princess:
+    - desert_curse
+    - pharaohs_wrath
+  oni_bruiser:
+    - oni_smash
+    - hellfire_roar
+  salamander_dancer:
+    - flame_dance
+    - ember_shield
+  succubus_seductress:
+    - allure
+    - draining_kiss
+  dullahan_knight:
+    - headless_charge
+    - spectral_guard
+  kitsune_miko:
+    - foxfire
+    - spirit_shield
+  siren_empress:
+    - siren_call
+    - ocean_lullaby
+  crimson_countess:
+    - crimson_slash
+    - blood_ritual
+  demon_whip_master:
+    - whip_lash
+    - dominating_presence
+  minotaur_gladiator:
+    - colossal_slam
+    - gladiator_stance
+  vampire_matriarch:
+    - matriarch_bite
+    - dark_blessing
+  centaur_champion:
+    - champion_charge
+    - stampede
+  infernal_empress:
+    - infernal_flame
+    - empress_command
+  scylla_wrecker:
+    - tentacle_crush
+    - abyssal_pull
+  gorgon_petrifier:
+    - petrifying_gaze
+    - serpent_fang
+  ninetales_fox:
+    - sunfire_breath
+    - nine_tails_strike
+  mermaid_siren_queen:
+    - tidal_wave
+    - siren_lullaby
+  draconic_valkyrie:
+    - dragon_breath
+    - valkyrie_strike
+  sphinx_riddler:
+    - riddle_blast
+    - enigma_field
+  lich_queen_avatar:
+    - necrotic_bolt
+    - raise_dead
+  valkyrie_commander:
+    - commanders_slash
+    - rally
+  dragon_goddess_avatar:
+    - starfire_breath
+    - divine_wings
+  arachne_brood_queen:
+    - brood_bite
+    - silk_shield
+  cosmic_slime_empress:
+    - cosmic_blast
+    - gravity_well
+  wonderland_alice:
+    - curious_inquiry
+    - try_me
+  wonderland_alice_vorpal:
+    - vorpal_edge
+    - snicker_snack
+  wonderland_red_hood:
+    - hunters_mark
+    - whats_in_the_basket
+  wonderland_red_hood_vorpal:
+    - what_big_teeth
+    - fell_the_wolf
+  wonderland_dorothy:
+    - no_place_like_home
+    - ruby_blink
+  wonderland_dorothy_vorpal:
+    - cyclones_call
+    - heart_of_tin
 
 # ============================================================================
 # INNATE SKILL DEFINITIONS
@@ -85,6 +175,7 @@ innate_skill_defs:
     base_power: 6
     poison_damage: 2
     poison_duration: 3
+    elemental: water
   goblin_evasion:
     name: Goblin Evasion
     description: Dodge incoming attacks with Goblin agility.
@@ -95,6 +186,7 @@ innate_skill_defs:
       type: evasion
       value: 0.6
       duration: 2
+    elemental: wind
   harpy_swoop:
     name: Harpy Swoop
     description: Dive down and strike an enemy.
@@ -103,6 +195,7 @@ innate_skill_defs:
     target: enemy
     power_type: dex
     base_power: 10
+    elemental: wind
   harpy_cry:
     name: Harpy Cry
     description: Screech loudly, damaging all enemies.
@@ -111,6 +204,7 @@ innate_skill_defs:
     target: enemies
     power_type: cha
     base_power: 8
+    elemental: wind
   root_strike:
     name: Root Strike
     description: Attack with magical roots.
@@ -119,6 +213,7 @@ innate_skill_defs:
     target: enemy
     power_type: wis
     base_power: 9
+    elemental: earth
   nature_embrace:
     name: Nature's Embrace
     description: Heal self and nearby allies moderately.
@@ -127,6 +222,7 @@ innate_skill_defs:
     target: all_allies
     power_type: wis
     base_power: 12
+    elemental: earth
   gadget_explosion:
     name: Gadget Explosion
     description: Detonate a gadget for massive damage to one target.
@@ -135,6 +231,7 @@ innate_skill_defs:
     target: enemy
     power_type: ler
     base_power: 14
+    elemental: fire
   tinker_enhancement:
     name: Tinker Enhancement
     description: Enhance an ally's next action for increased power.
@@ -145,6 +242,7 @@ innate_skill_defs:
       type: power_buff
       value: 0.25
       duration: 1
+    elemental: thunder
   entangle:
     name: Entangle
     description: Bind enemies in vines.
@@ -154,6 +252,7 @@ innate_skill_defs:
     effect:
       type: slow
       duration: 3
+    elemental: earth
   forest_shield:
     name: Forest Shield
     description: Protect allies with nature's barrier.
@@ -164,6 +263,7 @@ innate_skill_defs:
       type: damage_reduction
       value: 0.2
       duration: 2
+    elemental: earth
   spectral_strike:
     name: Spectral Strike
     description: Pass through defenses to strike an enemy.
@@ -173,6 +273,7 @@ innate_skill_defs:
     power_type: wis
     base_power: 10
     ignore_armor: true
+    elemental: dark
   phantom_barrier:
     name: Phantom Barrier
     description: Create a protective barrier around an ally.
@@ -183,6 +284,7 @@ innate_skill_defs:
       type: damage_reduction
       value: 0.35
       duration: 2
+    elemental: dark
   charge:
     name: Charge
     description: Rush forward and strike an enemy.
@@ -191,6 +293,7 @@ innate_skill_defs:
     target: enemy
     power_type: str
     base_power: 12
+    elemental: physical
   hoof_stomp:
     name: Hoof Stomp
     description: Stomp the ground, hitting all enemies.
@@ -199,6 +302,7 @@ innate_skill_defs:
     target: enemies
     power_type: str
     base_power: 9
+    elemental: earth
   flutter_strike:
     name: Flutter Strike
     description: Delicate yet damaging strike.
@@ -207,6 +311,7 @@ innate_skill_defs:
     target: enemy
     power_type: dex
     base_power: 8
+    elemental: wind
   dust_cloud:
     name: Dust Cloud
     description: Blind enemies with magical dust.
@@ -217,6 +322,7 @@ innate_skill_defs:
       type: blind
       value: 0.5
       duration: 2
+    elemental: earth
   acidic_blob:
     name: Acidic Blob
     description: Throw acidic slime at an enemy.
@@ -225,6 +331,7 @@ innate_skill_defs:
     target: enemy
     power_type: con
     base_power: 8
+    elemental: water
   slime_absorption:
     name: Slime Absorption
     description: Absorb damage as health.
@@ -235,6 +342,7 @@ innate_skill_defs:
       type: damage_absorption
       value: 0.4
       duration: 2
+    elemental: water
   constrict:
     name: Constrict
     description: Wrap around an enemy, immobilizing them.
@@ -244,6 +352,7 @@ innate_skill_defs:
     effect:
       type: stun
       duration: 2
+    elemental: physical
   venom_fang:
     name: Venom Fang
     description: Strike with venomous fangs.
@@ -254,6 +363,7 @@ innate_skill_defs:
     base_power: 9
     poison_damage: 3
     poison_duration: 4
+    elemental: water
   royal_slash:
     name: Royal Slash
     description: A majestic and powerful slash.
@@ -262,6 +372,7 @@ innate_skill_defs:
     target: enemy
     power_type: str
     base_power: 13
+    elemental: physical
   regenerate_scale:
     name: Regenerate Scale
     description: Restore health through scale regeneration.
@@ -272,6 +383,7 @@ innate_skill_defs:
       type: regen
       value: 0.15
       duration: 3
+    elemental: earth
   surprise_strike:
     name: Surprise Strike
     description: Strike when least expected.
@@ -281,6 +393,7 @@ innate_skill_defs:
     power_type: str
     base_power: 11
     guaranteed_crit: true
+    elemental: dark
   mimic_form:
     name: Mimic Form
     description: Temporarily mimic an ally's form for defense.
@@ -291,6 +404,7 @@ innate_skill_defs:
       type: damage_reduction
       value: 0.3
       duration: 2
+    elemental: magical
   shadow_strike:
     name: Shadow Strike
     description: Strike from darkness.
@@ -300,6 +414,7 @@ innate_skill_defs:
     power_type: dex
     base_power: 10
     guaranteed_crit: true
+    elemental: dark
   web_trap:
     name: Web Trap
     description: Trap enemies in webs.
@@ -309,6 +424,7 @@ innate_skill_defs:
     effect:
       type: slow
       duration: 3
+    elemental: earth
   frost_bolt:
     name: Frost Bolt
     description: Fire a bolt of freezing energy.
@@ -317,6 +433,7 @@ innate_skill_defs:
     target: enemy
     power_type: ler
     base_power: 10
+    elemental: water
   ice_shield:
     name: Ice Shield
     description: Create a shield of ice.
@@ -327,6 +444,7 @@ innate_skill_defs:
       type: damage_reduction
       value: 0.3
       duration: 2
+    elemental: water
   mighty_punch:
     name: Mighty Punch
     description: A powerful physical punch.
@@ -335,6 +453,7 @@ innate_skill_defs:
     target: enemy
     power_type: str
     base_power: 14
+    elemental: physical
   earthen_stomp:
     name: Earthen Stomp
     description: Stomp with earthen power.
@@ -343,6 +462,7 @@ innate_skill_defs:
     target: enemies
     power_type: str
     base_power: 10
+    elemental: earth
   stone_fist:
     name: Stone Fist
     description: Strike with fists of stone.
@@ -351,6 +471,7 @@ innate_skill_defs:
     target: enemy
     power_type: str
     base_power: 12
+    elemental: earth
   stone_skin:
     name: Stone Skin
     description: Harden your skin like stone.
@@ -361,6 +482,7 @@ innate_skill_defs:
       type: damage_reduction
       value: 0.4
       duration: 2
+    elemental: earth
   blood_drain:
     name: Blood Drain
     description: Drain blood to heal yourself.
@@ -372,6 +494,7 @@ innate_skill_defs:
     effect:
       type: life_steal
       value: 0.5
+    elemental: dark
   seductive_charm:
     name: Seductive Charm
     description: Charm an enemy to reduce their damage.
@@ -383,6 +506,7 @@ innate_skill_defs:
       stat: Strength
       value: 3
       duration: 2
+    elemental: dark
   blizzard:
     name: Blizzard
     description: Unleash a blizzard on all enemies.
@@ -391,6 +515,7 @@ innate_skill_defs:
     target: enemies
     power_type: ler
     base_power: 13
+    elemental: water
   frozen_heart:
     name: Frozen Heart
     description: Freeze your heart for power and protection.
@@ -401,6 +526,7 @@ innate_skill_defs:
       type: damage_reduction
       value: 0.35
       duration: 3
+    elemental: water
   spear_thrust:
     name: Spear Thrust
     description: A precise spear thrust.
@@ -409,6 +535,7 @@ innate_skill_defs:
     target: enemy
     power_type: str
     base_power: 12
+    elemental: physical
   warrior_stance:
     name: Warrior Stance
     description: Assume a defensive warrior stance.
@@ -419,6 +546,7 @@ innate_skill_defs:
       type: damage_reduction
       value: 0.25
       duration: 3
+    elemental: physical
   wail_of_sorrow:
     name: Wail of Sorrow
     description: A mournful wail that damages all enemies.
@@ -427,6 +555,7 @@ innate_skill_defs:
     target: enemies
     power_type: cha
     base_power: 11
+    elemental: dark
   death_shriek:
     name: Death Shriek
     description: Unleash a shriek of death.
@@ -435,6 +564,7 @@ innate_skill_defs:
     target: enemies
     power_type: cha
     base_power: 13
+    elemental: dark
   shadow_clone:
     name: Shadow Clone
     description: Create a shadow clone to confuse enemies.
@@ -445,6 +575,7 @@ innate_skill_defs:
       type: evasion
       value: 0.4
       duration: 2
+    elemental: dark
   ninja_strike:
     name: Ninja Strike
     description: A swift ninja strike.
@@ -453,6 +584,7 @@ innate_skill_defs:
     target: enemy
     power_type: dex
     base_power: 9
+    elemental: wind
   web_throw:
     name: Web Throw
     description: Throw webs at enemies.
@@ -461,6 +593,7 @@ innate_skill_defs:
     target: enemies
     power_type: dex
     base_power: 7
+    elemental: earth
   spider_dance:
     name: Spider Dance
     description: Perform a hypnotic spider dance.
@@ -471,3 +604,707 @@ innate_skill_defs:
       type: confusion
       value: 0.3
       duration: 2
+    elemental: dark
+  desert_curse:
+    name: Desert Curse
+    description: Curse all enemies with ancient maledictions.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: ler
+    base_power: 10
+    effect:
+      type: stat_debuff
+      stat: Strength
+      value: 2
+      duration: 3
+    elemental: earth
+  pharaohs_wrath:
+    name: Pharaoh's Wrath
+    description: Unleash the vengeance of a fallen dynasty upon one foe.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: wis
+    base_power: 14
+    ignore_armor: true
+    elemental: dark
+  oni_smash:
+    name: Oni Smash
+    description: Smash an enemy with demonic strength.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 16
+    guaranteed_crit: true
+    elemental: fire
+  hellfire_roar:
+    name: Hellfire Roar
+    description: Roar a wave of hellfire that scorches all enemies.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: str
+    base_power: 12
+    burn_damage: 6
+    burn_duration: 3
+    elemental: fire
+  flame_dance:
+    name: Flame Dance
+    description: Dance through the battlefield, leaving flames in your wake.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 10
+    burn_damage: 5
+    burn_duration: 3
+    elemental: fire
+  ember_shield:
+    name: Ember Shield
+    description: Wreathe yourself in protective flames.
+    category: defensive
+    cooldown: 3
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.25
+      duration: 3
+    elemental: fire
+  allure:
+    name: Allure
+    description: Bewitch an enemy, stunning them and reducing their will.
+    category: support
+    cooldown: 3
+    target: enemy
+    effect:
+      type: stun
+      duration: 2
+    elemental: dark
+  draining_kiss:
+    name: Draining Kiss
+    description: Steal life force with a kiss.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: cha
+    base_power: 12
+    effect:
+      type: life_steal
+      value: 0.5
+    elemental: dark
+  headless_charge:
+    name: Headless Charge
+    description: Charge at an enemy with reckless, armor-shattering force.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 13
+    ignore_armor: true
+    elemental: dark
+  spectral_guard:
+    name: Spectral Guard
+    description: Summon spectral protectors to shield an ally.
+    category: defensive
+    cooldown: 3
+    target: ally_or_self
+    effect:
+      type: damage_reduction
+      value: 0.35
+      duration: 2
+    elemental: dark
+  foxfire:
+    name: Foxfire
+    description: Launch a bolt of spiritual foxfire.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: wis
+    base_power: 11
+    burn_damage: 4
+    burn_duration: 3
+    elemental: fire
+  spirit_shield:
+    name: Spirit Shield
+    description: Call upon fox spirits to guard you.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.3
+      duration: 3
+    elemental: light
+  siren_call:
+    name: Siren Call
+    description: Lure enemies with a haunting song.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: cha
+    base_power: 12
+    stun_chance: 0.25
+    elemental: water
+  ocean_lullaby:
+    name: Ocean Lullaby
+    description: Sing a soothing melody that heals an ally.
+    category: support
+    cooldown: 3
+    target: ally_or_self
+    power_type: wis
+    base_power: 18
+    elemental: water
+  crimson_slash:
+    name: Crimson Slash
+    description: A swift, bloody slash aimed at a vital point.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 12
+    guaranteed_crit: true
+    elemental: dark
+  blood_ritual:
+    name: Blood Ritual
+    description: Sacrifice a sliver of health to heal the party.
+    category: support
+    cooldown: 5
+    target: all_allies
+    power_type: cha
+    base_power: 10
+    elemental: dark
+  whip_lash:
+    name: Whip Lash
+    description: Lash an enemy with a cruel whip, weakening them.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 10
+    apply_weaken: true
+    elemental: fire
+  dominating_presence:
+    name: Dominating Presence
+    description: Assert dominance, weakening all foes.
+    category: support
+    cooldown: 4
+    target: enemies
+    effect:
+      type: stat_debuff
+      stat: Strength
+      value: 2
+      duration: 3
+    elemental: dark
+  colossal_slam:
+    name: Colossal Slam
+    description: Bring down a massive strike that shakes the earth.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 18
+    elemental: earth
+  gladiator_stance:
+    name: Gladiator Stance
+    description: Assume an unbreakable battle stance.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: damage_reduction
+      value: 0.35
+      duration: 3
+    elemental: physical
+  matriarch_bite:
+    name: Matriarch's Bite
+    description: Sink fangs deep and drain life while weakening the victim.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: cha
+    base_power: 12
+    apply_weaken: true
+    effect:
+      type: life_steal
+      value: 0.5
+    elemental: dark
+  dark_blessing:
+    name: Dark Blessing
+    description: Bathe the party in vampiric vitality.
+    category: support
+    cooldown: 5
+    target: all_allies
+    effect:
+      type: regen
+      value: 0.08
+      duration: 4
+    elemental: dark
+  champion_charge:
+    name: Champion's Charge
+    description: Charge forward with the speed of a gale.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 14
+    ignore_armor: true
+    elemental: wind
+  stampede:
+    name: Stampede
+    description: Trample the ground, striking all enemies.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: str
+    base_power: 11
+    elemental: earth
+  infernal_flame:
+    name: Infernal Flame
+    description: Unleash a torrent of infernal fire upon all foes.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: str
+    base_power: 15
+    burn_damage: 8
+    burn_duration: 3
+    elemental: fire
+  empress_command:
+    name: Empress Command
+    description: Command enemies to kneel, instilling fear and weakness.
+    category: support
+    cooldown: 4
+    target: enemies
+    effect:
+      type: stat_debuff
+      stat: Strength
+      value: 2
+      duration: 3
+    elemental: dark
+  tentacle_crush:
+    name: Tentacle Crush
+    description: Crush a foe with writhing tentacles.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 13
+    apply_slow: true
+    elemental: water
+  abyssal_pull:
+    name: Abyssal Pull
+    description: Drag all enemies into the crushing deep.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: str
+    base_power: 11
+    stun_chance: 0.25
+    elemental: water
+  petrifying_gaze:
+    name: Petrifying Gaze
+    description: Turn an enemy to stone with a single glance.
+    category: support
+    cooldown: 4
+    target: enemy
+    effect:
+      type: stun
+      duration: 2
+    elemental: earth
+  serpent_fang:
+    name: Serpent Fang
+    description: Strike with venomous snake fangs.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 10
+    poison_damage: 4
+    poison_duration: 4
+    elemental: water
+  sunfire_breath:
+    name: Sunfire Breath
+    description: Exhale a wave of burning sunfire.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: wis
+    base_power: 13
+    burn_damage: 7
+    burn_duration: 3
+    elemental: fire
+  nine_tails_strike:
+    name: Nine Tails Strike
+    description: Strike with all nine tails at once.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: wis
+    base_power: 8
+    hits: 3
+    elemental: magical
+  tidal_wave:
+    name: Tidal Wave
+    description: Call forth a crushing wave upon all enemies.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: wis
+    base_power: 14
+    elemental: water
+  siren_lullaby:
+    name: Siren Lullaby
+    description: Sing a soothing song that heals all allies.
+    category: support
+    cooldown: 5
+    target: all_allies
+    power_type: wis
+    base_power: 12
+    elemental: water
+  dragon_breath:
+    name: Dragon Breath
+    description: Exhale a gout of dragon flame.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: str
+    base_power: 14
+    burn_damage: 6
+    burn_duration: 3
+    elemental: fire
+  valkyrie_strike:
+    name: Valkyrie Strike
+    description: A spear strike that pierces all defenses.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 15
+    ignore_armor: true
+    elemental: light
+  riddle_blast:
+    name: Riddle Blast
+    description: Unleash a blast of puzzling arcane energy.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: ler
+    base_power: 14
+    elemental: magical
+  enigma_field:
+    name: Enigma Field
+    description: Confuse all enemies with riddles.
+    category: support
+    cooldown: 4
+    target: enemies
+    effect:
+      type: confusion
+      value: 0.3
+      duration: 2
+    elemental: magical
+  necrotic_bolt:
+    name: Necrotic Bolt
+    description: Hurl a bolt of pure necrotic energy.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: ler
+    base_power: 18
+    elemental: dark
+  raise_dead:
+    name: Raise Dead
+    description: Revive a fallen ally with a sliver of unholy power.
+    category: support
+    cooldown: 6
+    target: dead_ally
+    power_type: wis
+    base_power: 10
+    revive_percent: 0.35
+    elemental: dark
+  commanders_slash:
+    name: Commander's Slash
+    description: A precise slash befitting a commander.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: str
+    base_power: 12
+    elemental: physical
+  rally:
+    name: Rally
+    description: Rally the party, raising their strength and healing them.
+    category: support
+    cooldown: 5
+    target: all_allies
+    power_type: str
+    base_power: 8
+    effect:
+      type: stat_buff
+      stat: Strength
+      value: 2
+      duration: 3
+    elemental: light
+  starfire_breath:
+    name: Starfire Breath
+    description: Exhale a torrent of starfire that burns all foes.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: str
+    base_power: 16
+    burn_damage: 8
+    burn_duration: 3
+    elemental: fire
+  divine_wings:
+    name: Divine Wings
+    description: Wrap yourself in divine wings of protection.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: evasion
+      value: 0.35
+      duration: 3
+    elemental: light
+  brood_bite:
+    name: Brood Bite
+    description: Bite an enemy with venomous brood fangs.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 10
+    poison_damage: 5
+    poison_duration: 4
+    elemental: water
+  silk_shield:
+    name: Silk Shield
+    description: Weave a shield of silk around an ally.
+    category: defensive
+    cooldown: 3
+    target: ally_or_self
+    effect:
+      type: damage_reduction
+      value: 0.3
+      duration: 3
+    elemental: earth
+  cosmic_blast:
+    name: Cosmic Blast
+    description: Unleash a blast of cosmic energy.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: ler
+    base_power: 15
+    elemental: magical
+  gravity_well:
+    name: Gravity Well
+    description: Create a gravity well that slows enemies.
+    category: support
+    cooldown: 4
+    target: enemies
+    effect:
+      type: slow
+      duration: 3
+    elemental: magical
+
+  # ── Alice (Wonderland Heroine) ─────────────────────────────────────────
+
+  curious_inquiry:
+    name: Curious Inquiry
+    description: Ask the wrong question. Increases enemy elemental weakness by 0.6 and reduces Wisdom by 3 for 3 turns.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    effect:
+      type: elemental_weakness
+      value: 0.6
+      stat_debuff: Wisdom
+      stat_value: -3
+      duration: 3
+    elemental: magical
+
+  try_me:
+    name: Try Me
+    description: Drink or eat? Shrink (+30% dodge, 2 turns) or Grow (+30% damage, 2 turns). Random each use.
+    category: defensive
+    cooldown: 2
+    target: self
+    effect:
+      type: random_buff
+      options:
+        - type: evasion
+          value: 0.3
+          duration: 2
+          label: "Shrink! +30% dodge for 2 turns"
+        - type: damage_boost
+          value: 0.3
+          duration: 2
+          label: "Grow! +30% damage for 2 turns"
+    elemental: magical
+
+  # ── Alice (Vorpal Blade skills — replaces normal skills) ──────────────
+
+  vorpal_edge:
+    name: Vorpal Edge
+    description: A swift, luminous slash. Deals physical+light damage with +30% crit chance.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: str
+    base_power: 12
+    elemental: light
+    crit_bonus: 0.30
+
+  snicker_snack:
+    name: Snicker-Snack
+    description: The blade sings its terrible song. Heavy damage, +50% damage vs Dragonkin and Storybook enemies.
+    category: offensive
+    cooldown: 4
+    target: enemy
+    power_type: str
+    base_power: 18
+    elemental: light
+    bonus_vs_races:
+      - Dragonkin
+      - Storybook
+    bonus_value: 0.50
+
+  frabjous_day:
+    name: Frabjous Day
+    description: Callooh! Callay! The Vorpal Blade restored — party gains +25% damage for 2 turns.
+    category: support
+    cooldown: 5
+    target: all_allies
+    effect:
+      type: damage_boost
+      value: 0.25
+      duration: 2
+    elemental: light
+
+  # ── Red Hood (Wonderland Heroine) ─────────────────────────────────────
+
+  hunters_mark:
+    name: Hunter's Mark
+    description: Mark your prey. Target takes +15% damage from all sources for 3 turns.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    effect:
+      type: marked
+      value: 0.15
+      duration: 3
+    elemental: wind
+
+  whats_in_the_basket:
+    name: What's in the Basket?
+    description: Share provisions with an ally, restoring 25% of their max HP.
+    category: support
+    cooldown: 3
+    target: ally_or_self
+    heal_percent: 0.25
+    elemental: earth
+
+  # ── Red Hood (Grandmother's Axe skills — replaces normal skills) ─────
+
+  what_big_teeth:
+    name: What Big Teeth
+    description: The better to eat you with! +30% damage vs Beasts, applies Bleed (3 dmg x 3 turns).
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 10
+    bonus_vs_races:
+      - Beast
+    bonus_value: 0.30
+    bleed_damage: 3
+    bleed_duration: 3
+    elemental: dark
+
+  fell_the_wolf:
+    name: Fell the Wolf
+    description: A brutal overhead swing. +15% crit chance, ignores 20% of target's armor.
+    category: offensive
+    cooldown: 4
+    target: enemy
+    power_type: str
+    base_power: 14
+    crit_bonus: 0.15
+    ignore_armor_pct: 0.20
+    elemental: physical
+
+  through_the_forest:
+    name: Through the Forest
+    description: Grandmother's blessing shields the party. +20% crit chance and Fear immunity for 2 turns.
+    category: support
+    cooldown: 5
+    target: all_allies
+    effect:
+      type: multi
+      effects:
+        - type: crit_boost
+          value: 0.20
+          duration: 2
+        - type: fear_immunity
+          duration: 2
+    elemental: wind
+
+  # ── Dorothy (Silver/Ruby Slippers skills — replaces normal skills) ───
+
+  cyclones_call:
+    name: Cyclone's Call
+    description: Summon a twister! AoE wind damage and pushes enemies to bottom of initiative.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: ler
+    base_power: 10
+    push_initiative: true
+    elemental: wind
+
+  heart_of_tin:
+    name: Heart of Tin
+    description: A heart is not judged by how much you love. Heal 30% + cleanse 1 debuff on an ally.
+    category: support
+    cooldown: 3
+    target: ally_or_self
+    heal_percent: 0.30
+    cleanse_one_debuff: true
+    elemental: light
+
+  emerald_citys_light:
+    name: Emerald City's Light
+    description: There's no place like home. Party cleanse ALL debuffs + heal 25%.
+    category: support
+    cooldown: 6
+    target: all_allies
+    heal_percent: 0.25
+    cleanse_all_debuffs: true
+    elemental: light
+
+  # ── Dorothy (Wonderland Heroine) ──────────────────────────────────────
+
+  no_place_like_home:
+    name: There's No Place Like Home
+    description: Party-wide heal (25% max HP) + cleanse one debuff per ally. 6-turn cooldown.
+    category: support
+    cooldown: 6
+    target: all_allies
+    heal_percent: 0.25
+    cleanse_one_debuff: true
+    elemental: light
+
+  ruby_blink:
+    name: Ruby Blink
+    description: Click your heels and vanish. +50% dodge for 1 turn.
+    category: defensive
+    cooldown: 3
+    target: self
+    effect:
+      type: evasion
+      value: 0.5
+      duration: 1
+    elemental: magical

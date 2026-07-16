@@ -123,3 +123,18 @@ IRONDEEP_BARRACKS_DIALOGUE = {
         "The barracks doors close behind you with a heavy thud.",
     ],
 }
+
+IRONDEEP_GUILD_DIALOGUE = {
+    "enter": [
+        "Irondeep Guild Hall. Bounties are posted by the Forge Council's decree.",
+        "The guild board is carved in stone. Literally. What do you seek?",
+        "Dwarven contracts pay well, but expect quality work.",
+        "State your purpose, surface-dweller. Our guild doesn't suffer fools.",
+    ],
+    "leave": [
+        "May your axe earn its weight in contracts.",
+        "Return when you've proven your worth in the deep.",
+        "The stone guild remembers every completed bounty.",
+        "Farewell. Don't take contracts you can't finish.",
+    ],
+}

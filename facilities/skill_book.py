@@ -12,14 +12,15 @@ from combat.ally_skills import (
     get_race_passive, get_innate_skill_def, get_learnable_skill_def,
     get_ally_skill_mastery_level, format_skill_learning_progress
 )
+from gui.terminal import term
 
 
 def display_skill_book(player):
     """Display the full party skill book with all skills, mastery levels, and descriptions."""
-    clear_screen()
-    print(f"=== {player['name']}'s Skill Book ===")
-    print(f"Class: {player['class']} | Level: {player.get('level', 1)}")
-    print("=" * 60)
+    term.clear()
+    term.print(f"=== {player['name']}'s Skill Book ===")
+    term.print(f"Class: {player['class']} | Level: {player.get('level', 1)}")
+    term.print("=" * 60)
 
     # ── Player Skills ──
     _display_player_skill_book(player)
@@ -30,8 +31,8 @@ def display_skill_book(player):
         for ally in allies:
             _display_ally_skill_book(ally)
 
-    print("\n" + "=" * 60)
-    input("Press Enter to return...")
+    term.print("\n" + "=" * 60)
+    term.pause("Press Continue to return...")
 
 
 def _display_player_skill_book(player):
@@ -39,13 +40,13 @@ def _display_player_skill_book(player):
     # Passive skill
     passive = PASSIVE_SKILLS.get(player.get("class"))
     if passive:
-        print(f"\n[Player Passive] {passive['name']}")
-        print(f"    {passive['description']}")
+        term.print(f"\n[Player Passive] {passive['name']}")
+        term.print(f"    {passive['description']}")
 
     # Active skills
     skill_map = get_class_skill_map(player)
     if not skill_map:
-        print("\nNo skills available for your class.")
+        term.print("\nNo skills available for your class.")
         return
 
     unlocked = set(player.get("skills", []))
@@ -67,7 +68,7 @@ def _display_player_skill_book(player):
             tiers["Tier 2 (Level 10-15)"].append((sid, sdef))
 
     for tier_name, skills in tiers.items():
-        print(f"\n--- {tier_name} ---")
+        term.print(f"\n--- {tier_name} ---")
         for sid, sdef in skills:
             name = sdef["name"]
             ul = sdef["unlock_level"]
@@ -84,23 +85,23 @@ def _display_player_skill_book(player):
             elif is_on_cd:
                 status = f" [CD: {cooldowns[sid]}]"
 
-            print(f"\n  {name}{status} {mastery_label}")
-            print(f"    Unlock: Level {ul} | Cooldown: {cd} turns")
-            print(f"    {sdef['description']}")
+            term.print(f"\n  {name}{status} {mastery_label}")
+            term.print(f"    Unlock: Level {ul} | Cooldown: {cd} turns")
+            term.print(f"    {sdef['description']}")
             if mastery_lvl > 0:
                 bonuses = get_mastery_bonuses(sid, mastery_lvl)
-                print(f"    Mastery Lv.{mastery_lvl} ({mastery} uses):")
+                term.print(f"    Mastery Lv.{mastery_lvl} ({mastery} uses):")
                 if bonuses["power_mult"] > 1.0:
-                    print(f"      +{int((bonuses['power_mult']-1)*100)}% power")
+                    term.print(f"      +{int((bonuses['power_mult']-1)*100)}% power")
                 if bonuses["cooldown_reduction"] > 0:
-                    print(f"      -{bonuses['cooldown_reduction']} turn cooldown")
+                    term.print(f"      -{bonuses['cooldown_reduction']} turn cooldown")
                 if bonuses["extra_effect"]:
-                    print(f"      Bonus effect at ★★★")
+                    term.print(f"      Bonus effect at ★★★")
 
 
 def _display_ally_skill_book(ally):
     """Display an ally's skill book: passive, innate, learned, and learning progress."""
-    print(f"\n--- {ally['name']} (Level {ally.get('level', 1)}) ---")
+    term.print(f"\n--- {ally['name']} (Level {ally.get('level', 1)}) ---")
 
     # Race passive
     race = ally.get("race")
@@ -115,13 +116,13 @@ def _display_ally_skill_book(ally):
         if template_race:
             passive = get_race_passive(template_race)
     if passive:
-        print(f"  [Passive] {passive['name']}")
-        print(f"    {passive['description']}")
+        term.print(f"  [Passive] {passive['name']}")
+        term.print(f"    {passive['description']}")
 
     # Innate skills
     innate_ids = ally.get("innate_skills", [])
     if innate_ids:
-        print("\n  --- Innate Skills ---")
+        term.print("\n  --- Innate Skills ---")
         for sid in innate_ids:
             sdef = get_innate_skill_def(sid)
             if not sdef:
@@ -132,50 +133,52 @@ def _display_ally_skill_book(ally):
             cd_str = ""
             if ally.get("skill_cooldowns", {}).get(sid, 0) > 0:
                 cd_str = f" [CD: {ally['skill_cooldowns'][sid]}]"
-            print(f"  {sdef['name']}{cd_str} {mastery_label}")
-            print(f"    {sdef.get('description', '')}")
-            print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')}")
+            term.print(f"  {sdef['name']}{cd_str} {mastery_label}")
+            term.print(f"    {sdef.get('description', '')}")
+            term.print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')}")
             if mastery > 0:
-                print(f"    Mastery Lv.{mastery}")
+                term.print(f"    Mastery Lv.{mastery}")
 
     # Learned skills
     learned_ids = ally.get("learned_skills", [])
     if learned_ids:
-        print("\n  --- Learned Skills ---")
+        term.print("\n  --- Learned Skills ---")
         for sid in learned_ids:
             sdef = get_learnable_skill_def(sid)
             if not sdef:
                 continue
             cd = sdef.get("cooldown", 1)
+            tier = sdef.get("tier", 1)
+            exp_cost = sdef.get("exp_cost", 300)
             mastery = get_ally_skill_mastery_level(ally, sid)
             mastery_label = "★" * mastery if mastery > 0 else ""
             cd_str = ""
             if ally.get("skill_cooldowns", {}).get(sid, 0) > 0:
                 cd_str = f" [CD: {ally['skill_cooldowns'][sid]}]"
-            print(f"  {sdef['name']}{cd_str} {mastery_label}")
-            print(f"    {sdef.get('description', '')}")
-            print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')}")
+            tier_labels = {1: "I", 2: "II", 3: "III", 4: "IV"}
+            tier_str = tier_labels.get(tier, "?")
+            term.print(f"  {sdef['name']}{cd_str} {mastery_label} [Tier {tier_str}]")
+            term.print(f"    {sdef.get('description', '')}")
+            term.print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')} | Cost: {exp_cost} EXP")
             if mastery > 0:
-                print(f"    Mastery Lv.{mastery}")
+                term.print(f"    Mastery Lv.{mastery}")
 
     # Currently learning
     if ally.get("learning"):
         progress = format_skill_learning_progress(ally)
-        print(f"\n  [Learning] {progress}")
+        term.print(f"\n  [Learning] {progress}")
 
 
 def skill_book_menu(player):
     """Main skill book loop."""
     while True:
-        clear_screen()
-        print(f"=== {player['name']}'s Skill Book ===")
-        print("1. View Skills")
-        print("2. Back")
-        choice = input("\nChoice: ").strip()
-        if choice == "1":
+        term.clear()
+        term.print(f"=== {player['name']}'s Skill Book ===")
+        choice = term.menu([
+            "View Skills",
+            "Back"
+        ], prompt="What would you like to do?")
+        if choice == 0:
             display_skill_book(player)
-        elif choice == "2":
+        elif choice == 1 or choice == -1:
             break
-        else:
-            print("Invalid choice.")
-            input("Press Enter...")

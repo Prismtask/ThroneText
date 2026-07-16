@@ -1,0 +1,1072 @@
+# Wonderland enemies
+# ====================
+# All wonderland enemies have race: Storybook as primary OR secondary_race field.
+# The dungeon spawn logic checks both fields against allowed_races.
+
+# ═══════════════════════════════════════════════════════════════════
+# FLOORS 1–8: Alice's Descent
+# ═══════════════════════════════════════════════════════════════════
+
+wl_card_soldier_2:
+  name: Card Soldier (Clubs)
+  race: Construct
+  secondary_race: Storybook
+  level: 1
+  base_hp: 12
+  mods:
+    Strength: 2
+    Constitution: 1
+    Dexterity: 1
+    Wisdom: 0
+    Learning: 0
+    Charisma: 0
+  boss: false
+  super_boss: false
+
+wl_card_soldier_3:
+  name: Card Soldier (Spades)
+  race: Construct
+  secondary_race: Storybook
+  level: 3
+  base_hp: 22
+  mods:
+    Strength: 3
+    Constitution: 2
+    Dexterity: 2
+    Wisdom: 0
+    Learning: 0
+    Charisma: 0
+  boss: false
+  super_boss: false
+
+wl_white_rabbit:
+  name: Panicked Rabbit
+  race: Beast
+  secondary_race: Storybook
+  level: 4
+  base_hp: 30
+  mods:
+    Dexterity: 5
+    Constitution: 1
+    Strength: 1
+    Wisdom: 1
+    Learning: 0
+    Charisma: 2
+  boss: false
+  super_boss: false
+
+wl_dormouse:
+  name: Dormouse
+  race: Beast
+  secondary_race: Storybook
+  level: 5
+  base_hp: 30
+  mods:
+    Wisdom: 3
+    Dexterity: 2
+    Constitution: 1
+    Strength: 0
+    Learning: 0
+    Charisma: 2
+  boss: false
+  super_boss: false
+
+wl_cheshire:
+  name: Grinning Shadow
+  race: Shadow
+  secondary_race: Storybook
+  level: 6
+  base_hp: 34
+  mods:
+    Dexterity: 4
+    Wisdom: 1
+    Constitution: 1
+    Strength: 1
+    Learning: 1
+    Charisma: 2
+  boss: false
+  super_boss: false
+
+wl_card_knight:
+  name: Card Knight
+  race: Construct
+  secondary_race: Storybook
+  level: 7
+  base_hp: 65
+  mods:
+    Strength: 4
+    Constitution: 3
+    Dexterity: 2
+    Wisdom: 0
+    Learning: 0
+    Charisma: 1
+  boss: true
+  super_boss: false
+
+wl_dormouse_capt:
+  name: Dormouse Captain
+  race: Beast
+  secondary_race: Storybook
+  level: 8
+  base_hp: 70
+  mods:
+    Wisdom: 4
+    Constitution: 2
+    Dexterity: 2
+    Strength: 1
+    Learning: 1
+    Charisma: 3
+  boss: true
+  super_boss: false
+
+# ═══════════════════════════════════════════════════════════════════
+# FLOORS 9–16: Neverland's Lost
+# ═══════════════════════════════════════════════════════════════════
+
+wl_lost_boy:
+  name: Lost Boy
+  race: Human
+  secondary_race: Storybook
+  level: 10
+  base_hp: 55
+  mods:
+    Dexterity: 4
+    Strength: 2
+    Constitution: 2
+    Wisdom: 1
+    Learning: 0
+    Charisma: 2
+  boss: false
+  super_boss: false
+
+wl_tinker_spite:
+  name: Spiteful Sprite
+  race: Fey
+  secondary_race: Storybook
+  level: 11
+  base_hp: 65
+  mods:
+    Dexterity: 5
+    Charisma: 3
+    Wisdom: 1
+    Learning: 2
+    Constitution: 0
+    Strength: -1
+  boss: false
+  super_boss: false
+
+wl_peter_pan:
+  name: Peter Pan
+  race: Fey
+  secondary_race: Storybook
+  level: 12
+  base_hp: 100
+  mods:
+    Dexterity: 6
+    Charisma: 5
+    Constitution: 2
+    Strength: 2
+    Wisdom: 3
+    Learning: 1
+  boss: true
+  super_boss: false
+
+wl_croc_ticktock:
+  name: Tick-Tock Hatchling
+  race: Beast
+  secondary_race: Storybook
+  level: 12
+  base_hp: 75
+  mods:
+    Strength: 4
+    Constitution: 3
+    Dexterity: 2
+    Wisdom: 1
+    Learning: 0
+    Charisma: 0
+  boss: false
+  super_boss: false
+
+wl_croc_ticktock_boss:
+  name: Tick-Tock Crocodile
+  race: Beast
+  secondary_race: Storybook
+  level: 14
+  base_hp: 115
+  mods:
+    Strength: 5
+    Constitution: 4
+    Dexterity: 3
+    Wisdom: 1
+    Learning: 0
+    Charisma: 0
+  boss: true
+  super_boss: false
+
+wl_pirate_shade:
+  name: Pirate Shade
+  race: Undead
+  secondary_race: Storybook
+  level: 13
+  base_hp: 78
+  mods:
+    Strength: 3
+    Dexterity: 3
+    Constitution: 2
+    Wisdom: 1
+    Learning: 0
+    Charisma: -1
+  boss: false
+  super_boss: false
+
+wl_pirate_captain:
+  name: Pirate Captain James
+  race: Undead
+  secondary_race: Storybook
+  level: 15
+  base_hp: 145
+  mods:
+    Strength: 4
+    Dexterity: 4
+    Constitution: 3
+    Wisdom: 2
+    Learning: 1
+    Charisma: 3
+  boss: true
+  super_boss: false
+
+# ═══════════════════════════════════════════════════════════════════
+# FLOORS 17–24: Yellow Brick Road & Gothic
+# ═══════════════════════════════════════════════════════════════════
+
+wl_munchkin:
+  name: Munchkin Trickster
+  race: Gnome
+  secondary_race: Storybook
+  level: 17
+  base_hp: 90
+  mods:
+    Learning: 4
+    Dexterity: 3
+    Wisdom: 2
+    Constitution: 1
+    Strength: -2
+    Charisma: 1
+  boss: false
+  super_boss: false
+
+wl_flying_monkey:
+  name: Flying Monkey
+  race: Beast
+  secondary_race: Storybook
+  level: 18
+  base_hp: 105
+  mods:
+    Dexterity: 5
+    Strength: 3
+    Constitution: 2
+    Wisdom: 1
+    Learning: 0
+    Charisma: 0
+  boss: false
+  super_boss: false
+
+wl_tin_woodsman:
+  name: Rusted Woodsman
+  race: Construct
+  secondary_race: Storybook
+  level: 18
+  base_hp: 110
+  mods:
+    Strength: 4
+    Constitution: 4
+    Dexterity: 1
+    Wisdom: 1
+    Learning: 0
+    Charisma: -2
+  boss: false
+  super_boss: false
+
+wl_tin_woodsman_capt:
+  name: Tin Woodsman Captain
+  race: Construct
+  secondary_race: Storybook
+  level: 18
+  base_hp: 160
+  mods:
+    Strength: 5
+    Constitution: 5
+    Dexterity: 2
+    Wisdom: 2
+    Learning: 1
+    Charisma: 0
+  boss: true
+  super_boss: false
+
+wl_cowardly_lion:
+  name: Cowardly Beast
+  race: Beast
+  secondary_race: Storybook
+  level: 18
+  base_hp: 105
+  mods:
+    Strength: 3
+    Constitution: 3
+    Dexterity: 3
+    Wisdom: 1
+    Learning: 0
+    Charisma: 1
+  boss: false
+  super_boss: false
+
+wl_hyde:
+  name: Mr. Hyde
+  race: Abomination
+  secondary_race: Storybook
+  level: 21
+  base_hp: 120
+  mods:
+    Strength: 6
+    Constitution: 4
+    Dexterity: 3
+    Wisdom: -2
+    Learning: -1
+    Charisma: -3
+  boss: false
+  super_boss: false
+
+wl_hyde_boss:
+  name: Mr. Hyde
+  race: Abomination
+  secondary_race: Storybook
+  level: 22
+  base_hp: 180
+  mods:
+    Strength: 7
+    Constitution: 5
+    Dexterity: 4
+    Wisdom: -1
+    Learning: 0
+    Charisma: -2
+  boss: true
+  super_boss: false
+
+wl_frankenstein:
+  name: Stitched Abomination
+  race: Abomination
+  secondary_race: Storybook
+  level: 22
+  base_hp: 115
+  mods:
+    Strength: 5
+    Constitution: 5
+    Dexterity: 1
+    Wisdom: -2
+    Learning: -2
+    Charisma: -4
+  boss: false
+  super_boss: false
+
+wl_moriarty:
+  name: Professor Moriarty
+  race: Human
+  secondary_race: Storybook
+  level: 24
+  base_hp: 195
+  mods:
+    Learning: 7
+    Wisdom: 5
+    Dexterity: 3
+    Constitution: 2
+    Strength: 2
+    Charisma: 4
+  boss: true
+  super_boss: false
+
+# ═══════════════════════════════════════════════════════════════════
+# FLOORS 25–32: Wonderland Revisited
+# ═══════════════════════════════════════════════════════════════════
+
+wl_bandersnatch:
+  name: Bandersnatch
+  race: Beast
+  secondary_race: Storybook
+  level: 26
+  base_hp: 140
+  mods:
+    Strength: 5
+    Constitution: 4
+    Dexterity: 3
+    Wisdom: -1
+    Learning: -2
+    Charisma: -3
+  boss: false
+  super_boss: false
+
+wl_jubjub_bird:
+  name: Jubjub Bird
+  race: Beast
+  secondary_race: Storybook
+  level: 27
+  base_hp: 145
+  mods:
+    Wisdom: 4
+    Dexterity: 4
+    Constitution: 2
+    Strength: 2
+    Learning: 1
+    Charisma: 1
+  boss: false
+  super_boss: false
+
+wl_dracula_bride:
+  name: Dracula's Bride
+  race: Vampire
+  secondary_race: Storybook
+  level: 27
+  base_hp: 210
+  mods:
+    Charisma: 5
+    Dexterity: 4
+    Constitution: 3
+    Wisdom: 2
+    Learning: 2
+    Strength: 2
+  boss: true
+  super_boss: false
+
+wl_tweedle_dum:
+  name: Tweedledum
+  race: Human
+  secondary_race: Storybook
+  level: 28
+  base_hp: 150
+  mods:
+    Strength: 4
+    Constitution: 3
+    Dexterity: 2
+    Wisdom: 1
+    Learning: 0
+    Charisma: 2
+  boss: false
+  super_boss: false
+
+wl_tweedle_dee:
+  name: Tweedledee
+  race: Human
+  secondary_race: Storybook
+  level: 28
+  base_hp: 150
+  mods:
+    Dexterity: 4
+    Constitution: 3
+    Strength: 2
+    Wisdom: 1
+    Learning: 0
+    Charisma: 2
+  boss: false
+  super_boss: false
+
+wl_phantom:
+  name: Phantom of the Opera
+  race: Shadow
+  secondary_race: Storybook
+  level: 29
+  base_hp: 225
+  mods:
+    Dexterity: 6
+    Charisma: 5
+    Wisdom: 3
+    Learning: 3
+    Constitution: 2
+    Strength: 2
+  boss: true
+  super_boss: false
+
+# ═══════════════════════════════════════════════════════════════════
+# FLOORS 33–40: The Final Chapter
+# ═══════════════════════════════════════════════════════════════════
+
+wl_captain_hook:
+  name: Captain Hook
+  race: Human
+  secondary_race: Storybook
+  level: 33
+  base_hp: 142
+  mods:
+    Strength: 5
+    Dexterity: 5
+    Constitution: 3
+    Wisdom: 2
+    Learning: 2
+    Charisma: 4
+  boss: true
+  super_boss: false
+
+wl_red_queen:
+  name: The Red Queen
+  race: Demon
+  secondary_race: Storybook
+  level: 35
+  base_hp: 270
+  mods:
+    Strength: 5
+    Charisma: 6
+    Constitution: 3
+    Dexterity: 4
+    Wisdom: -1
+    Learning: 2
+  boss: true
+  super_boss: false
+
+wl_scarecrow_king:
+  name: The Scarecrow King
+  race: Construct
+  secondary_race: Storybook
+  level: 36
+  base_hp: 280
+  mods:
+    Learning: 6
+    Wisdom: 4
+    Constitution: 4
+    Dexterity: 3
+    Strength: 2
+    Charisma: 2
+  boss: true
+  super_boss: false
+
+wl_bandersnatch_alpha:
+  name: Bandersnatch Alpha
+  race: Beast
+  secondary_race: Storybook
+  level: 38
+  base_hp: 295
+  mods:
+    Strength: 7
+    Constitution: 5
+    Dexterity: 4
+    Wisdom: 0
+    Learning: -1
+    Charisma: -3
+  boss: true
+  super_boss: false
+
+# ═══════════════════════════════════════════════════════════════════
+# FLOORS 41–48: The Author's Draft
+# ═══════════════════════════════════════════════════════════════════
+
+wl_wizard_oz:
+  name: The Wizard of Oz
+  race: Human
+  secondary_race: Storybook
+  level: 42
+  base_hp: 325
+  mods:
+    Learning: 7
+    Charisma: 6
+    Wisdom: 5
+    Dexterity: 3
+    Constitution: 3
+    Strength: 2
+  boss: true
+  super_boss: false
+
+wl_headless_horseman:
+  name: Headless Horseman
+  race: Undead
+  secondary_race: Storybook
+  level: 44
+  base_hp: 340
+  mods:
+    Strength: 6
+    Constitution: 5
+    Dexterity: 4
+    Wisdom: -1
+    Learning: 1
+    Charisma: 2
+  boss: true
+  super_boss: false
+
+wl_snow_queen:
+  name: The Snow Queen
+  race: Fey
+  secondary_race: Storybook
+  level: 46
+  base_hp: 360
+  mods:
+    Learning: 7
+    Wisdom: 6
+    Charisma: 5
+    Constitution: 3
+    Dexterity: 4
+    Strength: 1
+  boss: true
+  super_boss: false
+
+wl_the_nothing:
+  name: The Nothing
+  race: Abomination
+  secondary_race: Storybook
+  level: 48
+  base_hp: 380
+  mods:
+    Strength: 7
+    Constitution: 7
+    Dexterity: 1
+    Wisdom: -2
+    Learning: -3
+    Charisma: -5
+  boss: true
+  super_boss: false
+
+# ═══════════════════════════════════════════════════════════════════
+# SUPERBOSSES (every 10 floors)
+# ═══════════════════════════════════════════════════════════════════
+
+wl_queen_of_hearts:
+  name: Queen of Hearts
+  race: Demon
+  secondary_race: Storybook
+  level: 10
+  base_hp: 235
+  mods:
+    Strength: 5
+    Charisma: 6
+    Constitution: 3
+    Wisdom: -1
+    Dexterity: 3
+    Learning: 1
+  boss: false
+  super_boss: true
+
+wl_card_soldier:
+  name: Card Soldier
+  race: Construct
+  secondary_race: Storybook
+  level: 10
+  base_hp: 175
+  mods:
+    Strength: 2
+    Constitution: 3
+    Dexterity: 1
+    Wisdom: -3
+    Learning: -3
+    Charisma: -4
+  boss: false
+  super_boss: false
+  minion_only: true
+
+wl_big_bad_wolf:
+  name: Big Bad Wolf
+  race: Beast
+  secondary_race: Storybook
+  level: 24
+  base_hp: 480
+  mods:
+    Strength: 7
+    Constitution: 5
+    Dexterity: 5
+    Wisdom: 1
+    Learning: 0
+    Charisma: 3
+  boss: false
+  super_boss: true
+
+wl_wicked_witch:
+  name: Wicked Witch of the West
+  race: Demon
+  secondary_race: Storybook
+  level: 33
+  base_hp: 765
+  mods:
+    Learning: 8
+    Wisdom: 7
+    Charisma: 5
+    Constitution: 3
+    Dexterity: 4
+    Strength: 2
+  elemental_res:
+    water: 2.0
+    fire: 1.3
+    dark: 1.2
+    light: 0.8
+  boss: false
+  super_boss: true
+
+wl_jabberwock:
+  name: The Jabberwock
+  race: Storybook
+  secondary_race: Dragonkin
+  level: 41
+  base_hp: 1080
+  mods:
+    Strength: 5
+    Constitution: 5
+    Dexterity: 2
+    Wisdom: 3
+    Learning: 1
+    Charisma: -3
+  boss: true
+  super_boss: true
+  elemental_res:
+    thunder: 0.8
+    dark: 1.3
+    light: 0.6
+  dialogue:
+    phase1: "Beware... the Jabberwock, my son! The jaws that bite, the claws that catch!"
+    death: "...FIN."
+
+wl_jabberwock_shadow:
+  name: Shadow Jabberwock
+  race: Storybook
+  secondary_race: Dragonkin
+  level: 48
+  base_hp: 874
+  mods:
+    Strength: 4
+    Constitution: 4
+    Dexterity: 2
+    Wisdom: 2
+    Learning: 1
+    Charisma: -3
+  boss: false
+  super_boss: false
+  elemental_res:
+    thunder: 0.8
+    dark: 1.3
+    light: 0.6
+  _shadow: true
+  _shadow_of: jabberwock
+
+wl_mary_sue:
+  name: Mary Sue
+  race: Storybook
+  level: 57
+  base_hp: 2030
+  mods:
+    Charisma: 10
+    Strength: 12
+    Dexterity: 10
+    Constitution: 18
+    Wisdom: 15
+    Learning: 5
+  boss: false
+  super_boss: true
+
+# ═══════════════════════════════════════════════════════════════════
+# MARY SUE SHADOW BOSSES
+# ═══════════════════════════════════════════════════════════════════
+
+wl_queen_of_hearts_shadow:
+  name: Shadow Queen of Hearts
+  race: Demon
+  secondary_race: Storybook
+  level: 35
+  base_hp: 432
+  mods:
+    Strength: 3
+    Charisma: 4
+    Constitution: 2
+    Wisdom: -1
+    Dexterity: 3
+    Learning: 1
+  boss: false
+  super_boss: false
+  _shadow: true
+  _shadow_of: queen_of_hearts
+
+wl_card_soldier_shadow:
+  name: Shadow Card Soldier
+  race: Construct
+  secondary_race: Storybook
+  level: 10
+  base_hp: 164
+  mods:
+    Strength: 1
+    Constitution: 2
+    Dexterity: 1
+    Wisdom: -3
+    Learning: -3
+    Charisma: -4
+  boss: false
+  super_boss: false
+  minion_only: true
+
+wl_big_bad_wolf_shadow:
+  name: Shadow Big Bad Wolf
+  race: Beast
+  secondary_race: Storybook
+  level: 45
+  base_hp: 754
+  mods:
+    Strength: 5
+    Constitution: 3
+    Dexterity: 4
+    Wisdom: 1
+    Learning: 0
+    Charisma: 2
+  boss: false
+  super_boss: false
+  _shadow: true
+  _shadow_of: big_bad_wolf
+
+wl_wicked_witch_shadow:
+  name: Shadow Wicked Witch
+  race: Demon
+  secondary_race: Storybook
+  level: 42
+  base_hp: 650
+  mods:
+    Learning: 5
+    Wisdom: 5
+    Charisma: 3
+    Constitution: 2
+    Dexterity: 3
+    Strength: 1
+  elemental_res:
+    water: 2.0
+    fire: 1.3
+    dark: 1.2
+    light: 0.8
+  boss: false
+  super_boss: false
+  _shadow: true
+  _shadow_of: wicked_witch
+
+# ═══════════════════════════════════════════════════════════════════
+# HEROINE ALLIES (Phase 17)
+# ═══════════════════════════════════════════════════════════════════
+
+wonderland_alice:
+  name: Alice
+  race: Fey
+  secondary_race: Storybook
+  level: 1
+  base_hp: 20
+  mods:
+    Wisdom: 4
+    Dexterity: 2
+    Charisma: 2
+    Strength: -1
+    Constitution: 0
+    Learning: 0
+  boss: false
+  super_boss: false
+  _heroine: alice
+  _heroine_passive: wonderland_logic
+  dialogue:
+    capture: Alice blinks at you curiously, then takes your hand. 'Well! This is
+      unexpected. But then, everything here is. I think I rather like unexpected.'
+    recruit_denied: Alice tilts her head, studying you. 'I'm not sure I know you
+      well enough yet. The last person I followed turned out to be a playing card.
+      Let's... let's talk more first.'
+    recruit_accepted: Alice's face brightens. 'Oh, how wonderful! I was hoping you'd
+      ask. Let's go write a new chapter together — one with fewer monsters and more
+      tea.'
+    house_talk_low: Alice peers at you over her teacup. 'You're very quiet. Are you
+      thinking about something? Or is the silence just... comfortable?'
+    house_talk_mid: Alice sets down her book — upside-down, as always. 'The story
+      makes more sense this way,' she explains earnestly. 'Would you like some tea?
+      The pot thinks it's Tuesday.'
+    house_talk_high: Alice giggles and grabs your hand. 'I tried to count the impossible
+      things I believed today. I got to seven. The seventh was that you'd actually
+      come back to see me.'
+    house_talk_max: Alice curls up beside you, resting her head on your shoulder.
+      'I used to think being lost was the worst thing. But then I got lost here.
+      And I found you. So perhaps being lost isn't so bad after all.'
+    house_talk_engaged_1: Alice gazes at her engagement ring, watching it catch the
+      light. 'A ring is a circle, you know. No beginning, no end. Just like a good
+      story. Just like us.'
+    house_talk_engaged_2: Alice leans against you, smiling dreamily. 'I had a dream
+      last night. A real dream, not a Wonderland one. We were sitting by a river,
+      and the sky was the right colour, and you were there. I hope it was a prophecy.'
+    house_gift_love: Alice gasps, cradling the gift like it might vanish. 'This is...
+      this is PERFECT. How did you know? No, don't tell me. I want it to remain
+      a mystery. Mysteries are the best part of any story.'
+    house_gift_hate: Alice's smile wavers. 'Oh. Um. Thank you? I'm sure it's very...
+      practical. I'll put it somewhere safe. Somewhere I won't find it by accident.'
+    house_buff: Alice whispers something in your ear. It's not words exactly — more
+      like the shape of an idea. You feel... clearer. Sharper. As if the nonsense
+      of the world has parted, just a little.
+    house_bond_kiss: Alice's eyes go wide. For a moment, all of Wonderland seems
+      to hold its breath. 'Oh,' she whispers. 'That was... that was the most sensible
+      thing that's ever happened to me.' She touches her lips, dazed.
+    house_engaged: Alice stares at the ring. Her teacup clatters to the saucer. 'You're
+      asking ME? The girl who followed a rabbit, who argued with flowers, who grew
+      and shrank and grew again?' Tears well up — real tears, not Wonderland tears.
+      'Yes. A thousand times yes. Or maybe once. Once is enough, if it's the right once.'
+    house_special_gift: Alice hands you a small, wrapped package. Inside — a single
+      teacup, impossibly warm. 'This is from the tea party. The one that never ends.
+      As long as this cup is warm, you'll always be welcome at the table.' She fastens
+      the Teacup Brooch to your collar. 'There. Now you're part of OUR story.'
+    ascension_pre_ceremony: Alice kneels, her expression unusually serious. 'I've
+      been small and I've been tall. I've been lost and I've been found. But I've
+      never been... enough. Please. Help me break the limits of my story.'
+    ascension_post_ceremony: The {stone} dissolves into a shower of golden letters
+      — words that rearrange themselves mid-air. {name} rises, eyes shining. 'Oh!
+      I can feel new chapters opening. Level {old_cap} was just the preface — the
+      real story begins now!'
+    is_defeated: Alice stumbles, clutching her side. 'The words... the words are
+      fading. Is this... is this the end of the chapter?' She collapses, still reaching
+      for her teacup.
+    is_recovered: Alice blinks. 'Oh! I'm back. Was I gone long? It felt like I was
+      falling. But... sideways.' She picks up her teacup. It's still warm.
+
+wonderland_red_hood:
+  name: Red Hood
+  race: Beast
+  secondary_race: Storybook
+  level: 1
+  base_hp: 24
+  mods:
+    Strength: 3
+    Dexterity: 3
+    Constitution: 2
+    Wisdom: -1
+    Charisma: 1
+    Learning: 0
+  boss: false
+  super_boss: false
+  _heroine: red_hood
+  _heroine_passive: woodcutter_training
+  dialogue:
+    capture: Red Hood studies you for a long moment. Then she shoulders her axe.
+      'Fine. But I'm not some damsel you rescued. I'm here because I CHOOSE to be.
+      Don't make me regret it.'
+    recruit_denied: Red Hood doesn't look up from her whetstone. 'I don't follow
+      just anyone. Prove you can handle yourself first. The woods don't suffer fools
+      — and neither do I.'
+    recruit_accepted: Red Hood stands, axe coming up to rest on her shoulder. 'Good.
+      Don't get in my way, and I won't get in yours. Fair warning — I don't trust
+      easily. Stories have a way of betraying you.'
+    house_talk_low: Red Hood sharpens her axe with slow, deliberate strokes. Shhhk.
+      Shhhk. She doesn't look up. 'If you've got something to say, say it. I don't
+      do small talk.'
+    house_talk_mid: Red Hood glances up from her work. 'You're still here. Most
+      people leave when they realize I'm not... soft. That I don't know how to be
+      gentle.' She pauses. 'But you stayed.'
+    house_talk_high: Red Hood sets her axe aside — a rare gesture. 'Grandmother
+      always said I'd find someone who wasn't afraid of the woods. I thought she
+      was just being kind. But you... you really aren't afraid, are you?'
+    house_talk_max: Red Hood takes off her hood — a gesture of vulnerability you've
+      never seen from her. 'The Wolf ate my story's ending. But you... you gave me
+      a new one. A better one. One where I choose who I walk through the woods with.'
+    house_talk_engaged_1: Red Hood turns her engagement ring in the light. 'I never
+      thought I'd wear something like this. It's not practical. It wouldn't stop
+      a blade. But every time I look at it, I remember that someone chose ME.'
+    house_talk_engaged_2: Red Hood is baking bread — Grandmother's recipe. The kitchen
+      smells amazing. 'Don't tell anyone about this,' she says gruffly. 'I have a
+      reputation to maintain. But... you're worth breaking it for.'
+    house_gift_love: Red Hood holds the gift carefully, as if it might break. She
+      doesn't treat many things that way. 'This is... Grandmother would have loved
+      this. Where did you find it?' Her voice is rough. 'You actually listen. That's
+      rarer than you think.'
+    house_gift_hate: Red Hood turns the gift over in her hands. 'Pretty. Useless,
+      but pretty.' She sets it aside. 'I'll put it somewhere safe.' You suspect
+      'somewhere safe' means 'somewhere I won't have to look at it.'
+    house_buff: Red Hood rests the flat of her axe blade on your shoulder — a woodsman's
+      benediction. 'There. Now the forest knows you're under my protection. The trees
+      will whisper warnings. The path will clear before you. And the wolves... the
+      wolves will think twice.'
+    house_bond_kiss: Red Hood goes rigid. For a terrifying moment, you think she's
+      going for her axe. Then she exhales — a long, shaky breath. 'No one's ever...'
+      She doesn't finish. Instead, she kisses you back. Hard. 'Don't you dare get
+      eaten by anything. That's an order.'
+    house_engaged: Red Hood stares at the ring. Then at you. Then at the ring again.
+      'Is this a trick? Some kind of storybook magic?' You shake your head. Her voice
+      cracks — 'Then yes. A thousand times yes. But I'm keeping the axe. And the hood.
+      And you're not allowed to get eaten. Ever. Those are my conditions.'
+    house_special_gift: Red Hood hands you a small bundle wrapped in oilcloth. Inside —
+      a strip of crimson fabric, still warm. 'A piece of my hood. As long as you
+      wear it, I'll always find my way back to you. No matter how dark the woods
+      get.' She ties the Crimson Clasp around your wrist. 'There. Now you're pack.
+      And pack doesn't leave pack behind.'
+    ascension_pre_ceremony: Red Hood kneels, laying her axe before her. 'In the
+      woods, you grow or you die. There's no standing still. I've stood still at
+      Level {old_cap} for too long. It's time to grow.'
+    ascension_post_ceremony: The {stone} shatters like ice under a woodsman's axe!
+      {name} rises, rolling her shoulders as old limits fall away. 'Ha! Level {old_cap}
+      was a cage. Now I'm free. The hunt continues — and nothing can stop us.'
+    is_defeated: Red Hood drops to one knee, using her axe to keep herself upright.
+      'Grandmother... I'm sorry...' She collapses, still gripping the handle.
+    is_recovered: Red Hood sits up sharply, hand already reaching for her axe. 'How
+      long was I out? What did I miss? Is it dead?' She's on her feet before you
+      can answer.
+
+wonderland_dorothy:
+  name: Dorothy
+  race: Human
+  secondary_race: Storybook
+  level: 1
+  base_hp: 22
+  mods:
+    Charisma: 3
+    Wisdom: 3
+    Constitution: 2
+    Dexterity: 2
+    Strength: 0
+    Learning: 2
+  boss: false
+  super_boss: false
+  _heroine: dorothy
+  _heroine_passive: totos_nose
+  dialogue:
+    capture: Dorothy looks at you with wide, trusting eyes. Toto barks once — his
+      vote is clear. 'Well, Toto says you're okay. And Toto's never wrong about people.
+      I guess... I guess I'm coming with you!'
+    recruit_denied: Dorothy's face falls, but she nods bravely. 'I understand. You
+      probably have important things to do. Toto and I will wait here. The road isn't
+      going anywhere. It never does.'
+    recruit_accepted: Dorothy stands, slinging her bag over her shoulder. Toto jumps
+      up, suddenly very awake. 'I've been walking this road alone for so long. It'll
+      be nice to have company. Real company. Let's go!'
+    house_talk_low: Dorothy sits by the window, looking out at the unfamiliar sky.
+      'The stars are different here. Back in Kansas, I knew all their names. Here...
+      here I'm still learning.' She smiles bravely.
+    house_talk_mid: Dorothy is humming something — an old song about rainbows and
+      bluebirds. 'Aunt Em used to sing this when I couldn't sleep. It always made
+      me feel safe. I hope it makes you feel safe too.'
+    house_talk_high: Dorothy scratches behind Toto's ears. 'You know what I realized?
+      Home isn't a place. It's people. Aunt Em was home. Toto is home. And... and
+      you're starting to feel like home too.'
+    house_talk_max: Dorothy takes out her ruby slippers. She looks at them for a
+      long moment. Then she puts them back in her bag. 'I could go home now. I can
+      feel it. But my home doesn't have you in it. And that's not a home I want anymore.'
+    house_talk_engaged_1: Dorothy gazes at her engagement ring, then at the ruby
+      slippers on the table. 'The slippers don't glow anymore. I think they finally
+      got me where I needed to go. Not to Kansas. To you.'
+    house_talk_engaged_2: Dorothy is teaching Toto a new trick. 'Look! He can fetch
+      my ring box now. Not the ring — I'd never risk that. But the box!' She laughs,
+      and it's the warmest sound in any world.
+    house_gift_love: Dorothy's eyes fill with happy tears. 'This is... this feels
+      like home. I know that sounds silly — how can a THING feel like home? But this
+      does. Thank you. Truly.' Toto barks his approval.
+    house_gift_hate: Dorothy forces a smile. 'Oh. Um. That's... very green. The Wicked
+      Witch wore a lot of green. I'm not fond of green.' She pats your arm. 'But
+      thank you for thinking of me!'
+    house_buff: Dorothy closes her eyes. 'There's no place like home,' she whispers.
+      'And there's no one like you. May the road rise to meet you. May the wind be
+      always at your back. And may you always, ALWAYS find your way back.'
+    house_bond_kiss: Dorothy's cheeks flush bright red. Toto barks — once, sharply,
+      as if to say 'finally!' 'Oh my,' she breathes. 'That was... that was better
+      than a Kansas sunrise. And I REALLY like Kansas sunrises.'
+    house_engaged: Dorothy's hands fly to her mouth. The ruby slippers on the table
+      begin to glow — faintly, softly. 'You're asking me to stay? HERE? With YOU?'
+      Tears — happy tears — spill down her cheeks. 'Yes. A thousand times yes. I
+      don't need three clicks. I don't need a wizard. I just need you.'
+    house_special_gift: Dorothy hands you a small velvet pouch. Inside — a tiny pair
+      of ruby slippers on a silver chain. 'These are a replica. The originals only
+      work for me. But these will remind you that you always have a way home — because
+      home is wherever we are. Together.'
+    ascension_pre_ceremony: Dorothy kneels, folding her hands like she's saying grace.
+      'Back in Kansas, we believed that if you worked hard and kept faith, anything
+      was possible. I've worked hard. I've kept faith. Now please — help me break
+      through Level {old_cap}.'
+    ascension_post_ceremony: The {stone} bursts into a thousand points of golden
+      light — like a Kansas sunset! {name} rises, her ruby slippers flashing. 'Oh!
+      Level {old_cap} is gone — there's no place like beyond! Thank you!'
+    is_defeated: Dorothy stumbles, Toto whimpering at her side. 'Aunt Em... I'm
+      sorry... I tried to be brave...' She sinks to her knees, clutching Toto close.
+    is_recovered: Dorothy stirs. 'Aunt Em? Is that — oh. Oh, it's you. I was dreaming
+      about Kansas. About home. But you know what? I'm glad I woke up here instead.'
+      Toto licks her face happily.

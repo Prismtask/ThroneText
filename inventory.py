@@ -2,12 +2,34 @@ import random
 from character import player_max_hp
 from resources.items import build_item, ITEMS, ITEM_RARITY
 
+# ── GUI terminal detection (safe import for terminal mode) ──────────
+try:
+    from gui.terminal import get_terminal as _get_gui_terminal
+except ImportError:
+    _get_gui_terminal = lambda: None
+
+
+def _term():
+    """Return the GUI Terminal if running in GUI mode, else None."""
+    return _get_gui_terminal()
+
+
+def _tprint(*args, sep=" "):
+    """Print to GUI if available, else to terminal."""
+    t = _term()
+    text = sep.join(str(a) for a in args)
+    if t:
+        t.print(text)
+    else:
+        print(text)
+
 RARITY_ORDER = {
     "common": 0,
     "uncommon": 1,
     "rare": 2,
     "epic": 3,
     "legendary": 4,
+    "unique": 5,
 }
 
 def _items_stackable(a, b):
@@ -41,12 +63,23 @@ def get_inventory_caps(player):
 def count_inventory(player):
     inv = player.get("inventory", [])
     equip_count = sum(1 for i in inv if i.get("type") == "equipment")
-    other_count = sum(1 for i in inv if i.get("type") != "equipment")
+    # Key items and crafting materials don't take up bag space
+    other_count = sum(1 for i in inv if i.get("type") not in ("equipment", "key_item", "crafting_material"))
     return equip_count, other_count
 
 def add_item_to_inventory(player, item):
-    """Add item to inventory if there's space. Returns True if added, False if full."""
+    """Add item to inventory if there's space. Returns True if added, False if full.
+    Key items and crafting materials bypass capacity checks."""
     _ensure_count(item)
+    # Key items and crafting materials don't take up bag space — always add
+    if item.get("type") in ("key_item", "crafting_material"):
+        inv = player.setdefault("inventory", [])
+        for existing in inv:
+            if _items_stackable(existing, item):
+                existing["count"] = existing.get("count", 1) + item["count"]
+                return True
+        inv.append(item)
+        return True
     equip_cap, other_cap = get_inventory_caps(player)
     equip_count, other_count = count_inventory(player)
     if item.get("type") == "equipment":
@@ -77,14 +110,24 @@ def get_sorted_equipment(player):
     return equip
 
 def get_sorted_items(player):
-    """Return non-equipment items sorted by rarity descending, then by name."""
+    """Return non-equipment, non-key items sorted by rarity descending, then by name."""
     inv = player.get("inventory", [])
-    items = [i for i in inv if i.get("type") != "equipment"]
+    items = [i for i in inv if i.get("type") not in ("equipment", "key_item", "crafting_material")]
     items.sort(key=lambda x: (
         -RARITY_ORDER.get(x.get("rarity", "common"), 0),
         x.get("name", "")
     ))
     return items
+
+def get_key_items(player):
+    """Return key items and crafting materials from inventory."""
+    inv = player.get("inventory", [])
+    key_items = [i for i in inv if i.get("type") in ("key_item", "crafting_material")]
+    key_items.sort(key=lambda x: (
+        -RARITY_ORDER.get(x.get("rarity", "common"), 0),
+        x.get("name", "")
+    ))
+    return key_items
 
 def remove_item_from_inventory(player, index):
     """Remove item from inventory by index, decrementing count if stacked."""
@@ -156,10 +199,10 @@ def equip_item(player, item, target_slot=None):
     old = player["equipped"][target_slot]
     if old:
         if not add_item_to_inventory(player, old):
-            print(f"Cannot equip {item['name']} — inventory is full. Unequip something first.")
+            _tprint(f"Cannot equip {item['name']} — inventory is full. Unequip something first.")
             return False
     player["equipped"][target_slot] = item
-    print(f"Equipped {item['name']}.")
+    _tprint(f"Equipped {item['name']}.")
     # Recalculate elemental profile
     from combat.elemental import compute_player_elemental
     res, dmg = compute_player_elemental(player)
@@ -173,16 +216,16 @@ def unequip_slot(player, slot):
         item = player["equipped"][slot]
         if add_item_to_inventory(player, item):
             player["equipped"][slot] = None
-            print(f"Unequipped {item['name']}.")
+            _tprint(f"Unequipped {item['name']}.")
             # Recalculate elemental profile
             from combat.elemental import compute_player_elemental
             res, dmg = compute_player_elemental(player)
             player["elemental_res"] = res
             player["elemental_dmg"] = dmg
         else:
-            print(f"Cannot unequip {item['name']} — your inventory is full!")
+            _tprint(f"Cannot unequip {item['name']} — your inventory is full!")
     else:
-        print("Nothing equipped in that slot.")
+        _tprint("Nothing equipped in that slot.")
 
 def get_total_equipment_mods(player):
     total = {}
@@ -193,8 +236,39 @@ def get_total_equipment_mods(player):
     return total
 
 
+def is_combat_only_item(item):
+    """Return True if this item requires an enemy target and can only be used in combat.
+    
+    Items like flasks, bombs, and throwing weapons that deal damage or apply
+    debuffs to enemies have no valid target outside of combat.
+    Escape/flee items are NOT combat-only — they can be used freely.
+    """
+    if item.get("type") != "utility":
+        return False
+    # Escape / flee items work without a specific enemy target
+    if item.get("escape_bonus") or item.get("fixed_flee"):
+        return False
+    # Capture nets need a capturable enemy present
+    if item.get("capture_net"):
+        return True
+    # Items that apply debuffs or status effects to an enemy
+    if any(k in item for k in ["status", "blind_enemy", "damage_over_time",
+                                "poison_damage", "stun_chance", "expose_armor",
+                                "burn_tier", "shock_damage"]):
+        return True
+    # Utility items with damage power (throwing knives, etc.)
+    if item.get("power", item.get("base_power", 0)) > 0:
+        return True
+    return False
+
+
 def use_consumable(player, item, combat_state=None):
-    """Use consumable or utility item."""
+    """Use consumable or utility item.
+    
+    Returns a message string describing the result.
+    Callers should check is_combat_only_item() before calling this
+    outside of combat — those items have no valid target.
+    """
     if item["type"] == "consumable":
         if "temp_stat" in item:
             duration = item.get("duration", 3)
@@ -221,7 +295,8 @@ def use_consumable(player, item, combat_state=None):
                 combat_state["forced_flee"] = True
             msg = f"You throw a {item['name']} and disappear in smoke!"
         elif "bonus_vs" in item and combat_state and combat_state.get("enemy_race") == item["bonus_vs"]:
-            dmg = item["power"]
+            from combat.stat_milestones import get_dexterity_damage_bonus
+            dmg = item["power"] + get_dexterity_damage_bonus(player)
             msg = f"{item['name']} burns the enemy for {dmg} damage!"
             if combat_state:
                 combat_state["enemy_hp"] -= dmg
@@ -230,7 +305,8 @@ def use_consumable(player, item, combat_state=None):
                 combat_state["enemy_slowed"] = True
             msg = f"You throw {item['name']}. Enemy is slowed!"
         else:
-            dmg = item["power"]
+            from combat.stat_milestones import get_dexterity_damage_bonus
+            dmg = item["power"] + get_dexterity_damage_bonus(player)
             if combat_state:
                 combat_state["enemy_hp"] -= dmg
             msg = f"You throw {item['name']}, dealing {dmg} damage!"
@@ -238,14 +314,31 @@ def use_consumable(player, item, combat_state=None):
 
     return "Cannot use that item."
 
+# Rarity tier ordering (lower index = lower rarity)
+_RARITY_TIER = ["common", "uncommon", "rare", "epic", "legendary", "unique"]
+
 def apply_scroll_to_item(item, scroll):
-    """Apply a rarity scroll to an equipment item. Returns True if success."""
+    """Apply a rarity scroll to an equipment item. Returns True if success.
+    
+    Prevents degrading rarity to block the exploit where players
+    downgrade an item, enchant it cheaply at low rarity, then upgrade back.
+    Unique items cannot be fused with scrolls.
+    """
     if item["type"] != "equipment":
+        return False
+    # Unique items cannot be fused — their essence is immutable
+    if item.get("unique"):
         return False
     new_rarity = scroll["target_rarity"]
     old_rarity = item["rarity"]
     if new_rarity == old_rarity:
         return False
+    
+    # Prevent rarity degradation to close the cheap-enchant exploit
+    old_tier = _RARITY_TIER.index(old_rarity) if old_rarity in _RARITY_TIER else -1
+    new_tier = _RARITY_TIER.index(new_rarity) if new_rarity in _RARITY_TIER else -1
+    if old_tier >= 0 and new_tier >= 0 and new_tier < old_tier:
+        return False  # Cannot degrade rarity via scroll fusion
     
     # Rebuild the item with new rarity, same enhance
     item["rarity"] = new_rarity

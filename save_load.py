@@ -2,9 +2,26 @@
 import json
 import os
 import glob
+import sys
 
-SAVE_DIR = "savefile"
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+SAVE_DIR = os.path.join(BASE_DIR, "savefile")
 SAVE_PREFIX = "savegame_"
+
+
+def _make_json_safe(obj):
+    """Recursively convert non-JSON-serializable types (e.g. set→list)."""
+    if isinstance(obj, dict):
+        return {k: _make_json_safe(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_make_json_safe(v) for v in obj]
+    elif isinstance(obj, set):
+        return list(obj)
+    return obj
 
 def ensure_save_directory():
     """Ensure the save directory exists so Python doesn't throw errors."""
@@ -25,7 +42,7 @@ def list_saves():
         try:
             base_name = os.path.basename(fname)
             slot = int(base_name.split('_')[-1].split('.')[0])
-            with open(fname, 'r') as f:
+            with open(fname, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 name = data.get("name", "Unknown")
                 saves[slot] = name
@@ -47,8 +64,9 @@ def save_game(player):
     if slot is None:
         raise ValueError("Player dict missing 'save_slot' key.")
     filename = get_filename(slot)
-    with open(filename, 'w') as f:
-        json.dump(player, f, indent=2)
+    safe_data = _make_json_safe(player)
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(safe_data, f, indent=2, ensure_ascii=False)
 
 def load_game(slot):
     """Load player data from savefile/savegame_<slot>.json, or return None."""
@@ -56,9 +74,9 @@ def load_game(slot):
     if not os.path.exists(filename):
         return None
     try:
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (json.JSONDecodeError, IOError, UnicodeDecodeError):
         return None
     
 def delete_save(slot):

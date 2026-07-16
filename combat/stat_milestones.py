@@ -44,6 +44,18 @@ def get_dexterity_bonus(player):
     return _get_milestone_count(base_dex) * 0.04
 
 
+def get_dexterity_damage_bonus(player):
+    """+3 flat damage to thrown/utility items per 5 Dexterity."""
+    base_dex = player.get("attributes", {}).get("Dexterity", 0)
+    return _get_milestone_count(base_dex) * 3
+
+
+def get_dexterity_damage_bonus_for_ally(ally):
+    """+3 flat damage to thrown/utility items per 5 Dexterity (ally version)."""
+    base_dex = ally.get("dexterity", ally.get("dex", 0))
+    return max(0, base_dex // 5) * 3
+
+
 # ── Wisdom ──────────────────────────────────────────────────────────────────
 
 def get_wisdom_bonus(player):
@@ -81,7 +93,7 @@ def format_milestone_label(entity, attr):
     elif attr == "Constitution":
         return f"-{count} dmg taken"
     elif attr == "Dexterity":
-        return f"+{count * 4}% dodge"
+        return f"+{count * 4}% dodge, +{count} util dmg"
     elif attr == "Wisdom":
         return f"+{count} heal/init"
     elif attr == "Learning":

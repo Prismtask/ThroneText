@@ -1,2 +1,4 @@
-BASE_EXP_FOR_NEXT_LEVEL = 115      # Reduced from 100
-EXP_SCALING = 1.2                # Reduced from 1.2
+# XP formula: 60 * level^1.5 + 40 * level  (balanced quadratic-hybrid curve)
+EXP_COEFF_A = 60    # Power-law coefficient
+EXP_COEFF_B = 40    # Linear coefficient
+EXP_POWER = 1.5     # Exponent on level

@@ -50,29 +50,31 @@ STORMHOLD_SHOPKEEPER_DIALOGUE = {
 
 STORMHOLD_INNKEEPER_DIALOGUE = {
     "enter": [
-        "Welcome to the Gilded Hearth, traveler. Rest your feet by the fire.",
-        "You look like you've crossed the great plains. Come, sit.",
-        "The capital can be overwhelming. Let me offer you a moment of peace.",
+        "Welcome to the Frozen Hearth, traveler. Warm yourself by the forge-fire.",
+        "The northern wind howls outside, but in here it's ale and warmth.",
+        "Stormhold's best — and only — inn. What'll it be, soldier?",
+        "You look half-frozen. Sit by the fire before you lose a finger.",
     ],
     "rest": [
-        "There now, a quick rest puts the spark back in your step.",
-        "Just a short while off your feet works wonders, eh?",
-        "Feel that warmth returning? Good.",
-        "Take your time. The road can wait.",
+        "There now, let the forge-heat thaw your bones.",
+        "A short rest by the fire. The storm can wait.",
+        "Feel that? That's your blood warming up. Good.",
+        "Take your time. The glacier isn't going anywhere.",
     ],
     "sleep": [
-        "Sleep deep, traveler. The city guard keeps watch tonight.",
-        "Eight hours in a real bed. You'll wake renewed, I promise.",
-        "Dream of open skies and full purses, friend.",
-        "No monsters here. Only soft pillows and quiet.",
+        "Sleep deep. The walls are thick and the guards are alert.",
+        "Eight hours in a warm bed. You'll wake ready to face the tundra.",
+        "Dream of southern shores and warm winds, friend.",
+        "No monsters here. Only the howl of the northern wind.",
     ],
     "leave": [
-        "Come back anytime. The hearth is always lit for you.",
-        "Safe journey through the capital's streets.",
-        "May the roads lead you back to my door.",
+        "Come back when the cold bites too deep. The hearth is always lit.",
+        "Safe journey through the frozen streets.",
+        "May the northern lights guide you back to my door.",
+        "Take care out there. The glacier takes the unwary.",
     ],
     "early_sleep": [
-        "The innkeeper chuckles: 'The capital's lanterns are still bright, friend. Rest a few hours if you must, but full slumber comes later.'",
+        "The innkeeper grunts: 'The northern sun still hangs low, friend. Rest a few hours, but full slumber comes when the ice moon rises.'",
     ],
 }
 
@@ -121,5 +123,23 @@ STORMHOLD_GIFT_SHOP_DIALOGUE = {
         "Safe journey. Don't forget those you left behind.",
         "Farewell. May your gifts bring joy.",
         "The gift hall will be here when you return.",
+    ],
+}
+
+STORMHOLD_ARCANE_TOWER_DIALOGUE = {
+    "enter": [
+        "The Northern Spire pierces the aurora-lit sky. The storm-winds howl with arcane energy. State your business.",
+        "Ice crystals refract ley-line energy into prismatic patterns across the Spire's walls. What knowledge do you seek?",
+        "The glacier's ancient ice preserves magical secrets from a forgotten age. Speak your purpose.",
+    ],
+    "research": [
+        "You study ancient runes carved into the ice. Their meaning slowly crystallizes in your mind.",
+        "The Spire's observatory reveals constellations that haven't been charted in a thousand years.",
+        "A storm-mage shares a fragment of forgotten lore. The knowledge settles deep within you.",
+    ],
+    "leave": [
+        "May the northern lights illuminate your path.",
+        "Return when the ice-winds call you back to study.",
+        "The Northern Spire stands eternal. As does its knowledge.",
     ],
 }

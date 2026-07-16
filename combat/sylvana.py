@@ -1,6 +1,5 @@
 # sylvana.py – Queen of Mirrors Sylvana super boss encounter
 import random
-from utils import clear_screen
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
@@ -11,6 +10,7 @@ from combat.status_effects import (
     tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
     cure_curse, apply_weaken, format_player_status_line, apply_silence, apply_blind
 )
+from combat.combat_io import c_print, c_input, c_clear
 
 # ---------------------------------------------------------------------------
 # Custom Handlers
@@ -91,18 +91,41 @@ def _illusory_veil(boss, player):
 # Main combat function
 # ---------------------------------------------------------------------------
 
-def combat_sylvana(player, floor=None):
-    boss_key = "queen_of_mirrors_sylvana"
-    boss = enemy_stats(boss_key, player)
-    boss["max_hp"] = boss["hp"]
-    enemies = [boss]
+def combat_sylvana(player, floor=None, enemies=None):
+    """Superboss: Queen of Mirrors Sylvana.
 
-    print("\n" + "=" * 55)
-    print("A thousand reflections shatter apart and reassemble —")
-    print("Queen of Mirrors Sylvana steps forward, smiling coldly.")
-    print(f"{boss['name']} — HP: {boss['hp']}")
-    print("=" * 55)
-    input("Press Enter to face the Queen of Mirrors...")
+    Args:
+        enemies: Optional pre-created enemy list for GUI mode state sharing.
+                 If provided, the first entry matching 'queen_of_mirrors_sylvana'
+                 is used as the boss. Otherwise a new boss is created.
+    """
+    boss_key = "queen_of_mirrors_sylvana"
+
+    if enemies is None:
+        boss = enemy_stats(boss_key, player)
+        boss["max_hp"] = boss["hp"]
+        enemies = [boss]
+    else:
+        # GUI mode: enemies list is shared with the CombatScreen renderer.
+        # Find the boss in the pre-created list and set max_hp.
+        boss = None
+        for e in enemies:
+            if e.get("key") == boss_key:
+                e["max_hp"] = e["hp"]
+                boss = e
+                break
+        if boss is None:
+            # Fallback: create the boss if not found in the shared list
+            boss = enemy_stats(boss_key, player)
+            boss["max_hp"] = boss["hp"]
+            enemies.append(boss)
+
+    c_print("\n" + "=" * 55)
+    c_print("A thousand reflections shatter apart and reassemble —")
+    c_print("Queen of Mirrors Sylvana steps forward, smiling coldly.")
+    c_print(f"{boss['name']} — HP: {boss['hp']}")
+    c_print("=" * 55)
+    c_input("Press Enter to face the Queen of Mirrors...")
 
     context = {
         "mirror_phase_triggered": False,
@@ -116,18 +139,18 @@ def combat_sylvana(player, floor=None):
     def on_kill_hook(target, elist, ctx):
         """Fallback — if something else kills a clone."""
         if target.get("is_fake"):
-            print(f"\n🪞 The mirror copy of {target['name']} shatters!")
+            c_print(f"\n🪞 The mirror copy of {target['name']} shatters!")
             ctx["split_active"] = False
         else:
             ctx["split_active"] = False
 
     def _trigger_mirror_rage(ctx, is_kill=False):
         """Centralized rage trigger for hitting/killing clones."""
-        print("\n🪞 That was just a mirror! Sylvana laughs as you strike the illusion.")
+        c_print("\n🪞 That was just a mirror! Sylvana laughs as you strike the illusion.")
         if ctx["final_form"]:
-            print("Her rage surges — TRIPLE ACTIONS for 2 turns!")
+            c_print("Her rage surges — TRIPLE ACTIONS for 2 turns!")
         else:
-            print("Her rage crystalises — DOUBLE ACTIONS for 2 turns!")
+            c_print("Her rage crystalises — DOUBLE ACTIONS for 2 turns!")
         ctx["boss_extra_actions"] += 2
         ctx["extra_actions_granted_this_round"] = True
 
@@ -143,12 +166,12 @@ def combat_sylvana(player, floor=None):
 
         if not ctx["final_form"] and b["hp"] <= int(b["max_hp"] * 0.30):
             ctx["final_form"] = True
-            print("\n" + "!" * 55)
-            print("[FINAL FORM] Sylvana screams. Every surface erupts into mirrors!")
-            print("Her reflection multiplies endlessly — she is EVERYWHERE NOW.")
-            print("Double actions become permanent. Reflections spawn every 3 turns.")
-            print("!" * 55)
-            input("Press Enter...")
+            c_print("\n" + "!" * 55)
+            c_print("[FINAL FORM] Sylvana screams. Every surface erupts into mirrors!")
+            c_print("Her reflection multiplies endlessly — she is EVERYWHERE NOW.")
+            c_print("Double actions become permanent. Reflections spawn every 3 turns.")
+            c_print("!" * 55)
+            c_input("Press Enter...")
 
         should_spawn = False
         if not ctx["mirror_phase_triggered"] and b["hp"] <= int(b["max_hp"] * 0.65):
@@ -168,9 +191,9 @@ def combat_sylvana(player, floor=None):
             random.shuffle(elist)
             ctx["split_active"] = True
             fake_label = "two illusory copies" if num_fakes == 2 else "an illusory copy"
-            print(f"\n🪞 [GIMMICK] Mirror Reflection! Sylvana fractures into {fake_label}!")
-            print("One of them is the REAL Sylvana. The copies bear subtly wrong names.")
-            input("Press Enter...")
+            c_print(f"\n🪞 [GIMMICK] Mirror Reflection! Sylvana fractures into {fake_label}!")
+            c_print("One of them is the REAL Sylvana. The copies bear subtly wrong names.")
+            c_input("Press Enter...")
 
     def custom_hud_hook(ctx, elist):
         if ctx["final_form"] and ctx["boss_extra_actions"] > 0:
@@ -182,7 +205,7 @@ def combat_sylvana(player, floor=None):
         else:
             action_status = "Normal actions"
 
-        print(f"  {action_status}")
+        c_print(f"  {action_status}")
         print_combat_hud(player, elist, header="Superboss: Queen of Mirrors Sylvana")
 
     def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
@@ -191,12 +214,13 @@ def combat_sylvana(player, floor=None):
             fake_dmg = max(0, random.randint(2, 6) + enemy["str_mod"] - block)
             pl["current_hp"] -= fake_dmg
             if fake_dmg > 0:
-                print(f"\n🪞 {enemy['name']} flickers and strikes you for {fake_dmg} damage!")
-                if apply_blind(pl, duration=2) == "applied": print("The illusion's touch blinds you!")
-                else: print("The illusion refreshes your blindness!")
+                from combat.helpers import format_damage_msg
+                c_print("\n🪞 " + format_damage_msg(enemy['name'], pl['name'], fake_dmg, skill_name="Mirror Strike"))
+                if apply_blind(pl, duration=2) == "applied": c_print("The illusion's touch blinds you!")
+                else: c_print("The illusion refreshes your blindness!")
             else:
-                print(f"\n🪞 {enemy['name']} flickers through you — you block the illusion!")
-            print(f"The copy shatters after attacking!")
+                c_print(f"\n🪞 {enemy['name']} flickers through you — you block the illusion!")
+            c_print("The copy shatters after attacking!")
             enemy["hp"] = 0
             if pl["current_hp"] <= 0: return "dead"
             return 0, True, None, 1.0, 0  # Handled manually, skip standard loop
@@ -207,11 +231,11 @@ def combat_sylvana(player, floor=None):
         else: actions = 1
 
         veil_msg = _illusory_veil(enemy, pl)
-        if veil_msg: print(veil_msg)
+        if veil_msg: c_print(veil_msg)
 
         if random.random() < 0.70:
             null_msg = _nullify_player_buff(pl)
-            if null_msg: print(null_msg)
+            if null_msg: c_print(null_msg)
 
         # Invert veil defense into negative temp_str so the base loop calculates block properly
         veil_def = enemy.pop("veil_defense", 0)
@@ -230,23 +254,23 @@ def combat_sylvana(player, floor=None):
         if ctx["boss_extra_actions"] > 0 and not ctx["extra_actions_granted_this_round"]:
             ctx["boss_extra_actions"] -= 1
             if ctx["boss_extra_actions"] == 0:
-                print("\n✨ Sylvana's extra fury subsides...")
+                c_print("\n✨ Sylvana's extra fury subsides...")
         ctx["extra_actions_granted_this_round"] = False
 
         if ctx["split_active"] and not any(e.get("is_fake") for e in elist):
             ctx["split_active"] = False
 
     result = superboss_combat_loop(
-    player, enemies, floor, "Queen of Mirrors Sylvana", context,
-    pre_player_hook=pre_player_hook,
-    custom_hud_hook=custom_hud_hook,
-    on_kill_hook=on_kill_hook,
-    on_player_hit_hook=on_player_hit_hook,
-    enemy_turn_hook=enemy_turn_hook,
-    post_round_hook=post_round_hook
+        player, enemies, floor, "Queen of Mirrors Sylvana", context,
+        pre_player_hook=pre_player_hook,
+        custom_hud_hook=custom_hud_hook,
+        on_kill_hook=on_kill_hook,
+        on_player_hit_hook=on_player_hit_hook,
+        enemy_turn_hook=enemy_turn_hook,
+        post_round_hook=post_round_hook
     )
 
     if result == "victory":
-        print("\n✨ The mirrors all shatter at once. Sylvana dissipates into shards of light.")
+        c_print("\n✨ The mirrors all shatter at once. Sylvana dissipates into shards of light.")
         
     return result

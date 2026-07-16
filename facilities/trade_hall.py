@@ -36,6 +36,7 @@ from resources.mounts import (
     upgrade_cost,
     downgrade_refund,
 )
+from gui.terminal import term
 
 # Cities where property ownership isn't possible / doesn't make sense.
 _DEED_EXCLUDED = {"isle_of_glass", "blackwake"}
@@ -50,76 +51,99 @@ BULK_SELL_REWARD   = 50
 # ═══════════════════════════════════════════════════════════════
 
 def _sell_house_deed(player):
-    """Walk the player through buying and placing a house deed."""
+    """Walk the player through buying and placing a house deed.
+    
+    If the player already owns a house, buying a new deed moves the existing
+    house (with all its data: level, storage, monster girls, income timing)
+    to the newly chosen city instead of creating a second house.
+    """
     if player.get("gold", 0) < HOUSE_DEED_COST:
-        print(f"A House Deed costs {HOUSE_DEED_COST} gold. You don't have enough.")
-        input("\nPress Enter...")
+        term.print(f"A House Deed costs {HOUSE_DEED_COST} gold. You don't have enough.")
+        term.pause()
         return
 
     player.setdefault("houses", {})
+    houses = player.get("houses", {})
 
-    if len(player.get("houses", {})) >= 1:
-        print("You already own a house. You may only have one house.")
-        input("\nPress Enter...")
-        return
+    # Determine if the player already has a house (and where).
+    existing_city_id = None
+    existing_house = None
+    if houses:
+        # There should only be one, but grab the first just in case.
+        existing_city_id = next(iter(houses))
+        existing_house = houses[existing_city_id]
+
+    if existing_house:
+        old_city_name = CITIES.get(existing_city_id, {}).get("name", existing_city_id)
+        from facilities.house import HOUSE_LEVELS
+        old_level_name = HOUSE_LEVELS.get(existing_house.get("level", 1), {}).get("name", "Hovel")
+        term.print(f"\nYou already own a {old_level_name} in {old_city_name}.")
+        term.print(f"Buying a new deed will MOVE your house to the new city")
+        term.print(f"(keeping its level, storage, and residents).")
 
     # Build the list of cities where the player can place a deed.
     eligible = [
         (city_id, data)
         for city_id, data in CITIES.items()
         if city_id not in _DEED_EXCLUDED
+        and city_id != existing_city_id  # Don't show the city the house is already in
     ]
 
-    print("\n=== Choose a City for Your New Home ===")
-    print("(You may only own one house. It will be your home anywhere in the world.)\n")
-
-    for i, (city_id, data) in enumerate(eligible, 1):
-        owned = "✓ Owned" if city_id in player["houses"] else ""
-        print(f"  {i:2}. {data['name']:<20} {owned}")
-
-    print(f"\n  0. Cancel")
-
-    while True:
-        try:
-            raw = input("\nChoose city number: ").strip()
-            if raw == "0":
-                print("Purchase cancelled.")
-                input("\nPress Enter...")
-                return
-            idx = int(raw) - 1
-            if not (0 <= idx < len(eligible)):
-                print("Invalid choice.")
-                continue
-            chosen_id, chosen_data = eligible[idx]
-            break
-        except ValueError:
-            print("Please enter a number.")
-
-    if chosen_id in player["houses"]:
-        print(f"You already own a house in {chosen_data['name']}.")
-        input("\nPress Enter...")
+    if not eligible:
+        term.print("No other cities are available to move your house to.")
+        term.pause()
         return
 
-    # Confirm purchase.
-    print(f"\nPurchase a house deed for {chosen_data['name']}?")
-    print(f"  Cost: {HOUSE_DEED_COST} gold  (current: {player.get('gold', 0)})")
-    confirm = input("Proceed? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("Purchase cancelled.")
-        input("\nPress Enter...")
+    if existing_house:
+        term.print("\n=== Choose a City to Move Your House To ===")
+    else:
+        term.print("\n=== Choose a City for Your New Home ===")
+    term.print("(You may only own one house. It will be your home anywhere in the world.)\n")
+
+    options = [data['name'] for _, data in eligible]
+
+    prompt = "Choose city to move your house to:" if existing_house else "Choose city for your new home:"
+    choice = term.menu(options, prompt=prompt, allow_cancel=True)
+
+    if choice < 0:
+        term.print("Purchase cancelled.")
+        term.pause()
         return
 
-    # Complete purchase.
+    chosen_id, chosen_data = eligible[choice]
+
+    # Confirm purchase / move.
+    if existing_house:
+        term.print(f"\nMove your {old_level_name} from {old_city_name} to {chosen_data['name']}?")
+    else:
+        term.print(f"\nPurchase a house deed for {chosen_data['name']}?")
+    term.print(f"  Cost: {HOUSE_DEED_COST} gold  (current: {player.get('gold', 0)})")
+
+    if not term.confirm("Proceed?"):
+        term.print("Purchase cancelled.")
+        term.pause()
+        return
+
+    # Complete purchase / move.
     player["gold"] -= HOUSE_DEED_COST
-    player["houses"][chosen_id] = {
-        "level":           1,
-        "storage":         [],
-        "last_income_day": player.get("day", 1),
-    }
-    print(f"\nCongratulations! You now own a Hovel in {chosen_data['name']}.")
-    print("Visit that city and choose 'Your House' from the city menu.")
-    print(f"  Remaining gold: {player['gold']}")
-    input("\nPress Enter...")
+
+    if existing_house:
+        # Move the existing house to the new city, preserving all data.
+        player["houses"][chosen_id] = existing_house
+        del player["houses"][existing_city_id]
+        level_name = HOUSE_LEVELS.get(existing_house.get("level", 1), {}).get("name", "Hovel")
+        term.print(f"\nYour {level_name} has been moved from {old_city_name} to {chosen_data['name']}!")
+    else:
+        player["houses"][chosen_id] = {
+            "level":           1,
+            "storage":         [],
+            "last_income_day": player.get("day", 1),
+        }
+        term.print(f"\nCongratulations! You now own a Hovel in {chosen_data['name']}.")
+
+    term.print("Visit that city and choose 'Your House' from the city menu.")
+    term.print(f"  Remaining gold: {player['gold']}")
+    term.pause()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -143,24 +167,23 @@ def _buy_mount(player, mount_id):
 
     cost = mount["cost"]
     if player.get("gold", 0) < cost:
-        print(f"You need {cost}g for a {mount['name']}. You only have {player.get('gold', 0)}g.")
-        input("\nPress Enter...")
+        term.print(f"You need {cost}g for a {mount['name']}. You only have {player.get('gold', 0)}g.")
+        term.pause()
         return
 
-    print(f"\nPurchase a {mount['name']} for {cost}g?")
-    print(f"  Travel: {int(mount['time_reduction']*100)}% faster")
-    print(f"  Safety: {int(mount['event_mitigation']*100)}% fewer road events")
-    confirm = input("Proceed? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("Purchase cancelled.")
-        input("\nPress Enter...")
+    term.print(f"\nPurchase a {mount['name']} for {cost}g?")
+    term.print(f"  Travel: {int(mount['time_reduction']*100)}% faster")
+    term.print(f"  Safety: {int(mount['event_mitigation']*100)}% fewer road events")
+    if not term.confirm("Proceed?"):
+        term.print("Purchase cancelled.")
+        term.pause()
         return
 
     player["gold"] -= cost
     player["mount_id"] = mount_id
-    print(f"\nYou acquire a {mount['name']}. Road journeys will be smoother.")
-    print(f"  Remaining gold: {player['gold']}")
-    input("\nPress Enter...")
+    term.print(f"\nYou acquire a {mount['name']}. Road journeys will be smoother.")
+    term.print(f"  Remaining gold: {player['gold']}")
+    term.pause()
 
 
 def _upgrade_mount(player):
@@ -168,38 +191,37 @@ def _upgrade_mount(player):
     current_id = player.get("mount_id")
     current = get_mount(current_id)
     if not current:
-        print("You don't own a mount to upgrade.")
-        input("\nPress Enter...")
+        term.print("You don't own a mount to upgrade.")
+        term.pause()
         return
 
     next_id, next_mount = get_mount_by_tier(current["tier"] + 1)
     if not next_mount:
-        print(f"Your {current['name']} is already the finest beast on the road.")
-        input("\nPress Enter...")
+        term.print(f"Your {current['name']} is already the finest beast on the road.")
+        term.pause()
         return
 
     cost = upgrade_cost(current_id, next_id)
     if player.get("gold", 0) < cost:
-        print(f"Upgrading to a {next_mount['name']} costs an additional {cost}g.")
-        print(f"You only have {player.get('gold', 0)}g.")
-        input("\nPress Enter...")
+        term.print(f"Upgrading to a {next_mount['name']} costs an additional {cost}g.")
+        term.print(f"You only have {player.get('gold', 0)}g.")
+        term.pause()
         return
 
-    print(f"\nUpgrade your {current['name']} to a {next_mount['name']}?")
-    print(f"  Additional cost: {cost}g")
-    print(f"  Travel: {int(next_mount['time_reduction']*100)}% faster (was {int(current['time_reduction']*100)}%)")
-    print(f"  Safety: {int(next_mount['event_mitigation']*100)}% safer (was {int(current['event_mitigation']*100)}%)")
-    confirm = input("Proceed? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("Upgrade cancelled.")
-        input("\nPress Enter...")
+    term.print(f"\nUpgrade your {current['name']} to a {next_mount['name']}?")
+    term.print(f"  Additional cost: {cost}g")
+    term.print(f"  Travel: {int(next_mount['time_reduction']*100)}% faster (was {int(current['time_reduction']*100)}%)")
+    term.print(f"  Safety: {int(next_mount['event_mitigation']*100)}% safer (was {int(current['event_mitigation']*100)}%)")
+    if not term.confirm("Proceed?"):
+        term.print("Upgrade cancelled.")
+        term.pause()
         return
 
     player["gold"] -= cost
     player["mount_id"] = next_id
-    print(f"\nYou now ride a {next_mount['name']}. The road fears you.")
-    print(f"  Remaining gold: {player['gold']}")
-    input("\nPress Enter...")
+    term.print(f"\nYou now ride a {next_mount['name']}. The road fears you.")
+    term.print(f"  Remaining gold: {player['gold']}")
+    term.pause()
 
 
 def _downgrade_mount(player):
@@ -207,33 +229,32 @@ def _downgrade_mount(player):
     current_id = player.get("mount_id")
     current = get_mount(current_id)
     if not current:
-        print("You don't own a mount to downgrade.")
-        input("\nPress Enter...")
+        term.print("You don't own a mount to downgrade.")
+        term.pause()
         return
 
     prev_id, prev_mount = get_mount_by_tier(current["tier"] - 1)
     if not prev_mount:
-        print(f"A {current['name']} is the lowest tier. You cannot downgrade further.")
-        print("Use 'Sell mount' if you wish to part with it entirely.")
-        input("\nPress Enter...")
+        term.print(f"A {current['name']} is the lowest tier. You cannot downgrade further.")
+        term.print("Use 'Sell mount' if you wish to part with it entirely.")
+        term.pause()
         return
 
     refund = downgrade_refund(current_id, prev_id)
-    print(f"\nDowngrade your {current['name']} to a {prev_mount['name']}?")
-    print(f"  Refund: {refund}g")
-    print(f"  Travel: {int(prev_mount['time_reduction']*100)}% faster (was {int(current['time_reduction']*100)}%)")
-    print(f"  Safety: {int(prev_mount['event_mitigation']*100)}% safer (was {int(current['event_mitigation']*100)}%)")
-    confirm = input("Proceed? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("Downgrade cancelled.")
-        input("\nPress Enter...")
+    term.print(f"\nDowngrade your {current['name']} to a {prev_mount['name']}?")
+    term.print(f"  Refund: {refund}g")
+    term.print(f"  Travel: {int(prev_mount['time_reduction']*100)}% faster (was {int(current['time_reduction']*100)}%)")
+    term.print(f"  Safety: {int(prev_mount['event_mitigation']*100)}% safer (was {int(current['event_mitigation']*100)}%)")
+    if not term.confirm("Proceed?"):
+        term.print("Downgrade cancelled.")
+        term.pause()
         return
 
     player["gold"] += refund
     player["mount_id"] = prev_id
-    print(f"\nYou trade your {current['name']} for a {prev_mount['name']}.")
-    print(f"  Received: {refund}g  |  Remaining gold: {player['gold']}")
-    input("\nPress Enter...")
+    term.print(f"\nYou trade your {current['name']} for a {prev_mount['name']}.")
+    term.print(f"  Received: {refund}g  |  Remaining gold: {player['gold']}")
+    term.pause()
 
 
 def _sell_mount(player):
@@ -241,77 +262,64 @@ def _sell_mount(player):
     current_id = player.get("mount_id")
     current = get_mount(current_id)
     if not current:
-        print("You have no mount to sell.")
-        input("\nPress Enter...")
+        term.print("You have no mount to sell.")
+        term.pause()
         return
 
     refund = sell_value(current_id)
-    print(f"\nSell your {current['name']} for {refund}g?")
-    confirm = input("Proceed? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("Sale cancelled.")
-        input("\nPress Enter...")
+    term.print(f"\nSell your {current['name']} for {refund}g?")
+    if not term.confirm("Proceed?"):
+        term.print("Sale cancelled.")
+        term.pause()
         return
 
     player["gold"] += refund
     player["mount_id"] = None
-    print(f"\nYou part with your {current['name']} for {refund}g.")
-    print(f"  Remaining gold: {player['gold']}")
-    input("\nPress Enter...")
+    term.print(f"\nYou part with your {current['name']} for {refund}g.")
+    term.print(f"  Remaining gold: {player['gold']}")
+    term.pause()
 
 
 def _mount_menu(player):
     """Sub-menu for stable / mount transactions."""
     while True:
-        print("\n=== Stable & Caravan ===")
         current_id = player.get("mount_id")
 
         if current_id:
             current = get_mount(current_id)
-            print(f"Current mount: {_mount_info_line(current_id)}")
-            print()
-            print("1. Upgrade mount")
-            print("2. Downgrade mount")
-            print("3. Sell mount")
-            print("4. Back")
-        else:
-            print("You have no mount. The stable-master shows you what is available.")
-            print()
-            # Show all mounts for purchase
-            opts = []
-            for mid, data in sorted(MOUNTS.items(), key=lambda x: x[1]["tier"]):
-                opts.append(mid)
-                print(f"{len(opts)}. Buy {_mount_info_line(mid)}")
-            print(f"{len(opts)+1}. Back")
-
-        choice = input("\nChoice: ").strip()
-
-        if current_id:
-            if choice == "1":
+            term.print(f"Current mount: {_mount_info_line(current_id)}")
+            choice = term.menu([
+                "Upgrade mount",
+                "Downgrade mount",
+                "Sell mount",
+                "Back"
+            ], prompt="=== Stable & Caravan ===")
+            
+            if choice == 0:
                 _upgrade_mount(player)
                 return
-            elif choice == "2":
+            elif choice == 1:
                 _downgrade_mount(player)
                 return
-            elif choice == "3":
+            elif choice == 2:
                 _sell_mount(player)
                 return
-            elif choice == "4":
+            elif choice == 3 or choice == -1:
                 return
-            else:
-                print("Invalid choice.")
         else:
-            try:
-                idx = int(choice) - 1
-                if 0 <= idx < len(opts):
-                    _buy_mount(player, opts[idx])
-                    return
-                elif idx == len(opts):
-                    return
-                else:
-                    print("Invalid choice.")
-            except ValueError:
-                print("Invalid choice.")
+            opts = []
+            options = []
+            for mid, data in sorted(MOUNTS.items(), key=lambda x: x[1]["tier"]):
+                opts.append(mid)
+                options.append(f"Buy {_mount_info_line(mid)}")
+            
+            choice = term.menu(options, prompt="You have no mount. The stable-master shows you what is available:", allow_cancel=True)
+            
+            if 0 <= choice < len(opts):
+                _buy_mount(player, opts[choice])
+                return
+            elif choice == -1:
+                return
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -321,17 +329,14 @@ def _mount_menu(player):
 def trade_hall_service(player, city_id):
     """Trade hall: exchange goods, get trade permits, or manage mounts."""
     service_dialogue(city_id, "trade_hall", "enter")
-    print("You browse trade ledgers and exotic goods.")
 
     while True:
-        print()
         # Option 1: Trade Permit
         permit_label = (
             "Trade permit — already owned"
             if player.get("trade_permit")
-            else f"Buy trade permit ({TRADE_PERMIT_COST} gold) — unlocks special trades"
+            else f"Buy trade permit ({TRADE_PERMIT_COST} gold) — WIP"
         )
-        print(f"1. {permit_label}")
 
         # Option 2: House Deed
         houses_owned = len(player.get("houses", {}))
@@ -339,7 +344,6 @@ def trade_hall_service(player, city_id):
             f"Buy house deed ({HOUSE_DEED_COST} gold) — place a home in any city"
             + (f"  [You own {houses_owned} house(s)]" if houses_owned else "")
         )
-        print(f"2. {deed_label}")
 
         # Option 3: Mount / Stable
         mount_id = player.get("mount_id")
@@ -348,42 +352,43 @@ def trade_hall_service(player, city_id):
             mount_label = f"Stable / Caravan — current: {m['name']}"
         else:
             mount_label = "Stable / Caravan — buy a mount"
-        print(f"3. {mount_label}")
 
-        print(f"4. Sell bulk goods — {BULK_SELL_REWARD} gold")
-        print("5. Leave")
+        options = [
+            permit_label,
+            deed_label,
+            mount_label,
+            f"Sell bulk goods — {BULK_SELL_REWARD} gold",
+            "Leave"
+        ]
+        
+        choice = term.menu(options, prompt="You browse trade ledgers and exotic goods.")
 
-        choice = input("\nChoice: ").strip()
-
-        if choice == "1":
+        if choice == 0:
             if player.get("trade_permit"):
-                print("You already hold a trade permit.")
+                term.print("You already hold a trade permit.")
             elif player.get("gold", 0) >= TRADE_PERMIT_COST:
                 player["gold"] -= TRADE_PERMIT_COST
                 player["trade_permit"] = True
-                print("You obtain a trade permit. New opportunities await.")
+                term.print("You obtain a trade permit. New opportunities await.")
                 service_dialogue(city_id, "trade_hall", "success")
             else:
-                print("Insufficient gold.")
-            input("\nPress Enter...")
+                term.print("Insufficient gold.")
+            term.pause()
 
-        elif choice == "2":
+        elif choice == 1:
             _sell_house_deed(player)
 
-        elif choice == "3":
+        elif choice == 2:
             _mount_menu(player)
 
-        elif choice == "4":
+        elif choice == 3:
             player["gold"] = player.get("gold", 0) + BULK_SELL_REWARD
-            print(f"The merchants offer {BULK_SELL_REWARD} gold for your spare goods.")
-            print(f"  Gold: {player['gold']}")
-            input("\nPress Enter...")
+            term.print(f"The merchants offer {BULK_SELL_REWARD} gold for your spare goods.")
+            term.print(f"  Gold: {player['gold']}")
+            term.pause()
 
-        elif choice == "5":
+        elif choice == 4 or choice == -1:
             service_dialogue(city_id, "trade_hall", "leave")
             break
-
-        else:
-            print("Invalid choice.")
 
     advance_time(player, 30)

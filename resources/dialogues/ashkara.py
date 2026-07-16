@@ -123,3 +123,18 @@ ASHKARA_BLACKSMITH_DIALOGUE = {
     "fusion_failed": "The ash rejected the fusion. Nothing changed. Probably for the best.",
     "fusion_success": "Miracles happen! Your {} now boasts {} rarity! Don't celebrate yet.",
 }
+
+ASHKARA_GUILD_DIALOGUE = {
+    "enter": [
+        "Ashkara Guild. The board is mostly bounties on cultists and tomb-robbers.",
+        "Looking for work in the ruins? We have plenty. Most don't come back.",
+        "The guild here doesn't ask questions about your past. Just your results.",
+        "State your name — if you dare. The ash remembers.",
+    ],
+    "leave": [
+        "Come back alive. The guild needs contract-fillers, not corpses.",
+        "May the ash not claim your bounty before you do.",
+        "Return with proof of death. We don't take your word here.",
+        "Farewell. Don't become someone else's contract.",
+    ],
+}

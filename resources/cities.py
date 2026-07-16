@@ -61,12 +61,14 @@ from .dialogues import (
     THORNWALL_INNKEEPER_DIALOGUE,
     THORNWALL_BARRACKS_DIALOGUE,
 
-    # Dunemar  (no longer has a port — desert oasis city)
+    # Dunemar  (desert trade hub with coastal port access)
     DUNEMAR_RECEPTIONIST_DIALOGUE,
     DUNEMAR_SHOPKEEPER_DIALOGUE,
     DUNEMAR_INNKEEPER_DIALOGUE,
     DUNEMAR_TRADE_HALL_DIALOGUE,
     DUNEMAR_BLACK_MARKET_DIALOGUE,
+    DUNEMAR_PORTMASTER_DIALOGUE,
+    DUNEMAR_ARCANE_TOWER_DIALOGUE,
 
     # Tidebreak  (major southern port hub)
     TIDEBREAK_RECEPTIONIST_DIALOGUE,
@@ -82,6 +84,7 @@ from .dialogues import (
     STORMHOLD_INNKEEPER_DIALOGUE,
     STORMHOLD_BARRACKS_DIALOGUE,
     STORMHOLD_GIFT_SHOP_DIALOGUE,
+    STORMHOLD_ARCANE_TOWER_DIALOGUE,
 
     # Coralhaven  (tropical island — sea access only)
     CORALHAVEN_RECEPTIONIST_DIALOGUE,
@@ -121,7 +124,6 @@ from .dialogues import (
     CINDERPEAK_SHOPKEEPER_DIALOGUE,
     CINDERPEAK_INNKEEPER_DIALOGUE,
     CINDERPEAK_BLACKSMITH_DIALOGUE,
-    CINDERPEAK_ARCANE_TOWER_DIALOGUE,
 
     # Veilholt  (NEW — ancient forest city)
     VEILHOLT_RECEPTIONIST_DIALOGUE,
@@ -130,6 +132,17 @@ from .dialogues import (
     VEILHOLT_HERBALIST_DIALOGUE,
     VEILHOLT_ARCANE_TOWER_DIALOGUE,
     VEILHOLT_GUILD_DIALOGUE,
+    VEILHOLT_BLACK_MARKET_DIALOGUE,
+
+    # Wonderland  (hidden — accessible only via Veilholt Arcane Tower book)
+    WONDERLAND_RECEPTIONIST_DIALOGUE,
+    WONDERLAND_SHOPKEEPER_DIALOGUE,
+    WONDERLAND_INNKEEPER_DIALOGUE,
+    WONDERLAND_HERBALIST_DIALOGUE,
+    WONDERLAND_ARCANE_TOWER_DIALOGUE,
+    WONDERLAND_BLACK_MARKET_DIALOGUE,
+    WONDERLAND_TEMPLE_DIALOGUE,
+    WONDERLAND_GIFT_SHOP_DIALOGUE,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -145,6 +158,8 @@ from .dialogues import (
 #  CENTRAL:        Solmere (hub) — Greyharbor — Elderfen
 #  SOUTH REGION:   Sunreach — Brinewatch — Mirefall — Ashkara — Dunemar — Saltmarsh
 #  FAR REACHES:    Tidebreak — Coralhaven — Blackwake — Isle of Glass
+#
+#  WONDERLAND (hidden — accessible only via Veilholt Arcane Tower book)
 # ─────────────────────────────────────────────────────────────────────────────
 
 CITIES = {
@@ -155,13 +170,14 @@ CITIES = {
         "name": "Stormhold",
         "biome": "tundra",
         "description": "A bleak northern fortress carved into a glacier ridge. No harbour, no port — the sea here is frozen six months of the year.",
-        "services": ["shop", "inn", "barracks", "gift_shop"],
+        "services": ["shop", "inn", "barracks", "gift_shop", "arcane_tower"],
         "dialogues": {
             "receptionist": STORMHOLD_RECEPTIONIST_DIALOGUE,
             "shop": STORMHOLD_SHOPKEEPER_DIALOGUE,
             "inn": STORMHOLD_INNKEEPER_DIALOGUE,
             "barracks": STORMHOLD_BARRACKS_DIALOGUE,
-            "gift_shop": SKYLUME_GIFT_SHOP_DIALOGUE,
+            "gift_shop": STORMHOLD_GIFT_SHOP_DIALOGUE,
+            "arcane_tower": STORMHOLD_ARCANE_TOWER_DIALOGUE,
         },
         "travel": {
             "connections": [
@@ -321,13 +337,12 @@ CITIES = {
         "name": "Cinderpeak",
         "biome": "volcanic",
         "description": "Built in the caldera of a dormant volcano. The air tastes of sulphur and opportunity — rare ores flow down from the crater rim.",
-        "services": ["shop", "inn", "blacksmith", "arcane_tower"],
+        "services": ["shop", "inn", "blacksmith"],
         "dialogues": {
             "receptionist": CINDERPEAK_RECEPTIONIST_DIALOGUE,
             "shop": CINDERPEAK_SHOPKEEPER_DIALOGUE,
             "inn": CINDERPEAK_INNKEEPER_DIALOGUE,
             "blacksmith": CINDERPEAK_BLACKSMITH_DIALOGUE,
-            "arcane_tower": CINDERPEAK_ARCANE_TOWER_DIALOGUE,
         },
         "travel": {
             "connections": [
@@ -343,7 +358,7 @@ CITIES = {
         "name": "Veilholt",
         "biome": "forest",
         "description": "An ancient city grown into and around the Forest of Veils. Elven architecture merges seamlessly with the canopy.",
-        "services": ["shop", "inn", "herbalist", "arcane_tower", "guild"],
+        "services": ["shop", "inn", "herbalist", "arcane_tower", "guild", "black_market"],
         "dialogues": {
             "receptionist": VEILHOLT_RECEPTIONIST_DIALOGUE,
             "shop": VEILHOLT_SHOPKEEPER_DIALOGUE,
@@ -351,6 +366,7 @@ CITIES = {
             "herbalist": VEILHOLT_HERBALIST_DIALOGUE,
             "arcane_tower": VEILHOLT_ARCANE_TOWER_DIALOGUE,
             "guild": VEILHOLT_GUILD_DIALOGUE,
+            "black_market": VEILHOLT_BLACK_MARKET_DIALOGUE,
         },
         "travel": {
             "connections": [
@@ -462,13 +478,15 @@ CITIES = {
         "name": "Dunemar",
         "biome": "desert",
         "description": "A fortified desert trade post at the end of the Amber Road. Caravans converge here from three directions.",
-        "services": ["shop", "inn", "trade_hall", "black_market"],
+        "services": ["shop", "inn", "trade_hall", "black_market", "port", "arcane_tower"],
         "dialogues": {
             "receptionist": DUNEMAR_RECEPTIONIST_DIALOGUE,
             "shop": DUNEMAR_SHOPKEEPER_DIALOGUE,
             "inn": DUNEMAR_INNKEEPER_DIALOGUE,
             "trade_hall": DUNEMAR_TRADE_HALL_DIALOGUE,
             "black_market": DUNEMAR_BLACK_MARKET_DIALOGUE,
+            "port": DUNEMAR_PORTMASTER_DIALOGUE,
+            "arcane_tower": DUNEMAR_ARCANE_TOWER_DIALOGUE,
         },
         "travel": {
             "connections": [
@@ -597,6 +615,42 @@ CITIES = {
                 {"dest": "tidebreak", "type": "sea", "travel_time": 130},
                 {"dest": "coralhaven","type": "sea", "travel_time": 100},
             ],
+        },
+    },
+
+    # ── WONDERLAND (hidden — accessible only via Veilholt Arcane Tower book) ──
+
+    "wonderland": {
+        "name": "Wonderland",
+        "biome": "wonderland",
+        "description": (
+            "A realm stitched from forgotten storybooks and half-remembered dreams. "
+            "The sky is the colour of aged parchment, and the clocks tick backwards. "
+            "The residents are... familiar, in a way that unsettles the soul."
+        ),
+        "services": ["shop", "inn", "herbalist", "arcane_tower", "black_market", "temple", "gift_shop"],
+        "dialogues": {
+            "receptionist":  WONDERLAND_RECEPTIONIST_DIALOGUE,
+            "shop":          WONDERLAND_SHOPKEEPER_DIALOGUE,
+            "inn":           WONDERLAND_INNKEEPER_DIALOGUE,
+            "herbalist":     WONDERLAND_HERBALIST_DIALOGUE,
+            "arcane_tower":  WONDERLAND_ARCANE_TOWER_DIALOGUE,
+            "black_market":  WONDERLAND_BLACK_MARKET_DIALOGUE,
+            "temple":        WONDERLAND_TEMPLE_DIALOGUE,
+            "gift_shop":     WONDERLAND_GIFT_SHOP_DIALOGUE,
+        },
+        "travel": {
+            "connections": [],   # No travel connections — entry/exit is via Arcane Tower book only
+        },
+        "shop": {
+            "stock_size": 9,
+            "base_price_consumable": 22,
+            "base_price_other": 70,
+            "rarity_bias": "higher",
+        },
+        "inn": {
+            "rest_cost": 15,
+            "sleep_after_hour": 22,
         },
     },
 }

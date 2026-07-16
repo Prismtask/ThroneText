@@ -1,7 +1,9 @@
+from combat.combat_io import c_print, c_input, c_clear
 # combat/skills.py – Class Skill Definitions, Mastery & Execution
 import random
 
 from resources.skill_loader import PASSIVE_SKILLS, CLASS_SKILLS
+from combat.helpers import format_damage_msg
 
 
 # ── Skill Queries ──────────────────────────────────────────────────────────
@@ -78,14 +80,45 @@ def tick_skill_cooldowns(player):
 
 
 def set_skill_cooldown(player, skill_id):
-    """Put a skill on cooldown after use."""
+    """Put a skill on cooldown after use.
+    Returns an optional message if a cooldown_reduction buff was consumed."""
     from combat.wedding_specials import apply_wedding_skill_cooldown_skip
     if apply_wedding_skill_cooldown_skip(player, skill_id):
-        return
+        return None
     skill_map = get_class_skill_map(player)
     if skill_id in skill_map:
         cooldown = skill_map[skill_id]["cooldown"]
+        reduction_msg = None
+        # Consume cooldown_reduction buff if present (e.g. from Haste)
+        for buff in player.get("active_buffs", [])[:]:
+            if buff.get("type") == "cooldown_reduction":
+                reduction = buff.get("value", 0)
+                cooldown = max(0, cooldown - reduction)
+                player["active_buffs"].remove(buff)
+                reduction_msg = f"Cooldown reduced by {reduction}!"
+                break
+        # Consume haste CD reduction
+        from combat.status_effects import consume_haste_cd_reduction
+        haste_cd = consume_haste_cd_reduction(player)
+        if haste_cd > 0:
+            cooldown = max(0, cooldown - haste_cd)
+            if not reduction_msg:
+                reduction_msg = f"Haste cooldown reduced by {haste_cd}!"
+        # Pandemonium: Mana Drain curse increases cooldowns
+        from pandemonium_curses import get_cooldown_increase
+        cooldown += get_cooldown_increase(player)
+        
+        # Wonderland: White Rabbit's Haste reduces cooldowns
+        from wonderland_curses import get_white_rabbit_cooldown_reduction
+        cooldown = max(0, cooldown - get_white_rabbit_cooldown_reduction(player))
+        
+        # Arcane Blessing: Mana Attunement reduces cooldowns
+        from facilities.arcane_tower import get_arcane_cooldown_reduction
+        cooldown = max(0, cooldown - get_arcane_cooldown_reduction(player))
+        
         player.setdefault("skill_cooldowns", {})[skill_id] = cooldown
+        return reduction_msg
+    return None
 
 
 def reduce_all_cooldowns(player, amount):
@@ -258,7 +291,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         if len(enemies) == 1:
             return enemies[0]
         try:
-            choice = int(input("Select target number: ")) - 1
+            choice = int(c_input("Select target number: ")) - 1
             if 0 <= choice < len(enemies):
                 return enemies[choice]
         except ValueError:
@@ -273,15 +306,15 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             alive = [m for m in party if m.get("current_hp", 1) > 0]
         if len(alive) == 1:
             return alive[0]
-        print("Select target:")
+        c_print("Select target:")
         for i, m in enumerate(alive):
             name = m.get("name", "You") if m is player else m.get("name", "Ally")
             hp = m.get("current_hp", 0)
             max_hp = m.get("max_hp", player_max_hp(m) if m is player else m.get("max_hp", hp))
             status = " [FALLEN]" if m.get("current_hp", 1) <= 0 else ""
-            print(f"  {i+1}. {name} ({hp}/{max_hp}){status}")
+            c_print(f"  {i+1}. {name} ({hp}/{max_hp}){status}")
         try:
-            choice = int(input("Choice: ")) - 1
+            choice = int(c_input("Choice: ")) - 1
             if 0 <= choice < len(alive):
                 return alive[choice]
         except ValueError:
@@ -295,38 +328,18 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             return None
         if len(dead) == 1:
             return dead[0]
-        print("Select fallen ally to revive:")
+        c_print("Select fallen ally to revive:")
         for i, m in enumerate(dead):
             name = m.get("name", "You") if m is player else m.get("name", "Ally")
             max_hp = m.get("max_hp", player_max_hp(m) if m is player else m.get("max_hp", 1))
-            print(f"  {i+1}. {name} (will revive at {int(max_hp * 0.5)} HP)")
+            c_print(f"  {i+1}. {name} (will revive at {int(max_hp * 0.5)} HP)")
         try:
-            choice = int(input("Choice: ")) - 1
+            choice = int(c_input("Choice: ")) - 1
             if 0 <= choice < len(dead):
                 return dead[choice]
         except ValueError:
             pass
         return None
-
-    # ── Skill Element Mapping ──
-    SKILL_ELEMENTS = {
-        "mage_fireball": "fire", "mage_frostnova": "water", "mage_meteor": "fire",
-        "mage_overload": "thunder",
-        "pal_strike": "light", "pal_judgment": "light", "pal_consecrate": "light",
-        "pal_avenging": "light",
-        "lck_drain": "dark", "lck_pact": "dark", "lck_soul_fire": "dark",
-        "lck_curse": "dark", "lck_fear": "dark", "lck_empower": "dark",
-        "rog_backstab": "dark", "rog_assassinate": "dark", "rog_shadow_strike": "dark",
-        "rog_venom": "dark", "rog_smoke": "dark",
-        "rng_pierce": "wind", "rng_trueshot": "wind", "rng_rain": "wind",
-        "rng_rapid": "wind", "rng_mark": "wind",
-        "bar_rage": "fire", "bar_berserk": "fire", "bar_bloodlust": "fire",
-        "bar_sunder": "earth", "bar_earth_shatter": "earth", "bar_whirl": "wind",
-        "war_execute": "fire", "war_cleave": "fire", "war_bladestorm": "wind",
-        "war_shield_slam": "earth", "war_battlecry": "fire", "war_second_wind": "earth",
-        "clr_smite": "light", "clr_divine_wrath": "light", "clr_heal": "light",
-        "clr_mass_heal": "light", "clr_shield": "light", "clr_resurrection": "light",
-    }
 
     # ── Damage Helper ──
     def _calc_dmg(target, power, ignore_armor=False, element=None, guaranteed_crit=False):
@@ -335,6 +348,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         for debuff in target.get("active_debuffs", []):
             if debuff.get("type") == "sunder":
                 armor = max(0, armor - debuff.get("value", 0))
+            elif debuff.get("type") == "curse" and "Constitution" in debuff.get("stats", []):
+                armor = max(0, armor - debuff.get("penalty", 0))
         # Apply Strength milestone bonus
         from combat.stat_milestones import get_strength_bonus
         power = power + get_strength_bonus(player)
@@ -346,9 +361,9 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 power = apply_critical_damage(power, is_crit)
                 msg_parts.append("Critical hit!")
         dmg = max(1, power - armor)
-        # Apply elemental damage if applicable
-        if element is None and skill_id in SKILL_ELEMENTS:
-            element = SKILL_ELEMENTS[skill_id]
+        # Apply elemental damage — read from YAML skill definition
+        if element is None:
+            element = skill.get("elemental")
         if element:
             from combat.elemental import calculate_elemental_damage
             dmg = calculate_elemental_damage(dmg, player, target, element)
@@ -364,11 +379,11 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         if ls > 0 and damage_dealt > 0:
             heal = int(damage_dealt * ls)
             if heal > 0:
-                old_hp = player.get("current_hp", 0)
-                max_hp = player_max_hp(player)
-                player["current_hp"] = min(old_hp + heal, max_hp)
-                actual = player["current_hp"] - old_hp
-                if actual > 0:
+                from combat.status_effects import apply_healing
+                actual = apply_healing(player, heal)
+                if actual < 0:
+                    msg_parts.append(f"[Soul Siphon] The void twists the healing! You take {-actual} damage!")
+                elif actual > 0:
                     msg_parts.append(f"[Soul Siphon] You recover {actual} HP.")
 
     # ── Special Skills (non-damage) ──
@@ -448,12 +463,12 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             return "No valid target.", False
         from combat.stat_milestones import get_wisdom_bonus
         heal = int((base_power + scaling) * power_mult * get_passive_heal_bonus(player)) + get_wisdom_bonus(player)
-        old_hp = target.get("current_hp", 0)
-        max_hp = player_max_hp(target) if target is player else target.get("max_hp", old_hp)
-        target["current_hp"] = min(old_hp + heal, max_hp)
-        actual = target["current_hp"] - old_hp
+        from combat.status_effects import apply_healing
+        actual = apply_healing(target, heal)
         name = "You" if target is player else target.get("name", "Ally")
         mastery_msg = f" [{format_mastery_label(skill_id, player)}]" if mastery > 0 else ""
+        if actual < 0:
+            return f"The void twists the healing! {name} takes {-actual} damage instead!{mastery_msg}", False
         return f"{name} is healed for {actual} HP!{mastery_msg}", False
 
     # Lay on Hands
@@ -472,14 +487,13 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         party = [player] + (allies or [])
         from combat.stat_milestones import get_wisdom_bonus
         heal = int((base_power + scaling) * power_mult * get_passive_heal_bonus(player)) + get_wisdom_bonus(player)
+        from combat.status_effects import apply_healing
         total_healed = 0
         for member in party:
             if member.get("current_hp", 0) <= 0:
                 continue
-            old_hp = member.get("current_hp", 0)
-            max_hp = player_max_hp(member) if member is player else member.get("max_hp", old_hp)
-            member["current_hp"] = min(old_hp + heal, max_hp)
-            total_healed += member["current_hp"] - old_hp
+            actual = apply_healing(member, heal)
+            total_healed += max(0, actual)
         return f"Divine light washes over the party! Total healing: {total_healed} HP.", False
 
     # Resurrection
@@ -499,15 +513,31 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
         heal = int(max_hp * skill.get("heal_percent", 0.25))
         from combat.stat_milestones import get_wisdom_bonus
         heal = heal + get_wisdom_bonus(player)
-        old_hp = player.get("current_hp", 0)
-        player["current_hp"] = min(old_hp + heal, max_hp)
-        actual = player["current_hp"] - old_hp
+        from combat.status_effects import apply_healing
+        actual = apply_healing(player, heal)
+        if actual < 0:
+            return f"The void twists your second wind! You take {-actual} damage instead!", False
         return f"You catch your second wind, recovering {actual} HP!", False
 
     # Time Warp
     if skill_id == "mage_timewarp":
         reduce_all_cooldowns(player, skill.get("cooldown_reduction", 2))
         return "Time bends around you! All skill cooldowns reduced by 2 turns.", False
+
+    # Haste — grant an ally cooldown reduction on their next skill use
+    if skill_id == "haste":
+        target = _pick_ally_target()
+        if not target:
+            return "No valid target.", False
+        effect = skill.get("effect", {})
+        cd_val = effect.get("value", 2)
+        duration = effect.get("duration", 2)
+        target.setdefault("active_buffs", []).append({
+            "type": "cooldown_reduction", "value": cd_val, "remaining": duration
+        })
+        target_name = "You" if target is player else target.get("name", "Ally")
+        mastery_msg = f" [{format_mastery_label(skill_id, player)}]" if mastery > 0 else ""
+        return f"{target_name} is hastened! Next skill cooldown reduced by {cd_val} for {duration} turns.{mastery_msg}", False
 
     # Dark Empowerment
     if skill_id == "lck_empower":
@@ -573,7 +603,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                         msg_parts.append("Critical hit!")
                     dmg = _calc_dmg(target, power, skill.get("ignore_armor", False), guaranteed_crit=guaranteed)
                     target["hp"] -= dmg
-                    msg_parts.append(f"Hit {target['name']} for {dmg} damage!")
+                    msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get("elemental"), crit=guaranteed, skill_name=skill['name']))
                     # Apply slow
                     if skill.get("apply_slow"):
                         target["slowed"] = True
@@ -592,8 +622,9 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                         msg_parts.append(f"{target['name']} is weakened!")
                     # Apply burn
                     if skill.get("burn_damage"):
-                        from combat.status_effects import apply_burn
-                        apply_burn(target, skill["burn_damage"], skill.get("burn_duration", 3))
+                        from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
+                        b_tier = damage_to_burn_tier(skill["burn_damage"])
+                        apply_burn(target, b_tier, skill.get("burn_duration", 3))
                         msg_parts.append(f"{target['name']} is set ablaze!")
                     # Apply poison
                     if skill.get("poison_damage"):
@@ -617,7 +648,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                     power *= 2
                 dmg = _calc_dmg(target, power, skill.get("ignore_armor", False), guaranteed_crit=guaranteed)
                 target["hp"] -= dmg
-                msg_parts.append(f"Hit {target['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get("elemental"), crit=guaranteed, skill_name=skill['name']))
                 if target["hp"] <= 0:
                     msg_parts.append(f"{target['name']} is defeated!")
                 _apply_life_steal(dmg)
@@ -646,7 +677,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 msg_parts.append(f"EXECUTE! The {target['name']} is below 30% HP!")
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"You deal {dmg} damage to {target['name']}!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -660,7 +691,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 msg_parts.append("Critical backstab! The target is vulnerable!")
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"You backstab {target['name']} for {dmg} damage!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -678,7 +709,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 power = int((base_power + scaling) * power_mult)
                 dmg = _calc_dmg(target, power)
                 target["hp"] -= dmg
-                msg_parts.append(f"You attempt to assassinate {target['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if target["hp"] <= 0:
                     msg_parts.append(f"{target['name']} is defeated!")
                     victory = True
@@ -689,7 +720,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"Your holy strike deals {dmg} damage to {target['name']}!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if random.random() < skill.get("stun_chance", 0):
                 target["stunned"] = True
                 msg_parts.append(f"The {target['name']} is stunned!")
@@ -706,7 +737,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 msg_parts.append("Divine Judgment strikes a stunned foe!")
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"You deal {dmg} damage to {target['name']}!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -717,13 +748,14 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            old_hp = player.get("current_hp", 0)
-            max_hp = player_max_hp(player)
             from combat.stat_milestones import get_wisdom_bonus
             heal = dmg + get_wisdom_bonus(player)
-            player["current_hp"] = min(old_hp + heal, max_hp)
-            healed = player["current_hp"] - old_hp
-            msg_parts.append(f"You drain {dmg} HP from {target['name']}! You recover {healed} HP.")
+            from combat.status_effects import apply_healing
+            healed = apply_healing(player, heal)
+            if healed < 0:
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + f" (Void Drain: {-healed} damage!)")
+            else:
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + f" (Drain: +{healed} HP)")
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -736,7 +768,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"You sacrifice {hp_cost} HP to deal {dmg} devastating damage to {target['name']}!")
+            msg_parts.append(f"Sacrificed {hp_cost} HP | " + format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -747,13 +779,14 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            old_hp = player.get("current_hp", 0)
-            max_hp = player_max_hp(player)
             from combat.stat_milestones import get_wisdom_bonus
             heal = int(dmg * 0.5 * get_passive_heal_bonus(player)) + get_wisdom_bonus(player)
-            player["current_hp"] = min(old_hp + heal, max_hp)
-            actual_heal = player["current_hp"] - old_hp
-            msg_parts.append(f"Holy Smite deals {dmg} damage to {target['name']}! You heal {actual_heal} HP.")
+            from combat.status_effects import apply_healing
+            actual_heal = apply_healing(player, heal)
+            if actual_heal < 0:
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + f" (Void backlash: {-actual_heal} damage!)")
+            else:
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + f" (Heal: +{actual_heal} HP)")
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -764,7 +797,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"The fireball explodes on {target['name']} for {dmg} damage!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is incinerated!")
                 victory = True
@@ -780,7 +813,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 e.setdefault("active_debuffs", []).append({
                     "type": "slow", "remaining": 3
                 })
-                msg_parts.append(f"Frost blast hits {e['name']} for {dmg} damage and slows it!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + " +Slowed")
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} freezes solid and shatters!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -792,7 +825,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             for e in enemies:
                 dmg = _calc_dmg(e, power)
                 e["hp"] -= dmg
-                msg_parts.append(f"The meteor scorches {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is vaporized!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -806,7 +839,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"Mana overload deals {dmg} damage to {target['name']}! You take {recoil} recoil damage.")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + f" (Recoil: -{recoil} HP)")
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is disintegrated!")
                 victory = True
@@ -817,7 +850,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult) * 2
             dmg = _calc_dmg(target, power, skill.get("ignore_armor", False))
             target["hp"] -= dmg
-            msg_parts.append(f"Your shadow strike deals a devastating {dmg} damage to {target['name']}!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -828,7 +861,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"Your blade cuts deep for {dmg} damage!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             from combat.status_effects import apply_poison
             poison_dmg = skill.get("poison_damage", 5)
             if extra_effect:
@@ -845,7 +878,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power, ignore_armor=True)
             target["hp"] -= dmg
-            msg_parts.append(f"Your piercing shot ignores armor and deals {dmg} damage to {target['name']}!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + " [Ignores Armor]")
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -856,7 +889,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult) * 3
             dmg = _calc_dmg(target, power, ignore_armor=True)
             target["hp"] -= dmg
-            msg_parts.append(f"Your trueshot strikes true for {dmg} devastating damage!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + " [Ignores Armor]")
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -868,7 +901,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             for e in enemies:
                 dmg = _calc_dmg(e, power)
                 e["hp"] -= dmg
-                msg_parts.append(f"An arrow strikes {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is defeated!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -882,7 +915,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                     break
                 dmg = _calc_dmg(target, power, skill.get("ignore_armor", False))
                 target["hp"] -= dmg
-                msg_parts.append(f"Shot hits {target['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is defeated!")
                 victory = True
@@ -897,7 +930,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 e.setdefault("active_debuffs", []).append({
                     "type": "weaken", "value": 2, "remaining": 3
                 })
-                msg_parts.append(f"Holy fire burns {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is purified!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -911,7 +944,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 dmg = _calc_dmg(e, power)
                 e["hp"] -= dmg
                 total_dmg += dmg
-                msg_parts.append(f"Holy wrath strikes {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is smited!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -933,7 +966,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 dmg = _calc_dmg(e, power)
                 e["hp"] -= dmg
                 total_dmg += dmg
-                msg_parts.append(f"Divine fire scorches {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is judged!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -954,13 +987,14 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"Soul fire consumes {target['name']} for {dmg} damage!")
-            from combat.status_effects import apply_burn
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
+            from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
             burn_dmg = skill.get("burn_damage", 6)
             if extra_effect:
                 burn_dmg = int(burn_dmg * 1.5)
-            apply_burn(target, burn_dmg, skill.get("burn_duration", 3))
-            msg_parts.append(f"{target['name']}'s soul burns for {burn_dmg}/turn!")
+            b_tier = damage_to_burn_tier(burn_dmg)
+            apply_burn(target, b_tier, skill.get("burn_duration", 3))
+            msg_parts.append(f"{target['name']}'s soul is seared by {get_burn_tier_name(b_tier)}!")
             if target["hp"] <= 0:
                 msg_parts.append(f"{target['name']} is consumed by the flames!")
                 victory = True
@@ -971,7 +1005,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"Your mighty blow deals {dmg} damage to {target['name']}!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             sunder_val = skill.get("sunder_value", 3)
             if extra_effect:
                 sunder_val += 2
@@ -991,7 +1025,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             for e in enemies:
                 dmg = _calc_dmg(e, power)
                 e["hp"] -= dmg
-                msg_parts.append(f"The earth shatters beneath {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if random.random() < skill.get("stun_chance", 0):
                     e["stunned"] = True
                     msg_parts.append(f"{e['name']} is stunned!")
@@ -1006,7 +1040,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             for e in enemies:
                 dmg = _calc_dmg(e, power)
                 e["hp"] -= dmg
-                msg_parts.append(f"Your cleave hits {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is defeated!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -1018,7 +1052,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             for e in enemies:
                 dmg = _calc_dmg(e, power)
                 e["hp"] -= dmg
-                msg_parts.append(f"Your whirlwind strikes {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is defeated!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -1037,7 +1071,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 power = int((base_power + scaling) * power_mult)
                 dmg = _calc_dmg(target, power)
                 target["hp"] -= dmg
-                msg_parts.append(f"Bladestorm hits {target['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if target["hp"] <= 0:
                     msg_parts.append(f"{target['name']} is defeated!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -1048,7 +1082,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             power = int((base_power + scaling) * power_mult)
             dmg = _calc_dmg(target, power)
             target["hp"] -= dmg
-            msg_parts.append(f"Your shield slam deals {dmg} damage to {target['name']}!")
+            msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
             if random.random() < skill.get("stun_chance", 0):
                 target["stunned"] = True
                 msg_parts.append(f"The {target['name']} is stunned!")
@@ -1070,7 +1104,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 power = int((base_power + scaling) * power_mult)
                 dmg = _calc_dmg(target, power)
                 target["hp"] -= dmg
-                msg_parts.append(f"Death Dance strikes {target['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']))
                 if target["hp"] <= 0:
                     msg_parts.append(f"{target['name']} is defeated!")
                 _apply_life_steal(dmg)
@@ -1087,7 +1121,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 e.setdefault("active_debuffs", []).append({
                     "type": "slow", "remaining": 3
                 })
-                msg_parts.append(f"Vines entangle {e['name']} for {dmg} damage!")
+                msg_parts.append(format_damage_msg(player['name'], e['name'], dmg, element=skill.get('elemental'), skill_name=skill['name']) + " +Slowed")
                 if e["hp"] <= 0:
                     msg_parts.append(f"{e['name']} is strangled!")
             if not [e for e in enemies if e["hp"] > 0]:
@@ -1107,7 +1141,7 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
                 power = int((base_power + scaling) * power_mult)
                 dmg = _calc_dmg(target, power, skill.get("ignore_armor", False))
                 target["hp"] -= dmg
-                msg_parts.append(f"Skill deals {dmg} damage to {target['name']}!")
+                msg_parts.append(format_damage_msg(player['name'], target['name'], dmg, element=skill.get('elemental'), skill_name=skill.get('name', 'Skill')))
                 if target["hp"] <= 0:
                     msg_parts.append(f"{target['name']} is defeated!")
                     victory = True

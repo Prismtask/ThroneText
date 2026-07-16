@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────
-# TerminalRPG .gitignore
+# Pandemonium .gitignore
 # Covers Python build artifacts, game save files, secrets & IDE droppings
 # ─────────────────────────────────────────────────────────────
 
@@ -40,6 +40,7 @@ savefile/
 savefiles/
 saves/
 save/
+dist/
 *.sav
 *.save
 *.dat

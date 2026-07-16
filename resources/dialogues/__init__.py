@@ -17,6 +17,7 @@ from .mirefall import *
 from .saltmarsh import *
 from .cinderpeak import *
 from .veilholt import *
+from .wonderland import *
 
 # Recreate BLACKSMITH_DIALOGUES mapping (originally at end of old dialogues.py)
 BLACKSMITH_DIALOGUES = {
@@ -24,4 +25,5 @@ BLACKSMITH_DIALOGUES = {
     "brinewatch": BRINEWATCH_BLACKSMITH_DIALOGUE,
     "irondeep": IRONDEEP_BLACKSMITH_DIALOGUE,
     "ashkara": ASHKARA_BLACKSMITH_DIALOGUE,
+    "cinderpeak": CINDERPEAK_BLACKSMITH_DIALOGUE,
 }

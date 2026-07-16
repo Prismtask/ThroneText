@@ -138,3 +138,18 @@ SOLMERE_TEMPLE_DIALOGUE = {
         "The temple's light will wait for you.",
     ],
 }
+
+SOLMERE_GUILD_DIALOGUE = {
+    "enter": [
+        "Welcome to the Adventurer's Guild of Solmere. Quests and bounties await.",
+        "The guild board is full. What kind of work are you looking for?",
+        "Solmere's guild is the largest in Aeralis. Opportunities abound.",
+        "State your rank and purpose. The council watches all guild activities.",
+    ],
+    "leave": [
+        "May your bounties bring honor to the guild.",
+        "Return when you've completed your contracts.",
+        "The guild hall never closes for those with work to do.",
+        "Farewell, adventurer. The board will be waiting.",
+    ],
+}

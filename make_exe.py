@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Build script for TerminalRPG executable.
+Build script for Pandemonium executable.
 
 Usage:
     cd C:\\Code\\TerminalRPG
-    .venv\Scripts\python.exe make_exe.py
+    .venv\\Scripts\\python.exe make_exe.py
 
-This creates a clean distribution in dist/TerminalRPG/ that you can zip
-and share with your friend. Your friend just unzips and runs TerminalRPG.exe.
+This creates a clean distribution in dist/Pandemonium/ that you can zip
+and share with your friend. Your friend just unzips and runs Pandemonium.exe.
 
 No source files, no venv, no git repo — just the game and its data.
 """
@@ -49,13 +49,18 @@ def collect_data_files():
     if os.path.exists(skill_book_dir):
         datas.append(f'--add-data={skill_book_dir};resources/skill_book')
 
+    # GUI package data (JSON configs, assets, etc. if added later)
+    gui_dir = os.path.join(PROJECT_ROOT, "gui")
+    if os.path.exists(gui_dir):
+        datas.append(f'--add-data={gui_dir};gui')
+
     return datas
 
 
 def build():
     """Run PyInstaller with the correct settings for a terminal RPG."""
     print("=" * 60)
-    print("  TerminalRPG Executable Builder")
+    print("  Pandemonium Executable Builder")
     print("=" * 60)
 
     clean_old_builds()
@@ -65,19 +70,24 @@ def build():
     # Use --onefile instead if you want a single .exe (slower startup).
     cmd = [
         sys.executable, "-m", "PyInstaller",
-        "main.py",                          # Entry point
-        "--name", "TerminalRPG",            # Output exe name
+        "launcher.py",                      # Entry point (GUI)
+        "--name", "Pandemonium",            # Output exe name
         "--distpath", DIST_DIR,             # Where the final folder goes
         "--workpath", BUILD_DIR,            # Where temp build files go
         "--clean",                          # Always clean
         "--noconfirm",                      # Overwrite without asking
         "--console",                        # IMPORTANT: terminal game needs a console
         # "--onefile",                      # Uncomment for single .exe (slower startup)
+        "--hidden-import", "tkinter",
+        "--hidden-import", "tkinter.ttk",
+        "--hidden-import", "tkinter.font",
+        "--hidden-import", "tkinter.messagebox",
+        "--hidden-import", "yaml",
     ] + datas
 
     print(f"\n  Building with: {sys.executable}")
     print(f"  Data files: {len(datas)} bundle(s)")
-    print(f"  Output: {DIST_DIR}/TerminalRPG/TerminalRPG.exe")
+    print(f"  Output: {DIST_DIR}/Pandemonium/Pandemonium.exe")
     print("  This may take 30-60 seconds ...\n")
 
     result = subprocess.run(cmd, cwd=PROJECT_ROOT)
@@ -90,19 +100,22 @@ def build():
     print("  [OK] Build successful!")
     print("=" * 60)
     print(f"""
-  Output folder: {DIST_DIR}/TerminalRPG/
+  Output folder: {DIST_DIR}/Pandemonium/
 
   Files your friend needs:
-    TerminalRPG.exe          <- Double-click or run from terminal
+    Pandemonium.exe          <- Double-click or run from terminal
     _internal/               <- Python runtime & libraries (don't touch)
 
   To share:
-    1. Zip the entire folder: {DIST_DIR}/TerminalRPG/
+    1. Zip the entire folder: {DIST_DIR}/Pandemonium/
     2. Send the zip to your friend
-    3. Friend unzips and runs TerminalRPG.exe
+    3. Friend unzips and runs Pandemonium.exe
 
   Note: Save files will be created in a "savefile/" folder
-        next to TerminalRPG.exe when the game runs.
+        next to Pandemonium.exe when the game runs.
+
+  Launch mode:
+    Pandemonium.exe           -> Launches the GUI
 
   If you want a SINGLE .exe file instead of a folder:
     Edit make_exe.py and uncomment the --onefile line.

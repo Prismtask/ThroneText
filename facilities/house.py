@@ -29,11 +29,12 @@ Passive income now scales with your highest dungeon floor cleared across all
 regions so it stays relevant in late game.
 """
 
-from utils import clear_screen, advance_time, format_time
+from utils import clear_screen, advance_time
 from events import format_date
 from character import player_max_hp
 import random
 from resources.enemies import AFFECTION_GIFTS, ENEMIES
+from gui.terminal import term
 
 RECRUIT_AFFECTION_THRESHOLD = 50  # Minimum affection needed to recruit a girl
 
@@ -132,13 +133,10 @@ def _reset_daily_limits(player):
 
 
 def _talks_remaining(player, girl_key):
-    """Return how many talks remain for this girl today (2–3 per day)."""
+    """Return how many talks remain for this girl today (always 3 per day)."""
     _reset_daily_limits(player)
     talks_done = player.get("girl_talk_today", {}).get(girl_key, 0)
-    # Randomize daily limit between 2 and 3, seeded by day + girl_key for consistency
-    import hashlib
-    seed = int(hashlib.md5(f"{player.get('day',1)}-{girl_key}".encode()).hexdigest(), 16)
-    daily_limit = 2 + (seed % 2)  # 2 or 3
+    daily_limit = 3
     return max(0, daily_limit - talks_done)
 
 
@@ -226,23 +224,23 @@ def _house_rest(player, city_id, house):
             recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
             if "{name}" in recovered_line:
                 recovered_line = recovered_line.format(name=ally['name'])
-            print(f"  {recovered_line}")
+            term.print(f"  {recovered_line}")
         elif ally.get("current_hp", 0) > 0:
             ally_old = ally["current_hp"]
             ally["current_hp"] = ally["max_hp"]
             ally_healed = ally["max_hp"] - ally_old
-            print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
+            term.print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
 
     advance_time(player, rest_mins)
 
     home_name = lvl_data["name"].lower()
-    print(f"You take a quick rest in your {home_name}.")
+    term.print(f"You take a quick rest in your {home_name}.")
     if healed > 0:
-        print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
+        term.print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
     else:
-        print(f"  You were already at full health, but the brief rest feels nice.")
-    print(f"  ({rest_mins} minutes pass.)")
-    input("\nPress Enter...")
+        term.print(f"  You were already at full health, but the brief rest feels nice.")
+    term.print(f"  ({rest_mins} minutes pass.)")
+    term.pause()
 
 
 def _house_sleep(player, city_id, house):
@@ -251,8 +249,8 @@ def _house_sleep(player, city_id, house):
     Stat bonus: +1 (Manor–Villa), +2 (Estate–Citadel), +3 (Sanctuary)."""
     current_hour = player.get("time_minutes", 0) // 60
     if not (current_hour >= 20 or current_hour < 4):
-        print("You can only sleep at home between 20:00 and 04:00.")
-        input("\nPress Enter...")
+        term.print("You can only sleep at home between 20:00 and 04:00.")
+        term.pause()
         return
 
     lvl_data   = _house_level_data(house)
@@ -277,12 +275,12 @@ def _house_sleep(player, city_id, house):
             recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
             if "{name}" in recovered_line:
                 recovered_line = recovered_line.format(name=ally['name'])
-            print(f"  {recovered_line}")
+            term.print(f"  {recovered_line}")
         elif ally.get("current_hp", 0) > 0:
             ally_old = ally["current_hp"]
             ally["current_hp"] = ally["max_hp"]
             ally_healed = ally["max_hp"] - ally_old
-            print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
+            term.print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
 
     # Apply / refresh Well-Rested buff (Manor and above)
     if buff_val > 0:
@@ -309,15 +307,15 @@ def _house_sleep(player, city_id, house):
     advance_time(player, 480)
 
     home_name = lvl_data["name"].lower()
-    print(f"You settle into a deep sleep in your {home_name}.")
+    term.print(f"You settle into a deep sleep in your {home_name}.")
     if healed > 0:
-        print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
+        term.print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
     else:
-        print(f"  You were already at full health, but the sleep restores your spirit.")
+        term.print(f"  You were already at full health, but the sleep restores your spirit.")
     if buff_val > 0:
-        print(f"  Well-Rested: +{buff_val} to all stats for {buff_rooms} dungeon room(s).")
-    print("  (8 hours pass.)")
-    input("\nPress Enter...")
+        term.print(f"  Well-Rested: +{buff_val} to all stats for {buff_rooms} dungeon room(s).")
+    term.print("  (8 hours pass.)")
+    term.pause()
 
 
 from inventory import get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items, remove_item_by_reference, consume_stackable_items
@@ -329,51 +327,56 @@ def _house_storage(player, city_id, house):
     storage  = house["storage"]
 
     while True:
-        clear_screen()
+        term.clear()
         inv     = player.get("inventory", [])
         equip_cap, other_cap = get_inventory_caps(player)
         equip_count, other_count = count_inventory(player)
-        print(f"=== House Storage ({len(storage)}/{cap} slots used) ===")
-        print(f"Your Bag: {equip_count}/{equip_cap} equipment | {other_count}/{other_cap} items")
+        term.print(f"=== House Storage ({len(storage)}/{cap} slots used) ===")
+        term.print(f"Your Bag: {equip_count}/{equip_cap} equipment | {other_count}/{other_cap} items")
 
-        print("\n-- Chest --")
+        term.print("\n-- Chest --")
         if storage:
             for i, itm in enumerate(storage):
-                print(f"  {i+1}. {itm['name']} ({itm['type']})")
+                term.print(f"  {i+1}. {itm['name']} ({itm['type']})")
         else:
-            print("  (empty)")
+            term.print("  (empty)")
 
-        print("\n-- Your Bag --")
+        term.print("\n-- Your Bag --")
         if inv:
             sorted_equip = get_sorted_equipment(player)
             sorted_items = get_sorted_items(player)
             all_sorted = sorted_equip + sorted_items
             for i, itm in enumerate(all_sorted):
-                tag = f"[{itm.get('rarity','common')}]"
                 if itm.get("type") == "equipment":
-                    print(f"  {i+1}. {itm['name']} ({itm['slot']}) {tag}")
+                    tag = f"[{itm.get('rarity','common')}]"
+                    term.print(f"  {i+1}. {itm['name']} ({itm['slot']}) {tag}")
                 else:
-                    print(f"  {i+1}. {itm['name']} ({itm['type']}) {tag}")
+                    term.print(f"  {i+1}. {itm['name']} ({itm['type']})")
         else:
-            print("  (empty)")
+            term.print("  (empty)")
 
-        print("\n[D]eposit to chest  [W]ithdraw from chest  [B]ack")
-        act = input("Choice: ").strip().lower()
+        act_idx = term.menu(["Deposit to chest", "Withdraw from chest", "Back"], prompt="Storage action:")
+        if act_idx == 0:
+            act = "d"
+        elif act_idx == 1:
+            act = "w"
+        else:
+            act = "b"
 
         if act == "d":
             if not inv:
-                print("Your bag is empty.")
-                input("Press Enter...")
+                term.print("Your bag is empty.")
+                term.pause()
                 continue
             if len(storage) >= cap:
-                print(f"Chest is full ({cap} slots).")
-                input("Press Enter...")
+                term.print(f"Chest is full ({cap} slots).")
+                term.pause()
                 continue
-            print("\nEnter numbers to deposit (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")
-            raw = input("Deposit which items? ").strip().lower()
+            term.print("\nEnter numbers to deposit (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")
+            raw = term.input("Deposit which items? ").strip().lower()
             if raw in ("", "0", "cancel"):
-                print("Cancelled.")
-                input("Press Enter...")
+                term.print("Cancelled.")
+                term.pause()
                 continue
 
             sorted_equip = get_sorted_equipment(player)
@@ -398,8 +401,8 @@ def _house_storage(player, city_id, house):
 
             indices = sorted([i for i in indices if 0 <= i < len(all_sorted)], reverse=True)
             if not indices:
-                print("No valid items selected.")
-                input("Press Enter...")
+                term.print("No valid items selected.")
+                term.pause()
                 continue
 
             # Check capacity before depositing
@@ -408,19 +411,19 @@ def _house_storage(player, city_id, house):
             for i in indices:
                 item = all_sorted[i]
                 if is_wedding_item_soulbound(item):
-                    print(f"  {item['name']} is soulbound — it cannot leave your side.")
+                    term.print(f"  {item['name']} is soulbound — it cannot leave your side.")
                 else:
                     filtered_indices.append(i)
             
             if not filtered_indices:
-                print("No valid items to deposit (all selected items are soulbound).")
-                input("Press Enter...")
+                term.print("No valid items to deposit (all selected items are soulbound).")
+                term.pause()
                 continue
 
             deposit_count = len(filtered_indices)
             if len(storage) + deposit_count > cap:
-                print(f"Not enough chest space. Can only store {cap - len(storage)} more items.")
-                input("Press Enter...")
+                term.print(f"Not enough chest space. Can only store {cap - len(storage)} more items.")
+                term.pause()
                 continue
 
             for i in filtered_indices:
@@ -428,19 +431,19 @@ def _house_storage(player, city_id, house):
                 orig_idx = next(idx for idx, itm in enumerate(player["inventory"]) if itm is item)
                 player["inventory"].pop(orig_idx)
                 storage.append(item)
-            print(f"Stored {deposit_count} item(s) in your chest.")
-            input("Press Enter...")
+            term.print(f"Stored {deposit_count} item(s) in your chest.")
+            term.pause()
 
         elif act == "w":
             if not storage:
-                print("The chest is empty.")
-                input("Press Enter...")
+                term.print("The chest is empty.")
+                term.pause()
                 continue
-            print("\nEnter numbers to withdraw (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")
-            raw = input("Withdraw which items? ").strip().lower()
+            term.print("\nEnter numbers to withdraw (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel.")
+            raw = term.input("Withdraw which items? ").strip().lower()
             if raw in ("", "0", "cancel"):
-                print("Cancelled.")
-                input("Press Enter...")
+                term.print("Cancelled.")
+                term.pause()
                 continue
 
             indices = set()
@@ -462,8 +465,8 @@ def _house_storage(player, city_id, house):
 
             indices = sorted([i for i in indices if 0 <= i < len(storage)], reverse=True)
             if not indices:
-                print("No valid items selected.")
-                input("Press Enter...")
+                term.print("No valid items selected.")
+                term.pause()
                 continue
 
             # Check bag capacity before withdrawing
@@ -472,19 +475,19 @@ def _house_storage(player, city_id, house):
             equip_cap, other_cap = get_inventory_caps(player)
             equip_count, other_count = count_inventory(player)
             if equip_count + withdraw_equip > equip_cap:
-                print(f"Not enough equipment bag space. Can hold {equip_cap - equip_count} more equipment.")
-                input("Press Enter...")
+                term.print(f"Not enough equipment bag space. Can hold {equip_cap - equip_count} more equipment.")
+                term.pause()
                 continue
             if other_count + withdraw_other > other_cap:
-                print(f"Not enough item bag space. Can hold {other_cap - other_count} more items.")
-                input("Press Enter...")
+                term.print(f"Not enough item bag space. Can hold {other_cap - other_count} more items.")
+                term.pause()
                 continue
 
             for i in indices:
                 item = storage.pop(i)
                 player.setdefault("inventory", []).append(item)
-            print(f"Took {len(indices)} item(s) from the chest.")
-            input("Press Enter...")
+            term.print(f"Took {len(indices)} item(s) from the chest.")
+            term.pause()
 
         elif act == "b":
             break
@@ -494,13 +497,13 @@ def _house_collect_income(player, city_id, house):
     """Collect accumulated passive income."""
     gold = _pending_income(player, city_id, house)
     if gold <= 0:
-        print("No income has accumulated yet. Come back tomorrow.")
+        term.print("No income has accumulated yet. Come back tomorrow.")
     else:
         player["gold"]              = player.get("gold", 0) + gold
         house["last_income_day"]    = player.get("day", 1)
-        print(f"You collect {gold} gold from your {_house_level_data(house)['name'].lower()}'s rental income.")
-        print(f"  Gold: {player['gold']}")
-    input("\nPress Enter...")
+        term.print(f"You collect {gold} gold from your {_house_level_data(house)['name'].lower()}'s rental income.")
+        term.print(f"  Gold: {player['gold']}")
+    term.pause()
 
 
 def _house_upgrade(player, city_id, house):
@@ -511,35 +514,33 @@ def _house_upgrade(player, city_id, house):
     max_level = max(HOUSE_LEVELS)
 
     if cost is None or lvl >= max_level:
-        print(f"Your {_house_level_data(house)['name']} is already at its grandest — no further upgrades available.")
-        input("\nPress Enter...")
+        term.print(f"Your {_house_level_data(house)['name']} is already at its grandest — no further upgrades available.")
+        term.pause()
         return
 
     next_data = HOUSE_LEVELS[lvl + 1]
     from facilities.house import HOUSE_MONSTER_GIRL_LIMITS
-    print(f"Upgrade to {next_data['name']}?")
-    print(f"  Cost           : {cost} gold")
-    print(f"  Storage        : {lvl_data['storage_cap']} → {next_data['storage_cap']} slots")
-    print(f"  Daily income   : {lvl_data['income_per_day']} → {next_data['income_per_day']} gold")
-    print(f"  Rest time      : {lvl_data['rest_minutes']} → {next_data['rest_minutes']} min")
-    print(f"  Monster girls  : {HOUSE_MONSTER_GIRL_LIMITS[lvl]} → {HOUSE_MONSTER_GIRL_LIMITS[lvl + 1]}")
-    confirm = input("\nProceed? (y/n): ").strip().lower()
-
-    if confirm != "y":
-        print("Upgrade cancelled.")
-        input("\nPress Enter...")
+    term.print(f"Upgrade to {next_data['name']}?")
+    term.print(f"  Cost           : {cost} gold")
+    term.print(f"  Storage        : {lvl_data['storage_cap']} → {next_data['storage_cap']} slots")
+    term.print(f"  Daily income   : {lvl_data['income_per_day']} → {next_data['income_per_day']} gold")
+    term.print(f"  Rest time      : {lvl_data['rest_minutes']} → {next_data['rest_minutes']} min")
+    term.print(f"  Monster girls  : {HOUSE_MONSTER_GIRL_LIMITS[lvl]} → {HOUSE_MONSTER_GIRL_LIMITS[lvl + 1]}")
+    if not term.confirm("Proceed with upgrade?"):
+        term.print("Upgrade cancelled.")
+        term.pause()
         return
 
     if player.get("gold", 0) < cost:
-        print(f"Insufficient gold. You need {cost} gold.")
-        input("\nPress Enter...")
+        term.print(f"Insufficient gold. You need {cost} gold.")
+        term.pause()
         return
 
     player["gold"] -= cost
     house["level"]  = lvl + 1
-    print(f"Your home has been expanded into a fine {next_data['name']}!")
-    print(f"  Remaining gold: {player['gold']}")
-    input("\nPress Enter...")
+    term.print(f"Your home has been expanded into a fine {next_data['name']}!")
+    term.print(f"  Remaining gold: {player['gold']}")
+    term.pause()
 
 
 def _int_to_roman(num):
@@ -591,209 +592,318 @@ def _can_ascend_ally(player, ally):
     return True
 
 
+def _sort_girls(all_girls, sort_by, sort_dir):
+    """Sort the combined girls list by the given criteria.
+
+    Args:
+        all_girls: list of (where, girl_dict) tuples
+        sort_by: "capture_order", "level", or "affection"
+        sort_dir: "asc" (top→bottom) or "desc" (bottom→top)
+
+    Returns:
+        Sorted list of (where, girl_dict) tuples
+    """
+    reverse = (sort_dir == "desc")
+
+    if sort_by == "level":
+        return sorted(all_girls, key=lambda x: x[1].get("level", 1), reverse=reverse)
+    elif sort_by == "affection":
+        return sorted(all_girls, key=lambda x: x[1].get("affection", 30), reverse=reverse)
+    else:  # capture_order (default)
+        # Sort by captured_on day (lower = caught earlier).
+        # Active allies and girls without captured_on get a high sentinel value.
+        def _cap_key(item):
+            g = item[1]
+            return g.get("captured_on", 9999)
+        return sorted(all_girls, key=_cap_key, reverse=reverse)
+
+
 def _house_lounge(player, city_id, house):
-    clear_screen()
-    lvl_data = _house_level_data(house)
-    girls = house.get("monster_girls", [])
-    max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house["level"], 2)
-    allies = player.get("allies", [])
-    total_girls = len(girls) + len(allies)
+    # ── Filter / sort state (persists across re-displays) ──────────────────
+    sort_by = "capture_order"   # "capture_order" | "level" | "affection"
+    sort_dir = "asc"            # "asc" (top→bottom) | "desc" (bottom→top)
 
-    print(f"=== {lvl_data['name'].upper()} LOUNGE ===")
-    print(f"Monster Girls: {total_girls}/{max_girls}")
-    if allies:
-        print(f"Active Party: {len(allies)}/3 allies")
-    print()
+    SORT_LABELS = {
+        "capture_order": "Capture Order",
+        "level":         "Level",
+        "affection":     "Affection",
+    }
+    DIR_LABEL = {"asc": "Top→Bottom", "desc": "Bottom→Top"}
 
-    # Build combined list of all interactable girls
-    all_girls = []
-    for girl in girls:
-        all_girls.append(("lounge", girl))
-    for ally in allies:
-        all_girls.append(("active", ally))
-
-    if not all_girls:
-        print("The lounge is quiet... no companions yet.")
-        input("\nPress Enter...")
-        return
-
-    for i, (where, g) in enumerate(all_girls):
-        aff = g.get("affection", 30)
-        aff_cap = g.get("affection_cap", 100)
-        status = "💍" if g.get("married") else "💎" if g.get("engaged") else "💖" if aff >= 80 else "❤️" if aff >= 50 else "😐"
-        ready = " ✓" if aff >= RECRUIT_AFFECTION_THRESHOLD else ""
-        active_tag = " [ACTIVE]" if where == "active" else ""
-        cap_tag = " [CAP]" if where == "active" and g["level"] >= g.get("level_cap", 10) else ""
-        aff_str = f"{aff}/{aff_cap}"
-        if where == "active":
-            if g.get("defeated") or g.get("current_hp", 0) <= 0:
-                hp_str = "[INCAPACITATED]"
-            else:
-                hp_str = f"HP: {g['current_hp']}/{g['max_hp']}"
-            print(f"  {i+1}. {g['name']} (Lv {g['level']}{cap_tag}){active_tag} — {hp_str} — {status} Affection: {aff_str}{ready}")
-        else:
-            print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — {status} Affection: {aff_str}{ready}")
-
-    try:
-        idx = int(input("\nSelect a girl (number) or 0 to go back: ")) - 1
-        if idx < 0 or idx >= len(all_girls):
-            return
-    except ValueError:
-        return
-
-    where, girl = all_girls[idx]
-    girl_key = girl.get("key", "")
-    template = ENEMIES.get(girl_key, {})
-    dialogue = template.get("dialogue", {})
-    aff = girl.get("affection", 30)
-
-    # --- Sub-menu for this girl ---
+    # ── Outer loop: re-display after filter changes ─────────────────────────
     while True:
-        clear_screen()
-        aff_cap = girl.get("affection_cap", 100)
-        engaged = girl.get("engaged", False)
-        married = girl.get("married", False)
-        print(f"=== {girl['name']} ===")
-        print(f"  Affection: {aff}/{aff_cap}")
-        status_label = "Married" if married else "Engaged" if engaged else "Active" if where == "active" else "At home"
-        print(f"  Status: {status_label}")
-        ring_bonus = girl.get("ring_stat_bonus")
-        if ring_bonus:
-            bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
-            print(f"  Ring Blessing: {', '.join(bonus_lines)}")
-        if where == "active":
-            cap = girl.get("level_cap", 10)
-            print(f"  Level: {girl['level']}/{cap}")
-        print()
+        term.clear()
+        lvl_data = _house_level_data(house)
+        girls = house.get("monster_girls", [])
+        max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house["level"], 2)
+        allies = player.get("allies", [])
+        total_girls = len(girls) + len(allies)
 
-        talks_left = _talks_remaining(player, _girl_unique_id(girl))
-        gift_ready = _gifts_remaining(player, _girl_unique_id(girl))
-        can_propose = (aff >= 100 and not engaged and not married and _has_engagement_ring(player))
+        term.print(f"=== {lvl_data['name'].upper()} LOUNGE ===")
+        term.print(f"Monster Girls: {total_girls}/{max_girls}")
+        if allies:
+            term.print(f"Active Party: {len(allies)}/3 allies")
 
-        print(f"1. Talk  ({talks_left} left today)")
-        print(f"2. Give a gift  ({'ready' if gift_ready else 'already gifted today'})")
-        if aff >= 60:
-            print("3. Ask for blessing")
-        if aff >= 80:
-            print("4. Share a kiss")
+        # ── Filter / sort info bar ──────────────────────────────────────────
+        term.print(f"Sort: [{SORT_LABELS[sort_by]}]  |  View: [{DIR_LABEL[sort_dir]}]")
+        term.print()
 
-        opt_num = 5
-        if can_propose:
-            print(f"{opt_num}. Propose marriage")
-            opt_num += 1
+        # Build combined list
+        all_girls = []
+        for girl in girls:
+            all_girls.append(("lounge", girl))
+        for ally in allies:
+            all_girls.append(("active", ally))
 
-        can_ascend = where == "active" and _can_ascend_ally(player, girl)
-        at_cap = where == "active" and girl["level"] >= girl.get("level_cap", 10)
-        if can_ascend:
-            print(f"{opt_num}. Ascend (break level limit)")
-            opt_num += 1
-        elif at_cap:
-            # Show what stones are needed
-            requirements = _get_ascension_requirements(girl.get("level_cap", 10))
-            needs = ", ".join(f"{count} Stone {_int_to_roman(tier)}" for tier, count in requirements)
-            print(f"  [Ascend: needs {needs}]")
-        if where == "lounge":
-            print(f"{opt_num}. Recruit to party")
-        print("0. Back")
+        if not all_girls:
+            term.print("The lounge is quiet... no companions yet.")
+            term.pause()
+            return
 
-        choice = input("\nChoice: ").strip()
-        if choice == "0":
-            break
+        # ── Apply sort ──────────────────────────────────────────────────────
+        all_girls = _sort_girls(all_girls, sort_by, sort_dir)
 
-        elif choice == "1":  # Talk
-            if talks_left <= 0:
-                print(f"\n{girl['name']} seems tired of talking. Come back tomorrow.")
-                input("\nPress Enter...")
-                continue
-
-            # Wedding gift check (affection at cap and engaged but not married)
-            if engaged and not married and aff >= aff_cap:
-                special_line = dialogue.get("house_special_gift",
-                    f"{girl['name']} pulls out a beautifully wrapped box. 'This is for you, my love.'")
-                print("\n" + (special_line.format(name=girl['name']) if "{name}" in special_line else special_line))
-                # Give wedding accessory
-                wedding_id = f"wedding_{girl_key}"
-                from resources.items import build_item, ITEMS
-                if wedding_id in ITEMS:
-                    wedding_item = build_item(wedding_id, "legendary")
-                    wedding_item["unique"] = True
-                    from inventory import add_item_to_inventory
-                    if add_item_to_inventory(player, wedding_item):
-                        print(f"\n  *** You received: {wedding_item['name']} ***")
-                    else:
-                        print(f"\n  Your inventory is full! The {wedding_item['name']} was left on the table.")
+        # ── Display girl list ───────────────────────────────────────────────
+        for i, (where, g) in enumerate(all_girls):
+            aff = g.get("affection", 30)
+            aff_cap = g.get("affection_cap", 100)
+            status = "💍" if g.get("married") else "💎" if g.get("engaged") else "💖" if aff >= 80 else "❤️" if aff >= 50 else "😐"
+            ready = " ✓" if aff >= RECRUIT_AFFECTION_THRESHOLD else ""
+            active_tag = " [ACTIVE]" if where == "active" else ""
+            cap_tag = " [CAP]" if where == "active" and g["level"] >= g.get("level_cap", 10) else ""
+            aff_str = f"{aff}/{aff_cap}"
+            if where == "active":
+                if g.get("defeated") or g.get("current_hp", 0) <= 0:
+                    hp_str = "[INCAPACITATED]"
                 else:
-                    print(f"\n  (Wedding item '{wedding_id}' not found — this is a bug.)")
-                girl["married"] = True
-                player.setdefault("married_girls", [])
-                if girl_key not in player["married_girls"]:
-                    player["married_girls"].append(girl_key)
-                # Remove from engaged list
-                player.setdefault("engaged_girls", [])
-                if girl_key in player["engaged_girls"]:
-                    player["engaged_girls"].remove(girl_key)
-                print(f"\n  *** {girl['name']} is now your wife! ***")
-                input("\nPress Enter...")
-                continue
-
-            # Determine dialogue key
-            if engaged and not married:
-                # Alternate between engaged_1 and engaged_2
-                if player.get("day", 1) % 2 == 0:
-                    dialog_key = "house_talk_engaged_2"
-                    default = f"{girl['name']} leans against you, smiling. 'Every day with you feels like a dream. I can't wait for our wedding.'"
-                else:
-                    dialog_key = "house_talk_engaged_1"
-                    default = f"{girl['name']} beams at you, her engagement ring catching the light. 'Can you believe it? We're going to be together forever!'"
-                line = dialogue.get(dialog_key, default)
-            elif aff <= 30:
-                dialog_key = "house_talk_low"
-                line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
-            elif aff <= 60:
-                dialog_key = "house_talk_mid"
-                line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
-            elif aff <= 80:
-                dialog_key = "house_talk_high"
-                line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+                    hp_str = f"HP: {g['current_hp']}/{g['max_hp']}"
+                term.print(f"  {i+1}. {g['name']} (Lv {g['level']}{cap_tag}){active_tag} — {hp_str} — {status} Affection: {aff_str}{ready}")
             else:
-                dialog_key = "house_talk_max"
-                line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+                term.print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — {status} Affection: {aff_str}{ready}")
 
-            line = line.format(name=girl['name']) if "{name}" in line else line
-            print("\n" + line)
+        # ── Build menu: girl options + filter controls + back ───────────────
+        girl_options = []
+        girl_styles = []
+        for where, g in all_girls:
+            aff = g.get("affection", 30)
+            active_tag = " [ACTIVE]" if where == "active" else ""
+            girl_options.append(f"{g['name']} (Lv {g['level']}){active_tag} — \u2665{aff}")
+            girl_styles.append(None)  # default style
 
-            # Increase affection
-            gain = random.randint(3, 7)
-            girl["affection"] = min(aff_cap, aff + gain)
-            aff = girl["affection"]
-            print(f"\nAffection +{gain} (now {aff}/{aff_cap})")
+        # Pad to next full row so filters start on their own row (4-column grid)
+        num_girls = len(all_girls)
+        pad_count = (4 - (num_girls % 4)) % 4
+        for _ in range(pad_count):
+            girl_options.append("")
+            girl_styles.append({"bg": "#1a1a2e", "fg": "#1a1a2e", "active_bg": "#1a1a2e", "active_fg": "#1a1a2e"})
 
-            # Track daily talk
-            _reset_daily_limits(player)
-            uid = _girl_unique_id(girl)
-            player["girl_talk_today"][uid] = player["girl_talk_today"].get(uid, 0) + 1
-            input("\nPress Enter...")
+        # Filter style: warm amber/gold to stand out from blue girl buttons
+        FILTER_STYLE = {"bg": "#5a4a1a", "fg": "#f0d060", "active_bg": "#7a6a2a", "active_fg": "#ffe080"}
 
-        elif choice == "2":  # Gift
-            if not gift_ready:
-                print(f"\n{girl['name']} has already received a gift today.")
-                input("\nPress Enter...")
-                continue
+        # Append filter/sort toggles with distinct styling
+        girl_options.append("\u2014 Sort by Capture Order \u2014")
+        girl_styles.append(FILTER_STYLE)
+        girl_options.append("\u2014 Sort by Level \u2014")
+        girl_styles.append(FILTER_STYLE)
+        girl_options.append("\u2014 Sort by Affection \u2014")
+        girl_styles.append(FILTER_STYLE)
+        girl_options.append(f"\u2014 Toggle View: {'Bottom\u2192Top' if sort_dir == 'asc' else 'Top\u2192Bottom'} \u2014")
+        girl_styles.append(FILTER_STYLE)
 
-            gifts = [it for it in player.get("inventory", []) if it.get("type") == "gift"]
-            if not gifts:
-                print("You have no gifts.")
-                input("Press Enter...")
-                continue
+        idx = term.menu(girl_options, prompt="Select companion or change sort:", allow_cancel=True, cancel_label="Back", styles=girl_styles)
+        if idx < 0:
+            return  # Back to house menu
 
-            print("\nYour Gifts:")
-            for i, g in enumerate(gifts):
-                print(f"{i+1}. {g['name']}")
-            try:
-                gidx = int(input("Choose gift: ")) - 1
+        # ── Check if user picked a filter option ────────────────────────────
+        filter_start = num_girls + pad_count
+        if idx == filter_start:
+            sort_by = "capture_order"
+            continue  # re-display
+        elif idx == filter_start + 1:
+            sort_by = "level"
+            continue  # re-display
+        elif idx == filter_start + 2:
+            sort_by = "affection"
+            continue  # re-display
+        elif idx == filter_start + 3:
+            sort_dir = "desc" if sort_dir == "asc" else "asc"
+            continue  # re-display
+
+        # ── Handle clicks on invisible spacer buttons ───────────────────────
+        if idx >= num_girls:
+            continue  # clicked a spacer, re-display
+
+        where, girl = all_girls[idx]
+        girl_key = girl.get("key", "")
+        template = ENEMIES.get(girl_key, {})
+        dialogue = template.get("dialogue", {})
+        aff = girl.get("affection", 30)
+
+        # ── Sub-menu for this girl ──────────────────────────────────────────
+        while True:
+            term.clear()
+            aff_cap = girl.get("affection_cap", 100)
+            engaged = girl.get("engaged", False)
+            married = girl.get("married", False)
+            term.print(f"=== {girl['name']} ===")
+            term.print(f"  Affection: {aff}/{aff_cap}")
+            status_label = "Married" if married else "Engaged" if engaged else "Active" if where == "active" else "At home"
+            term.print(f"  Status: {status_label}")
+            ring_bonus = girl.get("ring_stat_bonus")
+            if ring_bonus:
+                bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
+                term.print(f"  Ring Blessing: {', '.join(bonus_lines)}")
+            if where == "active":
+                cap = girl.get("level_cap", 10)
+                term.print(f"  Level: {girl['level']}/{cap}")
+            term.print()
+
+            talks_left = _talks_remaining(player, _girl_unique_id(girl))
+            gift_ready = _gifts_remaining(player, _girl_unique_id(girl))
+            can_propose = (aff >= 100 and not engaged and not married and _has_engagement_ring(player))
+
+            can_ascend = where == "active" and _can_ascend_ally(player, girl)
+            at_cap = where == "active" and girl["level"] >= girl.get("level_cap", 10)
+
+            # Build dynamic menu options
+            menu_options = []
+            menu_actions = []
+
+            menu_options.append(f"Talk  ({talks_left} left today)")
+            menu_actions.append("talk")
+
+            menu_options.append(f"Give a gift  ({'ready' if gift_ready else 'already gifted today'})")
+            menu_actions.append("gift")
+
+            if aff >= 60:
+                menu_options.append("Ask for blessing")
+                menu_actions.append("blessing")
+
+            if aff >= 80:
+                menu_options.append("Share a kiss")
+                menu_actions.append("kiss")
+
+            if can_propose:
+                menu_options.append("Propose marriage")
+                menu_actions.append("propose")
+
+            if can_ascend:
+                menu_options.append("Ascend (break level limit)")
+                menu_actions.append("ascend")
+            elif at_cap:
+                requirements = _get_ascension_requirements(girl.get("level_cap", 10))
+                needs = ", ".join(f"{count} Stone {_int_to_roman(tier)}" for tier, count in requirements)
+                term.print(f"  [Ascend: needs {needs}]")
+
+            if where == "lounge":
+                menu_options.append("Recruit to party")
+                menu_actions.append("recruit")
+
+            if where == "active":
+                menu_options.append("Remove from party")
+                menu_actions.append("dismiss")
+
+            menu_options.append("Back")
+            menu_actions.append("back")
+
+            choice_idx = term.menu(menu_options, prompt=f"What to do with {girl['name']}?")
+            if choice_idx < 0:
+                break
+            action = menu_actions[choice_idx] if choice_idx < len(menu_actions) else "back"
+
+            if action == "back":
+                break
+
+            elif action == "talk":
+                if talks_left <= 0:
+                    term.print(f"\n{girl['name']} seems tired of talking. Come back tomorrow.")
+                    term.pause()
+                    continue
+
+                # Wedding gift check (affection at cap and engaged but not married)
+                if engaged and not married and aff >= aff_cap:
+                    special_line = dialogue.get("house_special_gift",
+                        f"{girl['name']} pulls out a beautifully wrapped box. 'This is for you, my love.'")
+                    term.print("\n" + (special_line.format(name=girl['name']) if "{name}" in special_line else special_line))
+                    # Give wedding accessory
+                    wedding_id = f"wedding_{girl_key}"
+                    from resources.items import build_item, ITEMS
+                    if wedding_id in ITEMS:
+                        wedding_item = build_item(wedding_id, "unique")
+                        from inventory import add_item_to_inventory
+                        if add_item_to_inventory(player, wedding_item):
+                            term.print(f"\n  *** You received: {wedding_item['name']} ***")
+                        else:
+                            term.print(f"\n  Your inventory is full! The {wedding_item['name']} was left on the table.")
+                    else:
+                        term.print(f"\n  (Wedding item '{wedding_id}' not found — this is a bug.)")
+                    girl["married"] = True
+                    player.setdefault("married_girls", [])
+                    if girl_key not in player["married_girls"]:
+                        player["married_girls"].append(girl_key)
+                    # Remove from engaged list
+                    player.setdefault("engaged_girls", [])
+                    if girl_key in player["engaged_girls"]:
+                        player["engaged_girls"].remove(girl_key)
+                    term.print(f"\n  *** {girl['name']} is now your wife! ***")
+                    term.pause()
+                    continue
+
+                # Determine dialogue key
+                if engaged and not married:
+                    # Alternate between engaged_1 and engaged_2
+                    if player.get("day", 1) % 2 == 0:
+                        dialog_key = "house_talk_engaged_2"
+                        default = f"{girl['name']} leans against you, smiling. 'Every day with you feels like a dream. I can't wait for our wedding.'"
+                    else:
+                        dialog_key = "house_talk_engaged_1"
+                        default = f"{girl['name']} beams at you, her engagement ring catching the light. 'Can you believe it? We're going to be together forever!'"
+                    line = dialogue.get(dialog_key, default)
+                elif aff <= 30:
+                    dialog_key = "house_talk_low"
+                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+                elif aff <= 60:
+                    dialog_key = "house_talk_mid"
+                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+                elif aff <= 80:
+                    dialog_key = "house_talk_high"
+                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+                else:
+                    dialog_key = "house_talk_max"
+                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+
+                line = line.format(name=girl['name']) if "{name}" in line else line
+                term.print("\n" + line)
+
+                # Increase affection
+                gain = random.randint(3, 7)
+                girl["affection"] = min(aff_cap, aff + gain)
+                aff = girl["affection"]
+                term.print(f"\nAffection +{gain} (now {aff}/{aff_cap})")
+
+                # Track daily talk
+                _reset_daily_limits(player)
+                uid = _girl_unique_id(girl)
+                player["girl_talk_today"][uid] = player["girl_talk_today"].get(uid, 0) + 1
+                term.pause()
+
+            elif action == "gift":
+                if not gift_ready:
+                    term.print(f"\n{girl['name']} has already received a gift today.")
+                    term.pause()
+                    continue
+
+                gifts = [it for it in player.get("inventory", []) if it.get("type") == "gift"]
+                if not gifts:
+                    term.print("You have no gifts.")
+                    term.pause()
+                    continue
+
+                gift_names = [g['name'] for g in gifts]
+                gift_names.append("Back")
+                gidx = term.menu(gift_names, prompt="Choose gift:")
                 if gidx < 0 or gidx >= len(gifts):
-                    print("Invalid gift.")
-                    input("Press Enter...")
+                    # Back or cancelled
                     continue
                 gift = gifts[gidx]
                 # Remove from inventory
@@ -804,85 +914,80 @@ def _house_lounge(player, city_id, house):
                 # Show love/hate dialogue
                 if reaction > 0:
                     love_line = dialogue.get("house_gift_love", f"{girl['name']} beams with joy!")
-                    print(love_line.format(name=girl['name']) if "{name}" in love_line else love_line)
+                    term.print(love_line.format(name=girl['name']) if "{name}" in love_line else love_line)
                 elif reaction < 0:
                     hate_line = dialogue.get("house_gift_hate", f"{girl['name']} sighs, disappointed.")
-                    print(hate_line.format(name=girl['name']) if "{name}" in hate_line else hate_line)
+                    term.print(hate_line.format(name=girl['name']) if "{name}" in hate_line else hate_line)
                 else:
-                    print(f"{girl['name']} shrugs indifferently.")
+                    term.print(f"{girl['name']} shrugs indifferently.")
 
                 # Apply reaction
-                old_aff = aff
                 girl["affection"] = max(0, min(aff_cap, aff + reaction))
                 aff = girl["affection"]
-                print(f"Reaction: {reaction:+} affection (now {aff}/{aff_cap})")
+                term.print(f"Reaction: {reaction:+} affection (now {aff}/{aff_cap})")
 
                 # Track daily gift
                 _reset_daily_limits(player)
                 uid = _girl_unique_id(girl)
                 player["girl_gift_today"][uid] = True
-                input("\nPress Enter...")
-            except (ValueError, IndexError):
-                print("Invalid choice.")
-                input("Press Enter...")
+                term.pause()
 
-        elif choice == "3" and aff >= 60:  # Blessing
-            buff_line = dialogue.get("house_buff", f"{girl['name']} grants you a blessing.")
-            print(buff_line.format(name=girl['name']) if "{name}" in buff_line else buff_line)
-            # Apply a buff: +1 all stats for 1 floor
-            player.setdefault("active_buffs", [])
-            player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "girl_blessing"]
-            player["active_buffs"].append({
-                "type": "girl_blessing",
-                "stat": "all",
-                "value": 1,
-                "remaining": 1,
-            })
-            print("You feel a warm glow – +1 to all stats for 1 floor.")
-            input("\nPress Enter...")
+            elif action == "blessing":  # Blessing
+                buff_line = dialogue.get("house_buff", f"{girl['name']} grants you a blessing.")
+                term.print(buff_line.format(name=girl['name']) if "{name}" in buff_line else buff_line)
+                # Apply a buff: +1 all stats for 1 floor
+                player.setdefault("active_buffs", [])
+                player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "girl_blessing"]
+                player["active_buffs"].append({
+                    "type": "girl_blessing",
+                    "stat": "all",
+                    "value": 1,
+                    "remaining": 1,
+                })
+                term.print("You feel a warm glow – +1 to all stats for 1 floor.")
+                term.pause()
 
-        elif choice == "4" and aff >= 80:  # Kiss
-            kiss_line = dialogue.get("house_bond_kiss", f"{girl['name']} kisses you tenderly.")
-            print(kiss_line.format(name=girl['name']) if "{name}" in kiss_line else kiss_line)
-            # Heal and boost affection
-            player["current_hp"] = min(player["current_hp"] + 20, player_max_hp(player))
-            gain = random.randint(5, 10)
-            girl["affection"] = min(aff_cap, aff + gain)
-            aff = girl["affection"]
-            print(f"Affection +{gain} (now {aff}/{aff_cap}). You feel renewed (healed 20 HP).")
-            input("\nPress Enter...")
+            elif action == "kiss":  # Kiss
+                kiss_line = dialogue.get("house_bond_kiss", f"{girl['name']} kisses you tenderly.")
+                term.print(kiss_line.format(name=girl['name']) if "{name}" in kiss_line else kiss_line)
+                # Heal and boost affection
+                player["current_hp"] = min(player["current_hp"] + 20, player_max_hp(player))
+                gain = random.randint(5, 10)
+                girl["affection"] = min(aff_cap, aff + gain)
+                aff = girl["affection"]
+                term.print(f"Affection +{gain} (now {aff}/{aff_cap}). You feel renewed (healed 20 HP).")
+                term.pause()
 
-        elif choice == "5" and can_propose:
-            # ── PROPOSE ──
-            ring = _get_engagement_ring_item(player)
-            if not ring:
-                print("You don't have an engagement ring.")
-                input("Press Enter...")
+            elif action == "propose":
+                # ── PROPOSE ──
+                ring = _get_engagement_ring_item(player)
+                if not ring:
+                    term.print("You don't have an engagement ring.")
+                    term.pause()
+                    continue
+
+                engaged_line = dialogue.get("house_engaged", f"{girl['name']} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
+                term.print("\n" + (engaged_line.format(name=girl['name']) if "{name}" in engaged_line else engaged_line))
+                # Consume the ring
+                remove_item_by_reference(player, ring)
+
+                # Store the ring's stat bonus on the girl (persisted in house save)
+                ring_bonus = ring.get("base_mods", {})
+                if ring_bonus:
+                    girl["ring_stat_bonus"] = ring_bonus.copy()
+                    bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
+                    term.print(f"  The ring's power flows into {girl['name']}: {', '.join(bonus_lines)}.")
+
+                girl["engaged"] = True
+                girl["affection_cap"] = 200
+                player.setdefault("engaged_girls", [])
+                if girl_key not in player["engaged_girls"]:
+                    player["engaged_girls"].append(girl_key)
+                term.print(f"\n  *** {girl['name']} is now engaged to you! Affection cap raised to 200. ***")
+                term.pause()
                 continue
 
-            engaged_line = dialogue.get("house_engaged", f"{girl['name']} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
-            print("\n" + (engaged_line.format(name=girl['name']) if "{name}" in engaged_line else engaged_line))
-            # Consume the ring
-            remove_item_by_reference(player, ring)
-
-            # Store the ring's stat bonus on the girl (persisted in house save)
-            ring_bonus = ring.get("base_mods", {})
-            if ring_bonus:
-                girl["ring_stat_bonus"] = ring_bonus.copy()
-                bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
-                print(f"  The ring's power flows into {girl['name']}: {', '.join(bonus_lines)}.")
-
-            girl["engaged"] = True
-            girl["affection_cap"] = 200
-            player.setdefault("engaged_girls", [])
-            if girl_key not in player["engaged_girls"]:
-                player["engaged_girls"].append(girl_key)
-            print(f"\n  *** {girl['name']} is now engaged to you! Affection cap raised to 200. ***")
-            input("\nPress Enter...")
-            continue
-
-        elif choice == str(5 + (1 if can_propose else 0)):
-            if can_ascend:
+            elif action == "ascend":
                 # ── ASCEND ──
                 current_cap = girl.get("level_cap", 10)
                 requirements = _get_ascension_requirements(current_cap)
@@ -894,8 +999,8 @@ def _house_lounge(player, city_id, house):
                     tier_consumed = consume_stackable_items(player, lambda item: item.get("ascension_tier") == tier, count)
                     total_found = sum(amt for _, amt in tier_consumed)
                     if total_found < count:
-                        print("You do not have enough Ascension Stones.")
-                        input("Press Enter...")
+                        term.print("You do not have enough Ascension Stones.")
+                        term.pause()
                         continue
                     consumed_refs.extend(tier_consumed)
 
@@ -917,8 +1022,8 @@ def _house_lounge(player, city_id, house):
                 pre_line = dialogue.get("ascension_pre_ceremony",
                     f"{girl['name']} kneels before you, her eyes closed in reverence.\n'I feel the chains upon my soul. Please... set me free.'")
                 pre_line = pre_line.format(name=girl['name'], stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
-                print("\n" + pre_line)
-                input("\nPress Enter to begin the ceremony...")
+                term.print("\n" + pre_line)
+                term.pause("Press Continue to begin the ceremony...")
 
                 girl["level_cap"] = old_cap + 10
 
@@ -926,67 +1031,54 @@ def _house_lounge(player, city_id, house):
                 post_line = dialogue.get("ascension_post_ceremony",
                     f"The {highest_stone['name'] if highest_stone else 'stone'} shatters into motes of prismatic light!\nAncient power surges through {girl['name']}.\nHer form shimmers, breaking the seal of Level {old_cap}.")
                 post_line = post_line.format(name=girl['name'], stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
-                print(f"\n{'='*50}")
-                print("  " + post_line.replace("\n", "\n  "))
-                print(f"  Stones consumed: {stone_summary}")
-                print(f"  *** LEVEL CAP INCREASED: {old_cap} → {girl['level_cap']} ***")
-                print(f"{'='*50}")
+                term.print(f"\n{'='*50}")
+                term.print("  " + post_line.replace("\n", "\n  "))
+                term.print(f"  Stones consumed: {stone_summary}")
+                term.print(f"  *** LEVEL CAP INCREASED: {old_cap} → {girl['level_cap']} ***")
+                term.print(f"{'='*50}")
 
-                print(f"\n{girl['name']} opens her eyes, renewed and stronger.")
-                print("'I can feel it... the path ahead is open once more.'")
-                input("\nPress Enter...")
-            elif where == "lounge":
+                term.print(f"\n{girl['name']} opens her eyes, renewed and stronger.")
+                term.print("'I can feel it... the path ahead is open once more.'")
+                term.pause()
+
+            elif action == "recruit":
                 # ── RECRUIT ──
                 aff = girl.get("affection", 30)
                 if aff < RECRUIT_AFFECTION_THRESHOLD:
                     denied_msg = dialogue.get("recruit_denied",
                         f"{girl['name']} looks at you uncertainly. 'I don't know you well enough yet...'")
-                    print(denied_msg.format(name=girl['name']))
-                    print(f"  (Need {RECRUIT_AFFECTION_THRESHOLD}+ affection. Currently: {aff}/{aff_cap})")
-                    input("\nPress Enter...")
+                    term.print(denied_msg.format(name=girl['name']))
+                    term.print(f"  (Need {RECRUIT_AFFECTION_THRESHOLD}+ affection. Currently: {aff}/{aff_cap})")
+                    term.pause()
                 else:
                     accepted_msg = dialogue.get("recruit_accepted",
                         f"{girl['name']} smiles warmly. 'I'll fight beside you!'")
-                    print(accepted_msg.format(name=girl['name']))
+                    term.print(accepted_msg.format(name=girl['name']))
                     from combat.ally import recruit_ally_from_house
                     ally, msg = recruit_ally_from_house(player, girl, house)
-                    print(msg)
+                    term.print(msg)
                     if ally:
-                        print(f"{ally['name']}'s stats:")
-                        print(f"  HP: {ally['max_hp']}")
-                        print(f"  STR: {ally['attributes']['Strength']}  CON: {ally['attributes']['Constitution']}  DEX: {ally['attributes']['Dexterity']}")
-                    input("\nPress Enter...")
+                        term.print(f"{ally['name']}'s stats:")
+                        term.print(f"  HP: {ally['max_hp']}")
+                        term.print(f"  STR: {ally['attributes']['Strength']}  CON: {ally['attributes']['Constitution']}  DEX: {ally['attributes']['Dexterity']}")
+                    term.pause()
                     break  # after recruitment, return to girl list
-            else:
-                print("Invalid option.")
-                input("Press Enter...")
 
-        elif choice == str(6 + (1 if can_propose else 0)) and can_ascend and where == "lounge":
-            # ── RECRUIT (when Ascend pushes number to 6/7) ──
-            aff = girl.get("affection", 30)
-            if aff < RECRUIT_AFFECTION_THRESHOLD:
-                denied_msg = dialogue.get("recruit_denied",
-                    f"{girl['name']} looks at you uncertainly. 'I don't know you well enough yet...'")
-                print(denied_msg.format(name=girl['name']))
-                print(f"  (Need {RECRUIT_AFFECTION_THRESHOLD}+ affection. Currently: {aff}/{aff_cap})")
-                input("\nPress Enter...")
-            else:
-                accepted_msg = dialogue.get("recruit_accepted",
-                    f"{girl['name']} smiles warmly. 'I'll fight beside you!'")
-                print(accepted_msg.format(name=girl['name']))
-                from combat.ally import recruit_ally_from_house
-                ally, msg = recruit_ally_from_house(player, girl, house)
-                print(msg)
-                if ally:
-                    print(f"{ally['name']}'s stats:")
-                    print(f"  HP: {ally['max_hp']}")
-                    print(f"  STR: {ally['attributes']['Strength']}  CON: {ally['attributes']['Constitution']}  DEX: {ally['attributes']['Dexterity']}")
-                input("\nPress Enter...")
-                break  # after recruitment, return to girl list
+            elif action == "dismiss":
+                # ── DISMISS ──
+                dismiss_msg = dialogue.get("dismiss",
+                    f"{girl['name']} nods quietly. 'I'll be here when you need me.'")
+                term.print(dismiss_msg.format(name=girl['name']) if "{name}" in dismiss_msg else dismiss_msg)
+                from combat.ally import _return_ally_to_house
+                _return_ally_to_house(player, girl, house)
+                player["allies"] = [a for a in player.get("allies", []) if not (a.get("key") == girl.get("key") and a.get("name") == girl.get("name"))]
+                term.print(f"{girl['name']} has been returned to the lounge.")
+                term.pause()
+                break  # after dismissal, return to girl list
 
-        else:
-            print("Invalid option.")
-            input("Press Enter...")
+            else:
+                term.print("Invalid option.")
+                term.pause()
 
 def get_gift_reaction(girl_key, gift_type):
     """Load personalized gift reactions from monster_girls.yaml"""
@@ -1003,59 +1095,57 @@ def house_menu(player, city_id):
     """Entry point called from city.py when player chooses 'Your House'."""
     house    = _get_house(player, city_id)
     if house is None:
-        print("You don't own a house here.")
-        input("\nPress Enter...")
+        term.print("You don't own a house here.")
+        term.pause()
         return
 
     max_level = max(HOUSE_LEVELS)
 
     while True:
-        clear_screen()
+        term.clear()
         lvl_data = _house_level_data(house)
         pending  = _pending_income(player, city_id, house)
         total_girls = len(house.get("monster_girls", [])) + len(player.get("allies", []))
         max_girls = HOUSE_MONSTER_GIRL_LIMITS.get(house["level"], 2)
 
-        print(f"=== Your {lvl_data['name']} ===")
-        print(f"  Level    : {house['level']} — {lvl_data['name']}")
-        print(f"  Girls    : {total_girls}/{max_girls}")
-        print(f"  Storage  : {len(house['storage'])}/{lvl_data['storage_cap']} slots")
-        print(f"  Pending  : {pending} gold")
-        print(f"  Gold     : {player.get('gold', 0)}")
-        print(f"  Time     : {format_time(player.get('time_minutes', 0))} | {format_date(player)}")
-        print()
-        print("1. Rest (quick heal)")
-        print("2. Sleep (full heal + 8 hours) — Available 20:00–04:00")
-        print("3. Storage chest")
-        print("4. Collect income")
-        print("5. Lounge")
+        term.print(f"=== Your {lvl_data['name']} ===")
+        term.print(f"  Level    : {house['level']} — {lvl_data['name']}")
+        term.print(f"  Girls    : {total_girls}/{max_girls}")
+        term.print(f"  Storage  : {len(house['storage'])}/{lvl_data['storage_cap']} slots")
+        term.print(f"  Pending  : {pending} gold")
+        term.print(f"  Gold     : {player.get('gold', 0)}")
+        term.print(f"  Date     : {format_date(player)}")
+
+        options = [
+            "Rest (quick heal)",
+            "Sleep (full heal + 8 hours) — Available 20:00–04:00",
+            "Storage chest",
+            "Collect income",
+            "Lounge",
+        ]
         if house["level"] < max_level:
             next_name = HOUSE_LEVELS[house["level"] + 1]["name"]
-            print(f"6. Upgrade to {next_name}")
-            print("7. Leave")
-            leave_opt = "7"
-            upgrade_opt = "6"
-        else:
-            print("6. Leave")
-            leave_opt = "6"
-            upgrade_opt = None
+            options.append(f"Upgrade to {next_name}")
+        options.append("Leave")
 
-        choice = input("\nChoice: ").strip()
+        choice = term.menu(options, prompt="What would you like to do?")
 
-        if choice == "1":
+        if choice == 0:
             _house_rest(player, city_id, house)
-        elif choice == "2":
+        elif choice == 1:
             _house_sleep(player, city_id, house)
-        elif choice == "3":
+        elif choice == 2:
             _house_storage(player, city_id, house)
-        elif choice == "4":
+        elif choice == 3:
             _house_collect_income(player, city_id, house)
-        elif choice == "5":
+        elif choice == 4:
             _house_lounge(player, city_id, house)
-        elif upgrade_opt and choice == upgrade_opt:
-            _house_upgrade(player, city_id, house)
-        elif choice == leave_opt:
-            break
+        elif choice == 5 and house["level"] >= max_level:
+            break  # Leave (at max level, Leave is index 5)
+        elif choice == 5:
+            _house_upgrade(player, city_id, house)  # Upgrade (not at max)
+        elif choice == 6 or choice == -1:
+            break  # Leave or cancelled
         else:
-            print("Invalid choice.")
-            input("Press Enter...")
+            term.print("Invalid choice.")
+            term.pause()
