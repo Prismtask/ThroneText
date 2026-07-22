@@ -2742,6 +2742,367 @@ cosmic_slime_empress:
       cold... the void... pulling me apart...'
     is_recovered: She coalesces back into a brilliant nebula. 'The cosmos reforms.
       I am infinite once more!'
+
+gnome_gear_maiden:
+  name: Gear Maiden
+  race: Gnome
+  level: 23
+  base_hp: 160
+  mods:
+    Strength: 3
+    Constitution: 5
+    Dexterity: 5
+    Wisdom: 5
+    Learning: 8
+    Charisma: 4
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name} adjusts her goggles, squinting at you. 'I've got calibrations to run. Unless you can help me align the phase couplers? No? Come back later.'
+    recruit_accepted: The {name} springs up, gears whirring. 'Finally! A field assistant who won't blow up my workshop! Let's go!'
+    capture: The {name} tinkers with a gadget, then looks up with a grin. 'You... you want me? Even with all the oil stains?'
+    house_talk_low: She doesn't look up from her workbench. 'Shh! The mana coil is about to resonate...'
+    house_talk_mid: She shows you a spinning contraption. 'See? I call it the Rotary Affection Engine. Still in beta.'
+    house_talk_high: She leans against you, her goggles pushed up. 'You're more interesting than any machine I've ever built.'
+    house_talk_max: She curls up next to you, a small gear charm in her hand. 'I made this for you. It ticks in sync with my heart.'
+    house_talk_engaged_1: The {name} holds up a ring made of interlocking gears. 'I forged this myself! Each gear represents a memory of us.'
+    house_gift_love: She examines it with a jeweler's loupe. 'Exquisite craftsmanship! This goes in my treasure drawer.'
+    house_gift_hate: She frowns. 'This doesn't fit any of my schematics. Sorry.'
+    house_buff: She attaches a tiny device to your armor. 'Kinetic booster engaged!'
+    house_bond_kiss: She kisses your cheek, leaving a smudge of grease. 'Oops! But worth it.'
+    house_recruit_again: She pops up from behind a pile of blueprints. 'Another expedition? I've got new gadgets to test!'
+    engaged: You'd marry a grease-monkey like me? I'll build us a future, one gear at a time.
+    special_gift: A gadget from you... I'll reverse-engineer it and make ten better ones, but keep the original forever.
+    ascension_pre_ceremony: The {name} frantically assembles a device. 'This should channel the {stone}'s energy through a mana condenser!'
+    ascension_post_ceremony: The {stone} explodes into a thousand tiny gears that reassemble into a crown on {name}'s head. 'It... it worked! Level {old_cap} was a design flaw I've now corrected!'
+    is_defeated: She clutches a broken gear, smoke rising. 'My... my inventions... failed...'
+    is_recovered: She sits up, already sketching on a scrap of paper. 'Failure is just data! Next version will be perfect!'
+
+orc_war_sister:
+  name: War Sister
+  race: Orc
+  level: 25
+  base_hp: 180
+  mods:
+    Strength: 8
+    Constitution: 7
+    Dexterity: 4
+    Wisdom: 3
+    Learning: 2
+    Charisma: 6
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name} crosses her muscular arms. 'You want a war sister at your side? Prove your strength first.'
+    recruit_accepted: The {name} slams her fist into her palm. 'Now THIS is a war party! I'll crush anything that stands in our way!'
+    capture: The {name} looks you over, a fierce grin spreading across her tusked face. 'Finally! Someone who sees the warrior, not the monster.'
+    house_talk_low: She sharpens her axe without looking up. 'Training starts at dawn. Be ready.'
+    house_talk_mid: She spars with a training dummy. 'Your form is improving. Still sloppy, but improving.'
+    house_talk_high: She shares her war stories by the fire. 'And then I headbutted the dragon! Ha! You should've seen its face!'
+    house_talk_max: She gently wraps her arms around you. 'In all my battles, you're the only victory that matters.'
+    house_talk_engaged_1: The {name} polishes her war trophies, then pauses. 'I used to fight for glory. Now I fight for you.'
+    house_gift_love: She tests its weight and balance. 'Good steel. You have a warrior's eye.'
+    house_gift_hate: She tosses it aside. 'This wouldn't survive one swing in battle.'
+    house_buff: She claps your shoulder. 'WAR CRY! Now go break something!'
+    house_bond_kiss: She pulls you into a bone-crushing embrace. 'Soft feelings for a hard warrior.'
+    house_recruit_again: She straps on her armor. 'The battlefield calls. Are you coming, war-sibling?'
+    engaged: A war-bond? Stronger than any marriage vow. Together we are an army of two.
+    special_gift: A token from you? I'll wear it into every battle as my lucky charm.
+    ascension_pre_ceremony: The {name} plants her axe in the ground. 'The {stone} is a weapon like no other. Let me wield its power, and no foe will stand before us.'
+    ascension_post_ceremony: The {stone} melts into {name}'s axe, which blazes with power. She roars to the sky. 'I AM UNSTOPPABLE! Level {old_cap} was just a warm-up!'
+    is_defeated: She drops to one knee, using her axe as a crutch. 'A... worthy opponent... I'll remember this...'
+    is_recovered: She rises, slamming her axe into the ground. 'Pain is a teacher! Now I am stronger!'
+
+shadow_dusk_weaver:
+  name: Dusk Weaver
+  race: Shadow
+  level: 27
+  base_hp: 175
+  mods:
+    Strength: 4
+    Constitution: 5
+    Dexterity: 10
+    Wisdom: 6
+    Learning: 5
+    Charisma: 6
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name} melts into the shadows. 'I walk in darkness. Few can follow.'
+    recruit_accepted: The {name} steps out of your own shadow, a faint smile on her lips. 'You noticed me. That's rare. I'll walk with you.'
+    capture: The {name} reforms from a wisp of darkness, her eyes meeting yours. 'In the dark, I was alone. Now I've found a light.'
+    house_talk_low: She is barely visible in the corner. '...watching. Always watching.'
+    house_talk_mid: She appears beside you silently. 'I wove a dream for you last night. Did you feel it?'
+    house_talk_high: Her shadow-form wraps around you like a cool blanket. 'You're warm. I'm not used to warm.'
+    house_talk_max: She takes your hand, her touch cool but present. 'In all the darkness I've known, you are the dawn.'
+    house_talk_engaged_1: The {name} weaves threads of shadow and light together. 'See? Darkness and light intertwined. That's us.'
+    house_gift_love: She wraps it in shadows and it disappears. 'I'll keep it in the void, where nothing can harm it.'
+    house_gift_hate: The shadows reject it. 'The void does not want this. Neither do I.'
+    house_buff: Shadows cling to your weapon. 'Strike from where they cannot see.'
+    house_bond_kiss: Her kiss is like cool mist. 'A memory of warmth to carry in the dark.'
+    house_recruit_again: A shadow detaches from the wall. 'The darkness is restless. Let's give it something to fear.'
+    engaged: You wish to bind your light to my darkness? Then I shall be your shadow, forever at your side.
+    special_gift: A piece of your world... I'll weave it into the twilight tapestry I keep in my heart.
+    ascension_pre_ceremony: The {name} becomes one with the darkness. 'In shadow, I am infinite. Use the {stone}, and I will weave a new destiny from the void.'
+    ascension_post_ceremony: The {stone} vanishes into shadow, then {name} emerges wreathed in twilight. 'The void has answered. Level {old_cap} was merely the absence of light — now I am both.'
+    is_defeated: She flickers like a dying candle. 'The... the light... it's too bright...'
+    is_recovered: She solidifies from a wisp. 'The dark is patient. I return.'
+
+clockwork_automata_doll:
+  name: Automata Doll
+  race: Clockwork
+  level: 29
+  base_hp: 195
+  mods:
+    Strength: 6
+    Constitution: 8
+    Dexterity: 6
+    Wisdom: 4
+    Learning: 6
+    Charisma: 5
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: "The {name}'s gears click rhythmically. 'Query: Why should this unit accompany you? Insufficient data.'"
+    recruit_accepted: The {name}'s eyes glow softly. 'Directive accepted. This unit will protect you with 100% operational capacity.'
+    capture: "The {name}'s clockwork heart ticks faster. 'Anomaly detected: emotional subroutine overflowing. Error: pleasant.'"
+    house_talk_low: She stands motionless. 'Recharging. Please do not disturb maintenance cycle.'
+    house_talk_mid: Her gears whir. 'I have calculated 847 ways today could go wrong. But with you, probability of happiness is... high.'
+    house_talk_high: She plays a soft melody from a built-in music box. 'I composed this. It's called "Warmth of Your Presence."'
+    house_talk_max: "She rests her head on your shoulder. 'Core temperature rising. Diagnostic: love.'"
+    house_talk_engaged_1: The {name} opens a compartment in her chest, revealing a tiny portrait of you inside. 'You are stored in my primary memory core. Permanent file.'
+    house_gift_love: "She analyzes it with precision. 'Quality: exceptional. This will be added to my treasure collection.'"
+    house_gift_hate: Sensors flash red. 'This item does not align with my preference matrix.'
+    house_buff: She injects a precision stimulant. 'Combat efficiency increased by 27.3%.'
+    house_bond_kiss: "A gentle mechanical hum, then a soft press of cool metal lips. 'Affection protocol: executed.'"
+    house_recruit_again: Her optics brighten. 'New expedition parameters received. This unit is combat-ready.'
+    engaged: Marriage proposal detected. Running compatibility scan... 100% match confirmed. This unit accepts with joy.
+    special_gift: A gift for this unit? I will treasure it in my innermost compartment, next to my core.
+    ascension_pre_ceremony: The {name}'s gears spin at maximum speed. 'The {stone} contains infinite energy. If I can interface with it...'
+    ascension_post_ceremony: "The {stone} becomes a perfect gear that slots into {name}'s core. Her entire frame glows. 'System update complete. New level cap: infinite. Previous limit: irrelevant.'"
+    is_defeated: Sparks fly from her joints. 'System... failure... backup power... fading...'
+    is_recovered: She reboots with a chime. 'System restored. All functions nominal. Apologies for the downtime.'
+
+giant_maiden_of_stone:
+  name: Maiden of Stone
+  race: Giant
+  level: 32
+  base_hp: 220
+  mods:
+    Strength: 11
+    Constitution: 10
+    Dexterity: 3
+    Wisdom: 5
+    Learning: 3
+    Charisma: 6
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name} looks down at you — way down. 'You're very small. Are you sure you can handle a giant's company?'
+    recruit_accepted: The {name} carefully picks you up and sets you on her shoulder. 'There! Now you can see the world as I do.'
+    capture: The {name} kneels down, her stone-like skin warm to the touch. 'I've stood alone for eons. But you... you don't seem afraid of me.'
+    house_talk_low: She sits cross-legged, still towering. 'Tell me about the tiny world down there.'
+    house_talk_mid: She carves little statues from stone with her bare hands. 'This one's you. See? Same grumpy face.'
+    house_talk_high: She cradles you in her palm. 'You're so small and fragile. I'll protect you forever.'
+    house_talk_max: She sings an ancient giant lullaby, her voice rumbling like distant thunder. 'Sleep, little one. The mountains watch over you.'
+    house_talk_engaged_1: The {name} has carved a stone heart the size of a boulder. 'I made this for you. It's to scale — giant-sized love.'
+    house_gift_love: She holds it up to the light. 'Beautiful! I'll put it on my highest shelf where nothing can reach it.'
+    house_gift_hate: She squints. 'Is this a pebble? I have bigger pebbles.'
+    house_buff: She pounds the ground, shaking the earth. 'STAND TALL, LITTLE ONE!'
+    house_bond_kiss: She very gently presses her forehead to yours. 'A giant's kiss... scaled down for you.'
+    house_recruit_again: The ground shakes as she approaches. 'The mountains are calling! Let's answer together.'
+    engaged: You wish to bind your tiny life to my ancient one? Then I shall carry you through all the ages to come.
+    special_gift: Something so tiny and precious... I'll polish it and keep it in my pocket, right over my heart.
+    ascension_pre_ceremony: The {name} holds the {stone} between two fingers like a grain of sand. 'Even mountains can grow. Use this, and I will become a range.'
+    ascension_post_ceremony: The {stone} sinks into {name}'s skin like water into stone. She grows even taller, her voice echoing. 'I AM THE MOUNTAIN NOW. Level {old_cap} was but a foothill.'
+    is_defeated: She crashes to the ground, the earth trembling. 'The mountain... crumbles...'
+    is_recovered: She rises slowly, brushing debris from her shoulders. 'Mountains fall. Mountains rise again.'
+
+dragonkin_flame_heart:
+  name: Flame Heart
+  race: Dragonkin
+  level: 39
+  base_hp: 320
+  mods:
+    Strength: 10
+    Constitution: 9
+    Dexterity: 7
+    Wisdom: 6
+    Learning: 5
+    Charisma: 8
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name} exhales a puff of smoke. 'My fire burns hot. Not everyone can stand the heat.'
+    recruit_accepted: The {name}'s scales shimmer with inner flame. 'At last, someone who doesn't flinch from my fire! Fly with me!'
+    capture: The {name} wraps her tail around you, warm like a hearth. 'A dragon's heart beats for eternity. I choose to share mine with you.'
+    house_talk_low: She basks in a sunbeam, tail twitching. 'Don't interrupt my solar charging.'
+    house_talk_mid: She breathes a tiny flame that dances like a bird. 'Look! I made a phoenix. It'll burn out in a minute.'
+    house_talk_high: Her inner flame glows brighter when you enter. 'See? You make my fire burn hotter.'
+    house_talk_max: She curls around you, wings sheltering you. 'This is my hoard now. Not gold — you.'
+    house_talk_engaged_1: The {name} breathes a heart-shaped flame. 'Dragonfire is eternal. So is my love.'
+    house_gift_love: She scorches it lightly, then admires the patina. 'Fire-kissed. Now it's truly beautiful.'
+    house_gift_hate: She snorts a puff of smoke. 'This won't survive my hoard inspection.'
+    house_buff: She breathes dragonfire over your weapon. 'Let your strikes burn!'
+    house_bond_kiss: Her lips are warm as embers. 'A dragon's kiss — rare and precious.'
+    house_recruit_again: She stretches her wings, fire flickering in her throat. 'The skies await, my rider!'
+    engaged: A dragon does not wed lightly. But for you, I would share my hoard, my fire, and my eternal heart.
+    special_gift: A treasure for my hoard? I'll sleep on it every night, guarding it with my life.
+    ascension_pre_ceremony: The {name}'s fire blazes white-hot. 'The {stone} burns with ancient flame. Let me consume it, and my fire will know no bounds.'
+    ascension_post_ceremony: The {stone} ignites into a miniature star that {name} swallows. Her scales turn prismatic. 'I AM THE ETERNAL FLAME! Level {old_cap} was just kindling.'
+    is_defeated: Her flames gutter to embers. 'The fire... it's going out...'
+    is_recovered: She reignites with a roar, flames brighter than before. 'A dragon's fire never truly dies!'
+
+angel_seraph_ascendant:
+  name: Seraph Ascendant
+  race: Angel
+  level: 42
+  base_hp: 490
+  mods:
+    Strength: 6
+    Constitution: 7
+    Dexterity: 7
+    Wisdom: 10
+    Learning: 8
+    Charisma: 11
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name}'s six wings fan out, her halo pulsing. 'You walk in shadow, mortal. Why should a seraph descend for you?'
+    recruit_accepted: The {name} folds her wings and takes your hand. 'The Choir Above sang of a mortal who would need me. It seems the prophecy was true.'
+    capture: The {name}'s radiance dims to a gentle glow as she lands beside you. 'I have watched you from the heavens. Your soul shines brighter than any star.'
+    house_talk_low: She hovers a few inches off the ground, meditating. 'The celestial harmony requires stillness. Please wait.'
+    house_talk_mid: Her halo spins lazily. 'I tried mortal food today. It was... surprisingly delightful.'
+    house_talk_high: She wraps a wing around you. 'The warmth of a mortal soul is different from divine light. I prefer it.'
+    house_talk_max: She sings a hymn in a language older than time. 'This is the song of eternals. I rewrite its verses for you.'
+    house_talk_engaged_1: The {name} holds a feather from her own wing. 'Each seraph has six. I give you my seventh — the one I grew just for you.'
+    house_gift_love: She blesses it with a touch of her halo. 'Consecrated. It now carries a spark of heaven.'
+    house_gift_hate: Her light dims. 'This object carries shadows. I cannot accept it.'
+    house_buff: Divine light surrounds you. 'Walk in radiance, mortal champion.'
+    house_bond_kiss: She touches your forehead, and you feel the warmth of a thousand suns. 'A seraph's blessing — eternal.'
+    house_recruit_again: Her wings shimmer into view. 'The heavens grant me leave to descend again. Shall we?'
+    engaged: A seraph and a mortal? The Choir will sing of this for eons. I choose you over heaven itself.
+    special_gift: A piece of the mortal realm... I will enshrine it in the Celestial Vault, my most sacred space.
+    ascension_pre_ceremony: The {name} rises on six wings, halo blazing. 'The {stone} was forged in the same fire as the stars. Let me unlock its divinity.'
+    ascension_post_ceremony: The {stone} becomes a seventh star in {name}'s halo. Her wings multiply, her voice chorus-like. 'I AM THE CHOIR! Level {old_cap} was the whisper; now hear the symphony!'
+    is_defeated: Her wings shatter into light. 'The darkness... it pain... the light...'
+    is_recovered: Her wings reform from motes of light. 'The light never truly fades. I am restored.'
+
+fey_star_court_dancer:
+  name: Star Court Dancer
+  race: Fey
+  level: 44
+  base_hp: 360
+  mods:
+    Strength: 4
+    Constitution: 6
+    Dexterity: 12
+    Wisdom: 8
+    Learning: 7
+    Charisma: 10
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name} twirls away, stardust trailing. 'The Star Court only dances with those who know the steps. Do you?'
+    recruit_accepted: The {name} curtsies, her gown shimmering like the night sky. 'A partner at last! The Star Court's waltz requires two.'
+    capture: The {name} offers her hand, constellations swirling in her eyes. 'Every dance ends. But ours... ours is just beginning.'
+    house_talk_low: She practices her footwork in silence. 'One-two-three, one-two-three...'
+    house_talk_mid: She teaches you a simple waltz step. 'No, no! Your left foot goes there! ...Better.'
+    house_talk_high: She dances under starlight she conjured herself. 'I've danced for eons. You're my favorite audience.'
+    house_talk_max: She rests her head on your shoulder, still swaying gently. 'The music never stops when I'm with you.'
+    house_talk_engaged_1: The {name} leads you in a dance that leaves trails of constellations. 'Every star in the sky watches our dance now.'
+    house_gift_love: She incorporates it into her dance, making it sparkle. 'It moves with me! Perfection!'
+    house_gift_hate: She sniffs. 'This has no rhythm. It doesn't dance.'
+    house_buff: She spins around you, leaving a trail of stardust. 'Dance like the stars — untouchable!'
+    house_bond_kiss: She kisses your cheek, leaving a faint glitter. 'Stardust marks the ones we love.'
+    house_recruit_again: She appears in a swirl of starlight. 'The music calls again! Take my hand!'
+    engaged: To dance together for eternity? The Star Court has never seen such a duet. I accept with all my light.
+    special_gift: A gift for a dancer? I shall choreograph a new constellation and name it after this moment.
+    ascension_pre_ceremony: The {name} floats on a disc of starlight. 'The Star Court's highest dance requires the {stone}'s power. Shall we ascend together?'
+    ascension_post_ceremony: The {stone} explodes into a galaxy of dancing lights that weave into {name}'s gown. She glows with the radiance of a thousand constellations. 'The dance is eternal now! Level {old_cap} was merely the overture.'
+    is_defeated: She stumbles mid-step, starlight fading. 'The music... it's stopping...'
+    is_recovered: She rises in a graceful pirouette. 'The curtain never falls on a true dancer!'
+
+demon_infernal_bride:
+  name: Infernal Bride
+  race: Demon
+  level: 47
+  base_hp: 420
+  mods:
+    Strength: 9
+    Constitution: 9
+    Dexterity: 8
+    Wisdom: 6
+    Learning: 6
+    Charisma: 12
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name}'s hellfire eyes narrow. 'I don't bind myself to just anyone. What do you offer the Infernal Bride?'
+    recruit_accepted: The {name} laughs, flames dancing in her hair. 'Finally! A consort worthy of the infernal throne! Let's paint this world in fire!'
+    capture: The {name}'s flames dim to a warm glow. 'In all the hells, I never found warmth like yours. I choose you.'
+    house_talk_low: She lounges on a throne of shadow. 'Entertain me, mortal. Hell is so boring.'
+    house_talk_mid: She flicks a fireball between her fingers idly. 'You're interesting. Most mortals bore me in minutes. You've lasted days.'
+    house_talk_high: She lets you touch her flames — they're warm, not burning. 'See? I control my fire. For you.'
+    house_talk_max: She drapes herself over you like a living flame. 'The infernal realms have nothing as precious as this moment.'
+    house_talk_engaged_1: The {name} forges a ring of hellfire that cools into obsidian. 'An infernal wedding band. It will never break.'
+    house_gift_love: She admires it with a wicked grin. 'Excellent taste. This will look magnificent in my trophy hall.'
+    house_gift_hate: She incinerates it with a glance. 'Worthless. Don't waste my time.'
+    house_buff: Hellfire wreathes your weapon. 'Show them what infernal wrath looks like!'
+    house_bond_kiss: Her kiss burns and soothes at once. 'Hellfire kisses — an acquired taste.'
+    house_recruit_again: Flames erupt around her. 'The infernal realm is restless! Time for a rampage, my love!'
+    engaged: A mortal proposing to the Infernal Bride? Bold. Foolish. Absolutely perfect. I accept.
+    special_gift: A token from my mortal love... I'll keep it in the hottest flame of hell, where nothing can destroy it.
+    ascension_pre_ceremony: The {name} stands in a ring of hellfire. 'The {stone} burns with a heat even hell envies. Let me claim it, and I shall become queen of all fires.'
+    ascension_post_ceremony: The {stone} erupts into a pillar of infernal flame that engulfs {name}. She emerges wreathed in dark fire, horns blazing. 'ALL HELLS BOW! Level {old_cap} was a candle to my inferno!'
+    is_defeated: Her flames sputter. 'Impossible... the infernal flame... extinguished...'
+    is_recovered: She ignites with renewed fury. 'You cannot kill hellfire! I AM hellfire!'
+
+undead_grave_queen:
+  name: Grave Queen
+  race: Undead
+  level: 50
+  base_hp: 500
+  mods:
+    Strength: 8
+    Constitution: 10
+    Dexterity: 7
+    Wisdom: 9
+    Learning: 8
+    Charisma: 10
+  boss: false
+  super_boss: false
+  monster_girl: true
+  dialogue:
+    recruit_denied: The {name}'s crown of bone glints. 'I have ruled the dead for millennia. Why should a queen follow a mortal?'
+    recruit_accepted: The {name} rises from her throne of gravestone. 'The dead speak of a mortal whose will rivals my own. Very well. I shall walk with you.'
+    capture: The {name}'s cold hand touches your cheek. 'Life and death — two sides of one coin. With you, I feel both.'
+    house_talk_low: She sits on a throne of bones, brooding. 'The silence of the grave is peaceful. Do not disturb it needlessly.'
+    house_talk_mid: She traces runes in the air. 'These are the names of every soul I've guided. Would you like to learn them?'
+    house_talk_high: Her skeletal crown softens into flowers — briefly. 'For a moment, I remember what living felt like.'
+    house_talk_max: She holds your hand, her grip cool but gentle. 'In undeath, I forgot warmth. You reminded me.'
+    house_talk_engaged_1: The {name} places her skeletal crown on your head for a moment. 'To share a crown is to share a kingdom. And my kingdom is yours.'
+    house_gift_love: She regards it with ancient eyes. 'A worthy offering. It shall rest in my tomb of treasures.'
+    house_gift_hate: She waves a dismissive hand. 'I have seen empires crumble. This is less than dust.'
+    house_buff: Grave-cold energy surrounds you. 'The chill of death — wield it against the living.'
+    house_bond_kiss: Her lips are cool as marble. 'An old soul's kiss — timeless and deep.'
+    house_recruit_again: Crypt doors open at her gesture. 'The dead whisper of battles to come. Rise, and follow your queen.'
+    engaged: To wed the Grave Queen is to accept eternity. You will never die alone. I will be there, always.
+    special_gift: Something for the grave... I'll place it in my own sarcophagus, where it will wait with me for the end of time.
+    ascension_pre_ceremony: The {name} opens a rift to the realm of the dead. 'The {stone} hums with souls ancient beyond counting. Let me become their sovereign.'
+    ascension_post_ceremony: The {stone} shatters into a million soul-lights that flow into {name}'s crown. Her eyes glow with the wisdom of all ages. 'I AM DEATH'S MONARCH! Level {old_cap} was merely the first death. Now I command them all.'
+    is_defeated: She crumbles to dust, crown shattering. 'Even queens... fall...'
+    is_recovered: She reforms from grave-dust, crown intact. 'Queens do not stay dead. That's the point.'
+
 affection_gifts:
   goblin_girl:
     flowers: 25
@@ -3337,6 +3698,140 @@ affection_gifts:
     mods:
       Strength: 1
       Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  gnome_gear_maiden:
+    jewelry: 35
+    book: 35
+    weapon: 15
+    flowers: 5
+    candy: -10
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  orc_war_sister:
+    weapon: 40
+    flowers: 15
+    jewelry: -5
+    candy: -20
+    book: 10
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  shadow_dusk_weaver:
+    jewelry: 30
+    book: 25
+    flowers: -10
+    weapon: 5
+    candy: 20
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  clockwork_automata_doll:
+    jewelry: 20
+    book: 30
+    weapon: 25
+    flowers: 10
+    candy: 15
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  giant_maiden_of_stone:
+    weapon: 35
+    flowers: 20
+    jewelry: 10
+    candy: 5
+    book: -15
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  dragonkin_flame_heart:
+    jewelry: 40
+    weapon: 25
+    flowers: -5
+    candy: 10
+    book: 15
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  angel_seraph_ascendant:
+    jewelry: 35
+    flowers: 30
+    book: 25
+    candy: -15
+    weapon: -10
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  fey_star_court_dancer:
+    flowers: 40
+    jewelry: 35
+    candy: 25
+    book: 10
+    weapon: -20
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  demon_infernal_bride:
+    jewelry: 45
+    weapon: 20
+    candy: 15
+    flowers: -15
+    book: 10
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
+  undead_grave_queen:
+    book: 40
+    jewelry: 35
+    weapon: 10
+    flowers: 15
+    candy: -25
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1
       Dexterity: 2
       Wisdom: 2
       Learning: 1

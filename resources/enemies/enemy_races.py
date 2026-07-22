@@ -51,4 +51,7 @@ ENEMY_RACES = {
     "Storybook": {"mods": {"Strength": 2, "Dexterity": 2, "Charisma": 3, "Wisdom": -1, "Constitution": -1},
                   "elemental_res": {"light": 1.2, "dark": 0.7, "thunder": 1.1},
                   "elemental_dmg": {"light": 1.3, "wind": 1.2}},
+    "Angel": {"mods": {"Wisdom": 3, "Charisma": 3, "Learning": 1, "Constitution": -1},
+              "elemental_res": {"light": 1.5, "dark": 0.4, "fire": 1.1, "magical": 1.2, "physical": 0.85, "thunder": 0.8},
+              "elemental_dmg": {"light": 1.5, "wind": 1.2, "magical": 1.2}},
 }

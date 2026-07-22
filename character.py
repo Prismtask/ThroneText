@@ -133,6 +133,13 @@ def ensure_player_fields(player):
     player.setdefault("daily_effects", {})
     player.setdefault("event_queue", [])
 
+    # Journal system (replaces console event display in GUI mode)
+    player.setdefault("journal", {
+        "events": [],
+        "main_quests": [],
+        "side_quests": [],
+    })
+
     # Engagement / wedding system fields
     player.setdefault("girl_talk_today", {})
     player.setdefault("girl_gift_today", {})

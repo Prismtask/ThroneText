@@ -1,5 +1,5 @@
 """
-gui/screens/inventory_screen.py — Tabbed inventory, stats, skills, allies, and bounties.
+gui/screens/inventory_screen.py — Tabbed inventory, stats, skills, allies, and journal.
 
 Replaces the terminal-based inventory_ui.py with a full GUI using tkinter's Notebook.
 """
@@ -20,7 +20,7 @@ class InventoryScreen(BaseScreen):
         2. Bag
         3. Skills
         4. Allies
-        5. Bounties
+        5. Journal
 
     Constructor kwargs:
         is_overlay  — if True, this screen is shown via push_overlay (e.g. from
@@ -93,7 +93,7 @@ class InventoryScreen(BaseScreen):
         self._build_bag_tab()
         self._build_skills_tab()
         self._build_allies_tab()
-        self._build_bounties_tab()
+        self._build_journal_tab()
 
         # ── Bottom action bar ────────────────────────────────────────────────
         action_frame = tk.Frame(container, bg=Theme.BG_DARK)
@@ -749,53 +749,197 @@ class InventoryScreen(BaseScreen):
             ).pack(anchor=tk.W, padx=6, pady=4)
 
     # ═══════════════════════════════════════════════════════════════════════
-    #  TAB 5 — Bounties
+    #  TAB 5 — Journal  (sub-notebook: Bounty, Main Quest, Side Quest, Event)
     # ═══════════════════════════════════════════════════════════════════════
 
-    def _build_bounties_tab(self):
-        self.bounties_frame = tk.Frame(self.notebook, bg=Theme.BG_DARK)
-        self.notebook.add(self.bounties_frame, text=" Bounties ")
-        self.bounties_frame.grid_columnconfigure(0, weight=1)
-        self._refresh_bounties_tab()
+    def _build_journal_tab(self):
+        self.journal_frame = tk.Frame(self.notebook, bg=Theme.BG_DARK)
+        self.notebook.add(self.journal_frame, text=" Journal ")
+        self.journal_frame.grid_rowconfigure(0, weight=1)
+        self.journal_frame.grid_columnconfigure(0, weight=1)
+        self._refresh_journal_tab()
 
-    def _refresh_bounties_tab(self):
-        for w in self.bounties_frame.winfo_children():
+    def _refresh_journal_tab(self):
+        for w in self.journal_frame.winfo_children():
             w.destroy()
 
         if not self.player:
-            self.styled_label(self.bounties_frame, text="No player data.").pack(pady=20)
+            self.styled_label(self.journal_frame, text="No player data.").pack(pady=20)
             return
 
+        # ── Sub-notebook for journal categories ──────────────────────────────
+        self.journal_notebook = ttk.Notebook(self.journal_frame, style="Ally.TNotebook")
+        self.journal_notebook.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        # Bounty sub-tab
+        bounty_tab = tk.Frame(self.journal_notebook, bg=Theme.BG_DARK)
+        self.journal_notebook.add(bounty_tab, text=" Bounty ")
+        self._render_bounty_subtab(bounty_tab)
+
+        # Main Quest sub-tab
+        main_quest_tab = tk.Frame(self.journal_notebook, bg=Theme.BG_DARK)
+        self.journal_notebook.add(main_quest_tab, text=" Main Quest ")
+        self._render_quest_subtab(main_quest_tab, "main_quests", "No main quests yet.")
+
+        # Side Quest sub-tab
+        side_quest_tab = tk.Frame(self.journal_notebook, bg=Theme.BG_DARK)
+        self.journal_notebook.add(side_quest_tab, text=" Side Quest ")
+        self._render_quest_subtab(side_quest_tab, "side_quests", "No side quests yet.")
+
+        # Event sub-tab
+        event_tab = tk.Frame(self.journal_notebook, bg=Theme.BG_DARK)
+        self.journal_notebook.add(event_tab, text=" Event ")
+        self._render_event_subtab(event_tab)
+
+    def _render_bounty_subtab(self, parent):
+        """Render the Bounty sub-tab showing active bounties."""
         bounties = self.player.get("active_bounties", [])
         if not bounties:
-            self.styled_label(self.bounties_frame, text="No active bounties.").pack(pady=20)
+            self.styled_label(parent, text="No active bounties.", fg=Theme.TEXT_DIM).pack(
+                anchor=tk.CENTER, expand=True
+            )
             return
+
+        # Scrollable container
+        scroll = tk.Scrollbar(parent)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas = tk.Canvas(parent, bg=Theme.BG_DARK, highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.config(command=canvas.yview)
+        canvas.config(yscrollcommand=scroll.set)
+
+        inner = tk.Frame(canvas, bg=Theme.BG_DARK)
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>", lambda e: canvas.config(scrollregion=canvas.bbox("all")))
+
+        current_day = self.player.get("day", 1)
 
         for b in bounties:
             current = b.get("current", 0)
             required = b["required"]
-            days_left = b["deadline"] - self.player.get("day", 1)
+            days_left = b.get("deadline", 0) - current_day
             ready = current >= required
+            expired = days_left <= 0 and not ready
+
+            frame_color = Theme.BORDER
+            title_color = Theme.BUFF_POSITIVE if ready else (Theme.BUFF_NEGATIVE if expired else Theme.TEXT)
+            status_text = "✓ READY TO CLAIM" if ready else ("✗ EXPIRED" if expired else f"{current}/{required}")
+            status_color = Theme.BUFF_POSITIVE if ready else (Theme.BUFF_NEGATIVE if expired else Theme.TEXT)
 
             frame = tk.LabelFrame(
-                self.bounties_frame,
+                inner,
                 text=f" {b['target_name']} ",
                 bg=Theme.BG_DARK,
-                fg=Theme.BUFF_POSITIVE if ready else Theme.TEXT,
+                fg=title_color,
+                font=Theme.FONT_BOLD,
+                highlightthickness=1,
+                highlightbackground=frame_color,
+            )
+            frame.pack(fill=tk.X, pady=4, padx=4)
+
+            self.styled_label(
+                frame, text=f"Progress: {status_text}",
+                fg=status_color,
+            ).pack(anchor=tk.W, padx=6, pady=2)
+            self.styled_label(
+                frame, text=f"Difficulty: {b.get('difficulty', '?')}",
+            ).pack(anchor=tk.W, padx=6, pady=1)
+            self.styled_label(
+                frame, text=f"Reward: {b.get('reward_gold', 0)} gold, {b.get('reward_favor', 0)} favor",
+            ).pack(anchor=tk.W, padx=6, pady=1)
+            days_text = f"Expires in {days_left} days" if days_left > 0 else "EXPIRED"
+            self.styled_label(
+                frame, text=days_text,
+                fg=Theme.BUFF_NEGATIVE if days_left <= 0 else Theme.TEXT_DIM,
+            ).pack(anchor=tk.W, padx=6, pady=2)
+
+    def _render_quest_subtab(self, parent, quest_key, empty_text):
+        """Render a quest sub-tab (main or side)."""
+        quests = self.player.get("journal", {}).get(quest_key, [])
+        if not quests:
+            self.styled_label(parent, text=empty_text, fg=Theme.TEXT_DIM).pack(
+                anchor=tk.CENTER, expand=True
+            )
+            return
+
+        scroll = tk.Scrollbar(parent)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas = tk.Canvas(parent, bg=Theme.BG_DARK, highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.config(command=canvas.yview)
+        canvas.config(yscrollcommand=scroll.set)
+
+        inner = tk.Frame(canvas, bg=Theme.BG_DARK)
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>", lambda e: canvas.config(scrollregion=canvas.bbox("all")))
+
+        for q in quests:
+            frame = tk.LabelFrame(
+                inner,
+                text=f" {q.get('name', 'Quest')} ",
+                bg=Theme.BG_DARK,
+                fg=Theme.TEXT,
+                font=Theme.FONT_BOLD,
+                highlightthickness=1,
+                highlightbackground=Theme.BORDER,
+            )
+            frame.pack(fill=tk.X, pady=4, padx=4)
+            self.styled_label(frame, text=q.get("desc", "")).pack(
+                anchor=tk.W, padx=6, pady=2
+            )
+            if q.get("day"):
+                self.styled_label(frame, text=f"Day {q['day']}", fg=Theme.TEXT_DIM).pack(
+                    anchor=tk.W, padx=6, pady=1
+                )
+
+    def _render_event_subtab(self, parent):
+        """Render the Event sub-tab showing all recorded events."""
+        from events import format_date
+        events = self.player.get("journal", {}).get("events", [])
+        if not events:
+            self.styled_label(parent, text="No events recorded yet.", fg=Theme.TEXT_DIM).pack(
+                anchor=tk.CENTER, expand=True
+            )
+            return
+
+        # Scrollable container
+        scroll = tk.Scrollbar(parent)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas = tk.Canvas(parent, bg=Theme.BG_DARK, highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.config(command=canvas.yview)
+        canvas.config(yscrollcommand=scroll.set)
+
+        inner = tk.Frame(canvas, bg=Theme.BG_DARK)
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>", lambda e: canvas.config(scrollregion=canvas.bbox("all")))
+
+        # Show most recent events first
+        for evt in reversed(events):
+            tag = evt.get("tag", "")
+            tag_color = Theme.ACCENT if "[FIXED]" in tag else Theme.BUFF_NEUTRAL
+
+            frame = tk.LabelFrame(
+                inner,
+                text=f" {tag}  {evt.get('name', 'Event')} ",
+                bg=Theme.BG_DARK,
+                fg=tag_color,
                 font=Theme.FONT_BOLD,
                 highlightthickness=1,
                 highlightbackground=Theme.BORDER,
             )
             frame.pack(fill=tk.X, pady=4, padx=4)
 
-            status = "✓ READY TO CLAIM" if ready else f"{current}/{required}"
-            self.styled_label(
-                frame, text=f"Progress: {status}",
-                fg=Theme.BUFF_POSITIVE if ready else Theme.TEXT,
-            ).pack(anchor=tk.W, padx=6, pady=2)
-            self.styled_label(frame, text=f"Expires in {days_left} days").pack(
+            self.styled_label(frame, text=evt.get("desc", "")).pack(
                 anchor=tk.W, padx=6, pady=2
             )
+            if evt.get("day"):
+                # Create a temp dict with the day for format_date
+                day_info = {"day": evt["day"]}
+                self.styled_label(
+                    frame, text=f"Day {evt['day']} ({format_date(day_info)})",
+                    fg=Theme.TEXT_DIM,
+                ).pack(anchor=tk.W, padx=6, pady=1)
 
     # ═══════════════════════════════════════════════════════════════════════
     #  Actions
@@ -978,7 +1122,7 @@ class InventoryScreen(BaseScreen):
         self._refresh_bag_tab()
         self._refresh_skills_tab()
         self._refresh_allies_tab()
-        self._refresh_bounties_tab()
+        self._refresh_journal_tab()
 
     def _on_back(self):
         """Return to the previous screen — dismiss overlay or go back in history."""

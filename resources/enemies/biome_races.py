@@ -7,7 +7,8 @@ BIOME_RACES = {
     "mountain":  ["Orc", "Giant", "Dragonkin", "Construct", "Human", "Elemental"],
     "desert":    ["Human", "Undead", "Lizardfolk", "Elemental", "Gnome", "Beast"],
     "volcanic":  ["Demon", "Elemental", "Dragonkin", "Construct", "Giant"],
-    "magical":   ["Fey", "Construct", "Clockwork", "Elemental", "Gnome", "Shadow", "Abomination"],
-    "pandemonium": ["Human", "Goblin", "Orc", "Undead", "Beast", "Demon", "Construct", "Dragonkin", "Fey", "Elemental", "Giant", "Vampire", "Lizardfolk", "Gnome", "Shadow", "Clockwork", "Abomination"],
+    "magical":   ["Fey", "Construct", "Clockwork", "Elemental", "Gnome", "Shadow", "Abomination", "Angel"],
+    "pandemonium": ["Human", "Goblin", "Orc", "Undead", "Beast", "Demon", "Construct", "Dragonkin", "Fey", "Elemental", "Giant", "Vampire", "Lizardfolk", "Gnome", "Shadow", "Clockwork", "Abomination", "Angel"],
     "wonderland": ["Storybook", "Fey", "Beast", "Construct", "Abomination", "Demon", "Shadow"],
+    "celestial":  ["Angel", "Fey", "Construct", "Dragonkin", "Elemental", "Clockwork"],
 }

@@ -366,6 +366,18 @@ ITEMS = {
     "wedding_arachne_brood_queen":{"name": "Broodmother's Web",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 15, "Strength": 9, "Constitution": 6}, "special": "brood_swarm", "elemental_res": {"earth": 1.3, "dark": 1.3}},
     "wedding_cosmic_slime_empress":{"name": "Galaxy Heart",           "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 18, "Learning": 15, "Charisma": 12}, "special": "cosmic_gravity", "elemental_res": {"fire": 1.2, "water": 1.2, "thunder": 1.2, "wind": 1.2, "earth": 1.2, "light": 1.2, "dark": 1.2}},
 
+    # === New Monster Girl Wedding Accessories ===
+    "wedding_gnome_gear_maiden":  {"name": "Gearheart Pendant",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Learning": 12, "Dexterity": 9}, "special": "overclock", "elemental_dmg": {"thunder": 1.2, "magical": 1.1}},
+    "wedding_orc_war_sister":    {"name": "War-Sister's Bond",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 12, "Constitution": 9}, "special": "blood_fury", "elemental_dmg": {"physical": 1.2, "fire": 1.1}},
+    "wedding_shadow_dusk_weaver":{"name": "Twilight Shroud",         "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 12, "Wisdom": 9}, "special": "dusk_weave", "elemental_res": {"dark": 1.3, "magical": 1.1}},
+    "wedding_clockwork_automata_doll":{"name": "Precision Core",     "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 12, "Learning": 9}, "special": "auto_guard", "elemental_res": {"physical": 1.2, "thunder": 1.2}},
+    "wedding_giant_maiden_of_stone":{"name": "Mountainheart Band",   "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 12, "Constitution": 12}, "special": "stone_ward", "elemental_res": {"earth": 1.3, "physical": 1.2}},
+    "wedding_dragonkin_flame_heart":{"name": "Eternal Ember",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 15, "Charisma": 9, "Constitution": 6}, "special": "dragon_heart", "elemental_dmg": {"fire": 1.4, "light": 1.2}},
+    "wedding_angel_seraph_ascendant":{"name": "Seraph's Feather",    "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Wisdom": 15, "Charisma": 12, "Learning": 6}, "special": "seraph_light", "elemental_dmg": {"light": 1.4, "wind": 1.2}},
+    "wedding_fey_star_court_dancer":{"name": "Constellation Waltz Ring","type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 15, "Charisma": 12, "Wisdom": 6}, "special": "star_waltz", "elemental_dmg": {"light": 1.3, "magical": 1.3}},
+    "wedding_demon_infernal_bride":{"name": "Infernal Vow Band",     "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 18, "Strength": 9, "Constitution": 9}, "special": "infernal_vow", "elemental_dmg": {"fire": 1.4, "dark": 1.3}},
+    "wedding_undead_grave_queen": {"name": "Deathward Crown",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Wisdom": 18, "Charisma": 12, "Learning": 9}, "special": "grave_reign", "elemental_dmg": {"dark": 1.4, "earth": 1.2}},
+
     # === Broodmother Superboss Drop ===
     "vileheart_pendant": {
         "name": "Vileheart Pendant",

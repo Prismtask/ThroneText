@@ -328,8 +328,6 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
 
     c_input("Press Enter to begin...")
 
-    apply_wedding_combat_start(player, enemies)
-
     round_num = 0
     while True:
         round_num += 1
@@ -356,6 +354,14 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                            total_rooms=total_rooms, time_str=time_str)
 
         print_pre_initiative_enemies(enemies)
+
+        # --- Wedding Accessory: combat start (Round 1 only) ---
+        if round_num == 1:
+            apply_wedding_combat_start(player, enemies)
+            enemies[:] = prune_dead(enemies)
+            if not enemies:
+                c_print("\n  All enemies have been defeated!")
+                return _end_combat_with_result(player, "victory")
 
         # --- Tarnished Jade: turn-start pin damage ---
         from combat.tarnished_jade import apply_tarnished_jade_turn_start
@@ -400,6 +406,20 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 set_first_strike(ally, is_first)
                 if is_first:
                     c_print(f"  🖤 {ally['name']} strikes first! +15% damage this round.")
+
+        # Wedding Accessory: First Strike detection (Round 1 only)
+        if round_num == 1:
+            from combat.wedding_specials import get_active_wedding_item, is_bonded, get_wedding_girl_key
+            wedding_item = get_active_wedding_item(player)
+            if wedding_item:
+                player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
+                enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
+                is_first = player_idx is not None and (not enemy_indices or player_idx < min(enemy_indices))
+                if is_first:
+                    name = wedding_item.get("name", "Wedding Accessory")
+                    bonded = is_bonded(player, wedding_item)
+                    bond_tag = " [Bonded]" if bonded else ""
+                    c_print(f"  ♥ Your {name}{bond_tag} thrums with power — you strike first!")
 
         # Abyss Tempo: add extra player turns
         abyss_count = get_abyssal_tempo_count(player)

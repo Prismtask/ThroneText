@@ -112,6 +112,107 @@ class ChangelogScreen(BaseScreen):
                          "or reset to Room 1 mid-run. Saved dungeon state is now validated before "
                          "being restored — invalid state is auto-wiped and the floor regenerates "
                          "fresh instead of silently corrupting the run.")
+        self._add_bullet("Fixed a bug where wedding accessory combat-start messages (Windweaver Pinion, "
+                         "Blizzard Veil, Deathward Crown, etc.) were being cleared before they could "
+                         "appear in the GUI combat log. apply_wedding_combat_start() now runs after "
+                         "the Round 1 header is printed so all wedding accessory effects are visible. "
+                         "Additionally, wedding accessories now show a \"thrums with power — you strike "
+                         "first!\" message when the player wins initiative in Round 1.")
+
+        self._add_section("New Monster Girls & Wedding Accessories")
+        self._add_bullet("10 new monster girls are now recruitable/capturable across various dungeons: "
+                         "Gear Maiden (Gnome, L23), War Sister (Orc, L25), Dusk Weaver (Shadow, L27), "
+                         "Automata Doll (Clockwork, L29), Maiden of Stone (Giant, L32), "
+                         "Flame Heart (Dragonkin, L39), Seraph Ascendant (Angel, L42), "
+                         "Star Court Dancer (Fey, L44), Infernal Bride (Demon, L47), "
+                         "and Grave Queen (Undead, L50).")
+        self._add_bullet("Each new monster girl has a unique Legendary soulbound wedding accessory "
+                         "earned at 200 affection after engagement, with active combat effects and "
+                         "enhanced Bonded effects when she is in the active party:")
+        self._add_sub_bullet("Gearheart Pendant (Gear Maiden) — Overclock: first attack bonus damage + "
+                             "skill cooldown refresh chance. [thunder/magical]")
+        self._add_sub_bullet("War-Sister's Bond (War Sister) — Blood Fury: ramps up STR/CON at low HP. "
+                             "[physical/fire]")
+        self._add_sub_bullet("Twilight Shroud (Dusk Weaver) — Dusk Weave: evasion + on-hit blind/slow. "
+                             "[dark/magical res]")
+        self._add_sub_bullet("Precision Core (Automata Doll) — Auto Guard: damage reduction + regen + "
+                             "combat-start CON boost. [physical/thunder res]")
+        self._add_sub_bullet("Mountainheart Band (Maiden of Stone) — Stone Ward: max HP + physical "
+                             "resistance + stun immunity. [earth/physical res]")
+        self._add_sub_bullet("Eternal Ember (Flame Heart) — Dragon Heart: fire damage bonus + "
+                             "spreading burn on hit. [fire/light]")
+        self._add_sub_bullet("Seraph's Feather (Seraph Ascendant) — Seraph Light: ally-scaling damage "
+                             "+ party heal + debuff cleanse. [light/wind]")
+        self._add_sub_bullet("Constellation Waltz Ring (Star Court Dancer) — Star Waltz: dodge + "
+                             "counter-attack + DEX boost on dodge. [light/magical]")
+        self._add_sub_bullet("Infernal Vow Band (Infernal Bride) — Infernal Vow: fire/dark damage + "
+                             "burn/dread on hit + retribution when struck. [fire/dark]")
+        self._add_sub_bullet("Deathward Crown (Grave Queen) — Grave Reign: combat-start AoE + "
+                             "on-kill heal + stacking all-stat buff (up to 3×). [dark/earth]")
+
+        self._add_section("New Race: Angel")
+        self._add_bullet("Introduced the Angel race — a celestial faction spanning levels 20–55 with "
+                         "extreme light affinity (1.5× resist, 1.5× damage) and crippling dark weakness "
+                         "(0.4× resist). Angels appear in magical biomes, pandemonium endgame, and the "
+                         "all-new Celestial biome (Lv 30+).")
+        self._add_bullet("20 Angel enemies added: 13 trash (Light Warden through Celestial Dragon), "
+                         "4 bosses (Divine Justicar, Heavenly Choir, Archon of Truth, Metatron's Voice), "
+                         "1 monster girl (Seraph Ascendant, Lv 42), 1 minion (Divine Puppet), and "
+                         "1 superboss (Fallen Morningstar, Lv 57).")
+        self._add_bullet("Angel race mods: +3 Wisdom, +3 Charisma, +1 Learning, −1 Constitution. "
+                         "Resistances: light 1.5, dark 0.4, fire 1.1, magical 1.2, physical 0.85, thunder 0.8.")
+
+        self._add_section("Enemy Roster Expansion (523 → 619 Enemies)")
+        self._add_bullet("Extended 6 previously short races that stopped at Lv 7–29 up to Lv 44–53, "
+                         "adding 36 new enemies so no race becomes irrelevant after Lv 30:")
+        self._add_sub_bullet("Goblin (was Lv 1–7 → now Lv 1–44): Backstabber, Bomb Chucker, "
+                             "Shadow Whisperer, War Chieftain, Demolition Squad, Horde Captain.")
+        self._add_sub_bullet("Gnome (was Lv 1–17 → now Lv 1–47): Aether Mechanist, Chrono-Tinker, "
+                             "Arcane Artillerist, Grand Artificer, Mecha Overlord, Reality Engineer, "
+                             "Omnissiah Prototype.")
+        self._add_sub_bullet("Orc (was Lv 1–28 → now Lv 1–49): Orc Chieftain, Orc Warlord "
+                             "(new high-level versions using titles freed by renaming low-level orcs), "
+                             "Bloodfist Champion, Apocalypse Rager, Warbringer Elite, Doom Howler.")
+        self._add_sub_bullet("Lizardfolk (was Lv 1–28 → now Lv 1–50): Serpentine Oracle, Dread Naga, "
+                             "Primordial Serpent, Scale Tyrant, World Fang.")
+        self._add_sub_bullet("Vampire (was Lv 1–27 → now Lv 1–52): Blood Baron, Nosferatu Ancient, "
+                             "Carmilla's Handmaiden, Blood Sovereign, Eclipse Countess, The First Sire.")
+        self._add_sub_bullet("Shadow (was Lv 1–29 → now Lv 1–53): Void Stalker, Penumbra Wraith, "
+                             "Total Eclipse, Umbral Sovereign, Abyss Incarnate, Primordial Dark.")
+        self._add_bullet("Added 16 Lv 41–50 trash enemies across 8 evergreen races (Beast, Undead, "
+                         "Demon, Construct, Dragonkin, Fey, Elemental, Abomination) to fill the critical "
+                         "high-level gap where previously only 3 non-minion enemies existed in this bracket.")
+        self._add_bullet("Built out Lv 51–60 endgame ladder with 15 new enemies: 8 trash, 4 bosses "
+                         "(Apex of Scales, The First Horror, World Engine, Lord of the Pit), and "
+                         "2 new superbosses (Fallen Morningstar at Lv 57, Lord of the Pit at Lv 60).")
+        self._add_bullet("Level cap extended from 57 to 60. The highest-level enemy is now "
+                         "Lord of the Pit (Demon superboss, Lv 60, 2200 HP).")
+
+        self._add_section("Enemy Naming Audit & Cleanup")
+        self._add_bullet("Renamed 3 existing enemies to fix title inflation at low levels, freeing "
+                         "names for high-level variants:")
+        self._add_sub_bullet("Orc Warlord (Lv 7) → Orc War Captain — 'Warlord' now used for Lv 33 boss.")
+        self._add_sub_bullet("Orc Chieftain (Lv 8) → Orc Elite Guard — 'Chieftain' now used for Lv 31 trash.")
+        self._add_sub_bullet("Goblin Whisperer (Lv 2) → Goblin Chatter — 'Whisperer' now used for "
+                             "Goblin Shadow Whisperer at Lv 31.")
+        self._add_bullet("Shifted 3 goblin specialists from Lv 2 to Lv 3 (Shaman, Archer, Knifer) "
+                         "to spread the extremely dense Lv 1–2 goblin cluster.")
+
+        self._add_section("Journal System & Event Log")
+        self._add_bullet("Replaced the standalone Bounties tab in the Inventory screen with a new "
+                         "Journal tab containing four sub-tabs: Bounty, Main Quest, Side Quest, and Event. "
+                         "The Journal consolidates all quest tracking into one organized interface.")
+        self._add_bullet("Bounty sub-tab now shows enhanced bounty details: progress status, "
+                         "difficulty rating, reward breakdown (gold + favor), and days-remaining timer "
+                         "with expiration warnings.")
+        self._add_bullet("Event sub-tab permanently records all daily events (fixed and random) as they "
+                         "occur, displayed newest-first with day stamps. Events are stored in save data "
+                         "so they persist across sessions.")
+        self._add_bullet("Main Quest and Side Quest sub-tabs are ready for future quest content.")
+        self._add_bullet("Fixed a bug where daily events (Bounty Rush, Full Moon, Lucky Day, etc.) and "
+                         "bounty expiry messages were leaking to the console log via raw print() calls "
+                         "during the continuous time flow tick. All event display is now routed through "
+                         "the Journal system in GUI mode — no more console spam.")
 
         self._add_version("v0.1.6")
 

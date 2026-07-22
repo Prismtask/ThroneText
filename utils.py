@@ -193,7 +193,7 @@ def advance_time(player, minutes):
                 # Queue alerts to show when player returns to the city
                 queue_event_alerts(player, events)
             else:
-                # Show immediately
+                # Show immediately (GUI mode suppresses console via journal)
                 for evt in events:
                     display_event_alert(evt)
         
@@ -201,9 +201,18 @@ def advance_time(player, minutes):
         from facilities.guild import check_bounty_expiry
         expired = check_bounty_expiry(player)
         if expired:
-            print(f"\n {len(expired)} bounty(s) expired due to time!")
+            # Record expired bounties in the journal instead of printing to console
+            from events import ensure_journal
+            ensure_journal(player)
+            day = player.get("day", 1)
             for b in expired:
-                print(f"  - {b['target_name']} (deadline passed)")
+                player["journal"]["events"].append({
+                    "day": day,
+                    "name": "Bounty Expired",
+                    "desc": f"Bounty for {b['target_name']} expired (deadline passed).",
+                    "tag": "[BOUNTY]",
+                    "fixed": False,
+                })
         
     return format_time(player["time_minutes"])
 

@@ -209,8 +209,48 @@ def format_event_alert(event):
     return "\n".join(lines)
 
 
+def ensure_journal(player):
+    """Initialize the journal structure if it doesn't exist."""
+    player.setdefault("journal", {
+        "events": [],
+        "main_quests": [],
+        "side_quests": [],
+    })
+
+
+def record_event(player, event):
+    """Record an event in the player's journal. Deduplicates by (day, name)."""
+    ensure_journal(player)
+    journal_events = player["journal"]["events"]
+    # Deduplicate: don't add the same event twice for the same day
+    event_day = event.get("day", 0)
+    event_name = event.get("name", "")
+    for existing in journal_events:
+        if existing.get("day") == event_day and existing.get("name") == event_name:
+            return  # Already recorded
+    # Store a lightweight copy (strip effect details that might be large)
+    journal_events.append({
+        "day": event_day,
+        "name": event_name,
+        "desc": event.get("desc", ""),
+        "tag": "[FIXED]" if event.get("fixed") else "[RANDOM]",
+        "fixed": event.get("fixed", False),
+    })
+
+
 def display_event_alert(event):
-    """Print a single event directly to the console."""
+    """Print a single event directly to the console (terminal mode only).
+
+    In GUI mode, events are stored in the journal instead.
+    """
+    # Check if we're in GUI mode (tkinter root active)
+    try:
+        import tkinter as tk
+        if tk._default_root and tk._default_root.winfo_exists():
+            # GUI mode: suppress console output, journal handles display
+            return
+    except (ImportError, AttributeError):
+        pass
     print(format_event_alert(event))
 
 
@@ -243,7 +283,7 @@ def get_event_queue_messages(player):
 def flush_event_queue(player):
     """Display and clear all queued events. Returns count shown.
 
-    In GUI mode, this only prints the events (no blocking input).
+    In GUI mode, this is a no-op (events are shown via the journal/log panel).
     In terminal mode, this prints and waits for Enter.
     """
     # Capture count before popping
@@ -258,11 +298,8 @@ def flush_event_queue(player):
     # Check if we're in GUI mode (tkinter root active)
     try:
         import tkinter as tk
-        # If there's an active tkinter root, we're in GUI mode
-        # — just print without blocking input.
         if tk._default_root and tk._default_root.winfo_exists():
-            for msg in messages:
-                print(msg)
+            # GUI mode: events are shown via journal/log, suppress console output
             return event_count
     except (ImportError, AttributeError):
         pass
@@ -353,6 +390,7 @@ def process_day_rollover(player, days_passed, old_day):
         events = check_events_for_day(day)
         for evt in events:
             apply_event_effects(player, evt)
+            record_event(player, evt)  # Store in journal for GUI display
             all_events.append(evt)
 
     return all_events

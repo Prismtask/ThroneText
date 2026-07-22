@@ -65,6 +65,9 @@ def end_wedding_combat(player):
     player.pop("wedding_keening_wail_used", None)
     player.pop("wedding_shadow_cloak_used", None)
     player.pop("wedding_cosmic_gravity_used", None)
+    player.pop("wedding_overclock_proc", None)
+    player.pop("wedding_grave_reign_stacks", None)
+    player.pop("wedding_crimson_feast_cha_buff", None)
 
 
 # ── Single-effect helpers (called by the main hooks below) ─────────────────
@@ -169,6 +172,20 @@ def apply_wedding_combat_start(player, enemies):
         # The bonded extra (burn 10 + dread on melee attacker) is handled in on_damage_taken.
         pass
 
+    # grave_reign: enemies take 3 dark damage at combat start; bonded 5
+    if special == "grave_reign":
+        dmg = 5 if bonded else 3
+        for e in enemies:
+            e["hp"] = max(0, e["hp"] - dmg)
+        _msg(f"Deathward Crown — the chill of the grave sweeps the battlefield! (-{dmg} HP all enemies)")
+
+    # auto_guard (bonded): +3 CON for 3 turns at combat start
+    if special == "auto_guard" and bonded:
+        player.setdefault("active_buffs", []).append({
+            "stat": "Constitution", "value": 3, "remaining": 3, "source": "auto_guard"
+        })
+        _msg("Precision Core — defensive protocols engaged! (+3 CON, 3 turns)")
+
 
 # ── End of Round ───────────────────────────────────────────────────────────
 
@@ -194,6 +211,31 @@ def apply_wedding_end_of_round(player):
             if poisons:
                 player["active_debuffs"].remove(poisons[0])
                 _msg("Pollenheart Locket — the blossom cleanses a poison stack.")
+
+    # auto_guard: regenerate 2 HP at end of turn; bonded 3 HP
+    if special == "auto_guard":
+        heal = 3 if bonded else 2
+        from character import player_max_hp
+        old_hp = player.get("current_hp", 0)
+        max_hp = player_max_hp(player)
+        player["current_hp"] = min(old_hp + heal, max_hp)
+        actual = player["current_hp"] - old_hp
+        if actual > 0:
+            _msg(f"Precision Core — auto-repair restores {actual} HP.")
+
+    # seraph_light: heal 4 HP at end of turn; bonded 6 HP + cleanse 1 debuff
+    if special == "seraph_light":
+        heal = 6 if bonded else 4
+        from character import player_max_hp
+        old_hp = player.get("current_hp", 0)
+        max_hp = player_max_hp(player)
+        player["current_hp"] = min(old_hp + heal, max_hp)
+        actual = player["current_hp"] - old_hp
+        if actual > 0:
+            _msg(f"Seraph's Feather — divine light restores {actual} HP.")
+        if bonded and player.get("active_debuffs"):
+            cleansed = player["active_debuffs"].pop(0)
+            _msg(f"Seraph's Feather — a {cleansed.get('type', 'debuff')} is cleansed!")
 
 
 # ── Attack Bonus (flat damage before elemental) ────────────────────────────
@@ -284,6 +326,48 @@ def apply_wedding_attack_bonus(player, target, base_dmg, is_first_attack):
         cha = get_effective_attribute(player, "Charisma")
         pct = 0.35 if bonded else 0.20
         bonus += max(1, int(cha * pct))
+
+    # overclock: first attack +10; bonded +15 and ignore 25% armor
+    if special == "overclock" and is_first_attack:
+        bonus += 15 if bonded else 10
+        if bonded and "con_mod" in target:
+            target["overclock_armor_ignore"] = max(0, target["con_mod"] // 4)
+
+    # blood_fury: below 50% HP +6; bonded below 70% +8 and +2 STR/+2 CON
+    if special == "blood_fury":
+        threshold = 0.70 if bonded else 0.50
+        hp_ratio = player.get("current_hp", 1) / max(1, player.get("max_hp", 1))
+        if hp_ratio < threshold:
+            bonus += 8 if bonded else 6
+            if bonded:
+                player.setdefault("active_buffs", []).append({
+                    "stat": "Strength", "value": 2, "remaining": 3, "source": "blood_fury"
+                })
+                player.setdefault("active_buffs", []).append({
+                    "stat": "Constitution", "value": 2, "remaining": 3, "source": "blood_fury"
+                })
+                _msg("War-Sister's Bond — battle-fury surges! (+2 STR, +2 CON, 3 turns)")
+
+    # dragon_heart: +10% fire bonus damage; bonded +15% fire + burn
+    if special == "dragon_heart":
+        pct = 0.15 if bonded else 0.10
+        bonus += max(1, int(base_dmg * pct))
+
+    # seraph_light: +5% damage per alive ally; bonded +8% and heal allies 2 HP
+    if special == "seraph_light":
+        alive_allies = len([a for a in player.get("allies", []) if a.get("current_hp", 0) > 0])
+        pct = (0.08 if bonded else 0.05) * alive_allies
+        bonus += max(0, int(base_dmg * pct))
+        if bonded and alive_allies > 0:
+            for a in player.get("allies", []):
+                if a.get("current_hp", 0) > 0:
+                    a["current_hp"] = min(a["current_hp"] + 2, a.get("max_hp", a["current_hp"]))
+            _msg("Seraph's Feather — your radiance restores allies! (+2 HP each)")
+
+    # infernal_vow: +8% fire and dark damage; bonded +12%
+    if special == "infernal_vow":
+        pct = 0.12 if bonded else 0.08
+        bonus += max(1, int(base_dmg * pct))
 
     return bonus
 
@@ -400,6 +484,21 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
             })
             _msg(f"Abyssal Coil — {target['name']} is drowning in tentacles! (slowed, 3 water/turn)")
 
+    # dusk_weave: 25% blind 2 turns; bonded 35% blind + slow
+    if special == "dusk_weave" and random.random() < (0.35 if bonded else 0.25):
+        dur = 3 if bonded else 2
+        target.setdefault("active_debuffs", []).append({
+            "type": "blind", "remaining": dur
+        })
+        target["blinded"] = True
+        _msg(f"Twilight Shroud — shadows blind {target['name']}! ({dur} turns)")
+        if bonded:
+            target["slowed"] = True
+            target.setdefault("active_debuffs", []).append({
+                "type": "slow", "remaining": 2
+            })
+            _msg(f"Twilight Shroud — {target['name']} is slowed by the dusk!")
+
     # stone_gaze: 20% petrify (-3 STR/DEX for 3 turns); bonded 15% chance to stun instead
     if special == "stone_gaze" and random.random() < 0.20:
         if bonded and random.random() < 0.15:
@@ -451,6 +550,38 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
 
     # infernal_crown: +15% fire/dark damage (handled by elemental stats), melee burn 5
     # The melee burn is handled in on_damage_taken (retribution).
+
+    # overclock (bonded): 30% chance to refresh a skill cooldown
+    if special == "overclock" and bonded and random.random() < 0.30:
+        player["wedding_overclock_proc"] = True
+        _msg("Gearheart Pendant — the gears align! (Skill cooldown refreshed)")
+
+    # dragon_heart: on hit 30% burn 3 turns (6/turn); bonded 10/turn and spread
+    if special == "dragon_heart" and random.random() < 0.30:
+        from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
+        burn_dmg = 10 if bonded else 6
+        b_tier = damage_to_burn_tier(burn_dmg)
+        apply_burn(target, b_tier, 3)
+        _msg(f"Eternal Ember — {target['name']} is seared by dragonfire! ({get_burn_tier_name(b_tier)})")
+        if bonded and enemies:
+            others = [e for e in enemies if e is not target and e.get("hp", 0) > 0]
+            if others:
+                spread = random.choice(others)
+                apply_burn(spread, b_tier, 3)
+                _msg(f"Eternal Ember — flames spread to {spread['name']}!")
+
+    # infernal_vow: on hit 25% burn 3 turns (5/turn); bonded 35% burn 8/turn + dread
+    if special == "infernal_vow" and random.random() < (0.35 if bonded else 0.25):
+        from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
+        burn_dmg = 8 if bonded else 5
+        b_tier = damage_to_burn_tier(burn_dmg)
+        apply_burn(target, b_tier, 3)
+        _msg(f"Infernal Vow Band — hellfire sears {target['name']}! ({get_burn_tier_name(b_tier)})")
+        if bonded:
+            target.setdefault("active_debuffs", []).append({
+                "type": "fear", "value": 0.25, "remaining": 1
+            })
+            _msg(f"Infernal Vow Band — {target['name']} is stricken with dread!")
 
     # cosmic_gravity (bonded): once per combat steal 1 random buff on first hit
     if special == "cosmic_gravity" and bonded and not player.get("wedding_cosmic_gravity_used"):
@@ -540,6 +671,27 @@ def apply_wedding_on_kill(player, target, enemies):
                 ally["current_hp"] = min(ally["current_hp"] + 10, ally.get("max_hp", ally["current_hp"]))
                 _msg(f"Headless Rider's Seal — {ally['name']} is healed by your oath! (+10 HP)")
 
+    # grave_reign: on kill heal 15% max HP; bonded 25% and gain +1 all stats (stacks 3x)
+    if special == "grave_reign":
+        from character import player_max_hp
+        max_hp = player_max_hp(player)
+        heal_pct = 0.25 if bonded else 0.15
+        heal = int(max_hp * heal_pct)
+        old_hp = player.get("current_hp", 0)
+        player["current_hp"] = min(old_hp + heal, max_hp)
+        actual = player["current_hp"] - old_hp
+        if actual > 0:
+            _msg(f"Deathward Crown — the grave yields {actual} HP!")
+        if bonded:
+            stacks = player.get("wedding_grave_reign_stacks", 0)
+            if stacks < 3:
+                player["wedding_grave_reign_stacks"] = stacks + 1
+                for stat in ("Strength", "Constitution", "Dexterity", "Wisdom", "Charisma", "Learning"):
+                    player.setdefault("active_buffs", []).append({
+                        "stat": stat, "value": 1, "remaining": 99, "source": "grave_reign"
+                    })
+                _msg(f"Deathward Crown — the grave empowers you! (+1 all stats, stack {stacks+1}/3)")
+
 
 # ── Dodge ────────────────────────────────────────────────────────────────────
 
@@ -557,6 +709,10 @@ def apply_wedding_dodge_bonus(player):
         return 0.12
     if special == "shadow_cloak":
         return 0.12
+    if special == "dusk_weave":
+        return 0.12 if bonded else 0.08
+    if special == "star_waltz":
+        return 0.15 if bonded else 0.10
     return 0.0
 
 
@@ -585,6 +741,21 @@ def apply_wedding_on_dodge(player, enemy):
         from combat.helpers import format_damage_msg
         _msg(format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Nekomata Bell"))
 
+    # star_waltz: counter-attack for 50% weapon damage; bonded 60% and +2 DEX for 2 turns
+    if special == "star_waltz":
+        from combat.stats import get_effective_attribute
+        p_str = get_effective_attribute(player, "Strength")
+        pct = 0.60 if bonded else 0.50
+        counter_dmg = max(1, int((random.randint(4, 10) + p_str) * pct))
+        enemy["hp"] = max(0, enemy["hp"] - counter_dmg)
+        from combat.helpers import format_damage_msg
+        _msg(format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Constellation Waltz Ring"))
+        if bonded:
+            player.setdefault("active_buffs", []).append({
+                "stat": "Dexterity", "value": 2, "remaining": 2, "source": "star_waltz"
+            })
+            _msg("Constellation Waltz Ring — your steps quicken! (+2 DEX, 2 turns)")
+
 
 # ── Damage Taken ───────────────────────────────────────────────────────────
 
@@ -598,6 +769,18 @@ def apply_wedding_damage_reduction(player, damage, is_elemental=False, element=N
     if special == "stone_endurance":
         reduction = 4 if bonded else 2
         damage = max(0, damage - reduction)
+
+    # auto_guard: -3 flat; bonded -5
+    if special == "auto_guard":
+        reduction = 5 if bonded else 3
+        damage = max(0, damage - reduction)
+
+    # stone_ward: -2 physical; bonded -4 physical and immune to stun
+    if special == "stone_ward" and element == "physical":
+        reduction = 4 if bonded else 2
+        damage = max(0, damage - reduction)
+        if bonded:
+            player["stun_immune"] = True
 
     # bark_shield: once per floor survive fatal blow with 1 HP + defense buff
     # This is handled in on_damage_taken_fatal below, not here.
@@ -654,6 +837,12 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
                 "type": "fear", "value": 0.25, "remaining": 1
             })
             _msg(f"Infernal Throne Seal — {enemy['name']} is filled with dread!")
+
+    # infernal_vow: attackers take 5 fire retribution; bonded 10
+    if special == "infernal_vow" and damage > 0:
+        ret = 10 if bonded else 5
+        enemy["hp"] = max(0, enemy["hp"] - ret)
+        _msg(f"Infernal Vow Band — {enemy['name']} is scorched by retribution! (-{ret} HP)")
 
     # keening_wail: when HP < 25%, enemies take 10-20 damage, 30% fear; bonded 15-30 at 35%
     if special == "keening_wail" and not player.get("wedding_keening_wail_used"):
@@ -726,12 +915,20 @@ def apply_wedding_fatal_blow_survival(player, damage):
 def apply_wedding_skill_cooldown_skip(player, skill_id):
     """Return True if the skill cooldown should NOT be set."""
     special, bonded = _active(player)
-    if not special or special != "tinkerers_inspiration":
+    if not special:
         return False
-    chance = 0.40 if bonded else 0.20
-    if random.random() < chance:
-        _msg("Clockwork Bond Ring — the gears align, and your skill is ready again!")
+
+    if special == "tinkerers_inspiration":
+        chance = 0.40 if bonded else 0.20
+        if random.random() < chance:
+            _msg("Clockwork Bond Ring — the gears align, and your skill is ready again!")
+            return True
+        return False
+
+    if special == "overclock" and player.pop("wedding_overclock_proc", False):
+        _msg("Gearheart Pendant — overclock refreshes your skill!")
         return True
+
     return False
 
 
@@ -747,6 +944,11 @@ def apply_wedding_max_hp_bonus(player):
         from character import player_max_hp
         base = player_max_hp(player)
         return int(base * 0.10)
+    if special == "stone_ward":
+        from character import player_max_hp
+        base = player_max_hp(player)
+        pct = 0.12 if bonded else 0.08
+        return int(base * pct)
     return 0
 
 

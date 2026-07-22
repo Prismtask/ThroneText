@@ -854,6 +854,48 @@ Beast:
       Charisma: 5
     boss: false
     super_boss: false
+  beast_apex_predator:
+    name: Apex Predator
+    race: Beast
+    level: 42
+    base_hp: 490
+    mods:
+      Strength: 12
+      Constitution: 10
+      Dexterity: 10
+      Wisdom: 5
+      Learning: 4
+      Charisma: 5
+    boss: false
+    super_boss: false
+  beast_world_serpent:
+    name: World Serpent
+    race: Beast
+    level: 46
+    base_hp: 550
+    mods:
+      Strength: 13
+      Constitution: 11
+      Dexterity: 9
+      Wisdom: 6
+      Learning: 5
+      Charisma: 5
+    boss: false
+    super_boss: false
+  beast_kaiju_alpha:
+    name: Kaiju Alpha
+    race: Beast
+    level: 55
+    base_hp: 800
+    mods:
+      Strength: 15
+      Constitution: 13
+      Dexterity: 9
+      Wisdom: 6
+      Learning: 5
+      Charisma: 5
+    boss: false
+    super_boss: false
 Fey:
   fey_glowmoth:
     name: Glowmoth
@@ -1149,6 +1191,48 @@ Fey:
       Charisma: 6
     boss: false
     super_boss: false
+  fey_twilight_courtier:
+    name: Twilight Courtier
+    race: Fey
+    level: 42
+    base_hp: 490
+    mods:
+      Strength: 5
+      Constitution: 5
+      Dexterity: 10
+      Wisdom: 8
+      Learning: 7
+      Charisma: 8
+    boss: false
+    super_boss: false
+  fey_verdant_sovereign:
+    name: Verdant Sovereign
+    race: Fey
+    level: 46
+    base_hp: 550
+    mods:
+      Strength: 5
+      Constitution: 6
+      Dexterity: 10
+      Wisdom: 9
+      Learning: 8
+      Charisma: 9
+    boss: false
+    super_boss: false
+  fey_timeless_court:
+    name: Timeless Court
+    race: Fey
+    level: 52
+    base_hp: 730
+    mods:
+      Strength: 5
+      Constitution: 7
+      Dexterity: 11
+      Wisdom: 10
+      Learning: 9
+      Charisma: 10
+    boss: false
+    super_boss: false
 Gnome:
   gnome_tinker:
     name: Gnome Tinker
@@ -1360,6 +1444,104 @@ Gnome:
       Charisma: 2
     boss: false
     super_boss: false
+  gnome_aether_mechanist:
+    name: Aether Mechanist
+    race: Gnome
+    level: 23
+    base_hp: 156
+    mods:
+      Strength: 3
+      Constitution: 4
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 7
+      Charisma: 3
+    boss: false
+    super_boss: false
+  gnome_chrono_tinker:
+    name: Chrono-Tinker
+    race: Gnome
+    level: 28
+    base_hp: 182
+    mods:
+      Strength: 3
+      Constitution: 4
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 8
+      Charisma: 3
+    boss: false
+    super_boss: false
+  gnome_arcane_artillerist:
+    name: Arcane Artillerist
+    race: Gnome
+    level: 32
+    base_hp: 226
+    mods:
+      Strength: 4
+      Constitution: 5
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 9
+      Charisma: 4
+    boss: false
+    super_boss: false
+  gnome_grand_artificer:
+    name: Grand Artificer
+    race: Gnome
+    level: 36
+    base_hp: 382
+    mods:
+      Strength: 5
+      Constitution: 6
+      Dexterity: 6
+      Wisdom: 7
+      Learning: 10
+      Charisma: 5
+    boss: true
+    super_boss: false
+  gnome_mecha_overlord:
+    name: Mecha Overlord
+    race: Gnome
+    level: 40
+    base_hp: 310
+    mods:
+      Strength: 7
+      Constitution: 7
+      Dexterity: 5
+      Wisdom: 6
+      Learning: 9
+      Charisma: 4
+    boss: false
+    super_boss: false
+  gnome_reality_engineer:
+    name: Reality Engineer
+    race: Gnome
+    level: 43
+    base_hp: 500
+    mods:
+      Strength: 5
+      Constitution: 6
+      Dexterity: 7
+      Wisdom: 8
+      Learning: 11
+      Charisma: 5
+    boss: false
+    super_boss: false
+  gnome_omnissiah_prototype:
+    name: Omnissiah Prototype
+    race: Gnome
+    level: 47
+    base_hp: 680
+    mods:
+      Strength: 8
+      Constitution: 9
+      Dexterity: 6
+      Wisdom: 8
+      Learning: 11
+      Charisma: 5
+    boss: true
+    super_boss: false
 Goblin:
   goblin_ratcatcher:
     name: Goblin Ratcatcher
@@ -1406,8 +1588,8 @@ Goblin:
   goblin_archer:
     name: Goblin Archer
     race: Goblin
-    level: 2
-    base_hp: 15
+    level: 3
+    base_hp: 21
     mods:
       Strength: 1
       Constitution: 1
@@ -1420,8 +1602,8 @@ Goblin:
   goblin_knifer:
     name: Goblin Knifer
     race: Goblin
-    level: 2
-    base_hp: 17
+    level: 3
+    base_hp: 22
     mods:
       Strength: 1
       Constitution: 1
@@ -1434,8 +1616,8 @@ Goblin:
   goblin_shaman:
     name: Goblin Shaman
     race: Goblin
-    level: 2
-    base_hp: 14
+    level: 3
+    base_hp: 20
     mods:
       Strength: 1
       Constitution: 1
@@ -1445,8 +1627,8 @@ Goblin:
       Charisma: 2
     boss: false
     super_boss: false
-  goblin_whisperer:
-    name: Goblin Whisperer
+  goblin_chatter:
+    name: Goblin Chatter
     race: Goblin
     level: 2
     base_hp: 16
@@ -1458,6 +1640,90 @@ Goblin:
       Learning: 1
       Charisma: 4
     boss: false
+    super_boss: false
+  goblin_backstabber:
+    name: Goblin Backstabber
+    race: Goblin
+    level: 20
+    base_hp: 130
+    mods:
+      Strength: 3
+      Constitution: 4
+      Dexterity: 8
+      Wisdom: 2
+      Learning: 2
+      Charisma: 3
+    boss: false
+    super_boss: false
+  goblin_bomb_chucker:
+    name: Goblin Bomb Chucker
+    race: Goblin
+    level: 24
+    base_hp: 154
+    mods:
+      Strength: 4
+      Constitution: 4
+      Dexterity: 7
+      Wisdom: 3
+      Learning: 4
+      Charisma: 3
+    boss: false
+    super_boss: false
+  goblin_shadow_whisperer:
+    name: Goblin Shadow Whisperer
+    race: Goblin
+    level: 31
+    base_hp: 225
+    mods:
+      Strength: 3
+      Constitution: 5
+      Dexterity: 9
+      Wisdom: 5
+      Learning: 4
+      Charisma: 5
+    boss: false
+    super_boss: false
+  goblin_war_chieftain:
+    name: Goblin War Chieftain
+    race: Goblin
+    level: 37
+    base_hp: 383
+    mods:
+      Strength: 7
+      Constitution: 7
+      Dexterity: 7
+      Wisdom: 4
+      Learning: 4
+      Charisma: 7
+    boss: true
+    super_boss: false
+  goblin_demolition_squad:
+    name: Goblin Demolition Squad
+    race: Goblin
+    level: 40
+    base_hp: 310
+    mods:
+      Strength: 6
+      Constitution: 6
+      Dexterity: 8
+      Wisdom: 4
+      Learning: 5
+      Charisma: 4
+    boss: false
+    super_boss: false
+  goblin_horde_captain:
+    name: Goblin Horde Captain
+    race: Goblin
+    level: 44
+    base_hp: 500
+    mods:
+      Strength: 8
+      Constitution: 8
+      Dexterity: 8
+      Wisdom: 5
+      Learning: 5
+      Charisma: 8
+    boss: true
     super_boss: false
 Demon:
   imp:
@@ -1866,6 +2132,62 @@ Demon:
       Charisma: 7
     boss: false
     super_boss: false
+  demon_hellfire_archon:
+    name: Hellfire Archon
+    race: Demon
+    level: 41
+    base_hp: 480
+    mods:
+      Strength: 11
+      Constitution: 8
+      Dexterity: 7
+      Wisdom: 5
+      Learning: 5
+      Charisma: 8
+    boss: false
+    super_boss: false
+  demon_abyssal_sovereign:
+    name: Abyssal Sovereign
+    race: Demon
+    level: 47
+    base_hp: 580
+    mods:
+      Strength: 12
+      Constitution: 9
+      Dexterity: 7
+      Wisdom: 6
+      Learning: 6
+      Charisma: 9
+    boss: false
+    super_boss: false
+  demon_pit_sovereign:
+    name: Pit Sovereign
+    race: Demon
+    level: 52
+    base_hp: 730
+    mods:
+      Strength: 12
+      Constitution: 9
+      Dexterity: 7
+      Wisdom: 6
+      Learning: 6
+      Charisma: 10
+    boss: false
+    super_boss: false
+  demon_lord_of_the_pit:
+    name: Lord of the Pit
+    race: Demon
+    level: 60
+    base_hp: 2200
+    mods:
+      Strength: 15
+      Constitution: 12
+      Dexterity: 8
+      Wisdom: 8
+      Learning: 8
+      Charisma: 12
+    boss: false
+    super_boss: true
 Lizardfolk:
   lizardfolk_egg_stealer:
     name: Egg Stealer
@@ -2132,6 +2454,76 @@ Lizardfolk:
       Learning: 3
       Charisma: 3
     boss: true
+    super_boss: false
+  lizardfolk_serpentine_oracle:
+    name: Serpentine Oracle
+    race: Lizardfolk
+    level: 32
+    base_hp: 226
+    mods:
+      Strength: 5
+      Constitution: 7
+      Dexterity: 6
+      Wisdom: 8
+      Learning: 6
+      Charisma: 5
+    boss: false
+    super_boss: false
+  lizardfolk_dread_naga:
+    name: Dread Naga
+    race: Lizardfolk
+    level: 36
+    base_hp: 274
+    mods:
+      Strength: 7
+      Constitution: 8
+      Dexterity: 6
+      Wisdom: 7
+      Learning: 5
+      Charisma: 5
+    boss: false
+    super_boss: false
+  lizardfolk_primordial_serpent:
+    name: Primordial Serpent
+    race: Lizardfolk
+    level: 40
+    base_hp: 310
+    mods:
+      Strength: 9
+      Constitution: 9
+      Dexterity: 5
+      Wisdom: 6
+      Learning: 5
+      Charisma: 4
+    boss: false
+    super_boss: false
+  lizardfolk_scale_tyrant:
+    name: Scale Tyrant
+    race: Lizardfolk
+    level: 45
+    base_hp: 580
+    mods:
+      Strength: 10
+      Constitution: 10
+      Dexterity: 6
+      Wisdom: 7
+      Learning: 6
+      Charisma: 6
+    boss: true
+    super_boss: false
+  lizardfolk_world_fang:
+    name: World Fang
+    race: Lizardfolk
+    level: 50
+    base_hp: 410
+    mods:
+      Strength: 11
+      Constitution: 10
+      Dexterity: 7
+      Wisdom: 6
+      Learning: 5
+      Charisma: 5
+    boss: false
     super_boss: false
 Elemental:
   elemental_spark:
@@ -2526,6 +2918,48 @@ Elemental:
       Charisma: 3
     boss: false
     super_boss: false
+  elemental_entropy_orb:
+    name: Entropy Orb
+    race: Elemental
+    level: 41
+    base_hp: 480
+    mods:
+      Strength: 4
+      Constitution: 10
+      Dexterity: 5
+      Wisdom: 6
+      Learning: 8
+      Charisma: 4
+    boss: false
+    super_boss: false
+  elemental_singularity:
+    name: Singularity
+    race: Elemental
+    level: 49
+    base_hp: 630
+    mods:
+      Strength: 5
+      Constitution: 12
+      Dexterity: 5
+      Wisdom: 7
+      Learning: 9
+      Charisma: 4
+    boss: false
+    super_boss: false
+  elemental_big_crunch:
+    name: Big Crunch
+    race: Elemental
+    level: 54
+    base_hp: 780
+    mods:
+      Strength: 5
+      Constitution: 14
+      Dexterity: 5
+      Wisdom: 7
+      Learning: 10
+      Charisma: 4
+    boss: false
+    super_boss: false
 Giant:
   giant_tiny_troll:
     name: Tiny Troll
@@ -2875,6 +3309,20 @@ Giant:
       Wisdom: 4
       Learning: 4
       Charisma: 6
+    boss: false
+    super_boss: false
+  giant_ragnarok_jotunn:
+    name: Ragnarok Jotunn
+    race: Giant
+    level: 51
+    base_hp: 710
+    mods:
+      Strength: 18
+      Constitution: 16
+      Dexterity: 3
+      Wisdom: 5
+      Learning: 5
+      Charisma: 7
     boss: false
     super_boss: false
 Undead:
@@ -3326,6 +3774,48 @@ Undead:
       Charisma: 6
     boss: false
     super_boss: false
+  undead_grave_colossus:
+    name: Grave Colossus
+    race: Undead
+    level: 41
+    base_hp: 480
+    mods:
+      Strength: 11
+      Constitution: 11
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 6
+      Charisma: 5
+    boss: false
+    super_boss: false
+  undead_soul_harvester:
+    name: Soul Harvester
+    race: Undead
+    level: 45
+    base_hp: 540
+    mods:
+      Strength: 9
+      Constitution: 10
+      Dexterity: 8
+      Wisdom: 7
+      Learning: 8
+      Charisma: 6
+    boss: false
+    super_boss: false
+  undead_lich_eternal:
+    name: Lich Eternal
+    race: Undead
+    level: 53
+    base_hp: 750
+    mods:
+      Strength: 8
+      Constitution: 10
+      Dexterity: 9
+      Wisdom: 9
+      Learning: 10
+      Charisma: 7
+    boss: false
+    super_boss: false
 Shadow:
   shadow_rat:
     name: Shadow Rat
@@ -3733,6 +4223,90 @@ Shadow:
       Charisma: 5
     boss: false
     super_boss: false
+  shadow_void_stalker:
+    name: Void Stalker
+    race: Shadow
+    level: 33
+    base_hp: 270
+    mods:
+      Strength: 5
+      Constitution: 5
+      Dexterity: 11
+      Wisdom: 6
+      Learning: 5
+      Charisma: 5
+    boss: false
+    super_boss: false
+  shadow_penumbra_wraith:
+    name: Penumbra Wraith
+    race: Shadow
+    level: 37
+    base_hp: 383
+    mods:
+      Strength: 5
+      Constitution: 5
+      Dexterity: 12
+      Wisdom: 7
+      Learning: 6
+      Charisma: 5
+    boss: false
+    super_boss: false
+  shadow_total_eclipse:
+    name: Total Eclipse
+    race: Shadow
+    level: 40
+    base_hp: 310
+    mods:
+      Strength: 6
+      Constitution: 5
+      Dexterity: 12
+      Wisdom: 7
+      Learning: 6
+      Charisma: 6
+    boss: false
+    super_boss: false
+  shadow_umbral_sovereign:
+    name: Umbral Sovereign
+    race: Shadow
+    level: 44
+    base_hp: 500
+    mods:
+      Strength: 7
+      Constitution: 6
+      Dexterity: 12
+      Wisdom: 8
+      Learning: 7
+      Charisma: 7
+    boss: true
+    super_boss: false
+  shadow_abyss_incarnate:
+    name: Abyss Incarnate
+    race: Shadow
+    level: 48
+    base_hp: 540
+    mods:
+      Strength: 7
+      Constitution: 6
+      Dexterity: 13
+      Wisdom: 8
+      Learning: 7
+      Charisma: 7
+    boss: false
+    super_boss: false
+  shadow_primordial_dark:
+    name: Primordial Dark
+    race: Shadow
+    level: 53
+    base_hp: 850
+    mods:
+      Strength: 8
+      Constitution: 7
+      Dexterity: 13
+      Wisdom: 9
+      Learning: 8
+      Charisma: 8
+    boss: true
+    super_boss: false
 Orc:
   orc_grunt:
     name: Orc Grunt
@@ -3818,8 +4392,8 @@ Orc:
       Charisma: 2
     boss: false
     super_boss: false
-  orc_warlord:
-    name: Orc Warlord
+  orc_war_captain:
+    name: Orc War Captain
     race: Orc
     level: 7
     base_hp: 48
@@ -3832,8 +4406,8 @@ Orc:
       Charisma: 3
     boss: false
     super_boss: false
-  orc_chieftain:
-    name: Orc Chieftain
+  orc_elite_guard:
+    name: Orc Elite Guard
     race: Orc
     level: 8
     base_hp: 55
@@ -3984,6 +4558,90 @@ Orc:
       Wisdom: 1
       Learning: 2
       Charisma: 3
+    boss: true
+    super_boss: false
+  orc_chieftain:
+    name: Orc Chieftain
+    race: Orc
+    level: 31
+    base_hp: 225
+    mods:
+      Strength: 9
+      Constitution: 8
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 6
+    boss: false
+    super_boss: false
+  orc_warlord:
+    name: Orc Warlord
+    race: Orc
+    level: 33
+    base_hp: 270
+    mods:
+      Strength: 10
+      Constitution: 9
+      Dexterity: 4
+      Wisdom: 3
+      Learning: 3
+      Charisma: 7
+    boss: true
+    super_boss: false
+  orc_bloodfist_champion:
+    name: Bloodfist Champion
+    race: Orc
+    level: 37
+    base_hp: 383
+    mods:
+      Strength: 10
+      Constitution: 9
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
+    boss: false
+    super_boss: false
+  orc_apocalypse_rager:
+    name: Apocalypse Rager
+    race: Orc
+    level: 40
+    base_hp: 310
+    mods:
+      Strength: 11
+      Constitution: 9
+      Dexterity: 5
+      Wisdom: 2
+      Learning: 2
+      Charisma: 4
+    boss: false
+    super_boss: false
+  orc_warbringer_elite:
+    name: Warbringer Elite
+    race: Orc
+    level: 44
+    base_hp: 500
+    mods:
+      Strength: 11
+      Constitution: 10
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 3
+      Charisma: 5
+    boss: false
+    super_boss: false
+  orc_doom_howler:
+    name: Doom Howler
+    race: Orc
+    level: 49
+    base_hp: 750
+    mods:
+      Strength: 13
+      Constitution: 11
+      Dexterity: 5
+      Wisdom: 4
+      Learning: 3
+      Charisma: 6
     boss: true
     super_boss: false
 Vampire:
@@ -4224,6 +4882,90 @@ Vampire:
       Learning: 4
       Charisma: 7
     boss: false
+    super_boss: false
+  vampire_blood_baron:
+    name: Blood Baron
+    race: Vampire
+    level: 33
+    base_hp: 270
+    mods:
+      Strength: 7
+      Constitution: 7
+      Dexterity: 8
+      Wisdom: 5
+      Learning: 5
+      Charisma: 7
+    boss: false
+    super_boss: false
+  vampire_nosferatu_ancient:
+    name: Nosferatu Ancient
+    race: Vampire
+    level: 37
+    base_hp: 383
+    mods:
+      Strength: 8
+      Constitution: 8
+      Dexterity: 7
+      Wisdom: 5
+      Learning: 5
+      Charisma: 6
+    boss: false
+    super_boss: false
+  vampire_carmilla_handmaiden:
+    name: Carmilla's Handmaiden
+    race: Vampire
+    level: 40
+    base_hp: 310
+    mods:
+      Strength: 6
+      Constitution: 6
+      Dexterity: 10
+      Wisdom: 6
+      Learning: 5
+      Charisma: 9
+    boss: false
+    super_boss: false
+  vampire_blood_sovereign:
+    name: Blood Sovereign
+    race: Vampire
+    level: 44
+    base_hp: 500
+    mods:
+      Strength: 9
+      Constitution: 9
+      Dexterity: 9
+      Wisdom: 6
+      Learning: 6
+      Charisma: 10
+    boss: true
+    super_boss: false
+  vampire_eclipse_countess:
+    name: Eclipse Countess
+    race: Vampire
+    level: 48
+    base_hp: 540
+    mods:
+      Strength: 7
+      Constitution: 8
+      Dexterity: 11
+      Wisdom: 7
+      Learning: 6
+      Charisma: 10
+    boss: false
+    super_boss: false
+  vampire_first_sire:
+    name: The First Sire
+    race: Vampire
+    level: 52
+    base_hp: 850
+    mods:
+      Strength: 10
+      Constitution: 10
+      Dexterity: 10
+      Wisdom: 8
+      Learning: 7
+      Charisma: 11
+    boss: true
     super_boss: false
 Clockwork:
   clockwork_sentinel:
@@ -4561,6 +5303,20 @@ Clockwork:
       Learning: 10
       Charisma: 6
     boss: true
+    super_boss: false
+  clockwork_heat_death:
+    name: Heat Death Engine
+    race: Clockwork
+    level: 53
+    base_hp: 750
+    mods:
+      Strength: 11
+      Constitution: 13
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 11
+      Charisma: 5
+    boss: false
     super_boss: false
 Abomination:
   lesser_abomination:
@@ -4997,6 +5753,62 @@ Abomination:
       Charisma: 6
     boss: true
     super_boss: false
+  abomination_void_horror:
+    name: Void Horror
+    race: Abomination
+    level: 43
+    base_hp: 500
+    mods:
+      Strength: 12
+      Constitution: 12
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 5
+      Charisma: 5
+    boss: false
+    super_boss: false
+  abomination_reality_tear:
+    name: Reality Tear
+    race: Abomination
+    level: 48
+    base_hp: 620
+    mods:
+      Strength: 13
+      Constitution: 13
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 6
+      Charisma: 5
+    boss: false
+    super_boss: false
+  abomination_end_bringer:
+    name: End Bringer
+    race: Abomination
+    level: 56
+    base_hp: 820
+    mods:
+      Strength: 14
+      Constitution: 14
+      Dexterity: 6
+      Wisdom: 5
+      Learning: 6
+      Charisma: 5
+    boss: false
+    super_boss: false
+  abomination_first_horror:
+    name: The First Horror
+    race: Abomination
+    level: 59
+    base_hp: 1950
+    mods:
+      Strength: 16
+      Constitution: 16
+      Dexterity: 6
+      Wisdom: 6
+      Learning: 7
+      Charisma: 6
+    boss: true
+    super_boss: false
 Construct:
   iron_golem:
     name: Iron Golem
@@ -5305,6 +6117,62 @@ Construct:
       Learning: 7
       Charisma: 6
     boss: false
+    super_boss: false
+  construct_celestial_sentry:
+    name: Celestial Sentry
+    race: Construct
+    level: 43
+    base_hp: 500
+    mods:
+      Strength: 10
+      Constitution: 14
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 7
+      Charisma: 5
+    boss: false
+    super_boss: false
+  construct_starforge_golem:
+    name: Starforge Golem
+    race: Construct
+    level: 48
+    base_hp: 620
+    mods:
+      Strength: 12
+      Constitution: 15
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 8
+      Charisma: 5
+    boss: false
+    super_boss: false
+  construct_omega_golem:
+    name: Omega Golem
+    race: Construct
+    level: 54
+    base_hp: 780
+    mods:
+      Strength: 14
+      Constitution: 16
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 8
+      Charisma: 5
+    boss: false
+    super_boss: false
+  construct_world_engine:
+    name: World Engine
+    race: Construct
+    level: 60
+    base_hp: 2100
+    mods:
+      Strength: 16
+      Constitution: 18
+      Dexterity: 5
+      Wisdom: 6
+      Learning: 9
+      Charisma: 6
+    boss: true
     super_boss: false
 Dragonkin:
   young_dragonkin:
@@ -5629,3 +6497,340 @@ Dragonkin:
       Charisma: 4
     boss: false
     super_boss: false
+  dragonkin_star_drake:
+    name: Star Drake
+    race: Dragonkin
+    level: 44
+    base_hp: 520
+    mods:
+      Strength: 12
+      Constitution: 11
+      Dexterity: 7
+      Wisdom: 7
+      Learning: 7
+      Charisma: 5
+    boss: false
+    super_boss: false
+  dragonkin_void_wyrm:
+    name: Void Wyrm
+    race: Dragonkin
+    level: 49
+    base_hp: 630
+    mods:
+      Strength: 13
+      Constitution: 12
+      Dexterity: 7
+      Wisdom: 7
+      Learning: 8
+      Charisma: 5
+    boss: false
+    super_boss: false
+  dragonkin_eternal_drake:
+    name: Eternal Drake
+    race: Dragonkin
+    level: 51
+    base_hp: 710
+    mods:
+      Strength: 14
+      Constitution: 12
+      Dexterity: 8
+      Wisdom: 8
+      Learning: 8
+      Charisma: 6
+    boss: false
+    super_boss: false
+  dragonkin_apex_of_scales:
+    name: Apex of Scales
+    race: Dragonkin
+    level: 58
+    base_hp: 1800
+    mods:
+      Strength: 16
+      Constitution: 15
+      Dexterity: 8
+      Wisdom: 8
+      Learning: 9
+      Charisma: 7
+    boss: true
+    super_boss: false
+Angel:
+  angel_lightwarden:
+    name: Light Warden
+    race: Angel
+    level: 20
+    base_hp: 210
+    mods:
+      Strength: 3
+      Constitution: 4
+      Dexterity: 3
+      Wisdom: 5
+      Learning: 3
+      Charisma: 4
+    boss: false
+    super_boss: false
+  angel_radiant_acolyte:
+    name: Radiant Acolyte
+    race: Angel
+    level: 22
+    base_hp: 226
+    mods:
+      Strength: 2
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 6
+      Learning: 4
+      Charisma: 5
+    boss: false
+    super_boss: false
+  angel_hallowed_lancer:
+    name: Hallowed Lancer
+    race: Angel
+    level: 25
+    base_hp: 250
+    mods:
+      Strength: 6
+      Constitution: 4
+      Dexterity: 5
+      Wisdom: 3
+      Learning: 2
+      Charisma: 4
+    boss: false
+    super_boss: false
+  angel_celestial_scribe:
+    name: Celestial Scribe
+    race: Angel
+    level: 27
+    base_hp: 266
+    mods:
+      Strength: 2
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 7
+      Learning: 5
+      Charisma: 5
+    boss: false
+    super_boss: false
+  angel_divine_sentinel:
+    name: Divine Sentinel
+    race: Angel
+    level: 29
+    base_hp: 282
+    mods:
+      Strength: 4
+      Constitution: 7
+      Dexterity: 3
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
+    boss: false
+    super_boss: false
+  angel_solar_arbiter:
+    name: Solar Arbiter
+    race: Angel
+    level: 31
+    base_hp: 329
+    mods:
+      Strength: 5
+      Constitution: 5
+      Dexterity: 6
+      Wisdom: 4
+      Learning: 3
+      Charisma: 5
+    boss: false
+    super_boss: false
+  angel_seraph_wing:
+    name: Seraph Wing
+    race: Angel
+    level: 33
+    base_hp: 347
+    mods:
+      Strength: 3
+      Constitution: 4
+      Dexterity: 8
+      Wisdom: 5
+      Learning: 3
+      Charisma: 5
+    boss: false
+    super_boss: false
+  angel_heaven_herald:
+    name: Heaven's Herald
+    race: Angel
+    level: 35
+    base_hp: 365
+    mods:
+      Strength: 2
+      Constitution: 4
+      Dexterity: 5
+      Wisdom: 7
+      Learning: 5
+      Charisma: 6
+    boss: false
+    super_boss: false
+  angel_throne_warden:
+    name: Throne Warden
+    race: Angel
+    level: 37
+    base_hp: 383
+    mods:
+      Strength: 7
+      Constitution: 6
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 3
+      Charisma: 4
+    boss: false
+    super_boss: false
+  angel_divine_justicar:
+    name: Divine Justicar
+    race: Angel
+    level: 39
+    base_hp: 842
+    mods:
+      Strength: 8
+      Constitution: 7
+      Dexterity: 5
+      Wisdom: 6
+      Learning: 5
+      Charisma: 7
+    boss: true
+    super_boss: false
+  angel_ophanim:
+    name: Ophanim
+    race: Angel
+    level: 41
+    base_hp: 480
+    mods:
+      Strength: 5
+      Constitution: 8
+      Dexterity: 3
+      Wisdom: 6
+      Learning: 4
+      Charisma: 5
+    boss: false
+    super_boss: false
+  angel_dominion_lord:
+    name: Dominion Lord
+    race: Angel
+    level: 43
+    base_hp: 500
+    mods:
+      Strength: 7
+      Constitution: 6
+      Dexterity: 5
+      Wisdom: 5
+      Learning: 4
+      Charisma: 6
+    boss: false
+    super_boss: false
+  angel_heavenly_choir:
+    name: Heavenly Choir
+    race: Angel
+    level: 45
+    base_hp: 1350
+    mods:
+      Strength: 3
+      Constitution: 6
+      Dexterity: 6
+      Wisdom: 10
+      Learning: 7
+      Charisma: 9
+    boss: true
+    super_boss: false
+  angel_virtue_incarnate:
+    name: Virtue Incarnate
+    race: Angel
+    level: 47
+    base_hp: 540
+    mods:
+      Strength: 4
+      Constitution: 6
+      Dexterity: 5
+      Wisdom: 9
+      Learning: 6
+      Charisma: 7
+    boss: false
+    super_boss: false
+  angel_power_manifest:
+    name: Power Manifest
+    race: Angel
+    level: 49
+    base_hp: 560
+    mods:
+      Strength: 10
+      Constitution: 8
+      Dexterity: 4
+      Wisdom: 4
+      Learning: 3
+      Charisma: 5
+    boss: false
+    super_boss: false
+  angel_archon_of_truth:
+    name: Archon of Truth
+    race: Angel
+    level: 51
+    base_hp: 1530
+    mods:
+      Strength: 8
+      Constitution: 9
+      Dexterity: 6
+      Wisdom: 10
+      Learning: 8
+      Charisma: 10
+    boss: true
+    super_boss: false
+  angel_celestial_dragon:
+    name: Celestial Dragon
+    race: Angel
+    level: 53
+    base_hp: 736
+    mods:
+      Strength: 10
+      Constitution: 8
+      Dexterity: 5
+      Wisdom: 6
+      Learning: 5
+      Charisma: 7
+    boss: false
+    super_boss: false
+  angel_metatron_voice:
+    name: Metatron's Voice
+    race: Angel
+    level: 55
+    base_hp: 1650
+    mods:
+      Strength: 6
+      Constitution: 8
+      Dexterity: 7
+      Wisdom: 12
+      Learning: 9
+      Charisma: 11
+    boss: true
+    super_boss: false
+  angel_divine_puppet:
+    name: Divine Puppet
+    race: Angel
+    level: 30
+    base_hp: 80
+    mods:
+      Strength: 3
+      Constitution: 3
+      Dexterity: 4
+      Wisdom: 2
+      Learning: 1
+      Charisma: 2
+    boss: false
+    super_boss: false
+  angel_fallen_morningstar:
+    name: Fallen Morningstar
+    race: Angel
+    level: 57
+    base_hp: 2280
+    mods:
+      Strength: 12
+      Constitution: 10
+      Dexterity: 9
+      Wisdom: 10
+      Learning: 9
+      Charisma: 14
+    boss: false
+    super_boss: true
