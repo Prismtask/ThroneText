@@ -187,7 +187,7 @@ def _merchant_price(player, item):
     return your_price, road_price
 
 
-def _sell_price(player, item):
+def _sell_price(item, player):
     """
     Sell-to-merchant price: 75 % of city shop's sell rate, soft Charisma bonus.
     City shop uses: int(12 * price_mult) × (1 + (cha - 8) / 100)
@@ -395,7 +395,7 @@ def _handle_combat(player, travel_type, region, combat_override=None):
                     term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
 
         # Wedding end-of-combat rewards
-        from combat.wedding_specials import apply_wedding_combat_end
+        from combat.weapon.wedding_specials import apply_wedding_combat_end
         apply_wedding_combat_end(player, victory=True)
 
         term.pause("  Press Continue your journey...")
@@ -458,7 +458,7 @@ def _sell_to_merchant(player):
     term.print("  (Road sell rate: ~75 % of city shop value)\n")
 
     for i, item in enumerate(inv):
-        unit_price = _sell_price(player, item)
+        unit_price = _sell_price(item, player)
         count = item.get("count", 1)
         stack_price = unit_price * count
         count_str = f" (x{count})" if count > 1 else ""
@@ -469,7 +469,7 @@ def _sell_to_merchant(player):
         idx = int(raw.strip()) - 1
         if 0 <= idx < len(inv):
             item = inv[idx]
-            gold = _sell_price(player, item) * item.get("count", 1)
+            gold = _sell_price(item, player) * item.get("count", 1)
             remove_item_by_reference(player, item, item.get("count", 1))
             player["gold"] = player.get("gold", 0) + gold
             term.print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')

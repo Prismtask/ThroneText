@@ -1,6 +1,6 @@
 # facilities/guild.py
 import random
-from utils import clear_screen, advance_time
+from utils import advance_time
 from resources.cities import CITIES
 from resources.enemies import ENEMIES, BIOME_RACES
 from city_dialogue import service_dialogue
@@ -303,6 +303,48 @@ def _ascend_level_cap(player, city_id):
     term.pause()
 
 
+def _legendary_rewards(player, city_id):
+    """Guild legacy rewards: Sky Piercer for defeating 5 distinct superbosses.
+
+    The option always exists but is rejected unless the requirement is met.
+    """
+    term.clear()
+    required = 5
+    progress = len(set(player.get("defeated_superbosses", [])))
+
+    term.print("=== GUILD LEGACY REWARDS ===")
+    term.print("The Guild Master unrolls a ledger older than the guild itself.")
+    term.print("")
+    term.print("  ☁️  Sky Piercer — unique accessory")
+    term.print("     Executes non-Super-Boss enemies left at low HP by your attacks.")
+    term.print(f"     Requirement: defeat {required} different Super Bosses")
+    term.print(f"     Progress: {min(progress, required)}/{required}")
+
+    if player.get("sky_piercer_claimed"):
+        term.print("")
+        term.print("*** CLAIM REJECTED ***")
+        term.print("The Sky Piercer already rests with you. The ledger is closed.")
+        term.pause()
+        return
+
+    if progress < required:
+        term.print("")
+        term.print("*** CLAIM REJECTED ***")
+        term.print(f"The ledger is incomplete. Defeat {required - progress} more different Super Bosses to prove your worth.")
+        term.pause()
+        return
+
+    from resources.items import build_item
+    from inventory import add_item_to_inventory
+    item = build_item("sky_piercer")
+    add_item_to_inventory(player, item)
+    player["sky_piercer_claimed"] = True
+    term.print("")
+    term.print("The Guild Master bows. 'Take it. The sky will not forget your name.'")
+    term.print(f"*** Received unique accessory: {item['name']} ***")
+    term.pause()
+
+
 def guild_service(player, city_id="solmere"):
     term.clear()
     
@@ -339,6 +381,7 @@ def guild_service(player, city_id="solmere"):
             "Manage Active Bounties",
             "Enemy Intelligence",
             "Ascend Level Cap",
+            "Legendary Rewards",
             "Leave"
         ], prompt="What would you like to do?")
         
@@ -350,7 +393,9 @@ def guild_service(player, city_id="solmere"):
             _view_enemy_intelligence(player, city_id)
         elif choice == 3:
             _ascend_level_cap(player, city_id)
-        elif choice == 4 or choice == -1:
+        elif choice == 4:
+            _legendary_rewards(player, city_id)
+        elif choice == 5 or choice == -1:
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 15)
             break

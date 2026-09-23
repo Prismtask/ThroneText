@@ -2,8 +2,8 @@
 import random
 from resources.items import ITEMS, build_item, ITEM_RARITY
 from resources.cities import CITIES
-from utils import clear_screen, advance_time
-from inventory import add_item_to_inventory, get_total_equipment_mods, get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items
+from utils import advance_time
+from inventory import add_item_to_inventory, get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items
 from combat.stats import get_effective_attribute
 from city_dialogue import service_dialogue   # changed import
 from facilities.travel_events import _item_stat_line
@@ -86,7 +86,7 @@ def sell_items(player):
         term.print("No valid items selected.")
         return
 
-    from combat.wedding_specials import is_wedding_item_soulbound
+    from combat.weapon.wedding_specials import is_wedding_item_soulbound
     # Filter out soulbound wedding items and unique items
     filtered_indices = []
     filtered_names = []

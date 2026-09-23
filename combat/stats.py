@@ -101,11 +101,11 @@ def get_effective_attribute(player, attr_name):
         total = int(total * pct_mult)
 
     # --- Author's Pen passive: +4 all stats while in Wonderland ---
-    from combat.authors_pen import get_authors_pen_stat_bonus
+    from combat.weapon.authors_pen import get_authors_pen_stat_bonus
     total += get_authors_pen_stat_bonus(player, attr_name)
 
     # --- Tarnished Jade stat bonuses ---
-    from combat.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus
+    from combat.weapon.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus
     total += get_tarnished_jade_str_bonus(player)
     total += get_tarnished_jade_wis_bonus(player)
 
@@ -279,8 +279,12 @@ def get_dodge_chance(defender, attacker):
             base += buff.get("value", 0)
 
     # Black Silence Gloves: +8% dodge when equipped
-    from combat.black_silence_gloves import get_gloves_dodge_bonus
+    from combat.weapon.black_silence_gloves import get_gloves_dodge_bonus
     base += get_gloves_dodge_bonus(defender)
+
+    # Palette's Brush: +7% dodge for Palette heroine in Verdant stance
+    from combat.weapon.palette_brush import get_brush_dodge_bonus
+    base += get_brush_dodge_bonus(defender)
 
     # Determine cap by defender type
     is_player_or_ally = "attributes" in defender

@@ -159,6 +159,10 @@ innate_skills:
   wonderland_dorothy_vorpal:
     - cyclones_call
     - heart_of_tin
+  wonderland_palette:
+    - palette_brushstroke
+    - palette_spectrum
+    - palette_signature
 
 # ============================================================================
 # INNATE SKILL DEFINITIONS
@@ -1308,3 +1312,33 @@ innate_skill_defs:
       value: 0.5
       duration: 1
     elemental: magical
+
+  palette_brushstroke:
+    name: Brushstroke
+    description: A stroke of her current color. (0.7x, current color's element)
+    category: offensive
+    cooldown: 0
+    target: enemy
+    power_type: wis
+    base_power: 5
+    palette_dynamic_element: true
+
+  palette_spectrum:
+    name: Spectrum
+    description: Three splashes, each a random element. (3 x 0.3x)
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: ler
+    base_power: 0
+    palette_spectrum: true
+
+  palette_signature:
+    name: Signature
+    description: Begins painting the target's name — strikes NEXT turn for 2.5x, ignoring defense. (4-turn cooldown)
+    category: offensive
+    cooldown: 4
+    target: enemy
+    power_type: wis
+    base_power: 0
+    palette_signature: true

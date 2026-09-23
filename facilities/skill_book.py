@@ -1,12 +1,9 @@
 # facilities/skill_book.py – Skill Book / Skill Menu
-from utils import clear_screen
 from combat.skills import (
-    CLASS_SKILLS, PASSIVE_SKILLS,
-    get_class_skill_map, get_all_unlocked_skills,
-    get_skill_mastery_level, get_mastery_bonuses,
+    PASSIVE_SKILLS,
+    get_class_skill_map, get_skill_mastery_level, get_mastery_bonuses,
     format_mastery_label,
 )
-from character import player_max_hp
 from combat.ally import get_alive_allies
 from combat.ally_skills import (
     get_race_passive, get_innate_skill_def, get_learnable_skill_def,

@@ -515,5 +515,16 @@ class CharCreateScreen(BaseScreen):
         self.sm.player = player
         self.sm.log(f"Character '{name}' created and saved to slot {slot}.")
 
+        # New characters get a short tutorial through the facility UI
+        # (the same terminal-style wrapper used by shops, inns, etc.).
+        from facilities.tutorial import tutorial_menu, TutorialScreen
         from gui.screens.city_screen import CityScreen
-        self.sm.switch_to(CityScreen)
+        sm = self.sm
+        self.sm.switch_to(
+            TutorialScreen,
+            push_history=False,
+            title="Tutorial",
+            func=tutorial_menu,
+            func_args=(player,),
+            on_close=lambda _result: sm.switch_to(CityScreen, push_history=False),
+        )

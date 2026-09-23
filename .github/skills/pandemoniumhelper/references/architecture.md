@@ -161,8 +161,7 @@
 | `post_floor_screen.py` | Post-floor rewards/choices |
 | `settings_screen.py` | Settings screen |
 | `splash_screen.py` | Splash/loading screen |
-| `travel_screen.py` | Travel/map screen |
-| `world_map_screen.py` | World map screen |
+| `world_map_screen.py` | Unified world map / travel hub |
 
 ### GUI Widgets (`./gui/widgets/`)
 | File | Role |

@@ -1,8 +1,8 @@
 # combat/action_menu.py
-from combat.capture import is_monster_girl, is_capturable
-from combat.abyss_fang import is_abyss_fang_available
-from combat.captain_cutlass import is_captain_cutlass_available
-from combat.authors_pen import is_authors_pen_available
+from combat.capture import is_capturable
+from combat.weapon.abyss_fang import is_abyss_fang_available
+from combat.weapon.captain_cutlass import is_captain_cutlass_available
+from combat.weapon.authors_pen import is_authors_pen_available
 from combat.status_effects import is_silenced
 from combat.skills import get_available_skills
 
@@ -30,6 +30,11 @@ def get_action_menu(player, enemies):
     if _player_has_black_silence_gloves(player):
         return _get_gloves_menu(player, enemies)
 
+    # Palette's Brush — replaces class skills with the brush kit
+    from combat.weapon.palette_brush import _actor_has_palette_brush, get_brush_action_menu
+    if _actor_has_palette_brush(player):
+        return get_brush_action_menu(player, player, enemies, True)
+
     # Capture – only if a capturable monster girl is alive
     if any(is_capturable(e) for e in enemies):
         actions.append(('c', 'Capture'))
@@ -42,6 +47,11 @@ def get_action_menu(player, enemies):
     # Use item – blocked if silenced
     if not is_silenced(player):
         actions.append(('u', 'Use item'))
+
+    # Blank Canvas Shawl – free action, once per combat (item actives are not class skills)
+    from combat.weapon.blank_canvas_shawl import _actor_has_blank_canvas_shawl
+    if _actor_has_blank_canvas_shawl(player) and not player.get("blank_canvas_used"):
+        actions.append(('b', 'Blank Canvas'))
 
     # Abyss Fang – only if equipped and not on cooldown
     if is_abyss_fang_available(player):
@@ -87,6 +97,11 @@ def _get_gloves_menu(player, enemies):
     # Use item (blocked if silenced)
     if not is_silenced(player):
         actions.append(('u', 'Use item'))
+
+    # Blank Canvas Shawl – free action, once per combat (item actives are not class skills)
+    from combat.weapon.blank_canvas_shawl import _actor_has_blank_canvas_shawl
+    if _actor_has_blank_canvas_shawl(player) and not player.get("blank_canvas_used"):
+        actions.append(('b', 'Blank Canvas'))
 
     # Workshop attacks 1-9
     workshop_state = player.get("gloves_workshop_used", set())

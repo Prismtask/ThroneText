@@ -121,7 +121,7 @@ def embark_journey(player, dest_id, dest_name, travel_time, origin_biome="temper
     Execute the actual journey (GUI-based travel events).
 
     Designed to be called both from the terminal travel_to_city() and from
-    the GUI TravelScreen (via FacilityScreen I/O redirection).
+    the GUI World Map (via FacilityScreen I/O redirection).
 
     Args:
         player: Player state dict.

@@ -1,5 +1,5 @@
 # facilities/inn.py
-from utils import clear_screen, advance_time
+from utils import advance_time
 from character import player_max_hp
 from resources.cities import CITIES
 from city_dialogue import service_dialogue   # changed

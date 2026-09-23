@@ -1,15 +1,28 @@
 """
-gui/widgets/log_window.py — Scrollable persistent log history popup.
+gui/widgets/log_window.py — Session log popup (travel-log style).
 
-A Toplevel window that shows the full session log history with category
-filtering and search. The bottom bar log is only 4 lines and gets cleared
-on screen switches; the log window persists across the session.
+A Toplevel window showing the full session log history with category
+filtering, search, and per-category colors. This is the single log surface
+in GUI mode — the old always-visible bottom bar was removed. Opened from
+the 📜 button in the top bar, and auto-opens when important messages
+(e.g. events) are logged.
 """
 
 import tkinter as tk
 from tkinter import scrolledtext
 
 from gui.theme import Theme
+
+# Category → color mapping (travel-log style)
+_CATEGORY_COLORS = {
+    "event": "#ffd166",
+    "dialogue": "#00d2d3",
+    "info": Theme.TEXT,
+    "dungeon": "#a78bfa",
+    "facility": "#51cf66",
+    "combat": "#ff6b6b",
+    "system": Theme.TEXT_DIM,
+}
 
 
 class LogWindow(tk.Toplevel):
@@ -39,7 +52,7 @@ class LogWindow(tk.Toplevel):
         ).pack(side=tk.LEFT)
 
         self._filter_var = tk.StringVar(value="all")
-        for cat in ("all", "combat", "dungeon", "facility", "event", "system"):
+        for cat in ("all", "event", "dialogue", "info", "dungeon", "facility", "combat", "system"):
             tk.Radiobutton(
                 filter_frame,
                 text=cat.title(),
@@ -95,12 +108,16 @@ class LogWindow(tk.Toplevel):
         )
         self.log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
+        # Category color tags (travel-log style)
+        for cat, color in _CATEGORY_COLORS.items():
+            self.log_text.tag_configure(cat, foreground=color)
+
         # Bottom buttons
         btn_frame = tk.Frame(self, bg=Theme.BG_DARK)
         btn_frame.pack(fill=tk.X, padx=8, pady=(0, 8))
 
         self.styled_button(btn_frame, text="Clear", command=self._clear).pack(side=tk.LEFT)
-        self.styled_button(btn_frame, text="Close", command=self.destroy).pack(side=tk.RIGHT)
+        self.styled_button(btn_frame, text="Close", command=self._on_destroy).pack(side=tk.RIGHT)
 
         self._apply_filter()
 
@@ -126,17 +143,15 @@ class LogWindow(tk.Toplevel):
         category = self._filter_var.get()
         query = self.search_entry.get().strip().lower()
 
-        lines = []
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.delete("1.0", tk.END)
         for cat, msg in self._all_entries:
             if category != "all" and cat != category:
                 continue
             if query and query not in msg.lower():
                 continue
-            lines.append(msg)
-
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.delete("1.0", tk.END)
-        self.log_text.insert(tk.END, "\n".join(lines))
+            tag = cat if cat in _CATEGORY_COLORS else "system"
+            self.log_text.insert(tk.END, msg + "\n", tag)
         self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
 
@@ -148,4 +163,5 @@ class LogWindow(tk.Toplevel):
     def _on_destroy(self):
         if self._on_close:
             self._on_close()
+        self.destroy()
         self.destroy()

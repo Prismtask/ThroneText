@@ -1,4 +1,4 @@
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input
 # combat/skills.py – Class Skill Definitions, Mastery & Execution
 import random
 
@@ -82,7 +82,7 @@ def tick_skill_cooldowns(player):
 def set_skill_cooldown(player, skill_id):
     """Put a skill on cooldown after use.
     Returns an optional message if a cooldown_reduction buff was consumed."""
-    from combat.wedding_specials import apply_wedding_skill_cooldown_skip
+    from combat.weapon.wedding_specials import apply_wedding_skill_cooldown_skip
     if apply_wedding_skill_cooldown_skip(player, skill_id):
         return None
     skill_map = get_class_skill_map(player)
@@ -185,30 +185,6 @@ def get_passive_skill(player):
     return PASSIVE_SKILLS.get(player.get("class"))
 
 
-def apply_passive_hp_bonus(player):
-    """Return any bonus max HP from passive effects (used for stat calculations)."""
-    passive = get_passive_skill(player)
-    if not passive:
-        return 0
-    effect = passive.get("effect", {})
-    if effect.get("stat") == "Constitution":
-        return effect.get("value", 0) * 3
-    return 0
-
-
-def apply_passive_to_damage_dealt(player, damage):
-    """Apply passive bonuses to outgoing damage. Returns modified damage."""
-    passive = get_passive_skill(player)
-    if not passive:
-        return damage
-    effect = passive.get("effect", {})
-    # Rogue sneak attack bonus vs vulnerable enemies
-    if effect.get("type") == "vulnerable_bonus":
-        # This is checked in execute_skill per-target
-        pass
-    return damage
-
-
 def apply_passive_to_damage_taken(player, damage):
     """Apply passive damage reduction. Returns reduced damage."""
     passive = get_passive_skill(player)
@@ -285,6 +261,8 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
 
     msg_parts = []
     victory = False
+    # Snapshot enemy HP so Sky Piercer can detect which enemies this skill damaged
+    pre_hp = [e["hp"] for e in enemies]
 
     # ── Target Selection Helpers ──
     def _pick_enemy_target():
@@ -1159,9 +1137,12 @@ def execute_skill(player, skill_id, enemies, p_str, p_con, p_dex, p_ler, p_wis, 
             if cooldowns[skill_id] <= 0:
                 del cooldowns[skill_id]
 
-    # Safety check: single-target skills may set victory=True for a kill,
-    # but victory is only valid if ALL enemies are defeated.
-    if victory and [e for e in enemies if e["hp"] > 0]:
-        victory = False
+    # ── Sky Piercer: execute non-superboss enemies left at/below threshold ──
+    from combat.weapon.sky_piercer import check_sky_piercer_execute
+    for i, e in enumerate(enemies):
+        if i < len(pre_hp) and e["hp"] < pre_hp[i]:
+            check_sky_piercer_execute(player, e, pre_hp[i] - e["hp"])
+    # Victory is only valid if ALL enemies are defeated (covers executes too).
+    victory = not any(e["hp"] > 0 for e in enemies)
 
     return " ".join(msg_parts), victory

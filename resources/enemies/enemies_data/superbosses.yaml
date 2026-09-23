@@ -317,6 +317,25 @@ Superbosses:
       thunder: 1.2
     elemental_dmg:
       dark: 1.5
+  chromatic_artisan:
+    name: Palette, the Chromatic Artisan
+    race: Human
+    level: 35
+    base_hp: 900
+    mods:
+      Strength: 7
+      Constitution: 8
+      Dexterity: 9
+      Wisdom: 10
+      Learning: 12
+      Charisma: 10
+    boss: true
+    super_boss: true
+    elemental_res:
+      physical: 0.8
+      magical: 0.8
+    elemental_dmg:
+      magical: 1.3
   entangled_chrysalis:
     name: Chrysalis, the Entangled One
     race: Abomination

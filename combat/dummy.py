@@ -15,7 +15,7 @@ Usage (GUI mode):
 """
 
 from combat.combat_engine import combat
-from combat.combat_io import c_print, c_input, c_clear, get_io, TerminalIO
+from combat.combat_io import c_print, c_input, c_clear
 from combat.elemental import ELEMENTS
 
 

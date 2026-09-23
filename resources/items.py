@@ -120,6 +120,16 @@ ITEMS = {
         "drop_rarity": "unique",
     },
 
+    "sky_piercer": {
+        "name": "Sky Piercer",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Strength": 6, "Dexterity": 6},
+        "elemental_res": {"physical": 1.1, "thunder": 1.1},
+        "special": "sky_piercer",
+    },
+
     "cutlass_of_the_captain": {
         "name": "Cutlass of the Captain",
         "type": "equipment",
@@ -377,6 +387,7 @@ ITEMS = {
     "wedding_fey_star_court_dancer":{"name": "Constellation Waltz Ring","type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Dexterity": 15, "Charisma": 12, "Wisdom": 6}, "special": "star_waltz", "elemental_dmg": {"light": 1.3, "magical": 1.3}},
     "wedding_demon_infernal_bride":{"name": "Infernal Vow Band",     "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 18, "Strength": 9, "Constitution": 9}, "special": "infernal_vow", "elemental_dmg": {"fire": 1.4, "dark": 1.3}},
     "wedding_undead_grave_queen": {"name": "Deathward Crown",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Wisdom": 18, "Charisma": 12, "Learning": 9}, "special": "grave_reign", "elemental_dmg": {"dark": 1.4, "earth": 1.2}},
+    "wedding_wonderland_palette": {"name": "Palette's Palette",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Wisdom": 12, "Learning": 9, "Charisma": 6}, "special": "palettes_palette", "elemental_dmg": {"magical": 1.1}},
 
     # === Broodmother Superboss Drop ===
     "vileheart_pendant": {
@@ -403,6 +414,29 @@ ITEMS = {
         "elemental_dmg": {"dark": 1.5},
         "special": "black_silence_gloves",
         "drop_source": "black_silence",
+        "drop_rarity": "unique",
+    },
+    "palette_brush": {
+        "name": "Palette's Brush",
+        "type": "equipment",
+        "slot": "weapon",
+        "unique": True,
+        "base_mods": {"Wisdom": 10, "Learning": 10, "Charisma": 8},
+        "scaling_stat": ["Wisdom", "Learning", "Charisma"],
+        "elemental_dmg": {"magical": 1.3},
+        "special": "painters_touch",
+        "drop_source": "chromatic_artisan",
+        "drop_rarity": "unique",
+    },
+    "blank_canvas_shawl": {
+        "name": "Blank Canvas Shawl",
+        "type": "equipment",
+        "slot": "armor",
+        "unique": True,
+        "base_mods": {"Constitution": 8, "Wisdom": 6},
+        "elemental_res": {"magical": 1.15, "light": 1.1, "dark": 1.1},
+        "special": "blank_canvas",
+        "drop_source": "chromatic_artisan",
         "drop_rarity": "unique",
     },
     "perception_blocking_mask": {

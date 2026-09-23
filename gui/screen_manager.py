@@ -22,7 +22,6 @@ _GAME_SCREENS = {
     "CityScreen",
     "DungeonScreen",
     "WorldMapScreen",
-    "TravelScreen",
     "PostFloorScreen",
     "FacilityScreen",
 }
@@ -77,6 +76,20 @@ class ScreenManager:
         )
         self.top_info.pack(side=tk.LEFT, padx=4, pady=5)
 
+        # Session log button (top-right — opens the log popup)
+        self._log_btn = tk.Button(
+            self.top_bar,
+            text="📜",
+            bg=Theme.BG_MID,
+            fg=Theme.TEXT_DIM,
+            font=(Theme.FONT_FAMILY, 10),
+            relief=tk.FLAT,
+            cursor="hand2",
+            activebackground=Theme.BG_MID,
+            command=self._open_log_window,
+        )
+        self._log_btn.pack(side=tk.RIGHT, padx=(0, 12), pady=4)
+
         # Gold is now displayed in the hero card — top bar gold widget hidden
         self.top_gold = tk.Label(
             self.top_bar,
@@ -90,43 +103,6 @@ class ScreenManager:
         # Content area (screens render here)
         self.content_frame = tk.Frame(self.root, bg=Theme.BG_DARK)
         self.content_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-        # Bottom bar (log / notifications — always visible)
-        self.bottom_bar = tk.Frame(
-            self.root,
-            height=100,
-            bg=Theme.BG_DARK,
-            highlightthickness=1,
-            highlightbackground=Theme.BORDER,
-        )
-        self.bottom_bar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.bottom_bar.pack_propagate(False)
-
-        self.log_text = tk.Text(
-            self.bottom_bar,
-            height=4,
-            wrap=tk.WORD,
-            state=tk.DISABLED,
-            bg=Theme.BG_DARK,
-            fg=Theme.TEXT_DIM,
-            font=Theme.FONT_SMALL,
-            highlightthickness=0,
-            borderwidth=0,
-        )
-        self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=2)
-
-        # Log window button (bottom-right of bottom bar)
-        self._log_btn = tk.Button(
-            self.bottom_bar,
-            text="📜",
-            bg=Theme.BG_DARK,
-            fg=Theme.TEXT_DIM,
-            font=(Theme.FONT_FAMILY, 8),
-            relief=tk.FLAT,
-            cursor="hand2",
-            command=self._open_log_window,
-        )
-        self._log_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-2, y=2)
 
         # Toast container (overlay on root)
         self._toast_container = tk.Frame(self.root, bg="")
@@ -370,23 +346,29 @@ class ScreenManager:
     # ── Log / notifications ───────────────────────────────────────────────────
 
     def log(self, message: str, category: str = "system"):
-        """Append a line to the bottom log panel and persistent history."""
+        """Record a line in the persistent session log.
+
+        The old always-visible bottom bar was removed. Messages are stored
+        in the session history, viewable via the 📜 popup (top-right).
+        Important categories (events) auto-open the popup so the player
+        never misses them.
+        """
         self._log_entries.append((category, message))
         # Trim if needed
         max_lines = self.settings.get("log_max_lines", 1000)
         if len(self._log_entries) > max_lines:
             self._log_entries = self._log_entries[-max_lines:]
 
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + "\n")
-        self.log_text.see(tk.END)
-        self.log_text.config(state=tk.DISABLED)
+        # Auto-open the log popup for important categories
+        if category == "event":
+            self.root.after(200, self._open_log_window)
 
     def clear_log(self):
-        """Clear the bottom log panel."""
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.delete("1.0", tk.END)
-        self.log_text.config(state=tk.DISABLED)
+        """Compatibility no-op — the bottom log panel was removed.
+
+        Screens still call this on build; the session history is preserved.
+        """
+        pass
 
     def show_toast(self, message: str, category: str = "info", duration_ms: int = 3000):
         """Show a slide-in toast notification."""

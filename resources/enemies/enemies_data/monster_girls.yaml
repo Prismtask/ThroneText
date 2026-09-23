@@ -3875,3 +3875,16 @@ affection_gifts:
       Wisdom: 2
       Learning: 1
       Charisma: 1
+  wonderland_palette:
+    book: 35
+    flowers: 25
+    jewelry: 20
+    candy: 15
+    weapon: -10
+    mods:
+      Strength: 1
+      Constitution: 2
+      Dexterity: 2
+      Wisdom: 2
+      Learning: 1
+      Charisma: 1

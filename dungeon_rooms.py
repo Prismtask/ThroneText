@@ -11,7 +11,7 @@ Room types:
 import random
 from character import player_max_hp
 from combat.stats import compute_player_stats
-from utils import clear_screen, advance_time
+from utils import clear_screen, advance_time, _tprint, _tpause, _tclear, _tmenu, _tinput
 from resources.items import ITEMS, ITEM_RARITY, build_item
 from inventory import add_item_to_inventory, remove_item_by_reference
 from leveling import gain_exp, gain_exp_ally
@@ -23,78 +23,6 @@ from facilities.travel_events import (
     _random_item_id, _item_stat_line, _charisma_discount,
     _merchant_price, _sell_price, _merchant_stock_rarity, _add_to_inv
 )
-
-# ── GUI terminal detection (safe import for terminal mode) ──────────
-try:
-    from gui.terminal import get_terminal as _get_gui_terminal
-except ImportError:
-    _get_gui_terminal = lambda: None
-
-
-def _term():
-    """Return the GUI Terminal if running in GUI mode, else None."""
-    return _get_gui_terminal()
-
-
-def _tprint(*args, sep=" "):
-    """Print to GUI if available, else to terminal."""
-    t = _term()
-    text = sep.join(str(a) for a in args)
-    if t:
-        t.print(text)
-    else:
-        print(text)
-
-
-def _tpause(prompt="Press Enter to continue..."):
-    """Pause for user acknowledgement."""
-    t = _term()
-    if t:
-        t.pause(prompt)
-    else:
-        input(prompt)
-
-
-def _tclear():
-    """Clear screen (no-op in GUI since output is managed by the panel)."""
-    t = _term()
-    if t:
-        t.clear()
-    else:
-        from utils import clear_screen
-        clear_screen()
-
-
-def _tmenu(options, prompt="Choose an option:", allow_cancel=False, cancel_label="Cancel"):
-    """Show a menu; returns 0-based index or -1."""
-    t = _term()
-    if t:
-        return t.menu(options, prompt=prompt, allow_cancel=allow_cancel, cancel_label=cancel_label)
-    else:
-        for i, opt in enumerate(options):
-            print(f"{i+1}. {opt}")
-        if allow_cancel:
-            print(f"0. {cancel_label}")
-        try:
-            choice = input(prompt + " ").strip()
-            idx = int(choice) - 1
-            if allow_cancel and idx == -1:
-                return -1
-            if 0 <= idx < len(options):
-                return idx
-        except (ValueError, IndexError):
-            pass
-        return -1
-
-
-def _tinput(prompt=""):
-    """Free-text input. Falls back to terminal input() if no GUI."""
-    t = _term()
-    if t:
-        return t.input(prompt)
-    else:
-        return input(prompt)
-
 
 # ── Room type weights ─────────────────────────────────────────────
 ROOM_TYPE_WEIGHTS = {
@@ -535,7 +463,7 @@ def handle_merchant_room(player, floor):
             _tprint("\nYour inventory:")
             sell_options = []
             for i, item in enumerate(inv):
-                unit_price = _sell_price(player, item)
+                unit_price = _sell_price(item, player)
                 count = item.get("count", 1)
                 stack_price = unit_price * count
                 count_str = f" (x{count})" if count > 1 else ""
@@ -544,7 +472,7 @@ def handle_merchant_room(player, floor):
             sell_idx = _tmenu(sell_options, prompt="Sell which item?", allow_cancel=True, cancel_label="Never mind")
             if 0 <= sell_idx < len(inv):
                 item = inv[sell_idx]
-                gold = _sell_price(player, item) * item.get("count", 1)
+                gold = _sell_price(item, player) * item.get("count", 1)
                 remove_item_by_reference(player, item, item.get("count", 1))
                 player["gold"] = player.get("gold", 0) + gold
                 _tprint(f'  Sold [{item["name"]}] for {gold}g.')
@@ -818,7 +746,7 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 _tprint(f"Found {gold} gold.")
 
                 # Wedding end-of-combat rewards
-                from combat.wedding_specials import apply_wedding_combat_end
+                from combat.weapon.wedding_specials import apply_wedding_combat_end
                 apply_wedding_combat_end(player, victory=True)
 
                 _tpause()
@@ -952,7 +880,7 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 player["gold"] = player.get("gold", 0) + gold
                 _tprint(f"Found {gold} gold.")
 
-                from combat.wedding_specials import apply_wedding_combat_end
+                from combat.weapon.wedding_specials import apply_wedding_combat_end
                 apply_wedding_combat_end(player, victory=True)
 
                 _tpause()

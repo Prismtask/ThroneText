@@ -1,11 +1,10 @@
 # ignis.py – Melt-Forge Golem Ignis super boss encounter
 import random
-from combat.stats import enemy_stats, compute_player_stats
-from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
-from combat.superboss_common import superboss_triple_action_loop, superboss_combat_loop
-from combat.status_effects import apply_weaken, apply_burn_to_player, format_player_status_line
-from combat.combat_io import c_print, c_input, c_clear
+from combat.stats import enemy_stats
+from combat.combat_ui import print_combat_hud
+from combat.superboss_common import superboss_combat_loop
+from combat.status_effects import apply_weaken, apply_burn_to_player
+from combat.combat_io import c_print, c_input
 from combat.helpers import format_damage_msg
 
 

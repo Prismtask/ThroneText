@@ -837,6 +837,46 @@ wl_wicked_witch_shadow:
 # HEROINE ALLIES (Phase 17)
 # ═══════════════════════════════════════════════════════════════════
 
+wonderland_palette:
+  name: Palette
+  race: Elemental
+  level: 1
+  base_hp: 24
+  mods:
+    Wisdom: 4
+    Learning: 3
+    Charisma: 3
+    Strength: -2
+    Constitution: 1
+    Dexterity: 1
+  boss: false
+  super_boss: false
+  _heroine: palette
+  _heroine_passive: living_pigment
+  dialogue:
+    capture: Palette blinks at the net, genuinely puzzled. 'Oh — no, I don't think
+      I'd paint well in a net. Would you like to talk instead? I don't... get
+      many visitors.'
+    recruit_denied: Palette's shoulders dip, just a little. 'That's... that's
+      alright. The atelier is quiet. I'm used to quiet.' They fuss with a brush
+      and do not quite look at you.
+    recruit_accepted: Palette's face lights up like wet paint catching the sun.
+      'Truly? Oh — I'll be careful, I promise. No accidental masterpieces on
+      your walls. Unless you'd like one. Do you like one?'
+    house_talk_low: Palette fidgets with the bristles of a brush, dipping it into
+      a pigment that isn't there. 'You're... you're not scary, you know. I was
+      sure you would be.'
+    house_talk_mid: Palette examines your sleeves with professional horror. 'That
+      color doesn't suit you at all. Here —' They paint a thread-thin stripe of
+      a different color up the cuff. Somehow, it is perfect.
+    house_talk_high: Palette has started leaving tiny painted gifts on your
+      windowsill — a storm cloud, a sleeping cat, a cup of tea that is somehow
+      still warm. Each one seems to say 'I thought of you', and then it is
+      painted into being.
+    house_talk_max: Palette curls up beside you, hands stained in seven colors.
+      'The others only ever saw the Artisan. You're the first person who let me
+      just... be Palette. Thank you. For letting the paint dry.'
+
 wonderland_alice:
   name: Alice
   race: Fey

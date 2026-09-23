@@ -1,10 +1,10 @@
 from combat.combat_io import c_print, c_input, c_clear
 import random
 from character import player_max_hp
-from combat.status_effects import cure_curse, apply_poison, is_silenced, is_dreaded, format_player_status_line
+from combat.status_effects import cure_curse, apply_poison, apply_healing, is_silenced, is_dreaded, format_player_status_line
 from combat.combat_ui import print_combat_hud, format_enemy_status_line
-from combat.abyss_fang import wield_abyss_fang
-from combat.wedding_specials import (
+from combat.weapon.abyss_fang import wield_abyss_fang
+from combat.weapon.wedding_specials import (
     apply_wedding_attack_bonus_procs,
     apply_wedding_on_hit,
     apply_wedding_on_kill,
@@ -12,11 +12,15 @@ from combat.wedding_specials import (
 from combat.action_menu import get_action_menu
 from combat.capture import is_monster_girl, is_capturable, attempt_capture
 from combat.stat_milestones import get_strength_bonus, get_wisdom_bonus, get_dexterity_damage_bonus
-from combat.skills import get_available_skills, execute_skill, set_skill_cooldown, format_mastery_label, get_passive_skill
+from combat.skills import get_available_skills, execute_skill, set_skill_cooldown, format_mastery_label, get_passive_skill, get_passive_life_steal
 from inventory import remove_item_by_reference
 
 
 def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None, on_hit=None, _action_override=None):
+    # Palette's Brush: reset the once-per-turn stance flag
+    from combat.weapon.palette_brush import begin_actor_turn
+    begin_actor_turn(player)
+
     if _action_override is None:
         # Normal player input
         print_combat_hud(player, enemies)
@@ -33,10 +37,54 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             c_print(f"Internal error: override action '{action}' is not available.")
             return "retry", False
 
+    # ----- BLANK CANVAS (shawl free action, once per combat) -----
+    if action == 'b':
+        from combat.weapon.blank_canvas_shawl import use_blank_canvas
+        for m in use_blank_canvas(player, True, player):
+            c_print(m)
+        return "retry", False
+
+    # ----- BRUSH STANCE (free action, once per turn) -----
+    if action == 't':
+        from combat.weapon.palette_brush import set_brush_stance
+        c_print(set_brush_stance(player))
+        return "retry", False
+
+    # ----- BRUSH EXHIBITS (i/k/g) -----
+    if action in ('i', 'k', 'g'):
+        from combat.weapon.palette_brush import (
+            _actor_has_palette_brush, execute_impasto_exhibit,
+            execute_chiaroscuro_exhibit, execute_signature_exhibit,
+            get_brush_exhibits,
+        )
+        if not _actor_has_palette_brush(player):
+            return "retry", False
+        key_map = {'i': 'impasto', 'k': 'chiaroscuro', 'g': 'signature'}
+        exhibit_key = key_map[action]
+        if exhibit_key not in [k for k, _ in get_brush_exhibits(player)]:
+            c_print("That exhibit is not available yet.")
+            return "retry", False
+        stats = (p_str, p_con, p_dex, p_ler, p_wis, p_cha)
+        enemies_before = [e for e in enemies if e["hp"] > 0]
+        if exhibit_key == "impasto":
+            msg, victory = execute_impasto_exhibit(player, enemies, stats, True)
+        elif exhibit_key == "chiaroscuro":
+            msg, victory = execute_chiaroscuro_exhibit(player, enemies, stats, True)
+        else:
+            msg, victory = execute_signature_exhibit(player, enemies, stats, True)
+        c_print(msg)
+        if on_kill:
+            for e in enemies_before:
+                if e["hp"] <= 0:
+                    on_kill(e, enemies)
+        if victory:
+            return "victory", False
+        return "continue", False
+
     # ----- SKILLS (numbered 1-9) or GLOVES WORKSHOPS -----
     if action.isdigit():
         # Check if Black Silence Gloves are equipped — workshop attacks replace skills
-        from combat.black_silence_gloves import _player_has_black_silence_gloves, execute_workshop, execute_furioso
+        from combat.weapon.black_silence_gloves import _player_has_black_silence_gloves, execute_workshop, execute_furioso
 
         if _player_has_black_silence_gloves(player):
             if action == '0':
@@ -67,7 +115,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 if workshop_id in ws_used:
                     c_print("That workshop has already been used this cycle!")
                     return "retry", False
-                from combat.black_silence_gloves import WORKSHOPS
+                from combat.weapon.black_silence_gloves import WORKSHOPS
                 ws = WORKSHOPS.get(workshop_id, {})
                 ws_name = ws.get("name", f"Workshop {workshop_id}")
                 ws_desc = ws.get("desc", "")
@@ -231,6 +279,10 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         element = get_attack_element(player, equipped_weapon)
         final_dmg = calculate_elemental_damage(dmg, player, target, element)
 
+        # Palette's Brush: stance damage multiplier
+        from combat.weapon.palette_brush import get_brush_damage_mult
+        final_dmg = int(final_dmg * get_brush_damage_mult(player))
+
         # ── Pierce (Magical trait): ignore portion of enemy elemental resistance ──
         if pre_dmg and pre_dmg.get("res_ignore", 0) > 0 and element:
             ignore_pct = int(pre_dmg["res_ignore"] * 100)
@@ -250,7 +302,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             final_dmg = int(final_dmg * (1 + bonus))
 
         # Captain's Cutlass: High Tide + Rally attack bonuses
-        from combat.captain_cutlass import get_high_tide_attack_bonus, get_rally_attack_bonus
+        from combat.weapon.captain_cutlass import get_high_tide_attack_bonus, get_rally_attack_bonus
         final_dmg += get_high_tide_attack_bonus(player, final_dmg)
         final_dmg += get_rally_attack_bonus(player, final_dmg)
         final_dmg = max(0, final_dmg)
@@ -273,6 +325,24 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if on_hit:
             on_hit(target, enemies)
         target["hp"] -= final_dmg
+        # ── Sky Piercer: execute non-superboss enemies left at/below threshold ──
+        from combat.weapon.sky_piercer import check_sky_piercer_execute
+        check_sky_piercer_execute(player, target, final_dmg)
+        # ── Life steal (Warlock Soul Siphon passive / Barbarian Bloodlust) ──
+        ls = get_passive_life_steal(player)
+        if ls > 0 and final_dmg > 0:
+            heal = int(final_dmg * ls)
+            if heal > 0:
+                actual = apply_healing(player, heal)
+                if actual < 0:
+                    c_print(f"  [Soul Siphon] The void twists the healing! You take {-actual} damage!")
+                elif actual > 0:
+                    c_print(f"  [Soul Siphon] You recover {actual} HP.")
+        # Palette's Brush: strokes, Pigment Explosion, aura procs
+        from combat.weapon.palette_brush import _actor_has_palette_brush, on_brush_attack_hit
+        if _actor_has_palette_brush(player):
+            for m in on_brush_attack_hit(player, target, final_dmg, enemies):
+                c_print(m)
         # Wake sleeping enemy on damage
         from combat.status_effects import wake_on_damage
         wake_msg = wake_on_damage(target)
@@ -313,7 +383,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 apply_trait_on_kill(trait, player, target, enemies)
 
             # Captain's Cutlass: High Tide stack on kill
-            from combat.captain_cutlass import check_high_tide_kill
+            from combat.weapon.captain_cutlass import check_high_tide_kill
             check_high_tide_kill(player, target)
         return "continue", False
 
@@ -555,6 +625,9 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                         msg += f"(ignores {item['armor_pierce']} armor) "
                     final_dmg = max(1, dmg - armor)
                     target["hp"] -= final_dmg
+                    # ── Sky Piercer: execute non-superboss enemies left at/below threshold ──
+                    from combat.weapon.sky_piercer import check_sky_piercer_execute
+                    check_sky_piercer_execute(player, target, final_dmg)
                     # Wake sleeping enemy on damage
                     from combat.status_effects import wake_on_damage
                     wake_msg = wake_on_damage(target)
@@ -634,12 +707,12 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
     # ----- CREW RALLY -----
     elif action == "r":
-        from combat.captain_cutlass import use_crew_rally
+        from combat.weapon.captain_cutlass import use_crew_rally
         return use_crew_rally(player)
 
     # ----- REWRITE (Author's Pen) -----
     elif action == "e":
-        from combat.authors_pen import use_rewrite
+        from combat.weapon.authors_pen import use_rewrite
         return use_rewrite(player)
 
     # ----- FLEE -----

@@ -41,6 +41,57 @@ def _tinput(prompt=""):
         return input(prompt)
 
 
+def _tclear():
+    """Clear screen (no-op in GUI since output is managed by the panel)."""
+    t = _term()
+    if t:
+        t.clear()
+    else:
+        clear_screen()
+
+
+def _tmenu(options, prompt="Choose an option:", allow_cancel=False, cancel_label="Cancel"):
+    """Show a menu; returns 0-based index or -1."""
+    t = _term()
+    if t:
+        return t.menu(options, prompt=prompt, allow_cancel=allow_cancel, cancel_label=cancel_label)
+    else:
+        for i, opt in enumerate(options):
+            print(f"{i+1}. {opt}")
+        if allow_cancel:
+            print(f"0. {cancel_label}")
+        try:
+            choice = input(prompt + " ").strip()
+            idx = int(choice) - 1
+            if allow_cancel and idx == -1:
+                return -1
+            if 0 <= idx < len(options):
+                return idx
+        except (ValueError, IndexError):
+            pass
+        return -1
+
+
+def _get_wonderland_max_floor(player):
+    """Return the highest floor reached in Wonderland dungeon."""
+    wl_prog = player.get("city_floors", {}).get("wonderland", {})
+    return wl_prog.get("max_floor", 1)
+
+
+def _int_to_roman(num):
+    """Convert integer (1-10) to Roman numeral."""
+    val = [10, 9, 5, 4, 1]
+    syms = ["X", "IX", "V", "IV", "I"]
+    roman = ""
+    i = 0
+    while num > 0:
+        d = num // val[i]
+        roman += syms[i] * d
+        num -= d * val[i]
+        i += 1
+    return roman
+
+
 def apply_death_penalty(player):
     """Apply death penalties without any I/O. Safe for both terminal and GUI modes.
 

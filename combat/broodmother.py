@@ -31,11 +31,11 @@ Phase 3 — "Vileheart's Desperation" (35%–0% HP):
 
 import random
 from combat.stats import enemy_stats, compute_player_stats
-from combat.combat_ui import format_enemy_status_line, print_combat_hud
+from combat.combat_ui import print_combat_hud
 from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_poison
 from combat.ally import get_active_allies, compute_ally_stats
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input
 
 # ═══════════════════════════════════════════════════════════════════
 # CONSTANTS

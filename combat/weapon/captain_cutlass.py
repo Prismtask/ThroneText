@@ -267,16 +267,16 @@ def get_high_tide_attack_bonus(actor, base_dmg):
     return int(base_dmg * stacks * 0.05)
 
 
-def apply_high_tide_vulnerability(player, incoming_dmg):
+def apply_high_tide_vulnerability(actor, incoming_dmg):
     """Increase incoming damage based on High Tide stacks.
 
     Rally suppresses this vulnerability while active.
     """
-    if not _player_has_captain_cutlass(player):
+    if not _player_has_captain_cutlass(actor):
         return incoming_dmg
-    if player.get("cutlass_rally_ignore_high_tide"):
+    if actor.get("cutlass_rally_ignore_high_tide"):
         return incoming_dmg
-    stacks = player.get("cutlass_high_tide_stacks", 0)
+    stacks = actor.get("cutlass_high_tide_stacks", 0)
     if stacks <= 0:
         return incoming_dmg
     extra = int(incoming_dmg * stacks * 0.10)
@@ -285,25 +285,26 @@ def apply_high_tide_vulnerability(player, incoming_dmg):
     return incoming_dmg + extra
 
 
-def apply_rally_damage_reduction(player, incoming_dmg):
+def apply_rally_damage_reduction(actor, incoming_dmg):
     """Apply percentage damage reduction from Crew Rally."""
-    if not player.get("cutlass_rally_active"):
+    if not actor.get("cutlass_rally_active"):
         return incoming_dmg
-    dr = player.get("cutlass_rally_dr", 0)
+    dr = actor.get("cutlass_rally_dr", 0)
     if dr <= 0:
         return incoming_dmg
     reduced = int(incoming_dmg * (1.0 - dr))
     if reduced < incoming_dmg:
-        c_print(f"  [RALLY] The spectral crew shields you! (-{incoming_dmg - reduced} damage)")
+        owner = "you" if not actor.get("is_ally") else actor.get("name", "The wielder")
+        c_print(f"  [RALLY] The spectral crew shields {owner}! (-{incoming_dmg - reduced} damage)")
     return reduced
 
 
-from combat.combat_io import c_print, c_input, c_clear
-def get_rally_attack_bonus(player, base_dmg):
+from combat.combat_io import c_print, c_input
+def get_rally_attack_bonus(actor, base_dmg):
     """Return bonus damage from Crew Rally attack multiplier."""
-    if not player.get("cutlass_rally_active"):
+    if not actor.get("cutlass_rally_active"):
         return 0
-    mult = player.get("cutlass_rally_attack_mult", 0)
+    mult = actor.get("cutlass_rally_attack_mult", 0)
     if mult <= 0:
         return 0
     return int(base_dmg * mult)

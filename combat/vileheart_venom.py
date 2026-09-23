@@ -13,9 +13,10 @@ def _actor_has_vileheart_pendant(actor):
     """Return True if the actor has the Vileheart Pendant equipped."""
     equipment = actor.get("equipped", {})
     if isinstance(equipment, dict):
-        acc = equipment.get("accessory")
-        if acc and acc.get("special") == "vileheart_venom":
-            return True
+        for slot in ("accessory1", "accessory2", "accessory"):
+            acc = equipment.get(slot)
+            if acc and acc.get("special") == "vileheart_venom":
+                return True
     return False
 
 

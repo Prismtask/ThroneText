@@ -147,6 +147,9 @@ def ensure_player_fields(player):
     player.setdefault("engaged_girls", [])
     player.setdefault("married_girls", [])
 
+    # Tutorial tracking
+    player.setdefault("tutorial_seen", False)
+
     # Clean up leftover combat-only state that may be non-serializable
     for _key in ("gloves_workshop_used", "gloves_furioso_available", "gloves_first_strike_active"):
         player.pop(_key, None)
@@ -160,6 +163,10 @@ def ensure_player_fields(player):
     player.setdefault("cutlass_riposte_count", 0)
     player.setdefault("potion_sickness", 0)  # turns remaining before another consumable can be used
     player.setdefault("wonderland_shadows", [])  # persistent Wonderland shadow choices (floor 41+)
+
+    # Guild legacy rewards (Sky Piercer)
+    player.setdefault("defeated_superbosses", [])  # distinct superboss ids defeated
+    player.setdefault("sky_piercer_claimed", False)
 
     # Ensure ally and house girl fields for leveling system
     for ally in player.get("allies", []):
@@ -229,7 +236,7 @@ def player_max_hp(player_or_attrs):
         bonus = player_or_attrs.get("level_hp_bonus", 0)
         base = 15 + attrs["Constitution"] * 3 + bonus
         # Wedding max HP bonus (matriarchs_embrace)
-        from combat.wedding_specials import apply_wedding_max_hp_bonus
+        from combat.weapon.wedding_specials import apply_wedding_max_hp_bonus
         return base + apply_wedding_max_hp_bonus(player_or_attrs)
     else:
         attrs = player_or_attrs
@@ -337,6 +344,7 @@ def build_character(race_key, class_key, final_attrs, name, slot):
         "girl_daily_last_day": 0,
         "engaged_girls": [],
         "married_girls": [],
+        "tutorial_seen": False,
     }
     return player
 

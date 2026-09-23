@@ -1,34 +1,18 @@
 # facilities/blacksmith.py
 import random
-from resources.items import ITEMS, ITEM_RARITY
+from resources.items import ITEM_RARITY
 from resources.dialogues import BLACKSMITH_DIALOGUES
-from inventory import add_item_to_inventory, apply_scroll_to_item, remove_item_by_reference
-from utils import clear_screen, advance_time
-from combat.stats import get_effective_attribute
-from city_dialogue import service_dialogue
+from inventory import apply_scroll_to_item, remove_item_by_reference
+from utils import advance_time
 from gui.terminal import term
 from gui.theme import Theme
+from facilities.shop import get_discounted_price
 
 def blacksmith_greeting(dialogues):
     term.print(random.choice(dialogues["greeting"]))
 
 def blacksmith_farewell(dialogues):
     term.print(random.choice(dialogues["farewell"]))
-
-def get_effective_charisma(player):
-    """Fetch the player's true charisma attribute score including equipment."""
-    return get_effective_attribute(player, "Charisma")
-
-def get_discounted_blacksmith_price(base_price, player, city_id):
-    charisma = get_effective_charisma(player)
-    favor = player.get("favor", {}).get(city_id, 0)
-    
-    discount_percent = min(40, max(0, (charisma - 8) * 0.5))
-    favor_discount = min(30, favor * 0.5)
-    total_discount = min(70, discount_percent + favor_discount)
-    
-    discounted = int(base_price * (100 - total_discount) / 100)
-    return max(1, discounted)
 
 def _rarity_style(item):
     """Return a button style dict for the given item based on its rarity."""
@@ -109,7 +93,7 @@ def enhance_item(player, dialogues, city_id):
     # This closes the exploit where players could degrade rarity, enchant cheaply,
     # then upgrade rarity back — high-enchant items are always expensive regardless.
     base_cost = int(50 * rarity_mult * (1.5 ** new_enhance))
-    cost = get_discounted_blacksmith_price(base_cost, player, city_id)
+    cost = get_discounted_price(base_cost, player, city_id)
     term.print(f"Enhance to +{new_enhance} costs {cost} gold (Discounts applied).")
 
     if not term.confirm("Proceed?"):
@@ -190,7 +174,7 @@ def fuse_scroll_with_item(player, dialogues, city_id):
     
     # Apply standard fusion pricing rules modified by Charisma value
     base_cost = 150
-    cost = get_discounted_blacksmith_price(base_cost, player, city_id)
+    cost = get_discounted_price(base_cost, player, city_id)
     term.print(f"Fusing {scroll['name']} into {eq_item['name']} costs {cost} gold.")
 
     if not term.confirm("Proceed?"):

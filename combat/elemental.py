@@ -378,6 +378,12 @@ def get_attack_element(attacker, equipped_weapon=None):
     """Determine the element of a basic attack based on equipped weapon.
     Returns an element string or None for neutral/physical.
     """
+    # Palette's Brush: committed stance overrides the weapon's default element
+    from combat.weapon.palette_brush import get_brush_stance_element
+    stance_el = get_brush_stance_element(attacker)
+    if stance_el:
+        return stance_el
+
     if equipped_weapon and "elemental_dmg" in equipped_weapon:
         # Return the element with the highest damage multiplier > 1.0
         best_el = None
@@ -396,35 +402,44 @@ def calculate_elemental_damage(base_dmg, attacker, target, element=None):
     
     If element is None, attempts to auto-detect from attacker's weapon.
     If no element is found, damage is neutral (1.0).
+    Momentum buff (+3% per stack) applies in both cases.
     """
     if element is None:
         element = get_attack_element(attacker)
     
     if not element or element not in ELEMENTS:
-        return base_dmg
+        final_dmg = base_dmg
+    else:
+        # Get attacker's damage multiplier for this element
+        attacker_dmg = attacker.get("elemental_dmg", {})
+        dmg_mult = attacker_dmg.get(element, 1.0)
+        
+        # Arcane Blessing: Elemental Attunement boost
+        from facilities.arcane_tower import get_arcane_elemental_boost
+        boost = get_arcane_elemental_boost(attacker)
+        if boost > 0:
+            dmg_mult += boost
+        
+        # Get target's resistance to this element
+        target_res = target.get("elemental_res", {})
+        res_mult = target_res.get(element, 1.0)
+        
+        # Apply elemental_weakness debuff (reduces all resistances)
+        for debuff in target.get("active_debuffs", []):
+            if debuff.get("type") == "elemental_weakness":
+                weakness = debuff.get("value", 0)
+                res_mult -= weakness
+                break
+        
+        final_dmg = int(base_dmg * dmg_mult * res_mult)
     
-    # Get attacker's damage multiplier for this element
-    attacker_dmg = attacker.get("elemental_dmg", {})
-    dmg_mult = attacker_dmg.get(element, 1.0)
+    # Momentum buff: +3% damage per stack (Chronoweave Mantle).
+    # Integer math avoids float rounding (0.03 * N truncation issues).
+    from combat.status_effects import get_momentum_stacks
+    momentum_stacks = get_momentum_stacks(attacker)
+    if momentum_stacks > 0:
+        final_dmg = int(final_dmg * (100 + momentum_stacks * 3) / 100)
     
-    # Arcane Blessing: Elemental Attunement boost
-    from facilities.arcane_tower import get_arcane_elemental_boost
-    boost = get_arcane_elemental_boost(attacker)
-    if boost > 0:
-        dmg_mult += boost
-    
-    # Get target's resistance to this element
-    target_res = target.get("elemental_res", {})
-    res_mult = target_res.get(element, 1.0)
-    
-    # Apply elemental_weakness debuff (reduces all resistances)
-    for debuff in target.get("active_debuffs", []):
-        if debuff.get("type") == "elemental_weakness":
-            weakness = debuff.get("value", 0)
-            res_mult -= weakness
-            break
-    
-    final_dmg = int(base_dmg * dmg_mult * res_mult)
     return max(0, final_dmg)
 
 

@@ -1,16 +1,12 @@
 # sylvana.py – Queen of Mirrors Sylvana super boss encounter
 import random
-from combat.stats import enemy_stats, compute_player_stats
-from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header, print_combat_hud
-from combat.superboss_common import superboss_triple_action_loop, superboss_combat_loop
-from character import player_max_hp
+from combat.stats import enemy_stats
+from combat.combat_ui import print_combat_hud
+from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import (
-    apply_poison, apply_curse,
-    tick_enemy_debuffs, tick_player_debuffs, tick_player_buffs,
-    cure_curse, apply_weaken, format_player_status_line, apply_silence, apply_blind
+    apply_blind
 )
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input
 
 # ---------------------------------------------------------------------------
 # Custom Handlers

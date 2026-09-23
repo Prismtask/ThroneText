@@ -29,7 +29,7 @@ Passive income now scales with your highest dungeon floor cleared across all
 regions so it stays relevant in late game.
 """
 
-from utils import clear_screen, advance_time
+from utils import advance_time, _int_to_roman
 from events import format_date
 from character import player_max_hp
 import random
@@ -421,7 +421,7 @@ def _house_storage(player, city_id, house):
                 continue
 
             # Check capacity before depositing
-            from combat.wedding_specials import is_wedding_item_soulbound
+            from combat.weapon.wedding_specials import is_wedding_item_soulbound
             filtered_indices = []
             for i in indices:
                 item = all_sorted[i]
@@ -556,20 +556,6 @@ def _house_upgrade(player, city_id, house):
     term.print(f"Your home has been expanded into a fine {next_data['name']}!")
     term.print(f"  Remaining gold: {player['gold']}")
     term.pause()
-
-
-def _int_to_roman(num):
-    """Convert integer (1-10) to Roman numeral."""
-    val = [10, 9, 5, 4, 1]
-    syms = ["X", "IX", "V", "IV", "I"]
-    roman = ""
-    i = 0
-    while num > 0:
-        d = num // val[i]
-        roman += syms[i] * d
-        num -= d * val[i]
-        i += 1
-    return roman
 
 
 def _get_ascension_requirements(current_cap):

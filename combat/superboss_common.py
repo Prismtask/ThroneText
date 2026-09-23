@@ -1,13 +1,18 @@
-from combat.abyss_fang import (
+from combat.weapon.abyss_fang import (
     apply_abyss_tempo_round_start,
     tick_abyss_fang_cooldown,
     tick_abyssal_tempo,
     clear_abyss_fang_state,
     get_abyssal_tempo_count,
 )
-from combat.captain_cutlass import (
+from combat.weapon.captain_cutlass import (
     clear_captain_cutlass_state,
     tick_captain_cutlass,
+)
+from combat.weapon.authors_pen import (
+    snapshot_party_hp,
+    compute_last_round_damage,
+    tick_authors_pen_cooldown,
 )
 # combat/superboss_common.py
 """Shared functions for superboss fights, extracted to break circular imports."""
@@ -20,61 +25,8 @@ from combat.status_effects import tick_player_debuffs, tick_player_buffs
 from combat.skills import tick_skill_cooldowns
 from combat.ally import get_alive_allies, get_active_allies, compute_ally_stats, handle_ally_turn
 from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_engine import prune_dead, roll_initiative
 import random
-
-
-def prune_dead(enemies):
-    return [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
-
-
-def roll_initiative(player, enemies):
-    """Return sorted turn order list including player and allies."""
-    p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
-    combatants = []
-
-    # Player
-    from combat.black_silence_gloves import get_gloves_initiative_bonus
-    player_speed = random.randint(1, 20) + p_dex + get_gloves_initiative_bonus(player)
-    combatants.append({
-        "type": "player",
-        "speed": player_speed,
-        "label": "You",
-        "entity": player,
-        "extra_turn": None,
-    })
-
-    # Allies (active combat row only)
-    allies = get_active_allies(player)
-    for idx, ally in enumerate(allies):
-        a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
-        eff_dex = a_dex
-        if ally.get("slowed"):
-            eff_dex = max(-10, eff_dex - 3)
-        speed = random.randint(1, 20) + eff_dex + get_gloves_initiative_bonus(ally)
-        combatants.append({
-            "type": "ally",
-            "speed": speed,
-            "label": f"{ally['name']}",
-            "entity": ally,
-            "extra_turn": None,
-        })
-
-    # Enemies
-    for idx, enemy in enumerate(enemies):
-        eff_dex = enemy["dex_mod"]
-        if enemy.get("slowed"):
-            eff_dex = max(-10, eff_dex - 3)
-        speed = random.randint(1, 20) + eff_dex
-        combatants.append({
-            "type": "enemy",
-            "speed": speed,
-            "label": f"[{idx + 1}] {enemy['name']}",
-            "entity": enemy,
-            "extra_turn": None,
-        })
-
-    combatants.sort(key=lambda c: (c["speed"], random.random()), reverse=True)
-    return combatants
 
 
 def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill, print_hud_func):
@@ -120,7 +72,8 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                           on_player_hit_hook=None,
                           player_action_override=None,
                           enemy_turn_hook=None,
-                          post_round_hook=None):
+                          post_round_hook=None,
+                          party_damage_hook=None):
     """
     Initiative‑based superboss combat loop with hooks for special mechanics.
     """
@@ -134,9 +87,39 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         lambda target, elist: on_player_hit_hook(target, elist, context)
         if on_player_hit_hook else None
     )
-    player["tarnished_jade_pins"] = 1
+    from combat.weapon.tarnished_jade import _actor_has_tarnished_jade
+    # Pins only start accumulating if the Jade is actually equipped
+    player["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(player) else 0
     player["tarnished_jade_weakened"] = False
     clear_captain_cutlass_state(player)
+
+    # Palette's Brush + Blank Canvas Shawl state (player)
+    from combat.weapon.palette_brush import init_brush_state, _actor_has_palette_brush
+    from combat.weapon.blank_canvas_shawl import clear_shawl_state
+    clear_shawl_state(player)
+    if _actor_has_palette_brush(player):
+        init_brush_state(player)
+
+    # Init/clear ally unique-equipment state (mirrors combat_engine._combat_inner)
+    from combat.weapon.black_silence_gloves import init_gloves_state, _actor_has_black_silence_gloves
+    from combat.weapon.authors_pen import clear_authors_pen_state
+    from combat.weapon.captain_cutlass import _clear_captain_cutlass_state_actor
+    for ally in player.get("allies", []):
+        if ally.get("current_hp", 0) > 0:
+            clear_authors_pen_state(ally)
+            _clear_captain_cutlass_state_actor(ally, player_ref=player)
+            ally["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(ally) else 0
+            ally["tarnished_jade_weakened"] = False
+            # Mirror player context onto allies (Wonderland checks, floor-tracking uniques)
+            ally["floor"] = player.get("floor")
+            ally["dungeon_region"] = player.get("dungeon_region")
+            if _actor_has_black_silence_gloves(ally):
+                init_gloves_state(ally)
+            clear_shawl_state(ally)
+            from combat.palette_ally import clear_palette_ally_state
+            clear_palette_ally_state(ally)
+            if _actor_has_palette_brush(ally):
+                init_brush_state(ally)
 
     # Reset High Tide if floor changed
     if floor is not None and player.get("cutlass_high_tide_floor") != floor:
@@ -148,6 +131,15 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         round_num += 1
 
         apply_abyss_tempo_round_start(player)
+
+        # ── Author's Pen: snapshot party HP for Rewrite damage tracking ──
+        snapshot_party_hp(player)
+
+        # Chronoweave Mantle: turn-start Momentum gain (player + allies)
+        from combat.weapon.chronoweave import apply_chronoweave_turn_start
+        apply_chronoweave_turn_start(player)
+        for ally in get_active_allies(player):
+            apply_chronoweave_turn_start(ally)
 
         enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
@@ -185,7 +177,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             print_combat_hud(player, enemies, header=f"Superboss: {boss_name}")
 
         # --- Tarnished Jade: turn-start pin damage ---
-        from combat.tarnished_jade import apply_tarnished_jade_turn_start
+        from combat.weapon.tarnished_jade import apply_tarnished_jade_turn_start
         tj_triggered = apply_tarnished_jade_turn_start(player, enemies)
         if tj_triggered:
             enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
@@ -199,7 +191,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         turn_order = roll_initiative(player, enemies)
 
         # Black Silence Gloves: First Strike detection
-        from combat.black_silence_gloves import set_first_strike, _actor_has_black_silence_gloves
+        from combat.weapon.black_silence_gloves import set_first_strike, _actor_has_black_silence_gloves
         if _actor_has_black_silence_gloves(player):
             player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
             enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
@@ -267,6 +259,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
                 print_player_mini_hud(player, live_enemies)
 
+                pre_turn_enemy_hp = sum(e.get("hp", 0) for e in live_enemies if e.get("hp", 0) > 0)
                 while True:
                     action = (
                         player_action_override(context)
@@ -294,6 +287,13 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 elif result in ("fled", "dead"):
                     return result
 
+                # Party damage tracking (e.g. Palette's Signature interrupt)
+                if party_damage_hook:
+                    post_hp = sum(e.get("hp", 0) for e in live_enemies if e.get("hp", 0) > 0)
+                    dealt = max(0, pre_turn_enemy_hp - post_hp)
+                    if dealt > 0:
+                        party_damage_hook(dealt, context)
+
             elif combatant["type"] == "ally":
                 ally = combatant["entity"]
                 if ally.get("current_hp", 0) <= 0:
@@ -304,6 +304,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 elif combatant.get("extra_turn") == "clone":
                     c_print(f"👁️  MIRROR CLONE — {ally['name']} mirrors the enemy!")
 
+                pre_turn_enemy_hp = sum(e.get("hp", 0) for e in live_enemies if e.get("hp", 0) > 0)
                 while True:
                     result = handle_ally_turn(
                         ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
@@ -320,6 +321,13 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     break
                 elif result == "dead":
                     pass  # Ally death doesn't end combat
+
+                # Party damage tracking (e.g. Palette's Signature interrupt)
+                if party_damage_hook:
+                    post_hp = sum(e.get("hp", 0) for e in live_enemies if e.get("hp", 0) > 0)
+                    dealt = max(0, pre_turn_enemy_hp - post_hp)
+                    if dealt > 0:
+                        party_damage_hook(dealt, context)
 
                 # Clean up clones after their turn
                 if ally.get("is_clone"):
@@ -420,12 +428,17 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         tick_abyssal_tempo(player, prefix="")
         tick_captain_cutlass(player, prefix="")
 
+        # Author's Pen: round-end damage tracking + cooldown
+        compute_last_round_damage(player)
+        tick_authors_pen_cooldown(player, prefix="")
+
         # Tick ally weapon specials (Abyss Fang, Captain's Cutlass, Abyssal Tempo)
-        from combat.captain_cutlass import _tick_captain_cutlass_actor
+        from combat.weapon.captain_cutlass import _tick_captain_cutlass_actor
         for ally in get_alive_allies(player):
             tick_abyss_fang_cooldown(ally, prefix="")
             tick_abyssal_tempo(ally, prefix="")
             _tick_captain_cutlass_actor(ally, player_ref=player)
+            tick_authors_pen_cooldown(ally, prefix="")
 
         tick_skill_cooldowns(player)
         for ally in get_alive_allies(player):

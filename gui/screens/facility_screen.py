@@ -11,7 +11,6 @@ import builtins
 import queue
 import threading
 import tkinter as tk
-from tkinter import scrolledtext
 
 from gui.screens.base_screen import BaseScreen
 from gui.theme import Theme

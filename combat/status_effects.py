@@ -62,6 +62,9 @@ def apply_poison(target, damage, duration):
 
     Returns 'applied' or 'refreshed'.
     """
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(target):
+        return None
     existing = next(
         (d for d in target.get("active_debuffs", []) if d["type"] == "poison"),
         None,
@@ -77,6 +80,9 @@ def apply_poison(target, damage, duration):
 
 
 def apply_curse(player, enemy_level=None):
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     if player.get("cursed"):
         return "already_cursed"
     penalty = max(2, player.get("level", 1) // 3)   # dynamic
@@ -115,6 +121,10 @@ def apply_burn(target, tier=None, duration=3, damage=None):
             tier = damage_to_burn_tier(damage)
         else:
             tier = 2  # default
+
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(target):
+        return None
 
     tier_info = BURN_TIERS.get(tier, BURN_TIERS[2])
     damage_val = tier_info["damage"]
@@ -171,6 +181,10 @@ def apply_burn_to_player(player, tier=None, duration=3, damage=None):
             tier = damage_to_burn_tier(damage)
         else:
             tier = 1  # default
+
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
 
     tier_info = BURN_TIERS.get(tier, BURN_TIERS[1])
     damage_val = tier_info["damage"]
@@ -248,6 +262,9 @@ def apply_weaken(player, str_penalty=2, duration=3):
 
     Returns 'applied' or 'refreshed'.
     """
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     existing = next(
         (d for d in player.get("active_debuffs", []) if d["type"] == "weaken"),
         None,
@@ -272,6 +289,9 @@ def apply_bleed(target, damage, duration=4):
 
     Returns 'applied', 'refreshed', or 'no_change' (existing bleed is worse).
     """
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(target):
+        return None
     existing = next(
         (d for d in target.get("active_debuffs", []) if d["type"] == "bleed"),
         None,
@@ -295,6 +315,9 @@ def apply_silence(player, duration=2):
 
     Returns 'applied' or 'already_silenced'.
     """
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     if player.get("silenced"):
         return "already_silenced"
     player["silenced"] = True
@@ -306,6 +329,9 @@ def apply_silence(player, duration=2):
 
 def apply_blind(player, duration=2):
     """Blind the player – 25% miss chance, -2 Dex for flee."""
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     existing = next((d for d in player.get("active_debuffs", []) if d["type"] == "blind"), None)
     if existing:
         existing["remaining"] = max(existing["remaining"], duration)
@@ -326,6 +352,9 @@ def apply_drain(player, enemy, drain_amount):
     Returns actual amount drained (may be less than drain_amount if player
     would die — caller decides whether to clamp at 1).
     """
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return 0
     actual = min(drain_amount, player["current_hp"] - 1)   # leave player at 1
     actual = max(0, actual)
     player["current_hp"] -= actual
@@ -342,6 +371,9 @@ def apply_dread(player, duration=2):
 
     Returns 'applied' or 'already_dreaded'.
     """
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     if player.get("dreaded"):
         return "already_dreaded"
     player["dreaded"] = True
@@ -379,6 +411,9 @@ def apply_shock(enemy, damage, duration=3):
 
 def apply_shock_to_player(player, damage, duration=3):
     """Apply Shocked to a player — thunder DoT with 25% stun proc per tick."""
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     existing = next(
         (d for d in player.get("active_debuffs", []) if d["type"] == "shock"), None
     )
@@ -396,6 +431,9 @@ def apply_shock_to_player(player, damage, duration=3):
 
 def apply_slow_to_player(player, duration=2):
     """Apply a timed Slow debuff to the player (-3 DEX, initiative penalty)."""
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     existing = next(
         (d for d in player.get("active_debuffs", []) if d["type"] == "slow"), None
     )
@@ -411,6 +449,9 @@ def apply_slow_to_player(player, duration=2):
 
 def apply_confusion_to_player(player, duration=2):
     """Apply Confusion to a player — 30% chance to hit own ally or miss."""
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(player):
+        return None
     existing = next(
         (d for d in player.get("active_debuffs", []) if d["type"] == "confusion"), None
     )
@@ -628,6 +669,9 @@ def get_healing_multiplier(target):
 
 def apply_void_touched(target, duration=2):
     """Curse target with void — healing received becomes damage."""
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(target):
+        return None
     if target.get("void_touched"):
         return "already_void_touched"
     target["void_touched"] = True
@@ -1045,6 +1089,14 @@ def tick_player_buffs(player):
                 if "stat" in buff:
                     messages.append(f"Your {buff['stat']} buff wears off.")
 
+    # Blank Canvas Shawl: Afterimage countdown
+    from combat.weapon.blank_canvas_shawl import tick_afterimage
+    messages.extend(tick_afterimage(player))
+
+    # Palette's Brush: Palette heroine passives (Azure heal / Alabaster cleanse)
+    from combat.weapon.palette_brush import tick_palette_brush_passives
+    messages.extend(tick_palette_brush_passives(player))
+
     return messages
 
 
@@ -1145,6 +1197,7 @@ def get_player_status_tags(player):
         "vulnerable": "Vulnerable",
         "shock":   "Shocked",
         "void_touched": "Void-Touched",
+        "paint":   "Painted",
     }
     buff_labels = {
         "haste":   "Hasted",

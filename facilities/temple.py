@@ -1,28 +1,10 @@
 # facilities/temple.py
-import random
-from utils import clear_screen, advance_time
-from character import player_max_hp
+from utils import advance_time, _int_to_roman, _get_wonderland_max_floor
 from city_dialogue import service_dialogue
 from facilities.shop import get_discounted_price
 from resources.items import build_item
 from inventory import add_item_to_inventory, get_inventory_caps, count_inventory
 from gui.terminal import term
-
-
-# ── Roman numeral helpers ───────────────────────────────────────────────────
-
-def _int_to_roman(num):
-    """Convert integer (1-10) to Roman numeral."""
-    val = [10, 9, 5, 4, 1]
-    syms = ["X", "IX", "V", "IV", "I"]
-    roman = ""
-    i = 0
-    while num > 0:
-        d = num // val[i]
-        roman += syms[i] * d
-        num -= d * val[i]
-        i += 1
-    return roman
 
 
 def _get_global_max_floor(player):
@@ -150,12 +132,6 @@ def recover_allies(player, city_id):
 
 
 # ── Main menu ────────────────────────────────────────────────────────────────
-
-def _get_wonderland_max_floor(player):
-    """Return the highest floor reached in Wonderland dungeon."""
-    wl_prog = player.get("city_floors", {}).get("wonderland", {})
-    return wl_prog.get("max_floor", 1)
-
 
 def _godmother_interaction(player, city_id):
     """Handle the Fairy Godmother encounter in Wonderland's temple.

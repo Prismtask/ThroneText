@@ -673,6 +673,13 @@ heroine_passives:
       type: xp_boost
       value: 0.10
       target: party
+  living_pigment:
+    id: living_pigment
+    name: Living Pigment
+    description: Palette's paint is alive — +10% damage dealt with elemental attacks. (Permanent unlock)
+    effect:
+      type: elemental_damage_bonus
+      value: 0.10
 learnable_skills:
   offensive:
     slash:

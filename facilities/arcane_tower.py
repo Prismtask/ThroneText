@@ -21,12 +21,7 @@ from combat.skills import (
 from resources.items import build_item, ITEM_RARITY
 from inventory import add_item_to_inventory, remove_item_by_reference
 from resources.cities import CITIES
-
-
-def _get_wonderland_max_floor(player):
-    """Return the highest floor reached in Wonderland dungeon."""
-    wl_prog = player.get("city_floors", {}).get("wonderland", {})
-    return wl_prog.get("max_floor", 1)
+from utils import _get_wonderland_max_floor
 
 
 def _strip_wonderland_only_from_ally(ally):

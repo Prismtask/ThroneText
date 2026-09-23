@@ -1,27 +1,7 @@
 import random
 from character import player_max_hp
 from resources.items import build_item, ITEMS, ITEM_RARITY
-
-# ── GUI terminal detection (safe import for terminal mode) ──────────
-try:
-    from gui.terminal import get_terminal as _get_gui_terminal
-except ImportError:
-    _get_gui_terminal = lambda: None
-
-
-def _term():
-    """Return the GUI Terminal if running in GUI mode, else None."""
-    return _get_gui_terminal()
-
-
-def _tprint(*args, sep=" "):
-    """Print to GUI if available, else to terminal."""
-    t = _term()
-    text = sep.join(str(a) for a in args)
-    if t:
-        t.print(text)
-    else:
-        print(text)
+from utils import _tprint
 
 RARITY_ORDER = {
     "common": 0,

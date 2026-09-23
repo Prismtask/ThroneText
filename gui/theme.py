@@ -129,5 +129,4 @@ WINDOW_TITLE = "Pandemonium"
 
 # ── Layout Constants ──────────────────────────────────────────────────────────
 TOP_BAR_HEIGHT = 40
-BOTTOM_BAR_HEIGHT = 100
 PADDING = 10

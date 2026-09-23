@@ -12,6 +12,7 @@ from combat.yinglong import combat_yinglong
 from combat.rientrante import combat_rientrante
 from combat.everlong_ship import combat_everlong_ship
 from combat.black_silence import combat_black_silence
+from combat.palette_chromatic_artisan import combat_palette
 from combat.entangled_chrysalis import combat_entangled_chrysalis
 from combat.queen_of_hearts import combat_queen_of_hearts
 from combat.big_bad_wolf import combat_big_bad_wolf
@@ -21,7 +22,7 @@ from combat.mary_sue import combat_mary_sue
 from combat.wl_floor_bosses import get_wl_floor_boss, is_wl_boss_floor
 from character import player_max_hp
 from save_load import save_game
-from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time
+from utils import clear_screen, advance_time, get_difficulty_multiplier_from_time, format_time, _tprint, _tpause, _tclear, _tmenu, _term
 from leveling import gain_exp, gain_exp_ally
 import dungeon_rooms
 from dungeon_rooms import (
@@ -83,69 +84,6 @@ from wonderland_curses import (
     format_mary_sue_shadow_intro,
     get_mary_sue_shadow_modifiers,
 )
-
-# ── GUI terminal detection (safe import for terminal mode) ──────────
-try:
-    from gui.terminal import get_terminal as _get_gui_terminal
-except ImportError:
-    _get_gui_terminal = lambda: None
-
-
-def _term():
-    """Return the GUI Terminal if running in GUI mode, else None."""
-    return _get_gui_terminal()
-
-
-def _tprint(*args, sep=" "):
-    """Print to GUI if available, else to terminal."""
-    t = _term()
-    text = sep.join(str(a) for a in args)
-    if t:
-        t.print(text)
-    else:
-        print(text)
-
-
-def _tpause(prompt="Press Enter to continue..."):
-    """Pause for user acknowledgement."""
-    t = _term()
-    if t:
-        t.pause(prompt)
-    else:
-        input(prompt)
-
-
-def _tclear():
-    """Clear screen (no-op in GUI since output is managed by the panel)."""
-    t = _term()
-    if t:
-        t.clear()
-    else:
-        from utils import clear_screen
-        clear_screen()
-
-
-def _tmenu(options, prompt="Choose an option:", allow_cancel=False, cancel_label="Cancel"):
-    """Show a menu; returns 0-based index or -1."""
-    t = _term()
-    if t:
-        return t.menu(options, prompt=prompt, allow_cancel=allow_cancel, cancel_label=cancel_label)
-    else:
-        for i, opt in enumerate(options):
-            print(f"{i+1}. {opt}")
-        if allow_cancel:
-            print(f"0. {cancel_label}")
-        try:
-            choice = input(prompt + " ").strip()
-            idx = int(choice) - 1
-            if allow_cancel and idx == -1:
-                return -1
-            if 0 <= idx < len(options):
-                return idx
-        except (ValueError, IndexError):
-            pass
-        return -1
-
 
 def get_random_enemy_key(floor, boss=False, region=None, player=None):
     """Pick a random enemy suitable for the current floor.
@@ -505,6 +443,13 @@ _WL_SUPERBOSS_MAP = {
 }
 
 
+def _record_superboss_defeat(player, boss_id):
+    """Track distinct superboss kills (used by guild legacy rewards)."""
+    kills = player.setdefault("defeated_superbosses", [])
+    if boss_id not in kills:
+        kills.append(boss_id)
+
+
 def _wl_superboss_defeated(player, floor):
     """Return True if the Wonderland superboss for this floor was already defeated."""
     flag_map = {
@@ -563,6 +508,14 @@ def _wonderland_superboss_dispatch(player, floor, superboss_override):
             flag = flag_map.get(floor)
             if flag:
                 player[flag] = True
+
+            _record_superboss_defeat(player, {
+                10: "wl_queen_of_hearts",
+                20: "wl_big_bad_wolf",
+                30: "wl_wicked_witch",
+                40: "wl_jabberwock",
+                50: "wl_mary_sue",
+            }.get(floor, f"wl_floor_{floor}"))
 
             # Rewards: exp = 300 + (floor * 60), gold = 200 + (floor * 40)
             super_boss_exp = 300 + (floor * 60)
@@ -661,13 +614,18 @@ def _ensure_city_floors(player, city_id):
     if "city_floors" not in player:
         player["city_floors"] = {}
     if city_id not in player["city_floors"]:
-        # New city: start at floor 1, but allow selecting up to the
-        # highest floor unlocked in any other city.
         if player["city_floors"]:
-            best_max = max(cf["max_floor"] for cf in player["city_floors"].values())
+            # New city: dungeon is independent — always start at floor 1
+            # with only floor 1 unlocked.  Inheriting other cities'
+            # max_floor let players skip floors and instantly counted
+            # new biomes toward ascension/Pandemonium milestones.
+            player["city_floors"][city_id] = {"floor": 1, "max_floor": 1}
         else:
+            # Legacy save migration: no per-city data exists yet, so
+            # preserve the global max_floor for the first city so old
+            # saves don't lose their unlocked floors.
             best_max = player.get("max_floor", 1)
-        player["city_floors"][city_id] = {"floor": 1, "max_floor": max(1, best_max)}
+            player["city_floors"][city_id] = {"floor": 1, "max_floor": max(1, best_max)}
 
 
 def _grant_glass_anchor(player):
@@ -774,6 +732,7 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     result = combat_entangled_chrysalis(player, floor)
 
                 if result == "victory":
+                    _record_superboss_defeat(player, "entangled_chrysalis")
                     super_boss_exp = 800 + (floor * 60)
                     super_boss_gold = 500 + (floor * 40)
                     if player.get("pandemonium_mode"):
@@ -820,7 +779,7 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
         
         # 1. Initialize or refill the superboss pool if it's empty or missing
         if not player.get("superboss_pool"):
-            pool = [0, 1, 2, 3, 4, 5, 6, 7]
+            pool = [0, 1, 2, 3, 4, 5, 6, 7, 8]
             # Use seed + floor to keep the shuffle consistent per run/floor 
             # but fall back to a random seed if missing to prevent crashes
             rng = random.Random(player.get("superboss_seed", random.randint(1, 99999)) + floor)
@@ -855,6 +814,10 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
             _tprint("something terrible is about to happen.")
             _tprint("A figure in black stands in the center. They do not speak.")
             _tprint("Nine names are stitched into their gloves.")
+        elif tier == 8:
+            _tprint("The corridor ahead is unfinished — walls of raw gesso,")
+            _tprint("a floor sketched in charcoal. From somewhere beyond,")
+            _tprint("you hear the wet drag of a brush against canvas.")
         _tprint("You have stumbled directly into a SUPER BOSS ARENA!")
         _tprint("="*50)
         _tpause("Press Enter to face the horror...")
@@ -880,10 +843,24 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                 result = combat_everlong_ship(player)
             elif tier == 7:
                 result = combat_black_silence(player)
+            elif tier == 8:
+                result = combat_palette(player)
                 
             if result == "victory":
                 # 3. Remove the defeated boss from the pool so it won't spawn again until reshuffled
                 player["superboss_pool"].pop(0)
+
+                _record_superboss_defeat(player, {
+                    0: "broodmother_vileheart",
+                    1: "dream_devouring_slitcurrent",
+                    2: "queen_of_mirrors_sylvana",
+                    3: "melt_forge_golem_ignis",
+                    4: "heaven_banished_dragon_yinglong",
+                    5: "rientrante_frostbound",
+                    6: "captain_everlong_ship",
+                    7: "black_silence",
+                    8: "chromatic_artisan",
+                }.get(tier, f"superboss_tier_{tier}"))
                 
                 # Reward
                 super_boss_exp = 500 + (floor * 50)
@@ -1213,7 +1190,7 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                             _tprint(f"  {ally['name']} recovers {ally_heal} HP.")
 
                     # Wedding end-of-combat rewards
-                    from combat.wedding_specials import apply_wedding_combat_end
+                    from combat.weapon.wedding_specials import apply_wedding_combat_end
                     apply_wedding_combat_end(player, victory=True)
 
                     break
@@ -1320,11 +1297,13 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     t.open_inventory()
                     continue
                 elif choice == 2:  # Save and quit
-                    save_game(player)
-                    _tprint("Game saved. Exiting to menu.")
+                    # Clear run-only flags BEFORE saving so they never persist
+                    # into the save file (they are re-set on dungeon entry).
                     player.pop("pandemonium_mode", None)
                     player["cutlass_high_tide_stacks"] = 0
                     player.pop("cutlass_high_tide_floor", None)
+                    save_game(player)
+                    _tprint("Game saved. Exiting to menu.")
                     # Clear Wonderland state — preserved shadows will restore on reload via save
                     clear_wonderland_quirk(player)
                     return "save_exit"
@@ -1338,12 +1317,14 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     print("Inventory management is only available in GUI mode. Please use the launcher.")
                     continue
                 elif cmd == "s":
-                    save_game(player)
-                    print("Game saved. Exiting to menu.")
+                    # Clear run-only flags BEFORE saving so they never persist
+                    # into the save file (they are re-set on dungeon entry).
                     player.pop("pandemonium_mode", None)
                     # Reset High Tide when leaving dungeon
                     player["cutlass_high_tide_stacks"] = 0
                     player.pop("cutlass_high_tide_floor", None)
+                    save_game(player)
+                    print("Game saved. Exiting to menu.")
                     return "save_exit"
                 else:
                     continue

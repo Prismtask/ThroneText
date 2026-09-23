@@ -1,4 +1,4 @@
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print
 # enemy_ai.py – enemy turn logic and racial status effects
 import random
 from combat.status_effects import (
@@ -6,7 +6,7 @@ from combat.status_effects import (
     apply_drain, apply_silence, tick_enemy_debuffs
 )
 from resources.enemies import ENEMIES
-from combat.wedding_specials import (
+from combat.weapon.wedding_specials import (
     apply_wedding_dodge_bonus,
     apply_wedding_on_dodge,
     apply_wedding_damage_reduction,
@@ -215,28 +215,41 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
                 reduction = effect.get("value", 0)
                 enemy_dmg = int(enemy_dmg * (1 - reduction))
 
+    # Palette's Brush: Umber aura damage reduction (player or ally wielder)
+    from combat.weapon.palette_brush import get_brush_damage_reduction
+    brush_dr = get_brush_damage_reduction(player)
+    if brush_dr > 0 and enemy_dmg > 0:
+        enemy_dmg = int(enemy_dmg * (1 - brush_dr))
+
     # Wedding damage reduction (slime_absorb, stone_endurance, etc.)
     is_elemental = element is not None
     enemy_dmg = apply_wedding_damage_reduction(player, enemy_dmg, is_elemental=is_elemental, element=element)
 
-    # Captain's Cutlass: High Tide vulnerability + Rally damage reduction
-    if actual_player and player is actual_player:
-        from combat.captain_cutlass import apply_high_tide_vulnerability, apply_rally_damage_reduction
-        enemy_dmg = apply_high_tide_vulnerability(actual_player, enemy_dmg)
-        enemy_dmg = apply_rally_damage_reduction(actual_player, enemy_dmg)
+    # Captain's Cutlass: High Tide vulnerability + Rally damage reduction (player or ally wielder)
+    if actual_player:
+        from combat.weapon.captain_cutlass import apply_high_tide_vulnerability, apply_rally_damage_reduction
+        enemy_dmg = apply_high_tide_vulnerability(player, enemy_dmg)
+        enemy_dmg = apply_rally_damage_reduction(player, enemy_dmg)
+
+    # Chronoweave Mantle: once-per-floor fatal survival (player or ally wielder)
+    from combat.weapon.chronoweave import check_chronoweave_fatal_survival
+    enemy_dmg, _ = check_chronoweave_fatal_survival(player, enemy_dmg)
 
     # Wedding fatal blow survival (bark_shield)
     enemy_dmg = apply_wedding_fatal_blow_survival(player, enemy_dmg)
 
     # --- Tarnished Jade trigger check (before applying damage) ---
-    if actual_player and player is actual_player and _player_has_tarnished_jade(actual_player) and all_enemies:
-        from combat.tarnished_jade import check_tarnished_jade_trigger
-        should_apply, _ = check_tarnished_jade_trigger(actual_player, enemy_dmg, all_enemies, enemy, "enemy_attack")
+    if actual_player and _player_has_tarnished_jade(player) and all_enemies:
+        from combat.weapon.tarnished_jade import check_tarnished_jade_trigger
+        should_apply, _ = check_tarnished_jade_trigger(
+            player, enemy_dmg, all_enemies, enemy, "enemy_attack",
+            is_player=(player is actual_player),
+        )
         if not should_apply:
             c_print(f"  The {enemy['name']}'s attack is REPULSED by the Tarnished Jade!")
-            c_print(f"  {actual_player['name']} takes 0 damage! [Divine Intervention]")
+            c_print(f"  {player['name']} takes 0 damage! [Divine Intervention]")
             if extra_logic:
-                msg = extra_logic(enemy, actual_player, 0)
+                msg = extra_logic(enemy, player, 0)
                 if msg:
                     c_print(msg)
             return "hit"
@@ -286,12 +299,13 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
                 if enemy["hp"] <= 0:
                     c_print(f"  The {enemy['name']} is shattered by the backlash!")
 
-    # Tarnished Jade: pin on taking damage
-    if actual_player and _player_has_tarnished_jade(actual_player):
-        from combat.tarnished_jade import add_tarnished_jade_pin
-        add_tarnished_jade_pin(actual_player)
-        pins = actual_player.get("tarnished_jade_pins", 0)
-        c_print(f"  📌 Your Tarnished Jade embeds a pin! ({pins}/10)")
+    # Tarnished Jade: pin on taking damage (player or ally wielder)
+    if _player_has_tarnished_jade(player):
+        from combat.weapon.tarnished_jade import add_tarnished_jade_pin
+        add_tarnished_jade_pin(player)
+        pins = player.get("tarnished_jade_pins", 0)
+        owner = "Your" if (actual_player is None or player is actual_player) else f"{player['name']}'s"
+        c_print(f"  📌 {owner} Tarnished Jade embeds a pin! ({pins}/10)")
 
     elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
                       "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
@@ -303,7 +317,7 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         # Wedding retribution effects (pharaohs_curse, infernal_crown, keening_wail)
         apply_wedding_on_damage_taken(player, enemy, enemy_dmg, "hit")
         # Captain's Cutlass: Captain's Authority riposte (player or ally)
-        from combat.captain_cutlass import trigger_captain_riposte
+        from combat.weapon.captain_cutlass import trigger_captain_riposte
         if actual_player and player is actual_player:
             trigger_captain_riposte(actual_player, enemy)
         elif player is not actual_player and player is not None:

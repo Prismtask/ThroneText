@@ -1,4 +1,4 @@
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input
 # combat/capture.py
 import random
 from combat.stats import get_effective_attribute
@@ -68,7 +68,7 @@ def attempt_capture(player, target, net=None):
 
     roll = (cha + dex) * 0.8 + rarity_mult_bonus - difficulty
     from combat.stat_milestones import get_charisma_bonus
-    from combat.wedding_specials import apply_wedding_capture_bonus
+    from combat.weapon.wedding_specials import apply_wedding_capture_bonus
     success_chance = max(5, min(95, roll + get_charisma_bonus(player) + apply_wedding_capture_bonus(player)))
 
     if random.uniform(0, 100) < success_chance:
@@ -137,7 +137,7 @@ def store_captured_girl(player, mg):
         c_print(f"Your house is already full (max {max_girls} monster girls).")
         return False
 
-    from combat.wedding_specials import apply_wedding_capture_affection_bonus
+    from combat.weapon.wedding_specials import apply_wedding_capture_affection_bonus
     base_affection = 20 + apply_wedding_capture_affection_bonus(player)
 
     captured_level = mg.get("level", 1)

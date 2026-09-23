@@ -29,29 +29,14 @@ class CityScreen(BaseScreen):
         self._update_top_bar()
         self.sm.clear_log()
 
-        # Show any queued dungeon events via GUI-native display
+        # Show any queued dungeon events — logging with category "event"
+        # auto-opens the session log popup so the player never misses them.
         if self.player:
             event_msgs = get_event_queue_messages(self.player)
             if event_msgs:
-                # Log all event messages to the persistent log panel
                 for msg in event_msgs:
                     if msg.strip():
                         self.sm.log(msg, category="event")
-                # Also show as a toast so the player doesn't miss it
-                event_names = []
-                # Re-read from player in case get_event_queue_messages already popped
-                # but we saved the messages above, try to extract names from messages
-                for msg in event_msgs:
-                    if msg.strip().startswith("  [EVENT]") or msg.strip().startswith("["):
-                        continue
-                    if msg.strip() and not msg.strip().startswith("="):
-                        event_names.append(msg.strip())
-                if event_names:
-                    self.sm.show_toast(
-                        f"Events occurred while you were away! Check the log.",
-                        category="event",
-                        duration_ms=5000,
-                    )
 
         # ── Main layout ────────────────────────────────────────────────────────
         self.content = self.styled_frame(self)
@@ -151,7 +136,6 @@ class CityScreen(BaseScreen):
             ("[I] Inventory", self._open_inventory),
             ("[K] Skill Book", self._open_skill_book),
             ("[M] World Map", self._open_world_map),
-            ("[T] Travel", self._open_travel),
             ("[S] Settings", self._open_settings),
             ("[Q] Save & Quit", self._save_and_quit),
             ("[?] Help", self._show_help),
@@ -186,7 +170,6 @@ class CityScreen(BaseScreen):
             "i": self._open_inventory,
             "k": self._open_skill_book,
             "m": self._open_world_map,
-            "t": self._open_travel,
             "d": self._enter_dungeon,
             "s": self._open_settings,
             "q": self._save_and_quit,
@@ -464,15 +447,11 @@ class CityScreen(BaseScreen):
             on_close=lambda _: self._after_facility(),
         )
 
-    def _open_world_map(self, travel_mode=False):
-        """Open the world map. travel_mode=True shows pathfinding + Travel Here."""
+    def _open_world_map(self):
+        """Open the unified world map — travel mode with pathfinding + Travel Here."""
         self.sm.log("Opening World Map...")
         from gui.screens.world_map_screen import WorldMapScreen
-        self.sm.switch_to(WorldMapScreen, travel_mode=travel_mode)
-
-    def _open_travel(self):
-        """Open the world map for travel (replaces old TravelScreen)."""
-        self._open_world_map(travel_mode=True)
+        self.sm.switch_to(WorldMapScreen, travel_mode=True)
 
     def _enter_dungeon(self):
         """Prompt for floor selection, then launch the dungeon."""
@@ -509,7 +488,6 @@ class CityScreen(BaseScreen):
                 return
             else:
                 self.sm.log("The crystalline gates of Pandemonium shimmer open...")
-                self.player["pandemonium_mode"] = True
 
         # ── Floor selection dialog ────────────────────────────────────────
         self._show_floor_selection(current_floor, max_unlocked)
@@ -521,6 +499,15 @@ class CityScreen(BaseScreen):
         self.player["dungeon_region"] = self.city.get("biome", "temperate")
         self.player["origin_city"] = self.city_id
         self.player["location"] = "dungeon"
+
+        # Pandemonium mode is a per-run flag: only true inside the Isle of
+        # Glass dungeon. Clear it for every other dungeon so a stale flag
+        # (e.g. from a canceled floor selection or an old save) can't make
+        # Elderfen or other dungeons display as PANDEMONIUM.
+        if self.city_id == "isle_of_glass":
+            self.player["pandemonium_mode"] = True
+        else:
+            self.player.pop("pandemonium_mode", None)
 
         # Clear any saved dungeon state and log for a fresh start
         for key in ("saved_dungeon_floor", "saved_dungeon_rooms", "saved_dungeon_room_index"):
@@ -907,7 +894,7 @@ class CityScreen(BaseScreen):
             "  1–9  — Open city service\n"
             "  I    — Inventory\n"
             "  K    — Skill Book\n"
-            "  T    — Travel\n"
+            "  M    — World Map / Travel\n"
             "  D    — Enter Dungeon\n"
             "  S    — Settings\n"
             "  Q    — Save & Quit\n\n"

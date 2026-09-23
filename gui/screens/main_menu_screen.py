@@ -3,7 +3,6 @@ gui/screens/main_menu_screen.py — Main menu: New Game, Continue, Delete Save, 
 """
 
 import tkinter as tk
-from tkinter import ttk
 
 from gui.screens.base_screen import BaseScreen
 from gui.theme import Theme
@@ -89,7 +88,7 @@ class MainMenuScreen(BaseScreen):
         # Version label
         tk.Label(
             container,
-            text="v0.1.6 — GUI Test Edition",
+            text="v0.1.7.0 — The Chromatic Artisan",
             bg=Theme.BG_DARK,
             fg=Theme.TEXT_DIM,
             font=Theme.FONT_SMALL,

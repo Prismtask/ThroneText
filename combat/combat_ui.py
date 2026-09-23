@@ -2,8 +2,8 @@
 from utils import clear_screen, format_time
 from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
-from combat.abyss_fang import is_abyssal_tempo_active, get_abyss_fang_cooldown_display
-from combat.captain_cutlass import get_captain_cutlass_cooldown_display
+from combat.weapon.abyss_fang import is_abyssal_tempo_active, get_abyss_fang_cooldown_display
+from combat.weapon.captain_cutlass import get_captain_cutlass_cooldown_display
 from combat.ally import format_ally_status_line, _ally_action_menu
 from combat.ally_skills import get_all_ally_skills
 from combat.skills import get_all_unlocked_skills
@@ -30,6 +30,8 @@ def format_enemy_status_line(enemy, extra=""):
             statuses.append(tier_name)
     if enemy.get("expose_stacks", 0) > 0:
         statuses.append(f"Exposed×{enemy['expose_stacks']}")
+    if enemy.get("brush_strokes_display"):
+        statuses.append(enemy["brush_strokes_display"])
     status_str = f" ({', '.join(statuses)})" if statuses else ""
     return f"{enemy['name']} - HP: {enemy['hp']}{status_str}{extra}"
 
@@ -114,10 +116,12 @@ def _get_entity_buff_tags(entity):
         if tag and tag not in statuses:
             statuses.append(tag)
 
-    # Tarnished Jade pin stacks
+    # Tarnished Jade pin stacks — only shown while the Jade is actually equipped
     tj_pins = entity.get("tarnished_jade_pins", 0)
     if tj_pins > 0:
-        statuses.append(f"PIN×{tj_pins}")
+        from combat.weapon.tarnished_jade import _actor_has_tarnished_jade
+        if _actor_has_tarnished_jade(entity):
+            statuses.append(f"PIN×{tj_pins}")
 
     # Expose stacks (enemy only)
     expose = entity.get("expose_stacks", 0)

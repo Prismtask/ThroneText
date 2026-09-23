@@ -75,7 +75,13 @@ def load_game(slot):
         return None
     try:
         with open(filename, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+        # A loaded game always resumes in a city, so any run-only dungeon
+        # flags baked into the save (e.g. pandemonium_mode from an in-dungeon
+        # save or an interrupted run) are stale. Clear it here as a safety
+        # net; it is re-established on dungeon entry.
+        data.pop("pandemonium_mode", None)
+        return data
     except (json.JSONDecodeError, IOError, UnicodeDecodeError):
         return None
     

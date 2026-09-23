@@ -124,7 +124,7 @@ class WorldMapScreen(BaseScreen):
         self._node_rects = {}
         self._canvas = None
         self._info_frame = None
-        self._travel_mode = travel_mode  # True = [T] Travel (pathfinding + highlights)
+        self._travel_mode = travel_mode  # True = travel mode (pathfinding + highlights + Travel Here)
         self._path_result = None        # cached pathfinding result for travel mode
         self._route_lines = {}           # (a,b) sorted tuple → [canvas line IDs]
 
@@ -1271,7 +1271,7 @@ class WorldMapScreen(BaseScreen):
         def _do_sell_item(idx):
             """Sell one item and close the dialog (one sale per open)."""
             try:
-                from combat.wedding_specials import is_wedding_item_soulbound
+                from combat.weapon.wedding_specials import is_wedding_item_soulbound
                 cur_inv = player.get("inventory", [])
                 if idx < 0 or idx >= len(cur_inv):
                     _close_sell()
@@ -1285,7 +1285,7 @@ class WorldMapScreen(BaseScreen):
                     self._log(f"[{item['name']}] is unique — cannot be sold.", "red")
                     _close_sell()
                     return
-                unit_price = _sell_price(player, item)
+                unit_price = _sell_price(item, player)
                 count = item.get("count", 1)
                 gold = unit_price * count
                 remove_item_by_reference(player, item, count)
@@ -1338,7 +1338,7 @@ class WorldMapScreen(BaseScreen):
             sell_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
 
         for i, item in enumerate(inv):
-            unit_price = _sell_price(player, item)
+            unit_price = _sell_price(item, player)
             count = item.get("count", 1)
             total_price = unit_price * count
             count_str = f" (x{count})" if count > 1 else ""
@@ -1683,7 +1683,7 @@ class WorldMapScreen(BaseScreen):
                         else:
                             self._log(f"Found: {item['name']}", "green")
 
-                from combat.wedding_specials import apply_wedding_combat_end
+                from combat.weapon.wedding_specials import apply_wedding_combat_end
                 apply_wedding_combat_end(player, victory=True)
 
                 self._log("Enemies defeated!", "green")

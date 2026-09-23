@@ -1,4 +1,4 @@
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input
 """Abyss Fang weapon mechanics and combat state management."""
 
 

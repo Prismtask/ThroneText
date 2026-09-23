@@ -149,6 +149,10 @@ def try_apply_elemental_debuff(enemy, player, enemy_dmg):
     if enemy_dmg <= 0:
         return None
 
+    # Palette, the Chromatic Artisan: paint bursts are the ONLY debuff channel
+    if enemy.get("_suppress_elemental_debuff"):
+        return None
+
     elem_result = get_elemental_debuff(enemy)
     if elem_result is None:
         return None

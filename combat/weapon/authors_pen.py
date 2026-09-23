@@ -22,21 +22,32 @@ def _actor_has_authors_pen(actor):
     return None
 
 
-def _is_in_wonderland(player):
-    """Return True if the player is currently in the Wonderland dungeon."""
-    return player.get("dungeon_region") == "wonderland"
+def _is_in_wonderland(actor):
+    """Return True if the actor is currently in the Wonderland dungeon.
+
+    Allies mirror the player's dungeon_region at combat start, so this
+    works for both players and allies.
+    """
+    return actor.get("dungeon_region") == "wonderland"
+
+
+def _owner_name(actor):
+    """Return a display name for the pen's wielder."""
+    if actor.get("is_ally"):
+        return actor.get("name", "The wielder")
+    return "You"
 
 
 # ─── Passive: +4 all stats in Wonderland ─────────────────────────────────
 
-def get_authors_pen_stat_bonus(player, attr_name):
+def get_authors_pen_stat_bonus(actor, attr_name):
     """Return the passive stat bonus from Author's Pen for a given attribute.
 
     +4 to ALL stats while in Wonderland. Returns 0 otherwise.
     """
-    if not _is_in_wonderland(player):
+    if not _is_in_wonderland(actor):
         return 0
-    if not _actor_has_authors_pen(player):
+    if not _actor_has_authors_pen(actor):
         return 0
     return 4
 
@@ -126,73 +137,93 @@ def compute_last_round_damage(player):
 
 # ─── Cooldown Management ─────────────────────────────────────────────────
 
-def tick_authors_pen_cooldown(player, prefix="  "):
+def tick_authors_pen_cooldown(actor, prefix="  "):
     """Decrement Author's Pen Rewrite cooldown at end of round.
 
     Returns True if cooldown just reached 0.
     """
-    if player.get("authors_pen_cooldown", 0) > 0:
-        player["authors_pen_cooldown"] -= 1
-        if player["authors_pen_cooldown"] == 0:
-            c_print(f"{prefix}~*~ The Author's Pen glows softly -- Rewrite is ready.")
+    if actor.get("authors_pen_cooldown", 0) > 0:
+        actor["authors_pen_cooldown"] -= 1
+        if actor["authors_pen_cooldown"] == 0:
+            owner = _owner_name(actor)
+            c_print(f"{prefix}~*~ {owner}'s Author's Pen glows softly -- Rewrite is ready." if actor.get("is_ally") else f"{prefix}~*~ The Author's Pen glows softly -- Rewrite is ready.")
             return True
     return False
 
 
-def clear_authors_pen_state(player):
-    """Clear all Author's Pen combat state."""
-    player.pop("authors_pen_cooldown", None)
-    player.pop("_authors_pen_hp_snapshot", None)
-    player.pop("_authors_pen_last_round_damage", None)
+def clear_authors_pen_state(actor):
+    """Clear all Author's Pen combat state for any actor."""
+    actor.pop("authors_pen_cooldown", None)
+    actor.pop("_authors_pen_hp_snapshot", None)
+    actor.pop("_authors_pen_last_round_damage", None)
 
 
 # ─── Active: Rewrite ─────────────────────────────────────────────────────
 
 def use_rewrite(player):
-    """Handle the 'Rewrite' action for the player.
+    """Handle the 'Rewrite' action for the player. (backward-compat wrapper)"""
+    return _use_rewrite_actor(player, player=player, is_player=True)
+
+
+def _use_rewrite_actor(actor, player=None, is_player=True):
+    """Handle the 'Rewrite' action for any actor (player or ally).
 
     Heals each party member for the damage they personally took in the
     PREVIOUS combat round. Does not revive fallen allies. 5-turn cooldown.
 
+    Party damage tracking is stored on the player dict by
+    snapshot_party_hp()/compute_last_round_damage(), so ally wielders
+    read the same map. The cooldown is tracked per-wielder on the actor.
+
     Returns (result, defending) tuple.
     """
-    pen = _actor_has_authors_pen(player)
+    pen = _actor_has_authors_pen(actor)
     if not pen:
-        c_print("You don't have the Author's Pen equipped.")
+        if is_player:
+            c_print("You don't have the Author's Pen equipped.")
+        else:
+            c_print(f"{actor['name']} doesn't have the Author's Pen equipped.")
         return "retry", False
 
-    cd = player.get("authors_pen_cooldown", 0)
+    cd = actor.get("authors_pen_cooldown", 0)
     if cd > 0:
         c_print(f"Rewrite is still recharging. ({cd} turn(s) remaining)")
         return "retry", False
 
-    damage_map = player.get("_authors_pen_last_round_damage", {})
+    # Damage map lives on the player dict (party-wide tracking)
+    tracker = player if player is not None else actor
+    damage_map = tracker.get("_authors_pen_last_round_damage", {})
     if not damage_map:
-        c_print("\n  ~*~ You raise the Author's Pen, but there is nothing to rewrite --")
-        c_print("  ~*~ no damage was taken in the last round.")
+        if is_player:
+            c_print("\n  ~*~ You raise the Author's Pen, but there is nothing to rewrite --")
+            c_print("  ~*~ no damage was taken in the last round.")
+        else:
+            c_print(f"\n  ~*~ {actor['name']} raises the Author's Pen, but there is nothing to rewrite --")
+            c_print("  ~*~ no damage was taken in the last round.")
         return "retry", False
 
     total_healed = 0
+    owner = _owner_name(actor)
 
     c_print("\n  " + "~*~ " * 18)
-    c_print("  You raise the Author's Pen. Ink flows backward through the air.")
+    c_print(f"  {owner} raise{'s' if not is_player else ''} the Author's Pen. Ink flows backward through the air.")
     c_print('  "That didn\'t happen. Let me try again."')
     c_print("  " + "~*~ " * 18)
 
-    # Heal player
+    # Heal the actual player
     player_dmg = damage_map.get(0, 0)
-    if player_dmg > 0 and player.get("current_hp", 0) > 0:
-        p_max = player.get("max_hp", player.get("current_hp", 1))
-        p_cur = player.get("current_hp", 0)
+    if player_dmg > 0 and tracker.get("current_hp", 0) > 0:
+        p_max = tracker.get("max_hp", tracker.get("current_hp", 1))
+        p_cur = tracker.get("current_hp", 0)
         heal = min(player_dmg, p_max - p_cur)
         if heal > 0:
-            player["current_hp"] = p_cur + heal
+            tracker["current_hp"] = p_cur + heal
             total_healed += heal
-            c_print(f"  ~*~ You: +{heal} HP -> {player['current_hp']}/{p_max} HP")
+            c_print(f"  ~*~ You: +{heal} HP -> {tracker['current_hp']}/{p_max} HP")
 
     # Heal active allies
     from combat.ally import get_active_allies
-    for ally in get_active_allies(player):
+    for ally in get_active_allies(tracker):
         ally_key = id(ally)
         ally_data = damage_map.get(ally_key)
         if ally_data is None:
@@ -209,8 +240,8 @@ def use_rewrite(player):
 
     c_print(f"\n  ~*~ The pen rewrites the last round -- {total_healed} HP restored!")
 
-    # Set cooldown
-    player["authors_pen_cooldown"] = 5
+    # Set cooldown on the wielder
+    actor["authors_pen_cooldown"] = 5
     c_print("  ~*~ Rewrite will be ready again in 5 turns.")
 
     return "continue", False

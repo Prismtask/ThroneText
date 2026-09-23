@@ -400,7 +400,7 @@ def get_ally_effective_attribute(ally, attr_name):
                 total += effect.get("value", 0)
 
     # Tarnished Jade pin bonuses
-    from combat.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus, is_tarnished_jade_weakened
+    from combat.weapon.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus, is_tarnished_jade_weakened
     if attr_name == "Strength":
         total += get_tarnished_jade_str_bonus(ally)
     elif attr_name == "Wisdom":
@@ -408,6 +408,10 @@ def get_ally_effective_attribute(ally, attr_name):
     # Apply weaken debuff from Wedge Backlash
     if is_tarnished_jade_weakened(ally):
         total = total // 2
+
+    # Author's Pen passive: +4 all stats while in Wonderland
+    from combat.weapon.authors_pen import get_authors_pen_stat_bonus
+    total += get_authors_pen_stat_bonus(ally, attr_name)
 
     return total
 
@@ -722,24 +726,34 @@ def _ally_action_menu(ally, player, enemies):
     disabled_keys = []
 
     # Check if Black Silence Gloves are equipped — replaces entire skill menu
-    from combat.black_silence_gloves import _actor_has_black_silence_gloves
+    from combat.weapon.black_silence_gloves import _actor_has_black_silence_gloves
     has_gloves = _actor_has_black_silence_gloves(ally)
     
     if has_gloves:
         return _ally_gloves_menu(ally, player, enemies)
 
+    # Palette's Brush — replaces class skills with the brush kit
+    from combat.weapon.palette_brush import _actor_has_palette_brush, get_brush_action_menu
+    if _actor_has_palette_brush(ally):
+        return get_brush_action_menu(ally, player, enemies, False)
+
     actions.append(('a', 'Attack'))
     actions.append(('d', 'Defend'))
 
     # Abyss Fang – only if equipped and off cooldown
-    from combat.abyss_fang import is_abyss_fang_available
+    from combat.weapon.abyss_fang import is_abyss_fang_available
     if is_abyss_fang_available(ally):
         actions.append(('w', 'Wield the Abyss'))
 
     # Captain's Cutlass – Crew Rally
-    from combat.captain_cutlass import is_captain_cutlass_available
+    from combat.weapon.captain_cutlass import is_captain_cutlass_available
     if is_captain_cutlass_available(ally):
         actions.append(('r', 'Crew Rally'))
+
+    # Author's Pen – Rewrite
+    from combat.weapon.authors_pen import is_authors_pen_available
+    if is_authors_pen_available(ally):
+        actions.append(('e', 'Rewrite'))
 
     # Switch – only if there are reserve allies to swap with
     if can_switch(player):
@@ -758,6 +772,11 @@ def _ally_action_menu(ally, player, enemies):
     ]
     if combat_items:
         actions.append(('u', 'Use Item'))
+
+    # Blank Canvas Shawl – free action, once per combat
+    from combat.weapon.blank_canvas_shawl import _actor_has_blank_canvas_shawl
+    if _actor_has_blank_canvas_shawl(ally) and not ally.get("blank_canvas_used"):
+        actions.append(('b', 'Blank Canvas'))
 
     menu_str = '  '.join(f'[{key.upper()}]{label}' for key, label in actions)
     valid_keys = [key for key, _ in actions if key not in disabled_keys]
@@ -779,7 +798,7 @@ def _ally_gloves_menu(ally, player, enemies):
     workshop_state = ally.get("gloves_workshop_used", set())
     if not isinstance(workshop_state, (set, list)):
         workshop_state = set()
-    from combat.black_silence_gloves import WORKSHOPS
+    from combat.weapon.black_silence_gloves import WORKSHOPS
     for wid, ws in WORKSHOPS.items():
         key = str(wid)
         label = f'{ws["name"]} [{ws["stat"][:3].upper()}]'
@@ -801,6 +820,11 @@ def _ally_gloves_menu(ally, player, enemies):
     if combat_items:
         actions.append(('u', 'Use Item'))
 
+    # Blank Canvas Shawl – free action, once per combat
+    from combat.weapon.blank_canvas_shawl import _actor_has_blank_canvas_shawl
+    if _actor_has_blank_canvas_shawl(ally) and not ally.get("blank_canvas_used"):
+        actions.append(('b', 'Blank Canvas'))
+
     menu_str = '  '.join(f'[{key.upper()}]{label}' for key, label in actions)
     valid_keys = [key for key, _ in actions if key not in disabled_keys]
     return menu_str, valid_keys, disabled_keys
@@ -817,6 +841,24 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
 
     # Reset defending flag each turn so it only applies if they choose Defend THIS turn
     ally["defending_this_turn"] = False
+
+    # Palette's Brush: reset the once-per-turn stance flag
+    from combat.weapon.palette_brush import begin_actor_turn
+    begin_actor_turn(ally)
+
+    # Palette heroine: color cycle each turn + deferred Signature strike
+    from combat.palette_ally import (
+        is_palette_ally, has_pending_signature,
+        fire_palette_signature, advance_palette_ally_color,
+    )
+    from combat.weapon.palette_brush import _actor_has_palette_brush, COLOR_NAMES as _BRUSH_COLORS
+    if is_palette_ally(ally) and not _actor_has_palette_brush(ally):
+        color = advance_palette_ally_color(ally)
+        c_print(f"  🎨 {ally['name']}'s brush settles on {_BRUSH_COLORS[color]}.")
+        if has_pending_signature(ally):
+            msg = fire_palette_signature(ally, player, enemies, on_kill)
+            c_print(msg)
+            return "continue"
 
     a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
 
@@ -877,20 +919,70 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
 
     # ----- WIELD THE ABYSS (Abyss Fang weapon special) -----
     if action == "w":
-        from combat.abyss_fang import _wield_abyss_fang_actor
+        from combat.weapon.abyss_fang import _wield_abyss_fang_actor
         result, _def = _wield_abyss_fang_actor(ally, is_player=False)
         return result
 
     # ----- CREW RALLY (Captain's Cutlass weapon special) -----
     if action == "r":
-        from combat.captain_cutlass import _use_crew_rally_actor
+        from combat.weapon.captain_cutlass import _use_crew_rally_actor
         result, _def = _use_crew_rally_actor(ally, is_player=False, player=player)
         return result
+
+    # ----- REWRITE (Author's Pen accessory special) -----
+    if action == "e":
+        from combat.weapon.authors_pen import _use_rewrite_actor
+        result, _def = _use_rewrite_actor(ally, player=player, is_player=False)
+        return result
+
+    # ----- BLANK CANVAS (shawl free action, once per combat) -----
+    if action == "b":
+        from combat.weapon.blank_canvas_shawl import use_blank_canvas
+        for m in use_blank_canvas(ally, False, player):
+            c_print(f"  {m}")
+        return "retry"
+
+    # ----- BRUSH STANCE (free action, once per turn) -----
+    if action == "t":
+        from combat.weapon.palette_brush import set_brush_stance
+        c_print(set_brush_stance(ally))
+        return "retry"
+
+    # ----- BRUSH EXHIBITS (i/k/g) -----
+    if action in ("i", "k", "g"):
+        from combat.weapon.palette_brush import (
+            _actor_has_palette_brush, execute_impasto_exhibit,
+            execute_chiaroscuro_exhibit, execute_signature_exhibit,
+            get_brush_exhibits,
+        )
+        if not _actor_has_palette_brush(ally):
+            return "retry"
+        key_map = {"i": "impasto", "k": "chiaroscuro", "g": "signature"}
+        exhibit_key = key_map[action]
+        if exhibit_key not in [k for k, _ in get_brush_exhibits(ally)]:
+            c_print("  That exhibit is not available yet.")
+            return "retry"
+        stats = (a_str, a_con, a_dex, a_ler, a_wis, a_cha)
+        alive_before = {id(e) for e in enemies if e["hp"] > 0}
+        if exhibit_key == "impasto":
+            msg, victory = execute_impasto_exhibit(ally, enemies, stats, False)
+        elif exhibit_key == "chiaroscuro":
+            msg, victory = execute_chiaroscuro_exhibit(ally, enemies, stats, False)
+        else:
+            msg, victory = execute_signature_exhibit(ally, enemies, stats, False)
+        c_print(msg)
+        killed = [e for e in enemies if e["hp"] <= 0 and id(e) in alive_before]
+        if on_kill:
+            for e in killed:
+                on_kill(e, enemies)
+        if victory:
+            return "victory"
+        return "continue"
 
     # ----- SKILLS (numbered 1-9) or GLOVES WORKSHOPS -----
     if action.isdigit():
         # Check if Black Silence Gloves are equipped — workshop attacks replace skills
-        from combat.black_silence_gloves import _actor_has_black_silence_gloves, _execute_workshop_actor, _execute_furioso_actor
+        from combat.weapon.black_silence_gloves import _actor_has_black_silence_gloves, _execute_workshop_actor, _execute_furioso_actor
         
         if _actor_has_black_silence_gloves(ally):
             if action == '0':
@@ -920,7 +1012,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 if workshop_id in ws_used:
                     c_print("  That workshop has already been used this cycle!")
                     return "retry"
-                from combat.black_silence_gloves import WORKSHOPS
+                from combat.weapon.black_silence_gloves import WORKSHOPS
                 ws = WORKSHOPS.get(workshop_id, {})
                 ws_name = ws.get("name", f"Workshop {workshop_id}")
                 ws_desc = ws.get("desc", "")
@@ -1071,6 +1163,10 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             element = get_attack_element(ally, equipped_weapon)
         final_dmg = calculate_elemental_damage(dmg, ally, target, element)
 
+        # Palette's Brush: stance damage multiplier
+        from combat.weapon.palette_brush import get_brush_damage_mult
+        final_dmg = int(final_dmg * get_brush_damage_mult(ally))
+
         # ── Pierce (Magical trait): ignore portion of enemy elemental resistance ──
         if pre_dmg and pre_dmg.get("res_ignore", 0) > 0 and element:
             target_res = target.get("elemental_res", {}).get(element, 1.0)
@@ -1080,6 +1176,12 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 final_dmg = int(dmg * attacker_dmg_mult * mitigated_res)
                 final_dmg = max(0, final_dmg)
                 c_print(f"  🔮 Pierce! {target['name']}'s {element} resistance is partially bypassed.")
+
+        # Captain's Cutlass: High Tide + Rally attack bonuses
+        from combat.weapon.captain_cutlass import get_high_tide_attack_bonus, get_rally_attack_bonus
+        final_dmg += get_high_tide_attack_bonus(ally, final_dmg)
+        final_dmg += get_rally_attack_bonus(ally, final_dmg)
+        final_dmg = max(0, final_dmg)
         
         # Wonderland: Jabberwock's Bane — bonus damage vs boss enemies
         if target.get("boss"):
@@ -1092,10 +1194,23 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     c_print(f"  ⚔️ Vorpal blessing surges! +{bonus_dmg} bonus damage!")
         
         target["hp"] -= final_dmg
+        # ── Sky Piercer: execute non-superboss enemies left at/below threshold ──
+        from combat.weapon.sky_piercer import check_sky_piercer_execute
+        check_sky_piercer_execute(ally, target, final_dmg)
+        # Palette's Brush: strokes, Pigment Explosion, aura procs
+        from combat.weapon.palette_brush import _actor_has_palette_brush, on_brush_attack_hit
+        if _actor_has_palette_brush(ally):
+            for m in on_brush_attack_hit(ally, target, final_dmg, enemies):
+                c_print(f"  {m}")
         # ── Elemental Trait: on-hit effects (Ignite, Chain, Leech, Swift, Bulwark) ──
         if trait:
             from combat.elemental_traits import apply_trait
             apply_trait(trait, ally, target, enemies, final_dmg)
+
+        # Vileheart Pendant: chance to poison on physical hit
+        from combat.vileheart_venom import try_vileheart_venom_proc
+        if try_vileheart_venom_proc(ally, target):
+            c_print(f"  🧪 Vileheart Pendant: {target['name']} is poisoned!")
 
         # ── Grandmother's Axe / Woodcutter's Broken Axe: bleed-pop passive ──
         if equipped_weapon and target["hp"] > 0:
@@ -1156,8 +1271,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 from combat.elemental_traits import apply_trait_on_kill
                 apply_trait_on_kill(trait, ally, target, enemies)
             c_print(f"  {ally['name']} defeated {target['name']}!")
-            # Captain's Cutlass: High Tide stack on kill
-            from combat.captain_cutlass import check_high_tide_kill
+            # Captain's Cutlass: High Tide stack on kill (player and ally wielders)
+            from combat.weapon.captain_cutlass import check_high_tide_kill
+            check_high_tide_kill(ally, target)
             check_high_tide_kill(player, target)
         return "continue"
 
@@ -1322,6 +1438,9 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                         msg += f"(ignores {item['armor_pierce']} armor) "
                     final_dmg = max(1, dmg - armor)
                     target["hp"] -= final_dmg
+                    # ── Sky Piercer: execute non-superboss enemies left at/below threshold ──
+                    from combat.weapon.sky_piercer import check_sky_piercer_execute
+                    check_sky_piercer_execute(ally, target, final_dmg)
                     from combat.helpers import format_damage_msg
                     msg += format_damage_msg(ally['name'], target['name'], final_dmg, skill_name=item.get('name', 'Item')) + " "
 
@@ -1378,18 +1497,21 @@ _HEROINE_TEMPLATE_KEYS = {
     "alice":     "wonderland_alice",
     "red_hood":  "wonderland_red_hood",
     "dorothy":   "wonderland_dorothy",
+    "palette":   "wonderland_palette",
 }
 
 _HEROINE_INTERNAL_KEYS = {
     "alice":     "wl_alice_state",
     "red_hood":  "wl_redhood_state",
     "dorothy":   "wl_dorothy_state",
+    "palette":   "palette_state",
 }
 
 _HEROINE_PERMANENT_FLAGS = {
     "alice":     "wonderland_heroine_alice_permanent",
     "red_hood":  "wonderland_heroine_redhood_permanent",
     "dorothy":   "wonderland_heroine_dorothy_permanent",
+    "palette":   "palette_heroine_permanent",
 }
 
 # ── Auto-equip builds for temp heroines (4 slots per heroine) ──────────
@@ -1612,6 +1734,7 @@ def promote_heroine_to_permanent(player, ally, join_level=None):
         "alice":    "vorpal_instinct",
         "red_hood": "grandmothers_lesson",
         "dorothy":  "somewhere_over_rainbow",
+        "palette":  "living_pigment",
     }
     perm_passive = perm_passive_map.get(heroine_key)
     if perm_passive:

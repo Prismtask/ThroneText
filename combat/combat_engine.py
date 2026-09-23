@@ -1,15 +1,15 @@
-from combat.abyss_fang import (
+from combat.weapon.abyss_fang import (
     apply_abyss_tempo_round_start,
     tick_abyss_fang_cooldown,
     tick_abyssal_tempo,
     clear_abyss_fang_state,
     get_abyssal_tempo_count,
 )
-from combat.captain_cutlass import (
+from combat.weapon.captain_cutlass import (
     clear_captain_cutlass_state,
     tick_captain_cutlass,
 )
-from combat.authors_pen import (
+from combat.weapon.authors_pen import (
     snapshot_party_hp,
     compute_last_round_damage,
     tick_authors_pen_cooldown,
@@ -28,7 +28,7 @@ from combat.ally import (
     get_alive_allies, get_active_allies, compute_ally_stats, handle_ally_turn,
     auto_fill_active_slots, can_switch, swap_party_member,
 )
-from combat.wedding_specials import (
+from combat.weapon.wedding_specials import (
     begin_wedding_combat, end_wedding_combat,
     apply_wedding_combat_start, apply_wedding_end_of_round
 )
@@ -47,11 +47,12 @@ def roll_initiative(player, enemies):
 
     # Player
     from combat.stat_milestones import get_wisdom_bonus
-    from combat.black_silence_gloves import get_gloves_initiative_bonus
+    from combat.weapon.black_silence_gloves import get_gloves_initiative_bonus
+    from combat.weapon.palette_brush import get_brush_initiative_bonus
     from combat.status_effects import get_haste_initiative_bonus
     from wonderland_curses import roll_d20_with_looking_glass
     d20_roll, _ = roll_d20_with_looking_glass(player, verbose=False)
-    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_haste_initiative_bonus(player)
+    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_brush_initiative_bonus(player) + get_haste_initiative_bonus(player)
     combatants.append({
         "type": "player",
         "speed": player_speed,
@@ -67,7 +68,7 @@ def roll_initiative(player, enemies):
         eff_dex = a_dex
         if ally.get("slowed"):
             eff_dex = max(-10, eff_dex - 3)
-        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_haste_initiative_bonus(ally)
+        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_brush_initiative_bonus(ally) + get_haste_initiative_bonus(ally)
         combatants.append({
             "type": "ally",
             "speed": speed,
@@ -90,7 +91,7 @@ def roll_initiative(player, enemies):
         eff_dex = enemy["dex_mod"]
         if enemy.get("slowed"):
             eff_dex = max(-10, eff_dex - 3)
-        speed = random.randint(1, 20) + eff_dex + pandemonium_speed_bonus + shadow_init_bonus
+        speed = random.randint(1, 20) + eff_dex + pandemonium_speed_bonus + shadow_init_bonus + enemy.get("initiative_bonus", 0)
         combatants.append({
             "type": "enemy",
             "speed": speed,
@@ -118,12 +119,13 @@ def _tick_all_state(player):
     tick_authors_pen_cooldown(player)
 
     # Tick ally specials
-    from combat.captain_cutlass import _tick_captain_cutlass_actor
+    from combat.weapon.captain_cutlass import _tick_captain_cutlass_actor
     for ally in player.get("allies", []):
         if ally.get("current_hp", 0) > 0:
             tick_abyss_fang_cooldown(ally)
             tick_abyssal_tempo(ally)
             _tick_captain_cutlass_actor(ally, player_ref=player)
+            tick_authors_pen_cooldown(ally)
 
     from combat.skills import tick_skill_cooldowns
     tick_skill_cooldowns(player)
@@ -233,13 +235,26 @@ def _end_combat_with_result(player, result):
     """Tick all combat state and return the requested result, unless DoT kills the player."""
     clear_abyss_fang_state(player)
     clear_authors_pen_state(player)
+    # Clear Tarnished Jade combat state (pins/backlash are battle-scoped)
+    player["tarnished_jade_pins"] = 0
+    player["tarnished_jade_weakened"] = False
     # Clear Black Silence Gloves state for player
-    from combat.black_silence_gloves import clear_gloves_state
+    from combat.weapon.black_silence_gloves import clear_gloves_state
     clear_gloves_state(player)
+    # Clear Palette's Brush + Blank Canvas Shawl state for player
+    from combat.weapon.palette_brush import clear_brush_state
+    from combat.weapon.blank_canvas_shawl import clear_shawl_state
+    from combat.palette_ally import clear_palette_ally_state
+    clear_brush_state(player)
+    clear_shawl_state(player)
     # Clear ally specials
     for ally in player.get("allies", []):
         clear_abyss_fang_state(ally)
         clear_gloves_state(ally)
+        clear_authors_pen_state(ally)
+        clear_brush_state(ally)
+        clear_shawl_state(ally)
+        clear_palette_ally_state(ally)
     # Reset potion sickness between combats
     player["potion_sickness"] = 0
     tick_result = _tick_all_state(player)
@@ -273,25 +288,38 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
     clear_abyss_fang_state(player)
     clear_captain_cutlass_state(player)
     clear_authors_pen_state(player)
-    player["tarnished_jade_pins"] = 1
+    from combat.weapon.tarnished_jade import _actor_has_tarnished_jade
+    # Pins only start accumulating if the Jade is actually equipped
+    player["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(player) else 0
     player["tarnished_jade_weakened"] = False
 
     # Initialize Black Silence Gloves state for player
-    from combat.black_silence_gloves import init_gloves_state, clear_gloves_state, _actor_has_black_silence_gloves
+    from combat.weapon.black_silence_gloves import init_gloves_state, clear_gloves_state, _actor_has_black_silence_gloves
     if _actor_has_black_silence_gloves(player):
         init_gloves_state(player)
+
+    # Initialize Palette's Brush state for player
+    from combat.weapon.palette_brush import init_brush_state, _actor_has_palette_brush
+    if _actor_has_palette_brush(player):
+        init_brush_state(player)
 
     # Init/clear ally specials
     for ally in player.get("allies", []):
         if ally.get("current_hp", 0) > 0:
             clear_abyss_fang_state(ally)
             # Clear cutlass state on ally (actor version)
-            from combat.captain_cutlass import _clear_captain_cutlass_state_actor
+            from combat.weapon.captain_cutlass import _clear_captain_cutlass_state_actor
             _clear_captain_cutlass_state_actor(ally, player_ref=player)
-            ally["tarnished_jade_pins"] = 0
+            ally["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(ally) else 0
             ally["tarnished_jade_weakened"] = False
+            clear_authors_pen_state(ally)
+            # Mirror player context onto allies (Wonderland checks, floor-tracking uniques)
+            ally["floor"] = player.get("floor")
+            ally["dungeon_region"] = player.get("dungeon_region")
             if _actor_has_black_silence_gloves(ally):
                 init_gloves_state(ally)
+            if _actor_has_palette_brush(ally):
+                init_brush_state(ally)
 
     if enemies is None:
         enemies = [enemy_stats(k, player) for k in enemy_keys]
@@ -340,6 +368,12 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         for ally in get_active_allies(player):
             apply_abyss_tempo_round_start(ally)
 
+        # Chronoweave Mantle: turn-start Momentum gain (player + allies)
+        from combat.weapon.chronoweave import apply_chronoweave_turn_start
+        apply_chronoweave_turn_start(player)
+        for ally in get_active_allies(player):
+            apply_chronoweave_turn_start(ally)
+
         enemies[:] = prune_dead(enemies)
         if not enemies:
             c_print("All enemies have been defeated!")
@@ -364,7 +398,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 return _end_combat_with_result(player, "victory")
 
         # --- Tarnished Jade: turn-start pin damage ---
-        from combat.tarnished_jade import apply_tarnished_jade_turn_start
+        from combat.weapon.tarnished_jade import apply_tarnished_jade_turn_start
         tj_triggered = apply_tarnished_jade_turn_start(player, enemies)
         if tj_triggered:
             enemies[:] = prune_dead(enemies)
@@ -387,7 +421,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         turn_order = roll_initiative(player, enemies)
 
         # Black Silence Gloves: First Strike detection
-        from combat.black_silence_gloves import set_first_strike, _actor_has_black_silence_gloves
+        from combat.weapon.black_silence_gloves import set_first_strike, _actor_has_black_silence_gloves
         if _actor_has_black_silence_gloves(player):
             # Player acts first if their entry comes before all enemies
             player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
@@ -409,7 +443,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
 
         # Wedding Accessory: First Strike detection (Round 1 only)
         if round_num == 1:
-            from combat.wedding_specials import get_active_wedding_item, is_bonded, get_wedding_girl_key
+            from combat.weapon.wedding_specials import get_active_wedding_item, is_bonded, get_wedding_girl_key
             wedding_item = get_active_wedding_item(player)
             if wedding_item:
                 player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)

@@ -1,15 +1,9 @@
-from utils import advance_time
+from utils import advance_time, _get_wonderland_max_floor
 from inventory import add_item_to_inventory
 from resources.items import random_equipment, build_item, ITEM_RARITY
 from city_dialogue import service_dialogue
 from gui.terminal import term
 import random
-
-
-def _get_wonderland_max_floor(player):
-    """Return the highest floor reached in Wonderland dungeon."""
-    wl_prog = player.get("city_floors", {}).get("wonderland", {})
-    return wl_prog.get("max_floor", 1)
 
 
 # ── Capture Net tier definitions ─────────────────────────────────────────────

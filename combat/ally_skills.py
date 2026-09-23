@@ -1,9 +1,8 @@
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input
 # combat/ally_skills.py - Ally skill system: passive, innate, and learnable skills
 import os
 import yaml
 
-from resources.skill_loader import PASSIVE_SKILLS, CLASS_SKILLS
 from combat.helpers import format_damage_msg
 
 # Maximum number of learnable skills an ally can have at once
@@ -334,6 +333,20 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
     from combat.status_effects import apply_poison, apply_burn, apply_shock, apply_barrier, apply_sleep, apply_haste, apply_paralyze, apply_regen, apply_entomb, apply_void_touched, apply_bleed, absorb_damage, wake_on_damage, apply_healing
     from character import player_max_hp
 
+    # ── Palette heroine: custom kit (degraded boss moves) ──
+    from combat.palette_ally import is_palette_ally
+    if is_palette_ally(ally):
+        if skill_id == "palette_signature":
+            from combat.palette_ally import start_palette_signature
+            ally.setdefault("skill_cooldowns", {})[skill_id] = skill_def.get("cooldown", 4)
+            add_ally_skill_mastery_xp(ally, skill_id)
+            return start_palette_signature(ally), False
+        if skill_id == "palette_spectrum":
+            from combat.palette_ally import palette_spectrum_attack
+            ally.setdefault("skill_cooldowns", {})[skill_id] = skill_def.get("cooldown", 3)
+            add_ally_skill_mastery_xp(ally, skill_id)
+            return palette_spectrum_attack(ally, player, enemies)
+
     a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
 
     stat_map = {
@@ -358,6 +371,8 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
 
     msg_parts = []
     victory = False
+    # Snapshot enemy HP so Sky Piercer can detect which enemies this skill damaged
+    pre_hp = [e["hp"] for e in enemies]
 
     # ── Target Selection Helpers ──
     def _pick_enemy_target():
@@ -436,6 +451,9 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         dmg = max(1, power + get_strength_bonus(ally) - armor)
         # Apply elemental damage if skill has an elemental profile
         element = skill_def.get("elemental")
+        if skill_def.get("palette_dynamic_element"):
+            from combat.palette_ally import get_palette_ally_color_element
+            element = get_palette_ally_color_element(ally)
         if element:
             from combat.elemental import calculate_elemental_damage
             dmg = calculate_elemental_damage(dmg, ally, target, element)
@@ -1089,9 +1107,13 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
     if mastery_upgrade:
         msg_parts.append("Skill Mastery increased! ★")
 
-    # Safety check
-    if victory and [e for e in enemies if e["hp"] > 0]:
-        victory = False
+    # ── Sky Piercer: execute non-superboss enemies left at/below threshold ──
+    from combat.weapon.sky_piercer import check_sky_piercer_execute
+    for i, e in enumerate(enemies):
+        if i < len(pre_hp) and e["hp"] < pre_hp[i]:
+            check_sky_piercer_execute(ally, e, pre_hp[i] - e["hp"])
+    # Victory is only valid if ALL enemies are defeated (covers executes too).
+    victory = not any(e["hp"] > 0 for e in enemies)
 
     return " ".join(msg_parts), victory
 

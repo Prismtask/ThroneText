@@ -82,6 +82,72 @@ class ChangelogScreen(BaseScreen):
         t = self.text_widget
         t.configure(state=tk.NORMAL)
 
+        self._add_version("v0.1.7.0")
+
+        self._add_section("New Super Boss: Palette, the Chromatic Artisan")
+        self._add_bullet("A new tier-8 superboss joins the normal superboss rotation — a painter "
+                         "whose canvas is reality, and who teaches you the very mechanics her "
+                         "drops later grant.")
+        self._add_bullet("7-color stance system: Palette cycles Crimson, Azure, Gold, Verdant, Umber, "
+                         "Alabaster, and Obsidian. Each stance changes her attacks, resistances "
+                         "(0.6 vs her own element, 1.4 vs the counter element), and a unique boss "
+                         "passive (damage boost, regen, initiative, dodge, defense, self-cleanse, "
+                         "lifesteal). Physical and magical stay 0.8 in every stance.")
+        self._add_bullet("Paint system: her attacks stain the whole party with Paint stacks. At 5 stacks "
+                         "the paint bursts into the stance's color-matched debuff (Burn, Slow, Shock, "
+                         "Blind, Weaken, Silence, Dread); at 6-7 it explodes at +50% potency. "
+                         "Phase 1 cap is 5, phase 2+ is 7.")
+        self._add_bullet("3 phases: Underpainting, Layering (a Blank Canvas transition that wipes every "
+                         "debuff and heals her), and Masterpiece (Dual Palette — two colors, two "
+                         "passives, two weaknesses).")
+        self._add_bullet("Signature: below 10% HP she paints your name — a 2-turn instant-KO charge, "
+                         "interrupted by dealing 40+ total party damage during the charge. "
+                         "Fixative locks your paint in place for 3 turns — no growth, no burst, "
+                         "no cleanse.")
+
+        self._add_section("New Unique Equipment")
+        self._add_bullet("Palette's Brush (100% drop) — the game's second no-skills weapon. Replaces ALL "
+                         "class skills with the brush kit: stance commitment (1.35x elemental attacks), "
+                         "stroke painting (3rd stroke = Pigment Explosion, +50%), permanent battle auras "
+                         "(Wet Palette: 3 slots, rank up to 3), and one-use Exhibits (Impasto, "
+                         "Chiaroscuro, Signature) unlocked at 6/12/18 strokes. Fully usable by allies.")
+        self._add_bullet("Blank Canvas Shawl (100% drop) — once per combat, a free action that wipes every "
+                         "debuff (including Paint), heals 15% max HP, and grants Afterimage (blocks the "
+                         "next 2 debuffs for 2 turns) — at the cost of your own buffs.")
+
+        self._add_section("New Ally: Palette (Heroine)")
+        self._add_bullet("Not capturable — recruited through \"The Artist's Choice\" after the fight if you "
+                         "let a full Paint burst dry on your skin, or if you survive her finished "
+                         "Signature (\"You held the canvas\").")
+        self._add_bullet("Joins directly as a permanent party member (Elemental race) with a degraded "
+                         "masterpiece kit: Brushstroke (her cycling color), Spectrum (3 random-element "
+                         "hits), and Signature (2.5x, 1-turn telegraph, cannot be defended).")
+        self._add_bullet("Original-equipment synergies: wielding her own brush locks her into the full "
+                         "brush kit and grants half-strength boss passives per stance; wearing her own "
+                         "shawl upgrades Blank Canvas to a party-wide cleanse and heal.")
+
+        self._add_section("New Wedding Accessory")
+        self._add_bullet("Palette's Palette (soulbound Legendary at 200 affection) — Masterclass: while "
+                         "Palette is in the party, brush Exhibits unlock at 5/10/15 strokes and deal "
+                         "+15% damage.")
+
+        self._add_section("Engine Additions & Fixes")
+        self._add_bullet("New party damage hook in superboss fights (enemy-HP tracking across player and "
+                         "ally turns) powering the Signature interrupt.")
+        self._add_bullet("The generic elemental debuff proc is suppressed for Palette — paint bursts are "
+                         "her only debuff channel.")
+        self._add_bullet("Enemies can carry an initiative bonus; Paint shows as a Painted status tag; "
+                         "enemy status lines display active brush strokes.")
+        self._add_bullet("Afterimage gate added to all debuff application paths, including Paint.")
+
+        self._add_section("Bug Fixes")
+        self._add_bullet("Fixed a bug where the Tarnished Jade PIN status tag appeared even when "
+                         "the Jade wasn't equipped. Combat start unconditionally set pin stacks to 1 "
+                         "and end-of-combat cleanup never reset them, so the phantom pin persisted "
+                         "into the save and showed on the city party card. Pins now initialize only "
+                         "when the Jade is actually worn (player and allies), are cleared after "
+                         "combat, and the tag only renders for a real Jade wielder.")
+
         self._add_version("v0.1.6.2")
 
         self._add_section("Bug Fixes")
@@ -112,12 +178,6 @@ class ChangelogScreen(BaseScreen):
                          "or reset to Room 1 mid-run. Saved dungeon state is now validated before "
                          "being restored — invalid state is auto-wiped and the floor regenerates "
                          "fresh instead of silently corrupting the run.")
-        self._add_bullet("Fixed a bug where wedding accessory combat-start messages (Windweaver Pinion, "
-                         "Blizzard Veil, Deathward Crown, etc.) were being cleared before they could "
-                         "appear in the GUI combat log. apply_wedding_combat_start() now runs after "
-                         "the Round 1 header is printed so all wedding accessory effects are visible. "
-                         "Additionally, wedding accessories now show a \"thrums with power — you strike "
-                         "first!\" message when the player wins initiative in Round 1.")
 
         self._add_section("New Monster Girls & Wedding Accessories")
         self._add_bullet("10 new monster girls are now recruitable/capturable across various dungeons: "
@@ -149,70 +209,6 @@ class ChangelogScreen(BaseScreen):
                              "burn/dread on hit + retribution when struck. [fire/dark]")
         self._add_sub_bullet("Deathward Crown (Grave Queen) — Grave Reign: combat-start AoE + "
                              "on-kill heal + stacking all-stat buff (up to 3×). [dark/earth]")
-
-        self._add_section("New Race: Angel")
-        self._add_bullet("Introduced the Angel race — a celestial faction spanning levels 20–55 with "
-                         "extreme light affinity (1.5× resist, 1.5× damage) and crippling dark weakness "
-                         "(0.4× resist). Angels appear in magical biomes, pandemonium endgame, and the "
-                         "all-new Celestial biome (Lv 30+).")
-        self._add_bullet("20 Angel enemies added: 13 trash (Light Warden through Celestial Dragon), "
-                         "4 bosses (Divine Justicar, Heavenly Choir, Archon of Truth, Metatron's Voice), "
-                         "1 monster girl (Seraph Ascendant, Lv 42), 1 minion (Divine Puppet), and "
-                         "1 superboss (Fallen Morningstar, Lv 57).")
-        self._add_bullet("Angel race mods: +3 Wisdom, +3 Charisma, +1 Learning, −1 Constitution. "
-                         "Resistances: light 1.5, dark 0.4, fire 1.1, magical 1.2, physical 0.85, thunder 0.8.")
-
-        self._add_section("Enemy Roster Expansion (523 → 619 Enemies)")
-        self._add_bullet("Extended 6 previously short races that stopped at Lv 7–29 up to Lv 44–53, "
-                         "adding 36 new enemies so no race becomes irrelevant after Lv 30:")
-        self._add_sub_bullet("Goblin (was Lv 1–7 → now Lv 1–44): Backstabber, Bomb Chucker, "
-                             "Shadow Whisperer, War Chieftain, Demolition Squad, Horde Captain.")
-        self._add_sub_bullet("Gnome (was Lv 1–17 → now Lv 1–47): Aether Mechanist, Chrono-Tinker, "
-                             "Arcane Artillerist, Grand Artificer, Mecha Overlord, Reality Engineer, "
-                             "Omnissiah Prototype.")
-        self._add_sub_bullet("Orc (was Lv 1–28 → now Lv 1–49): Orc Chieftain, Orc Warlord "
-                             "(new high-level versions using titles freed by renaming low-level orcs), "
-                             "Bloodfist Champion, Apocalypse Rager, Warbringer Elite, Doom Howler.")
-        self._add_sub_bullet("Lizardfolk (was Lv 1–28 → now Lv 1–50): Serpentine Oracle, Dread Naga, "
-                             "Primordial Serpent, Scale Tyrant, World Fang.")
-        self._add_sub_bullet("Vampire (was Lv 1–27 → now Lv 1–52): Blood Baron, Nosferatu Ancient, "
-                             "Carmilla's Handmaiden, Blood Sovereign, Eclipse Countess, The First Sire.")
-        self._add_sub_bullet("Shadow (was Lv 1–29 → now Lv 1–53): Void Stalker, Penumbra Wraith, "
-                             "Total Eclipse, Umbral Sovereign, Abyss Incarnate, Primordial Dark.")
-        self._add_bullet("Added 16 Lv 41–50 trash enemies across 8 evergreen races (Beast, Undead, "
-                         "Demon, Construct, Dragonkin, Fey, Elemental, Abomination) to fill the critical "
-                         "high-level gap where previously only 3 non-minion enemies existed in this bracket.")
-        self._add_bullet("Built out Lv 51–60 endgame ladder with 15 new enemies: 8 trash, 4 bosses "
-                         "(Apex of Scales, The First Horror, World Engine, Lord of the Pit), and "
-                         "2 new superbosses (Fallen Morningstar at Lv 57, Lord of the Pit at Lv 60).")
-        self._add_bullet("Level cap extended from 57 to 60. The highest-level enemy is now "
-                         "Lord of the Pit (Demon superboss, Lv 60, 2200 HP).")
-
-        self._add_section("Enemy Naming Audit & Cleanup")
-        self._add_bullet("Renamed 3 existing enemies to fix title inflation at low levels, freeing "
-                         "names for high-level variants:")
-        self._add_sub_bullet("Orc Warlord (Lv 7) → Orc War Captain — 'Warlord' now used for Lv 33 boss.")
-        self._add_sub_bullet("Orc Chieftain (Lv 8) → Orc Elite Guard — 'Chieftain' now used for Lv 31 trash.")
-        self._add_sub_bullet("Goblin Whisperer (Lv 2) → Goblin Chatter — 'Whisperer' now used for "
-                             "Goblin Shadow Whisperer at Lv 31.")
-        self._add_bullet("Shifted 3 goblin specialists from Lv 2 to Lv 3 (Shaman, Archer, Knifer) "
-                         "to spread the extremely dense Lv 1–2 goblin cluster.")
-
-        self._add_section("Journal System & Event Log")
-        self._add_bullet("Replaced the standalone Bounties tab in the Inventory screen with a new "
-                         "Journal tab containing four sub-tabs: Bounty, Main Quest, Side Quest, and Event. "
-                         "The Journal consolidates all quest tracking into one organized interface.")
-        self._add_bullet("Bounty sub-tab now shows enhanced bounty details: progress status, "
-                         "difficulty rating, reward breakdown (gold + favor), and days-remaining timer "
-                         "with expiration warnings.")
-        self._add_bullet("Event sub-tab permanently records all daily events (fixed and random) as they "
-                         "occur, displayed newest-first with day stamps. Events are stored in save data "
-                         "so they persist across sessions.")
-        self._add_bullet("Main Quest and Side Quest sub-tabs are ready for future quest content.")
-        self._add_bullet("Fixed a bug where daily events (Bounty Rush, Full Moon, Lucky Day, etc.) and "
-                         "bounty expiry messages were leaking to the console log via raw print() calls "
-                         "during the continuous time flow tick. All event display is now routed through "
-                         "the Journal system in GUI mode — no more console spam.")
 
         self._add_version("v0.1.6")
 

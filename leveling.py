@@ -3,12 +3,7 @@ from resources.constants import EXP_COEFF_A, EXP_COEFF_B, EXP_POWER
 from resources.cities import CITIES
 from character import player_max_hp
 from combat.skills import unlock_skills_for_level
-
-# ── GUI terminal detection (safe import for terminal mode) ──────────
-try:
-    from gui.terminal import get_terminal as _get_gui_terminal
-except ImportError:
-    _get_gui_terminal = lambda: None
+from utils import _tprint, _tpause, _tmenu
 
 # ── GUI level-up dialog (safe import) ──────────────────────────────────
 try:
@@ -19,52 +14,6 @@ try:
 except ImportError:
     _gui_choose_attr = None
     _gui_show_results = None
-
-
-def _term():
-    """Return the GUI Terminal if running in GUI mode, else None."""
-    return _get_gui_terminal()
-
-
-def _tprint(*args, sep=" "):
-    """Print to GUI if available, else to terminal."""
-    t = _term()
-    text = sep.join(str(a) for a in args)
-    if t:
-        t.print(text)
-    else:
-        print(text)
-
-
-def _tpause(prompt="Press Enter to continue..."):
-    """Pause for user acknowledgement."""
-    t = _term()
-    if t:
-        t.pause(prompt)
-    else:
-        input(prompt)
-
-
-def _tmenu(options, prompt="Choose an option:", allow_cancel=False, cancel_label="Cancel"):
-    """Show a menu; returns 0-based index or -1."""
-    t = _term()
-    if t:
-        return t.menu(options, prompt=prompt, allow_cancel=allow_cancel, cancel_label=cancel_label)
-    else:
-        for i, opt in enumerate(options):
-            print(f"{i+1}. {opt}")
-        if allow_cancel:
-            print(f"0. {cancel_label}")
-        try:
-            choice = input(prompt + " ").strip()
-            idx = int(choice) - 1
-            if allow_cancel and idx == -1:
-                return -1
-            if 0 <= idx < len(options):
-                return idx
-        except (ValueError, IndexError):
-            pass
-        return -1
 
 
 # ── Level-up I/O helpers (GUI-first, terminal fallback) ──────────────

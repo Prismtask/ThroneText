@@ -21,7 +21,7 @@ description: 'Iterative development helper for the Pandemonium Python text-based
 2. **Read player + ally files** if touching UI or stats display.
 3. **New persistent fields** → patch `./character.py` `ensure_player_fields()` with `.setdefault()`.
 4. **Verify** with `./.venv` interpreter.
-5. **Allies can't** use Abyss Fang, Cutlass, capture, or player class skills.
+5. **Allies can** use unique equipment — all effects are actor-based: Abyss Fang, Captain's Cutlass, Black Silence Gloves, Tarnished Jade, Author's Pen, Vileheart Pendant, Chronoweave Mantle. **Allies can't** use capture, player class skills, or wedding accessories (player-only, soulbound).
 6. **New superboss** → `./combat/<name>.py` + YAML entry + import in `./dungeon.py` + tier pool.
 7. **End-of-combat**: `end_of_combat_cleanup()` must run on victory/flee/death to tick cooldowns, decrement buffs, clear weapon states. Must also call `clear_abyss_fang_state()` and `clear_captain_cutlass_state()`.
 
@@ -56,6 +56,15 @@ description: 'Iterative development helper for the Pandemonium Python text-based
 - **Captain Cutlass:** 5 persistent player fields (`cutlass_high_tide_stacks`, `cutlass_rally_cooldown`, `cutlass_riposte_count`, etc.). Cleared via `clear_captain_cutlass_state()`.
 - **Chrysalis:** Set HP via `enemy["hp"] = new_value` for Paradox Fracture. 3 Temporal Aspects.
 
+### Unique Equipment (actor-based convention — applies to ALL future uniques)
+Every unique item effect must work for the player AND allies unless it's a wedding accessory:
+- Implement in `./combat/weapon/<name>.py` with `_actor_has_<id>(actor)` + `is_player` flags; never hardcode the player dict.
+- Wire into BOTH `combat/player_actions.py` and `combat/ally.py` (`handle_ally_turn`, `_ally_action_menu`, ally basic-attack path).
+- Lifecycle: tick/clear per-ally state in `combat/combat_engine.py` (`_tick_all_state`, `_combat_inner`, `_end_combat_with_result`) AND `combat/superboss_common.py` (superboss rounds have their own loop).
+- Mirror player context onto allies at combat start (`ally["floor"]`, `ally["dungeon_region"]`) for floor/region-gated effects.
+- Actors are identifiable via `actor.get("is_ally")` and `actor.get("race")`; player HP uses `player_max_hp()`, ally HP uses `ally["max_hp"]`.
+- Player-only exceptions: wedding accessories (`combat/weapon/wedding_specials.py`) and vanity items (e.g. Perception-Blocking Mask).
+
 ### Player Systems
 - **Engagement/Wedding:** 100 affection → propose with ring → cap 200 → Legendary soulbound accessory at 200. Fields: `engaged_girls`, `married_girls`.
 - **Mounts:** `player["mount_id"]` — travel speed + combat passives.
@@ -65,8 +74,8 @@ description: 'Iterative development helper for the Pandemonium Python text-based
 - **Elemental profiles:** `player["elemental_res"]` / `player["elemental_dmg"]` — per-element dicts.
 - **Party order:** `player["party_order"]` — front/back row positioning.
 
-### GUI Screens (16 screens in `./gui/screens/`)
-`base_screen`, `changelog_screen`, `char_create_screen`, `city_screen`, `combat_screen`, `death_screen`, `dungeon_screen`, `facility_screen`, `inventory_screen`, `main_menu_screen`, `post_floor_screen`, `settings_screen`, `splash_screen`, `travel_screen`, `world_map_screen`
+### GUI Screens (14 screens in `./gui/screens/`)
+`base_screen`, `changelog_screen`, `char_create_screen`, `city_screen`, `combat_screen`, `death_screen`, `dungeon_screen`, `facility_screen`, `inventory_screen`, `main_menu_screen`, `post_floor_screen`, `settings_screen`, `splash_screen`, `world_map_screen`
 
 ### GUI Widgets (7 widgets in `./gui/widgets/`)
 `city_map`, `confirm_dialog`, `hp_bar`, `item_card`, `log_window`, `notification_toast`, `stat_display`
