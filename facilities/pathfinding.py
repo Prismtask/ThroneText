@@ -70,6 +70,9 @@ def find_shortest_path(player, origin_id, dest_id):
         if mount:
             mount_reduction = mount.get("time_reduction", 0)
 
+    # Daily events: Heavy Rain makes travel take longer
+    daily_time_mult = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
+
     # ── BFS ───────────────────────────────────────────────────────────────
     # We store (current_node, path_list, total_time, total_cost, ferry_count,
     #          segments_list) in the queue.
@@ -116,6 +119,8 @@ def find_shortest_path(player, origin_id, dest_id):
             else:
                 effective_time = int(raw_time * (1 - mount_reduction))
                 seg_cost = 0
+            if daily_time_mult != 1.0:
+                effective_time = int(effective_time * daily_time_mult)
 
             new_time = total_time + effective_time
             new_cost = total_cost + seg_cost

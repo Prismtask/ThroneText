@@ -45,15 +45,20 @@ def _danger_tag(travel_time):
 
 
 def _effective_travel_time(player, raw_time):
-    """Apply mount time reduction for overland journeys."""
+    """Apply mount time reduction and daily event modifiers (e.g. Heavy Rain)."""
+    effective = raw_time
     mount_id = player.get("mount_id")
     if mount_id:
         from resources.mounts import get_mount
         mount = get_mount(mount_id)
         if mount:
             reduction = mount.get("time_reduction", 0)
-            return int(raw_time * (1 - reduction))
-    return raw_time
+            effective = int(raw_time * (1 - reduction))
+    # Daily events: Heavy Rain makes travel take longer
+    daily_mult = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
+    if daily_mult != 1.0:
+        effective = int(effective * daily_mult)
+    return effective
 
 
 def travel_to_city(player, current_city_id):

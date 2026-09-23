@@ -4,8 +4,8 @@ gui/widgets/log_window.py — Session log popup (travel-log style).
 A Toplevel window showing the full session log history with category
 filtering, search, and per-category colors. This is the single log surface
 in GUI mode — the old always-visible bottom bar was removed. Opened from
-the 📜 button in the top bar, and auto-opens when important messages
-(e.g. events) are logged.
+the 📜 button in the top bar. Event notices use the separate level-up
+style dialog in gui/widgets/event_dialog.py.
 """
 
 import tkinter as tk

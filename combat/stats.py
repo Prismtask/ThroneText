@@ -25,6 +25,11 @@ def enemy_stats(enemy_key, player=None):
     attrs = compute_enemy_attributes(enemy_key)
 
     multiplier = get_difficulty_multiplier_from_time(player) if player else 1.0
+    # Daily events: Full Moon — monsters grow restless (+20% difficulty)
+    if player and player.get("daily_effects", {}).get("full_moon"):
+        multiplier *= 1.20
+    # Soft cap so stacked time-of-day + event modifiers stay fair
+    multiplier = min(multiplier, 2.2)
     pandemonium_mult = 1.7 if player and player.get("pandemonium_mode") else 1.0
 
     base_hp = template["base_hp"]

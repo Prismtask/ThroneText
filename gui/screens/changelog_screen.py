@@ -82,6 +82,28 @@ class ChangelogScreen(BaseScreen):
         t = self.text_widget
         t.configure(state=tk.NORMAL)
 
+        self._add_version("v0.1.7.1 — The Chromatic Artisan")
+
+        self._add_section("World Events Now Actually Happen")
+        self._add_bullet("The daily event system was announcing effects that never fired — Traveling "
+                         "Merchant, New Moon, Full Moon, Month-End Festival, Heavy Rain, Bounty Rush, "
+                         "Monster Surge, Lucky Day, and Blessed Wind are all now wired into gameplay.")
+        self._add_bullet("Market Day (days 7 & 21): the Traveling Merchant now sets up a stall inside "
+                         "the Guild Hall with buy/sell stock at road rates.")
+        self._add_bullet("New Moon grants +25% favor on bounty turn-ins; Bounty Rush boosts bounty "
+                         "gold and favor by 50%; Full Moon raises enemy strength by 20%; Month-End "
+                         "Festival cuts shop prices by 20%; Heavy Rain slows travel by 30%; Monster "
+                         "Surge adds an extra enemy per dungeon room; Lucky Day adds 15% gold drops.")
+        self._add_bullet("Blessed Wind (+1 all stats) now properly expires when the day changes.")
+
+        self._add_section("New Events")
+        self._add_bullet("Tax Day — shop prices +15%. Scholar's Day — +25% XP. Peaceful Skies — "
+                         "monsters 10% weaker. Crimson Dawn — monsters 15% stronger.")
+        self._add_bullet("Monster Girl Season — +15 capture chance. Wary Prey — -10 capture chance. "
+                         "Ill Omen — dungeons swarm with foes and gold is scarcer (-5%).")
+        self._add_bullet("Difficulty stacking is capped at 2.2x so stacked night/event modifiers "
+                         "can't spiral out of control.")
+
         self._add_version("v0.1.7.0")
 
         self._add_section("New Super Boss: Palette, the Chromatic Artisan")

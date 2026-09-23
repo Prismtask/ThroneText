@@ -71,6 +71,10 @@ def attempt_capture(player, target, net=None):
     from combat.weapon.wedding_specials import apply_wedding_capture_bonus
     success_chance = max(5, min(95, roll + get_charisma_bonus(player) + apply_wedding_capture_bonus(player)))
 
+    # Daily events: Monster Girl Season (+15) / Wary Prey (-10)
+    capture_bonus = player.get("daily_effects", {}).get("capture_bonus", 0)
+    success_chance = max(5, min(95, success_chance + capture_bonus))
+
     if random.uniform(0, 100) < success_chance:
         c_print("\n" + "✨" * 20)
         c_print(get_capture_message(target, player))

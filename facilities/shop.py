@@ -22,6 +22,14 @@ def get_discounted_price(base_price, player, city_id):
     total_discount = min(70, discount_percent + favor_discount)
     
     discounted = int(base_price * (100 - total_discount) / 100)
+    # Daily events: Month-End Festival — extra 20% off everything
+    event_discount = player.get("daily_effects", {}).get("shop_discount", 0.0)
+    if event_discount:
+        discounted = int(round(discounted * (1.0 - event_discount)))
+    # Daily events: Tax Day — the crown takes its cut on all goods
+    surcharge = player.get("daily_effects", {}).get("shop_surcharge", 0.0)
+    if surcharge:
+        discounted = int(round(discounted * (1.0 + surcharge)))
     return max(1, discounted)
 
 
@@ -203,6 +211,10 @@ def city_shop(player, city_id="solmere"):
         total_disc = min(70, c_disc + f_disc)
         
         term.print(f"Charisma & Favor ({favor}): → {100 - total_disc:.0f}% of base price (max 70%)\n")
+        if player.get("daily_effects", {}).get("shop_discount"):
+            term.print("🏮 Month-End Festival: all shops offer 20% off today!\n")
+        if player.get("daily_effects", {}).get("shop_surcharge"):
+            term.print("🧾 Tax Day: the crown takes a 15% cut on all goods!\n")
         term.print("--- Shop Stock ---")
         for i, (item, base_price) in enumerate(shop_stock, 1):
             final_price = get_discounted_price(base_price, player, city_id)  # Pass city_id here!

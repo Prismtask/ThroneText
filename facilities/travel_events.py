@@ -378,6 +378,9 @@ def _handle_combat(player, travel_type, region, combat_override=None):
         total_xp   = sum(ENEMIES[k]["level"] * 10 for k in enemy_keys)
         total_gold = sum(ENEMIES[k]["level"] * 5 + random.randint(3, 12)
                          for k in enemy_keys)
+        # Daily events: Lucky Day / Full Moon gold bonus
+        from events import get_daily_bonus_multiplier
+        total_gold = int(total_gold * get_daily_bonus_multiplier(player, "gold_bonus"))
         player["gold"] = player.get("gold", 0) + total_gold
         gain_exp(player, total_xp)
         term.print(f"  +{total_gold} gold  |  +{total_xp} XP")

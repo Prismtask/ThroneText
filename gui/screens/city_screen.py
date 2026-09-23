@@ -16,7 +16,7 @@ from resources.cities import CITIES
 from character import player_max_hp
 from save_load import save_game
 from utils import format_time, advance_time
-from events import format_date, get_event_queue_messages
+from events import format_date, get_event_queue_events
 from combat.combat_ui import _get_entity_buff_tags
 
 
@@ -29,14 +29,20 @@ class CityScreen(BaseScreen):
         self._update_top_bar()
         self.sm.clear_log()
 
-        # Show any queued dungeon events — logging with category "event"
-        # auto-opens the session log popup so the player never misses them.
+        # Show any queued dungeon events — a level-up style popup displays
+        # them (name, day, duration, description), while the session log
+        # keeps the history for the 📜 popup.
         if self.player:
-            event_msgs = get_event_queue_messages(self.player)
-            if event_msgs:
-                for msg in event_msgs:
-                    if msg.strip():
-                        self.sm.log(msg, category="event")
+            events = get_event_queue_events(self.player)
+            if events:
+                from events import format_event_alert
+                for evt in events:
+                    self.sm.log(format_event_alert(evt), category="event")
+                from gui.widgets.event_dialog import show_event_notice
+                _root = self.sm.root
+                # Defer so the city screen finishes building first
+                _root.after(200, lambda: show_event_notice(
+                    events, day_text=format_date(self.player), parent=_root))
 
         # ── Main layout ────────────────────────────────────────────────────────
         self.content = self.styled_frame(self)

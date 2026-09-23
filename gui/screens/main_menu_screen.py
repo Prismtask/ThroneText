@@ -88,7 +88,7 @@ class MainMenuScreen(BaseScreen):
         # Version label
         tk.Label(
             container,
-            text="v0.1.7.0 — The Chromatic Artisan",
+            text="v0.1.7.1 — The Chromatic Artisan",
             bg=Theme.BG_DARK,
             fg=Theme.TEXT_DIM,
             font=Theme.FONT_SMALL,

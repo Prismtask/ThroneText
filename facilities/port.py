@@ -58,6 +58,10 @@ def port_service(player, city_id):
     dest_name   = CITIES.get(dest_id, {}).get("name", dest_id)
     cost        = 0 if has_ship else 100
     travel_time = int(chosen["travel_time"] * 0.7) if has_ship else chosen["travel_time"]
+    # Daily events: Heavy Rain makes voyages take longer
+    daily_mult  = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
+    if daily_mult != 1.0:
+        travel_time = int(travel_time * daily_mult)
 
     if player.get("gold", 0) < cost:
         term.print("\n  You cannot afford a passage ticket.")

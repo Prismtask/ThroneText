@@ -350,18 +350,14 @@ class ScreenManager:
 
         The old always-visible bottom bar was removed. Messages are stored
         in the session history, viewable via the 📜 popup (top-right).
-        Important categories (events) auto-open the popup so the player
-        never misses them.
+        Event notices surface through the level-up style event dialog
+        (gui/widgets/event_dialog.py) instead.
         """
         self._log_entries.append((category, message))
         # Trim if needed
         max_lines = self.settings.get("log_max_lines", 1000)
         if len(self._log_entries) > max_lines:
             self._log_entries = self._log_entries[-max_lines:]
-
-        # Auto-open the log popup for important categories
-        if category == "event":
-            self.root.after(200, self._open_log_window)
 
     def clear_log(self):
         """Compatibility no-op — the bottom log panel was removed.

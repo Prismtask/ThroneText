@@ -345,6 +345,116 @@ def _legendary_rewards(player, city_id):
     term.pause()
 
 
+def _traveling_merchant(player):
+    """Market Day event: a traveling merchant sells wares inside the guild hall."""
+    from facilities.travel_events import (
+        _random_item_id, _merchant_stock_rarity, _merchant_price,
+        _charisma_discount, _item_stat_line,
+    )
+    from resources.items import build_item
+    from inventory import add_item_to_inventory
+
+    term.clear()
+    term.print("=== TRAVELING MERCHANT ===")
+    term.print('  A road-worn merchant has set up a stall in the corner of the guild hall.')
+    term.print('  "Wares! Quality goods — fair price for a fellow traveler!"\n')
+
+    # Build stock: filtered item pool, floor-influenced rarity (no legendaries)
+    stock = []
+    for _ in range(random.randint(2, 3)):
+        item_id     = _random_item_id()
+        rarity      = _merchant_stock_rarity(player)
+        item        = build_item(item_id, rarity)
+        your_price, road_price = _merchant_price(player, item)
+        stock.append((item, your_price, road_price))
+
+    # Display
+    cha_disc = _charisma_discount(player)
+    gold_info = f"  Your gold: {player.get('gold', 0)}g"
+    if cha_disc > 0:
+        gold_info += f"  |  Charisma discount: {cha_disc:.0f}%"
+    term.print(gold_info)
+
+    term.print("")
+    options = []
+    for item, your_price, road_price in stock:
+        stat = _item_stat_line(item)
+        if cha_disc > 0 and your_price < road_price:
+            price_str = f"{your_price}g  (road: {road_price}g)"
+        else:
+            price_str = f"{your_price}g"
+        term.print(f"  {len(options) + 1}. {item['name']}  {stat}  —  {price_str}")
+        options.append(f"Buy: {item['name']}  {stat}  —  {your_price}g")
+    options.append("Sell an item")
+    options.append("Leave the stall")
+
+    while True:
+        choice = term.menu(options, prompt="What will you do?",
+                           allow_cancel=True, cancel_label="Leave the stall")
+
+        if choice == -1 or choice == len(options) - 1:
+            term.print('  "Safe roads, traveler!"')
+            break
+
+        if choice == len(options) - 2:  # Sell
+            _merchant_sell(player)
+            break
+
+        if 0 <= choice < len(stock):
+            item, your_price, _ = stock[choice]
+            if player.get("gold", 0) >= your_price:
+                player["gold"] -= your_price
+                if add_item_to_inventory(player, item.copy()):
+                    term.print(f'  You purchase [{item["name"]}] for {your_price}g.')
+                    term.print('  "Pleasure doing business!" The merchant tips his hat.')
+                else:
+                    term.print('  "Your bag looks stuffed, friend. Make room and come back!"')
+                    player["gold"] += your_price  # refund
+            else:
+                term.print(f'  "You\'re {your_price - player.get("gold", 0)}g short, friend."')
+        break
+
+    term.pause()
+
+
+def _merchant_sell(player):
+    """Sell items to the guild-hall traveling merchant at road rates."""
+    from facilities.travel_events import _sell_price, _item_stat_line
+    from inventory import remove_item_by_reference
+
+    inv = player.get("inventory", [])
+    if not inv:
+        term.print('  "Nothing I want off you — yet." The merchant shrugs.')
+        term.pause()
+        return
+
+    term.print("\n  The merchant eyes your pack with practiced interest.")
+    term.print("  (Road sell rate: ~75% of city shop value)\n")
+
+    for i, item in enumerate(inv):
+        unit_price  = _sell_price(item, player)
+        count       = item.get("count", 1)
+        stack_price = unit_price * count
+        count_str   = f" (x{count})" if count > 1 else ""
+        term.print(f"  {i+1:>2}. {item['name']}{count_str}  {_item_stat_line(item)}  —  {stack_price}g")
+
+    try:
+        raw = term.input("\n  Sell which item number? (0 to cancel): ")
+        idx = int(raw.strip()) - 1
+        if 0 <= idx < len(inv):
+            item = inv[idx]
+            gold = _sell_price(item, player) * item.get("count", 1)
+            remove_item_by_reference(player, item, item.get("count", 1))
+            player["gold"] = player.get("gold", 0) + gold
+            term.print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
+        else:
+            term.print('  "Changing your mind is free."')
+    except (ValueError, IndexError):
+        term.print("  Nothing sold.")
+
+    term.pause()
+
+
 def guild_service(player, city_id="solmere"):
     term.clear()
     
@@ -375,16 +485,24 @@ def guild_service(player, city_id="solmere"):
         can_ascend = can_ascend_level_cap(player)
         if can_ascend:
             term.print("\n  🌟 ASCENSION READY! Your power yearns to break through!")
-        
-        choice = term.menu([
+
+        merchant_active = bool(player.get("daily_effects", {}).get("traveling_merchant"))
+        if merchant_active:
+            term.print("\n  🏪 A traveling merchant has set up a stall in the corner of the hall!")
+
+        options = [
             "View Bounty Board",
             "Manage Active Bounties",
             "Enemy Intelligence",
             "Ascend Level Cap",
             "Legendary Rewards",
-            "Leave"
-        ], prompt="What would you like to do?")
-        
+        ]
+        if merchant_active:
+            options.append("Visit the Traveling Merchant")
+        options.append("Leave")
+
+        choice = term.menu(options, prompt="What would you like to do?")
+
         if choice == 0:
             _view_bounty_board(player, city_id, stock_key)
         elif choice == 1:
@@ -395,7 +513,9 @@ def guild_service(player, city_id="solmere"):
             _ascend_level_cap(player, city_id)
         elif choice == 4:
             _legendary_rewards(player, city_id)
-        elif choice == 5 or choice == -1:
+        elif merchant_active and choice == 5:
+            _traveling_merchant(player)
+        elif choice == len(options) - 1 or choice == -1:
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 15)
             break
@@ -487,9 +607,22 @@ def _manage_bounties(player, city_id):
                 term.print("Bounty conditions not met yet.")
                 term.pause()
             else:
-                term.print(f"Bounty Complete! Earned {b['reward_gold']} gold and {b['reward_favor']} Favor in {CITIES[b['city']]['name']}.")
-                player["gold"] = player.get("gold", 0) + b["reward_gold"]
-                player["favor"][city_id] = player["favor"].get(city_id, 0) + b["reward_favor"]
+                # Event bonuses: Bounty Rush (+50% rewards) and New Moon Festival (+25% favor)
+                daily        = player.get("daily_effects", {})
+                gold_reward  = b["reward_gold"]
+                favor_reward = b["reward_favor"]
+                notes = []
+                if daily.get("bounty_bonus"):
+                    gold_reward  = int(gold_reward * 1.5)
+                    favor_reward = int(favor_reward * 1.5)
+                    notes.append("Bounty Rush +50%")
+                if daily.get("favor_bonus"):
+                    favor_reward += int(b["reward_favor"] * 0.25)
+                    notes.append("New Moon +25% favor")
+                note = f" ({', '.join(notes)})" if notes else ""
+                term.print(f"Bounty Complete! Earned {gold_reward} gold and {favor_reward} Favor in {CITIES[b['city']]['name']}.{note}")
+                player["gold"] = player.get("gold", 0) + gold_reward
+                player["favor"][city_id] = player["favor"].get(city_id, 0) + favor_reward
                 active.pop(choice)
                 advance_time(player, 10)
                 term.pause()

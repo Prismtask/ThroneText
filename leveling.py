@@ -4,6 +4,7 @@ from resources.cities import CITIES
 from character import player_max_hp
 from combat.skills import unlock_skills_for_level
 from utils import _tprint, _tpause, _tmenu
+from events import get_daily_bonus_multiplier
 
 # ── GUI level-up dialog (safe import) ──────────────────────────────────
 try:
@@ -33,8 +34,14 @@ def _choose_level_attr(entity_name, level, attributes):
             chosen = _gui_choose_attr(entity_name, level, attributes)
             if chosen is not None:
                 return chosen, True
-        except Exception:
-            pass  # Fall through to terminal
+            # GUI existed but returned no choice (dialog closed / timed out).
+            # Fall back to the terminal menu, but tell the player why.
+            _tprint("\n(Level-up popup was closed without a choice — "
+                    "using the text menu instead.)")
+        except Exception as exc:
+            # The GUI dialog failed to build/show (e.g. thread/race issue).
+            # Report the reason visibly instead of failing silently.
+            _tprint(f"\n(Level-up popup could not be shown: {exc})")
 
     # Terminal fallback
     _tprint(f"\n*** LEVEL UP! {entity_name} is now level {level} ***")
@@ -72,8 +79,9 @@ def _show_level_results(entity_name, level, chosen_attr, new_value,
                 milestones=milestones if milestones else None,
             )
             return
-        except Exception:
-            pass  # Fall through to terminal
+        except Exception as exc:
+            _tprint(f"(Level-up results popup could not be shown: {exc})")
+            # Fall through to terminal
 
     # Terminal fallback
     _tprint(f"{chosen_attr} increased to {new_value}.")
@@ -220,6 +228,8 @@ def gain_exp(player, amount):
         return False
     
     amount = int(amount * get_learning_bonus(player))
+    # Daily events: Scholar's Day (+25% XP)
+    amount = int(amount * get_daily_bonus_multiplier(player, "xp_bonus"))
     old_attributes = player["attributes"].copy()
     player["exp"] = player.get("exp", 0) + amount
     leveled = False

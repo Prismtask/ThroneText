@@ -244,6 +244,9 @@ def generate_floor(floor, region=None, player=None):
         else:
             # Combat room
             num_enemies = random.randint(1, max_enemies)
+            # Daily events: Monster Surge — dungeon enemies are more numerous
+            if player and player.get("daily_effects", {}).get("monster_surge"):
+                num_enemies = min(5, num_enemies + 1)
             enemy_keys = [get_random_enemy_key(floor, boss=False, region=region, player=player)
                           for _ in range(num_enemies)]
             rooms.append({"type": "combat", "enemies": enemy_keys})
@@ -426,11 +429,10 @@ def add_gold_drop(player, enemy_key, pandemonium=False):
     if shadow_gold_reduce > 0:
         gold = max(1, int(gold * (1.0 - shadow_gold_reduce)))
     
-    player["gold"] = player.get("gold", 0) + gold
-    _tprint(f"You found {gold} gold on the enemy!")
+    # Daily events: Lucky Day / Full Moon gold bonus
+    from events import get_daily_bonus_multiplier
+    gold = int(gold * get_daily_bonus_multiplier(player, "gold_bonus"))
 
-
-# ── Wonderland Superboss Dispatch Map ────────────────────────────────
 # Wonderland uses per‑10‑floor superbosses (unlike the global per‑20).
 # Each entry maps floor → (boss_name, module_path, combat_function).
 # Phases 13‑16 will populate floors 20‑50; only floor 10 is live now.
@@ -524,6 +526,9 @@ def _wonderland_superboss_dispatch(player, floor, superboss_override):
                 super_boss_gold = int(super_boss_gold * 2.5)
                 super_boss_exp = int(super_boss_exp * 1.5)
                 _tprint("\n  Pandemonium surges — the reward is amplified!")
+            # Daily events: Lucky Day / Full Moon gold bonus
+            from events import get_daily_bonus_multiplier
+            super_boss_gold = int(super_boss_gold * get_daily_bonus_multiplier(player, "gold_bonus"))
             player["gold"] = player.get("gold", 0) + super_boss_gold
             _tprint(f"\n  {boss_name} defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
             gain_exp(player, super_boss_exp)
@@ -738,6 +743,9 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     if player.get("pandemonium_mode"):
                         super_boss_gold = int(super_boss_gold * 2.5)
                         super_boss_exp = int(super_boss_exp * 1.5)
+                    # Daily events: Lucky Day / Full Moon gold bonus
+                    from events import get_daily_bonus_multiplier
+                    super_boss_gold = int(super_boss_gold * get_daily_bonus_multiplier(player, "gold_bonus"))
                     player["gold"] = player.get("gold", 0) + super_boss_gold
                     _tprint(f"\n Chrysalis defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
                     gain_exp(player, super_boss_exp)
@@ -869,6 +877,9 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     super_boss_gold = int(super_boss_gold * 2.5)
                     super_boss_exp = int(super_boss_exp * 1.5)
                     _tprint("\n  Pandemonium surges — the reward is amplified!")
+                # Daily events: Lucky Day / Full Moon gold bonus
+                from events import get_daily_bonus_multiplier
+                super_boss_gold = int(super_boss_gold * get_daily_bonus_multiplier(player, "gold_bonus"))
                 player["gold"] = player.get("gold", 0) + super_boss_gold
                 _tprint(f"\n Super Boss Defeated! Bonus: +{super_boss_gold} gold, +{super_boss_exp} XP!")
                 gain_exp(player, super_boss_exp)

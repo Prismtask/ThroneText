@@ -285,21 +285,29 @@ def get_time_period(total_minutes):
 
 
 def get_difficulty_multiplier_from_time(player):
-    """Get time-based difficulty multiplier."""
+    """Get time-based difficulty multiplier (time-of-day + daily events)."""
     if "time_minutes" not in player:
         return 1.0
     period = get_time_period(player["time_minutes"])
     if period == "midnight":
-        return 1.8  # Very punishing for early-mid game
+        mult = 1.8  # Very punishing for early-mid game
     elif period == "dawn":
-        return 1.1
+        mult = 1.1
     elif period == "noon":
-        return 1.25
+        mult = 1.25
     elif period == "dusk":
-        return 1.4
+        mult = 1.4
     elif period == "night":
-        return 1.6
-    return 1.0
+        mult = 1.6
+    else:
+        mult = 1.0
+
+    # Daily events: Peaceful Skies (-10%) / Crimson Dawn (+15%)
+    difficulty_mod = player.get("daily_effects", {}).get("difficulty_mod", 0.0)
+    if difficulty_mod:
+        mult *= (1.0 + difficulty_mod)
+
+    return mult
 
 
 # ── ANSI escape code stripping (for GUI text widgets that don't support SGR) ─

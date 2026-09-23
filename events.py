@@ -74,9 +74,51 @@ RANDOM_EVENT_POOL = [
     {
         "id": "ill_omen",
         "name": "Ill Omen",
-        "desc": "A dark cloud hangs over the city. You feel uneasy...",
-        "effect": {"ill_omen": True},
+        "desc": "A dark cloud hangs over the city. Gold is scarce and dungeons swarm with foes...",
+        "effect": {"gold_bonus": -0.05, "monster_surge": True},
         "weight": 5,
+    },
+    {
+        "id": "tax_day",
+        "name": "Tax Day",
+        "desc": "The crown's collectors swarm the markets! Shop prices are 15% higher today.",
+        "effect": {"shop_surcharge": 0.15},
+        "weight": 6,
+    },
+    {
+        "id": "scholars_day",
+        "name": "Scholar's Day",
+        "desc": "The sages open their libraries to the city! You gain 25% more XP today.",
+        "effect": {"xp_bonus": 0.25},
+        "weight": 9,
+    },
+    {
+        "id": "peaceful_skies",
+        "name": "Peaceful Skies",
+        "desc": "An unnatural calm settles over the land. Monsters are 10% weaker today.",
+        "effect": {"difficulty_mod": -0.10},
+        "weight": 7,
+    },
+    {
+        "id": "crimson_dawn",
+        "name": "Crimson Dawn",
+        "desc": "The sky burns red at daybreak. Monsters fight 15% harder today.",
+        "effect": {"difficulty_mod": 0.15},
+        "weight": 5,
+    },
+    {
+        "id": "monster_girl_season",
+        "name": "Monster Girl Season",
+        "desc": "Monster girls emerge from their dens in force! +15 to capture attempts today.",
+        "effect": {"capture_bonus": 15},
+        "weight": 8,
+    },
+    {
+        "id": "wary_prey",
+        "name": "Wary Prey",
+        "desc": "Rumors of hunters sweep the wilds. Monster girls are skittish: -10 to capture attempts today.",
+        "effect": {"capture_bonus": -10},
+        "weight": 6,
     },
 ]
 
@@ -194,6 +236,23 @@ def _apply_all_stats_buff(player, bonus):
     player.setdefault("active_buffs", []).append(buff)
 
 
+def get_daily_effect(player, key, default=None):
+    """Read a value from the player's currently-active daily effects."""
+    return player.get("daily_effects", {}).get(key, default)
+
+
+def get_daily_bonus_multiplier(player, key):
+    """Return 1.0 + a numeric daily effect (e.g. gold_bonus) as a multiplier.
+
+    Safe for missing/corrupt values — always returns a float >= 1.0.
+    """
+    try:
+        value = float(player.get("daily_effects", {}).get(key, 0))
+    except (TypeError, ValueError):
+        value = 0.0
+    return 1.0 + value
+
+
 # ── Display ─────────────────────────────────────────────────────────────
 
 def format_event_alert(event):
@@ -278,6 +337,15 @@ def get_event_queue_messages(player):
         messages.append(format_event_alert(evt))
     messages.append("=" * 50)
     return messages
+
+
+def get_event_queue_events(player):
+    """Pop and return queued raw event dicts, or empty list if none.
+
+    Used by the GUI event notice popup, which needs structured data
+    (name, day, duration, description) rather than formatted strings.
+    """
+    return player.pop("event_queue", [])
 
 
 def flush_event_queue(player):
@@ -387,6 +455,11 @@ def process_day_rollover(player, days_passed, old_day):
         day = old_day + offset
         # Clear yesterday's daily effects
         player["daily_effects"] = {}
+        # Blessed Wind (+all stats) wears off at the day change
+        player["active_buffs"] = [
+            b for b in player.get("active_buffs", [])
+            if b.get("type") != "daily_buff"
+        ]
         events = check_events_for_day(day)
         for evt in events:
             apply_event_effects(player, evt)

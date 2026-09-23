@@ -32,6 +32,7 @@ from inventory import add_item_to_inventory, remove_item_by_reference
 from combat.stats import get_effective_attribute
 from utils import advance_time, get_difficulty_multiplier_from_time
 from character import player_max_hp
+from events import get_daily_bonus_multiplier
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1413,6 +1414,7 @@ class WorldMapScreen(BaseScreen):
         if travel_type == "sea":
             if find_gold:
                 gold = random.randint(20, 80)
+                gold = int(gold * get_daily_bonus_multiplier(self.player, "gold_bonus"))
                 player["gold"] = player.get("gold", 0) + gold
                 msg = f"A barnacled crate bobs alongside.\nInside: {gold} gold in waxed pouches!"
                 self._log(f"+{gold} gold found at sea!", "green")
@@ -1430,6 +1432,7 @@ class WorldMapScreen(BaseScreen):
         else:
             if find_gold:
                 gold = random.randint(10, 50)
+                gold = int(gold * get_daily_bonus_multiplier(self.player, "gold_bonus"))
                 player["gold"] = player.get("gold", 0) + gold
                 msg = f"A traveler's purse lies abandoned at the roadside.\nYou pocket {gold} gold."
                 self._log(f"+{gold} gold found on the road!", "green")

@@ -37,10 +37,18 @@ Usage:
 
 import queue
 import threading
+import traceback
 import tkinter as tk
 from typing import Optional, List, Dict
 
 from gui.theme import Theme
+
+
+class LevelUpDialogError(Exception):
+    """Raised when the level-up dialog could not be built/shown on the GUI
+    thread.  Carries the original traceback so callers can log the real
+    failure reason instead of silently degrading."""
+    pass
 
 # Map attribute keys to display names and icons
 _ATTR_DISPLAY = {
@@ -115,8 +123,11 @@ def choose_level_up_attribute(entity_name: str,
         result_queue = queue.Queue()
 
         def _build():
-            dlg = _AttrChoiceDialog(entity_name, level, attributes, parent)
-            dlg._result_queue = result_queue
+            try:
+                dlg = _AttrChoiceDialog(entity_name, level, attributes, parent)
+                dlg._result_queue = result_queue
+            except Exception:
+                result_queue.put(("__ERROR__", traceback.format_exc()))
 
         root = tk._default_root
         if root is None:
@@ -124,9 +135,12 @@ def choose_level_up_attribute(entity_name: str,
         root.after(0, _build)
 
         try:
-            return result_queue.get(timeout=120)
+            out = result_queue.get(timeout=120)
         except queue.Empty:
             return None
+        if isinstance(out, tuple) and out and out[0] == "__ERROR__":
+            raise LevelUpDialogError(out[1])
+        return out
 
 
 def show_level_up_results(entity_name: str,
@@ -164,18 +178,21 @@ def show_level_up_results(entity_name: str,
         result_queue = queue.Queue()
 
         def _build():
-            dlg = _ResultsDialog(
-                entity_name=entity_name,
-                level=level,
-                chosen_attr=chosen_attr,
-                new_value=new_value,
-                hp_increase=hp_increase,
-                new_max_hp=new_max_hp,
-                new_skills=new_skills or [],
-                milestones=milestones or [],
-                parent=parent,
-            )
-            dlg._result_queue = result_queue
+            try:
+                dlg = _ResultsDialog(
+                    entity_name=entity_name,
+                    level=level,
+                    chosen_attr=chosen_attr,
+                    new_value=new_value,
+                    hp_increase=hp_increase,
+                    new_max_hp=new_max_hp,
+                    new_skills=new_skills or [],
+                    milestones=milestones or [],
+                    parent=parent,
+                )
+                dlg._result_queue = result_queue
+            except Exception:
+                result_queue.put(("__ERROR__", traceback.format_exc()))
 
         root = tk._default_root
         if root is None:
@@ -183,9 +200,11 @@ def show_level_up_results(entity_name: str,
         root.after(0, _build)
 
         try:
-            result_queue.get(timeout=120)
+            out = result_queue.get(timeout=120)
         except queue.Empty:
-            pass
+            return
+        if isinstance(out, tuple) and out and out[0] == "__ERROR__":
+            raise LevelUpDialogError(out[1])
 
 
 # ═══════════════════════════════════════════════════════════════════════════
