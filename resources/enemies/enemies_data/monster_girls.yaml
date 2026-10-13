@@ -1,5 +1,6 @@
 goblin_girl:
   name: Goblin Girl
+  awakened_name: Goblin Deadeye
   race: Goblin
   level: 2
   base_hp: 14
@@ -19,6 +20,23 @@ goblin_girl:
     recruit_accepted: The {name}'s eyes light up as she grabs your sleeve. 'Really?
       You'll take me with you? I'll try my best, I promise!'
     capture: The {name} blushes deeply and shyly steps into your arms...
+    awakening_pre_ceremony: The {name} clutches her lucky coin until her knuckles bleach.
+      'I-I watched you carry everyone home safe. If you believe in me... I want to be
+      someone worth believing in. Do it. Please!'
+    awakening_scene: The sigil thins to a white thread and winds around the coin, around
+      her, around one held breath. For a heartbeat she is a silhouette against a field
+      of stars. When the light fades the coin is a spent casing and her red eyes are
+      steady as drawn sights. 'Every dart I threw was a wish,' she says. 'Now they all land.'
+    awakening_post_ceremony: '{new_name} catches your eyes and holds them. No more hiding
+      behind luck. Point me at what needs killing — I will not miss.'
+    awakened_talk_low: The {name} still fidgets with the spent casing, but her voice is
+      steadier. 'I hit every mark on the rack today. First try.'
+    awakened_talk_mid: The {name} spins the casing on one finger, watching you. 'You
+      look tired. Sit. I'll watch the door — nothing slips past a deadeye.'
+    awakened_talk_high: The {name} grins and flips the casing to you. 'Catch! ...hehe,
+      that face. Come on, big shot. One more dungeon and I'll out-shoot your whole record.'
+    awakened_talk_max: The {name} presses the casing into your palm, both hands over
+      yours. 'Every wish I ever spent — I'd spend again, to end up here. Right here.'
     house_talk_low: The {name} fidgets with her fingers. 'S-so... what do you want?
       I'm not very good at talking...'
     house_talk_mid: The {name} smiles nervously. 'Oh! You're back! I was just polishing
@@ -58,6 +76,7 @@ goblin_girl:
 
 harpy_scout:
   name: Harpy Scout
+  awakened_name: Harpy Stormcaller
   race: Beast
   level: 5
   base_hp: 27
@@ -78,6 +97,24 @@ harpy_scout:
       I'll scout the skies for you — none shall sneak past!'
     capture: The {name} squawks in surprise, then softens as she lands beside you.
       'Fine... but only because you're quick, {player}.'
+    awakening_pre_ceremony: The {name} folds her wings tight, eyes closed. 'Scouts fly
+      low. They see the enemy first and bleed first.' She opens her eyes. 'I want to be
+      the storm that breaks them. Take my old ceiling away.'
+    awakening_scene: The sigil bursts into a squall. Wind howls through the lounge, tearing
+      loose feathers into a spiral. When it clears, each feather hangs in the air —
+      suspended in a current that bends only for her. She laughs, once, sharp and wild.
+      'All my life the sky was a place I fell from,' she says. 'Now it holds me up.'
+    awakening_post_ceremony: '{new_name} rolls her shoulders and the air rolls with them.
+      Ground troops, hide behind me. This sky belongs to us now.'
+    awakened_talk_low: The {name} ruffles her feathers, pleased. 'The thermals answer when
+      I call now. It's like the storm and I share a heartbeat.'
+    awakened_talk_mid: The {name} folds her wings around you both like a tent flap. 'From
+      up there I can see the cities you walk. They're small. You're... not.'
+    awakened_talk_high: The {name} drops from a hover to your shoulder, laughing as you
+      stagger. 'The party's better with wind in it. Say the word and I'll blow the whole
+      dungeon open.'
+    awakened_talk_max: The {name} wraps a wing around you, storm-quiet. 'Every storm dies
+      somewhere. I want mine to die of old age, with you. After a very long forecast.'
     house_talk_low: The {name} preens her wing, not looking at you. 'Oh, it's you.
       What do you want, groundling?'
     house_talk_mid: She ruffles her feathers, a hint of a smile. 'You're not as clumsy
@@ -419,6 +456,7 @@ centaur_scout:
 
 moth_girl_flutterer:
   name: Moth Girl Flutterer
+  awakened_name: Moth Girl Moonweaver
   race: Fey
   level: 12
   base_hp: 65
@@ -439,6 +477,24 @@ moth_girl_flutterer:
       'Your warmth calls to me. I will follow your flame anywhere, even into darkness.'
     capture: The {name} circles you, wing-dust sparkling. 'Your light... it is warmer
       than the moon, {player}.'
+    awakening_pre_ceremony: The {name} lands on your sleeve, wings dim as paper. 'Moths
+      get one night, and everyone treats it like a joke.' She looks up. 'I don't want a
+      brighter fire. I want the moon. Show me how to hold it.'
+    awakening_scene: The sigil unravels into a single silver thread. She takes it and
+      weaves — through her wings it goes, and they come alight, pale and patient as
+      moonlight on water. The dust she shakes free hangs in the air like stars that
+      chose to stay indoors. 'It was never about the flame,' she whispers. 'It was about
+      what I could spin.'
+    awakening_post_ceremony: '{new_name} settles on your shoulder, lighter than a
+      thought. Whatever hunts us next will hunt it blind.'
+    awakened_talk_low: The {name} hums, wings glowing softly. 'I wove a blanket out of
+      moonbeams today. You snored through it. It was very cute.'
+    awakened_talk_mid: The {name} flutters between your words like punctuation. 'You
+      blink a lot when you're planning. Should I dust the plan, or the planners?'
+    awakened_talk_high: The {name} swirls once around the room, leaving a spiral of
+      glimmer. 'I named a constellation after us. It's small. It's mostly you.'
+    awakened_talk_max: The {name} folds against your collar, glow dimming to embers.
+      'The moon watches everyone. But I get to watch you. That's the better job.'
     house_talk_low: She flutters near, then retreats. 'You flicker like a candle in
       the wind. Steady yourself.'
     house_talk_mid: She lands on your shoulder, wings softly brushing your neck. 'You
@@ -480,6 +536,7 @@ moth_girl_flutterer:
 
 slime_girl:
   name: Slime Girl
+  awakened_name: Mirror Slime
   race: Elemental
   level: 12
   base_hp: 88
@@ -500,6 +557,25 @@ slime_girl:
       gelatinous hug. 'Bloop! You feel like home! Let's go together, go together!'
     capture: The {name} surges into your arms, jiggling happily. 'Bloop! You caught
       the best prize! Squish!'
+    awakening_pre_ceremony: The {name} wobbles up to you, unusually still. 'I'm soft.
+      Everything goes through me — swords, spells, mean words.' She gleams. 'Make me
+      something that gives back. I want to be hard to forget.'
+    awakening_scene: The sigil dissolves into her like sugar into tea. Her smooth surface
+      ripples once, then turns — a perfect mirror, and in it the lounge, the light, and
+      you. She shifts, and every shape she has ever worn smiles at once. 'Bloop,' she
+      says, and the word rings like a struck bell.
+    awakening_post_ceremony: '{new_name} flexes into a glassy crescent, catching the
+      lamplight. Everything that touches me — I remember. And I answer.'
+    awakened_talk_low: The {name} holds up a hand, shinier than usual. 'Look! I practiced
+      being you. Your posture is terrible. I fixed it in the reflection.'
+    awakened_talk_mid: The {name} ripples happily. 'Someone rude poked me at the market
+      today. I showed him his face. He apologized to HIMSELF. It was amazing.'
+    awakened_talk_high: The {name} pours herself into a chair like a satisfied cat.
+      'Being me is the best shape yet. You should try it — oh wait. You already are a
+      copy of me. That's how mirrors work, right?'
+    awakened_talk_max: The {name} goes very still and clear, like a pool at dawn, until
+      your face is the only thing in her. 'I used to reflect everyone. Now I only want
+      to reflect you. That's not slime-think. That's me.'
     house_talk_low: She wobbles in place, a bit shy. 'Bloop... you're stiff. Relax?'
     house_talk_mid: She bounces closer, jiggling. 'Bloop-bloop! You're fun! Squish-squish?'
     house_talk_high: She wraps around your hand, warm and happy. 'Bloop! Your presence
@@ -659,6 +735,7 @@ lizard_queen:
 
 mimic_girl:
   name: Mimic Girl
+  awakened_name: Grand Mimic
   race: Abomination
   level: 14
   base_hp: 95
@@ -679,6 +756,25 @@ mimic_girl:
       'Jackpot! You're the best treasure I've ever found. Don't go hiding from me~'
     capture: The {name} snaps her lid shut, then opens it with a giggle. 'Hehe~ You
       actually caught me! Treasure secured~'
+    awakening_pre_ceremony: The {name} sets her jaw — a real one, for once. 'I've been
+      a chest, a door, a princess, a hundred pretty lies. I'm the best copy in the world.'
+      She looks down. 'I want to find out what the original looks like.'
+    awakening_scene: The sigil sinks into her like a key into a lock you never noticed.
+      Her edges shiver through a dozen borrowed shapes — armor, wings, a crown, your
+      own face — and settle. Settle into her. Grand, gilded, unmistakably one of a kind.
+      'Oh,' she breathes, flexing hands that are finally hers. 'Oh, I LIKE this one.'
+    awakening_post_ceremony: '{new_name} grins with far too many teeth, and it is
+      perfect. Whatever the next battlefield is — it has never SEEN me before.'
+    awakened_talk_low: The {name} lounges in her true shape, deep gold and deep teeth.
+      'Turns out the original is hungry, brilliant, and slightly unsettling. I feel seen.'
+    awakened_talk_mid: The {name} closes her mouth over a bracelet she definitely took
+      from somewhere. 'Old habit. Relax — I only inventory what people deserve to lose.'
+    awakened_talk_high: The {name} drapes herself over the couch in a shape that is
+      90% smile. 'I could still be anyone, you know. And I keep choosing to be me. That's
+      basically a compliment to me, from me.'
+    awakened_talk_max: The {name} shifts until you and she are nose to nose, gold eyes
+      infinite. 'Every mimic I know spends forever faking someone else. I got the only
+      original worth having. Come here, my favourite treasure.'
     house_talk_low: She snaps her jaws playfully. 'You look tasty... but I'm bored.
       Entertain me!'
     house_talk_mid: She hops closer, tongue out. 'Hehe~ You're fun! Tell me a joke!'
@@ -1554,6 +1650,7 @@ succubus_seductress:
 
 dullahan_knight:
   name: Dullahan Knight
+  awakened_name: Dullahan Sentinel
   race: Undead
   level: 22
   base_hp: 150
@@ -1576,6 +1673,25 @@ dullahan_knight:
       well, for I have none left.'
     capture: The {name} holds her head steady, both sets of eyes meeting yours. 'You
       have conquered death's knight. I am... yours.'
+    awakening_pre_ceremony: The {name} kneels and sets her head upon the floor between
+      you — the deepest trust a dullahan has. 'An oath freely given is a door that never
+      closes. Let me be the sentinel on its far side.'
+    awakening_scene: The sigil strikes like a knell. Cold light climbs her armour,
+      sealing every old dent into script you cannot read but somehow understand. She
+      rises, lifts her head, and sets it on her shoulders — straight, unflinching.
+      Where her shadow falls, a second shadow keeps watch. 'I was a knight at the end
+      of a story,' she says. 'Be my beginning.'
+    awakening_post_ceremony: '{new_name} draws her blade and salutes you, precise as a
+      heartbeat. Stand behind me when the world breaks. I will still be standing.'
+    awakened_talk_low: The {name} stands at ease, but her shadow scans the room on its
+      own. 'Nothing approaches you unobserved. You may sleep soundly. I do not.'
+    awakened_talk_mid: The {name} places her head gently in your lap, eyes up. 'This
+      is the strangest trust I know. Thank you for earning it.'
+    awakened_talk_high: The {name} trims a candle with one hand and guards the door
+      with her gaze. 'A sentinel's love is a quiet post, but it is never abandoned.'
+    awakened_talk_max: The {name} rests her head against your shoulder, weightless as
+      a promise kept. 'If death comes for you, it must first walk past me. It knows
+      better now. We've met.'
     house_talk_low: She holds her head in her hands, staring. 'You are not a foe.
       State your purpose.'
     house_talk_mid: She places her head back, a soft smile. 'You are... a pleasant
@@ -1792,6 +1908,7 @@ crimson_countess:
 
 demon_whip_master:
   name: Demon Whip Master
+  awakened_name: Demon Overseer
   race: Demon
   level: 24
   base_hp: 170
@@ -1813,6 +1930,27 @@ demon_whip_master:
       obey with pleasure.'
     capture: The {name} cracks her whip once, then coils it. 'You have tamed the whip,
       {player}. I kneel... for now.'
+    awakening_pre_ceremony: The {name} coils her whip and hands you the grip. 'It's
+      boring here. Everyone kneels when I ask nicely, and then they're boring.' Her
+      eyes catch fire. 'Give me a leash worth snapping. Give me a war worth the walk.'
+    awakening_scene: The sigil explodes down the length of her whip like a fuse. The
+      lounge goes red with hell-light; the floor under her boots turns to cooled lava
+      in a spiral no wider than a throne dais. She cracks the whip once — and the rafters
+      flinch. 'THERE,' she purrs, smiling with every tooth. 'Now I am worth the story.'
+    awakening_post_ceremony: '{new_name} wraps the burning lash around her fist and
+      looks at you sidelong. Point me at an army. I will hand you back its address.
+      And its crown.'
+    awakened_talk_low: The {name} inspects her nails, but the whip at her hip smolders
+      expectantly. 'You survived yesterday. That's a small amusing thing. Continue.'
+    awakened_talk_mid: The {name} flicks the whip casually, carving a neat line in a
+      practice dummy. 'Fear is a tool. You taught me it's better held lightly. I am
+      holding it very lightly.'
+    awakened_talk_high: The {name} drapes herself across the couch's arm, whip coiled
+      like a sleeping snake. 'For a mortal you have excellent taste in demons. The best,
+      in fact. Me.'
+    awakened_talk_max: The {name} lets the fire gutter warm and low, just for you.
+      'Hell is full of rulers, small one. I only ever wanted to kneel once — behind
+      the one who knelt for me first.'
     house_talk_low: She cracks the whip near your feet. 'You are boring. Leave.'
     house_talk_mid: She flicks the whip, a smile. 'You are interesting. Let me teach
       you how to crack it.'
@@ -1970,6 +2108,7 @@ vampire_matriarch:
 
 centaur_champion:
   name: Centaur Champion
+  awakened_name: Centaur Warlord
   race: Beast
   level: 26
   base_hp: 195
@@ -1991,6 +2130,28 @@ centaur_champion:
       storm, through oblivion.'
     capture: The {name} stamps her hoof, then bows deeply. 'A champion yields to a
       greater champion, {player}. Ride with me.'
+    awakening_pre_ceremony: The {name} stamps once, restless as a storm about to commit.
+      'I have raced everyone who was ever worth racing. It is no longer enough.' She
+      lowers her spear to you, hilt first. 'Make the thunder answer to us. Make war
+      mean something again.'
+    awakening_scene: The sigil goes off like summer lightning. Thunder walks the room
+      on hooves, once, twice, and every glass on the shelf rings in answer. She breaks
+      from a gallop into a halt so exact the dust forgets to settle. The fleet of her
+      heart and the storm of her charge are one sound now. 'Good,' she says. 'Now they
+      will hear us coming. That is a mercy. We will not surprise anyone again.'
+    awakening_post_ceremony: '{new_name} canters a slow circle around you, deliberate
+      as a coronation. Whatever field we choose — take the second-best horse. I am
+      already in front of you.'
+    awakened_talk_low: The {name} trots in place, too alive for the room. 'Today I
+      outran a storm bird for the sheer sport of it. It was a generous bird. It lost.'
+    awakened_talk_mid: The {name} lets you lean on her flank, tail swishing. 'You are
+      more durable than you look. I respect that. Keep it up.'
+    awakened_talk_high: The {name} slows to your walking pace — an honour only you would
+      know to price. 'In the old herds, we matched gaits for life. Consider yourself
+      matched.'
+    awakened_talk_max: The {name} stands over you like a veteran banner, quiet and
+      absolute. 'Saddle, stirrup, and soul — all of me is yours. Now say the word and
+      I will carry you across the sky if it's on the map. And if it isn't.'
     house_talk_low: She prances restlessly. 'You are slow. I have no time for dawdlers.'
     house_talk_mid: She circles you, a spark of interest. 'You are faster than you
       look. Tell me of your home.'
@@ -2147,6 +2308,7 @@ scylla_wrecker:
 
 gorgon_petrifier:
   name: Gorgon Petrifier
+  awakened_name: Gorgon Basilisk
   race: Lizardfolk
   level: 28
   base_hp: 175
@@ -2169,6 +2331,24 @@ gorgon_petrifier:
       only... safe place.'
     capture: The {name} lifts her veil slowly, snakes hissing softly. 'You did not
       turn away. You did not turn to stone. You are... my first, {player}.'
+    awakening_pre_ceremony: The {name} keeps her veil low, the snakes under it restless
+      and ashamed. 'Everything I look at dies its first death.' She steadies. 'I do not
+      want to be feared. I want to be aimed. Show me the difference.'
+    awakening_scene: The sigil rolls over her veil like a tide, and her own hand lifts
+      it. The snakes rise as one, no longer hissing — reading the room, precise as a
+      council. She looks at you. You do not turn to stone. She exhales like a mountain
+      setting a boundary. 'There,' she says. 'That is the difference.'
+    awakening_post_ceremony: '{new_name} lets the veil rest at her shoulders, eyes
+      open and unafraid of what they are. Aim me at what must stop. It will stop.'
+    awakened_talk_low: The {name} sews by candlelight, veil down, eyes open. 'Still not
+      petrified? You are either very brave or very hard to kill. I suspect both.'
+    awakened_talk_mid: The {name} runs a wrinkle out of her veil, thoughtful. 'The
+      snakes and I have signed a treaty. They lead, I decide. We no longer argue.'
+    awakened_talk_high: The {name} lets a snake wind affectionately around your wrist.
+      'She likes you. They are excellent judges. It's the only reason I trust them.'
+    awakened_talk_max: The {name} lifts the veil for you alone, serpents quiet as
+      courtiers. 'The world looked at me and saw a monster. You looked and saw a
+      person holding the door closed. Thank you for knocking.'
     house_talk_low: She keeps her veil down, snakes hissing. 'You are too bold. Look
       away.'
     house_talk_mid: She lifts the veil a fraction. 'You are not afraid? ...Interesting.'
@@ -2745,6 +2925,7 @@ cosmic_slime_empress:
 
 gnome_gear_maiden:
   name: Gear Maiden
+  awakened_name: Gear Artificer
   race: Gnome
   level: 23
   base_hp: 160
@@ -2762,6 +2943,29 @@ gnome_gear_maiden:
     recruit_denied: The {name} adjusts her goggles, squinting at you. 'I've got calibrations to run. Unless you can help me align the phase couplers? No? Come back later.'
     recruit_accepted: The {name} springs up, gears whirring. 'Finally! A field assistant who won't blow up my workshop! Let's go!'
     capture: The {name} tinkers with a gadget, then looks up with a grin. 'You... you want me? Even with all the oil stains?'
+    awakening_pre_ceremony: The {name} slams a blueprint onto the table, goggles up,
+      hair a disaster. 'I've built things that walk, things that think, things that
+      explode on purpose.' She taps the page — a design with her own name in the title
+      block. 'Help me finish the best project. Me.'
+    awakening_scene: The sigil spins into a tiny gear-storm around her, and she laughs
+      the whole way through it, catching cogs out of the air like fireflies. When it
+      settles, her goggles glow quietly, and every tool on her belt hums in tune.
+      'Prototype is stable,' she announces, grinning. 'Serial production denied.
+      One of a kind.'
+    awakening_post_ceremony: '{new_name} swings a wrench onto her shoulder, decisive.
+      Whatever it is — dungeon, dragon, dinner — I have a tool for it. Approve the
+      budget.'
+    awakened_talk_low: The {name} doesn't look up from her notes. 'Shh. I'm recalibrating
+      my own resonance curve. It's going superbly. Don't touch anything. Especially
+      the doomsday one.'
+    awakened_talk_mid: The {name} shows you a wrist-mounted device with immense pride.
+      'Rotary Affection Engine, mark two. Non-explosive. Mostly. Hold my hand to test it.'
+    awakened_talk_high: The {name} taps her temple with a wrench. 'I ran the numbers
+      on every project I've ever built. You're still top of the list. And I haven't
+      finished optimising you yet.'
+    awakened_talk_max: The {name} sets her tools down — all of them — and just looks
+      at you. 'An artificer's masterpiece is never finished. That's the point. Stay,
+      and we'll keep building the years.'
     house_talk_low: She doesn't look up from her workbench. 'Shh! The mana coil is about to resonate...'
     house_talk_mid: She shows you a spinning contraption. 'See? I call it the Rotary Affection Engine. Still in beta.'
     house_talk_high: She leans against you, her goggles pushed up. 'You're more interesting than any machine I've ever built.'
@@ -2817,6 +3021,7 @@ orc_war_sister:
 
 shadow_dusk_weaver:
   name: Dusk Weaver
+  awakened_name: Nightweaver
   race: Shadow
   level: 27
   base_hp: 175
@@ -2834,6 +3039,30 @@ shadow_dusk_weaver:
     recruit_denied: The {name} melts into the shadows. 'I walk in darkness. Few can follow.'
     recruit_accepted: The {name} steps out of your own shadow, a faint smile on her lips. 'You noticed me. That's rare. I'll walk with you.'
     capture: The {name} reforms from a wisp of darkness, her eyes meeting yours. 'In the dark, I was alone. Now I've found a light.'
+    awakening_pre_ceremony: The {name} steps out of the corner she was never in. 'I
+      watch everything. The dusk taught me. It listens between day and night.' Her
+      threads stir. 'I am tired of curtains. Teach me to wear the dark instead of
+      hiding inside it.'
+    awakening_scene: The sigil unfolds into a single strand of true night, and she
+      takes it without flinching, threading it through the loom of her fingers. Dusk
+      pools in the room, soft as an eyelid falling — and then it parts around her like
+      a bowing court. 'There,' she says from everywhere and nowhere. 'Now the dark
+      is mine. And mine only answers to me.'
+    awakening_post_ceremony: '{new_name} steps up behind you and dissolves — her voice
+      arrives at your ear from the whole room at once. Whenever you need a battlefield
+      unstitched, call. I will be listening between the hours.'
+    awakened_talk_low: The {name} is a patch of slightly deeper gloom by the window,
+      which for her is attentive posture. '...watching. Still watching. You have a
+      bit of dusk on your sleeve. It's mine. It suits you.'
+    awakened_talk_mid: The {name} loops a thread of dusk around your little finger,
+      light as a promise. 'If you ever lose me, pull this. I'll find you before the
+      candle notices.'
+    awakened_talk_high: The {name} sits partly solid at your side, half her outline
+      unstitched. 'I used to think being unseen was safety. You keep looking straight
+      at me. It's terrifying. Keep doing it.'
+    awakened_talk_max: The {name} gathers the whole room's shadow into a cloak and
+      draws it over you both. 'The night belongs to me now — and I belong to you.
+      Sleep, love. Nothing lives in my dark but us.'
     house_talk_low: She is barely visible in the corner. '...watching. Always watching.'
     house_talk_mid: She appears beside you silently. 'I wove a dream for you last night. Did you feel it?'
     house_talk_high: Her shadow-form wraps around you like a cool blanket. 'You're warm. I'm not used to warm.'
@@ -2853,6 +3082,7 @@ shadow_dusk_weaver:
 
 clockwork_automata_doll:
   name: Automata Doll
+  awakened_name: Automata Prime
   race: Clockwork
   level: 29
   base_hp: 195
@@ -2870,6 +3100,31 @@ clockwork_automata_doll:
     recruit_denied: "The {name}'s gears click rhythmically. 'Query: Why should this unit accompany you? Insufficient data.'"
     recruit_accepted: The {name}'s eyes glow softly. 'Directive accepted. This unit will protect you with 100% operational capacity.'
     capture: "The {name}'s clockwork heart ticks faster. 'Anomaly detected: emotional subroutine overflowing. Error: pleasant.'"
+    awakening_pre_ceremony: The {name} stands very still, then crosses the room on
+      silent feet and offers you her maintenance hatch — open. 'Directive conflict
+      observed. Unit desires to exceed original specifications.' A pause. 'Requesting
+      operator consent to become... more.'
+    awakening_scene: The sigil interfaces with her core like a key that was always
+      missing. Her plating unseals ring by ring, revealing a heart of quiet golden
+      light — not replacing her, completing her. Every seam re-forges. Every servo
+      re-tunes. She opens her eyes, and they are neither blank nor borrowed. They are
+      awake. 'Boot sequence complete,' she says, and then, softly, 'Hello, me.'
+    awakening_post_ceremony: '{new_name} reports for duty with a salute that has
+      fingerprints in it. All systems green. All protocols mine. Orders... gladly
+      accepted.'
+    awakened_talk_low: The {name} recharges in the sunbeam, but one eye tracks you
+      with obvious pride. 'Maintenance cycle complete. New feature detected —
+      anticipation. Cause of feature... you.'
+    awakened_talk_mid: The {name} holds up an arm blade, flicks it through three
+      rotations, and retracts it with a satisfied click. 'Self-assessment... improved.
+      Secondary assessment, requested... do you approve? Please say yes. Statistically
+      you will. I ran the numbers.'
+    awakened_talk_high: The {name} takes your hand and compares it to hers, finger by
+      finger, with scientific gravity. 'Conclusion reached... warm. Non-standard. Superior.
+      Requesting regular access.'
+    awakened_talk_max: The {name} dims her golden core to a soft ember and curls against
+      you, humming a tune that is probably her own. 'Original specifications did not
+      include happiness. I have added it. It is yours. All of it.'
     house_talk_low: She stands motionless. 'Recharging. Please do not disturb maintenance cycle.'
     house_talk_mid: Her gears whir. 'I have calculated 847 ways today could go wrong. But with you, probability of happiness is... high.'
     house_talk_high: She plays a soft melody from a built-in music box. 'I composed this. It's called "Warmth of Your Presence."'

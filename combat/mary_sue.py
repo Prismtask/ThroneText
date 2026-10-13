@@ -49,6 +49,7 @@ from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_bleed
 from combat.combat_io import c_print, c_input, c_clear
 from combat.ally import get_active_allies, compute_ally_stats
+from utils import display_name
 from combat.mary_sue_shadows import (
     create_shadow_queen_of_hearts,
     create_shadow_card_soldier,
@@ -693,7 +694,7 @@ def combat_mary_sue(player, floor=None, enemies=None):
             for sk in player.get("wonderland_shadows", []):
                 dialogue = get_heroine_shadow_floor50_dialogue(heroine_key, sk)
                 if dialogue:
-                    c_print(f"\n  💬 [{ally['name']}] {dialogue}")
+                    c_print(f"\n  💬 [{display_name(ally)}] {dialogue}")
                     break  # One story dialogue per heroine
 
     c_input("\nPress Enter to begin the final chapter...")
@@ -1041,7 +1042,7 @@ def combat_mary_sue(player, floor=None, enemies=None):
 
         return None
 
-    def on_hit_hook(target, elist, ctx):
+    def on_hit_hook(target, elist, ctx, attacker=None):
         """Track damage for various mechanics."""
         sue_ref = ctx.get("_mary_sue_ref")
 

@@ -7,9 +7,11 @@ from combat.skills import (
 from combat.ally import get_alive_allies
 from combat.ally_skills import (
     get_race_passive, get_innate_skill_def, get_learnable_skill_def,
-    get_ally_skill_mastery_level, format_skill_learning_progress
+    get_ally_skill_mastery_level, format_skill_learning_progress,
+    format_ally_mastery_label,
 )
 from gui.terminal import term
+from utils import display_name
 
 
 def display_skill_book(player):
@@ -92,13 +94,23 @@ def _display_player_skill_book(player):
                     term.print(f"      +{int((bonuses['power_mult']-1)*100)}% power")
                 if bonuses["cooldown_reduction"] > 0:
                     term.print(f"      -{bonuses['cooldown_reduction']} turn cooldown")
+                if bonuses["status_mult"] > 1.0:
+                    term.print(f"      Effect potency ×{bonuses['status_mult']:g}")
+                if bonuses["duration_bonus"] > 0:
+                    term.print(f"      +{bonuses['duration_bonus']} turn to effect duration")
                 if bonuses["extra_effect"]:
                     term.print(f"      Bonus effect at ★★★")
 
 
 def _display_ally_skill_book(ally):
     """Display an ally's skill book: passive, innate, learned, and learning progress."""
-    term.print(f"\n--- {ally['name']} (Level {ally.get('level', 1)}) ---")
+    term.print(f"\n--- {display_name(ally)} (Level {ally.get('level', 1)}) ---")
+
+    # Late-bloomer growth band (docs/awakening_design.md Part A)
+    from combat.ally import get_growth_label
+    growth_label = get_growth_label(ally)
+    if growth_label != "—":
+        term.print(f"  [Growth] {growth_label} — gains bonus attributes as she levels")
 
     # Race passive
     race = ally.get("race")
@@ -126,7 +138,27 @@ def _display_ally_skill_book(ally):
                 continue
             cd = sdef.get("cooldown", 1)
             mastery = get_ally_skill_mastery_level(ally, sid)
-            mastery_label = "★" * mastery if mastery > 0 else ""
+            mastery_label = format_ally_mastery_label(sid, ally)
+            cd_str = ""
+            if ally.get("skill_cooldowns", {}).get(sid, 0) > 0:
+                cd_str = f" [CD: {ally['skill_cooldowns'][sid]}]"
+            term.print(f"  {sdef['name']}{cd_str} {mastery_label}")
+            term.print(f"    {sdef.get('description', '')}")
+            term.print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')}")
+            if mastery > 0:
+                term.print(f"    Mastery Lv.{mastery}")
+
+    # Upgrade skills (facility-granted heroine skills — own category)
+    upgrade_ids = ally.get("upgrade_skills", [])
+    if upgrade_ids:
+        term.print("\n  --- Upgrade Skills ---")
+        for sid in upgrade_ids:
+            sdef = get_innate_skill_def(sid)
+            if not sdef:
+                continue
+            cd = sdef.get("cooldown", 1)
+            mastery = get_ally_skill_mastery_level(ally, sid)
+            mastery_label = format_ally_mastery_label(sid, ally)
             cd_str = ""
             if ally.get("skill_cooldowns", {}).get(sid, 0) > 0:
                 cd_str = f" [CD: {ally['skill_cooldowns'][sid]}]"
@@ -147,16 +179,18 @@ def _display_ally_skill_book(ally):
             cd = sdef.get("cooldown", 1)
             tier = sdef.get("tier", 1)
             exp_cost = sdef.get("exp_cost", 300)
+            req_cap = sdef.get("required_cap", 0)
             mastery = get_ally_skill_mastery_level(ally, sid)
-            mastery_label = "★" * mastery if mastery > 0 else ""
+            mastery_label = format_ally_mastery_label(sid, ally)
             cd_str = ""
             if ally.get("skill_cooldowns", {}).get(sid, 0) > 0:
                 cd_str = f" [CD: {ally['skill_cooldowns'][sid]}]"
-            tier_labels = {1: "I", 2: "II", 3: "III", 4: "IV"}
+            tier_labels = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI"}
             tier_str = tier_labels.get(tier, "?")
             term.print(f"  {sdef['name']}{cd_str} {mastery_label} [Tier {tier_str}]")
             term.print(f"    {sdef.get('description', '')}")
-            term.print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')} | Cost: {exp_cost} EXP")
+            cap_str = f" | Cap: {req_cap}" if req_cap else ""
+            term.print(f"    Cooldown: {cd} turns | Target: {sdef.get('target', 'enemy')} | Cost: {exp_cost} EXP{cap_str}")
             if mastery > 0:
                 term.print(f"    Mastery Lv.{mastery}")
 

@@ -48,7 +48,7 @@ ELEMENTAL_DEBUFF_DEFAULTS = {
     "slow":       {"duration": 2, "strength": {}},
     "shock":      {"duration": 3, "strength": {"damage": 2}},
     "blind":      {"duration": 2, "strength": {}},
-    "weaken":     {"duration": 3, "strength": {"str_penalty": 1}},
+    "weaken":     {"duration": 3, "strength": {"penalty_pct": 0.20}},
     "silence":    {"duration": 2, "strength": {}},
     "dread":      {"duration": 2, "strength": {}},
     "bleed":      {"duration": 4, "strength": {"damage": 2}},
@@ -119,7 +119,8 @@ def get_elemental_debuff_params(debuff_type, enemy_level):
         strength["damage"] = max(2, enemy_level // 5)
 
     elif debuff_type == "weaken":
-        strength["str_penalty"] = max(1, enemy_level // 10)
+        # Percentage scales with the target's STR; rises mildly with enemy level
+        strength["penalty_pct"] = min(0.25, 0.15 + enemy_level / 400.0)
 
     return duration, strength
 
@@ -130,7 +131,7 @@ DEBUFF_APPLY_MAP = {
     "slow":       lambda player, dur, kw: apply_slow_to_player(player, duration=dur),
     "shock":      lambda player, dur, kw: apply_shock_to_player(player, damage=kw.get("damage", 2), duration=dur),
     "blind":      lambda player, dur, kw: apply_blind(player, duration=dur),
-    "weaken":     lambda player, dur, kw: apply_weaken(player, str_penalty=kw.get("str_penalty", 1), duration=dur),
+    "weaken":     lambda player, dur, kw: apply_weaken(player, penalty_pct=kw.get("penalty_pct", 0.20), duration=dur),
     "silence":    lambda player, dur, kw: apply_silence(player, duration=dur),
     "dread":      lambda player, dur, kw: apply_dread(player, duration=dur),
     "bleed":      lambda player, dur, kw: apply_bleed(player, damage=kw.get("damage", 2), duration=dur),

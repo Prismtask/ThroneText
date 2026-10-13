@@ -12,6 +12,8 @@ Covers:
 import unittest
 import tkinter as tk
 
+from _tk_test_utils import shared_tk_root
+
 
 class TestPhase3Imports(unittest.TestCase):
     """Verify all Phase 3 modules import cleanly."""
@@ -44,8 +46,7 @@ class TestPhase3Screens(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.root = tk.Tk()
-        cls.root.withdraw()
+        cls.root = shared_tk_root()
         from gui.screen_manager import ScreenManager
         cls.sm = ScreenManager(cls.root)
         # Create a minimal player dict for screens that need it
@@ -71,10 +72,6 @@ class TestPhase3Screens(unittest.TestCase):
             "day": 1,
             "houses": {},
         }
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.root.destroy()
 
     def test_facility_screen_instantiation(self):
         from gui.screens.facility_screen import FacilityScreen

@@ -20,12 +20,16 @@
 import random
 from utils import advance_time, get_difficulty_multiplier_from_time
 from resources.enemies import ENEMIES, BIOME_RACES
-from resources.items import ITEMS, ITEM_RARITY, build_item
+from resources.items import ITEMS, ITEM_RARITY, build_item, is_unique_item
 from combat.combat_engine import combat
 from combat.stats import get_effective_attribute
 from leveling import gain_exp
 from character import player_max_hp
 from gui.terminal import term
+from resources.trade_goods import (
+    roll_cargo_good, build_cargo,
+    cargo_merchant_stock_price, cargo_merchant_sell_price,
+)
 
 # Prefer the proper inventory helper (handles capacity / stacking if implemented)
 try:
@@ -68,10 +72,12 @@ SEA_EVENTS = [
 # Thematic enemy races for sea lanes
 _SEA_RACES = set(BIOME_RACES.get("coastal", []))
 
-# Keys excluded from all random item rolls: uniques (e.g. Abyss Fang), Scrolls of Fusion, and Wonderland-only items
+# Keys excluded from all random item rolls: uniques (e.g. Abyss Fang), Scrolls of Fusion,
+# key items (quest/progression — e.g. Shattered Orb, Glass Anchor, Beating Root),
+# and Wonderland-only / black-market exclusives
 _SKIP_IDS = frozenset(
     k for k, v in ITEMS.items()
-    if v.get("unique") or v.get("type") in ("scroll", "ascension") or v.get("wonderland_only") or v.get("black_market_only")
+    if v.get("unique") or v.get("type") in ("scroll", "ascension", "key_item") or v.get("wonderland_only") or v.get("black_market_only")
 )
 
 # Superboss-minion keys are now filtered dynamically via d.get("minion_only", False)
@@ -210,7 +216,10 @@ def _item_stat_line(item):
             f"{stat[:3]} {'+' if v >= 0 else ''}{v}"
             for stat, v in mods.items()
         )
-        return f"[{slot}{(' | ' + mod_s) if mod_s else ''}]"
+        line = f"[{slot}{(' | ' + mod_s) if mod_s else ''}]"
+        from inventory import format_scaling_stat
+        scale = format_scaling_stat(item)
+        return f"{line}  {scale}" if scale else line
 
     if itype == "consumable":
         if item.get("cure_curse"):
@@ -309,7 +318,7 @@ def _num_slots(travel_time, difficulty_mult):
         slots = 3
     else:
         slots = random.randint(3, 5)
-    if difficulty_mult >= 1.6:
+    if difficulty_mult >= 1.2:   # Night phase (1.25) — one extra incident slot
         slots += 1
     return slots
 
@@ -321,7 +330,9 @@ def _trigger_chance(travel_time, difficulty_mult):
         base = 0.40
     else:
         base = 0.55
-    return min(base * (difficulty_mult ** 0.6), 0.80)
+    # Retuned for the phase scale (1.0–1.25): exponent 1.3 keeps Night
+    # danger ≈ the old 1.6 multiplier (docs §7).
+    return min(base * (difficulty_mult ** 1.3), 0.80)
 
 
 def _weighted_choice(pool):
@@ -415,44 +426,75 @@ def _handle_combat(player, travel_type, region, combat_override=None):
 
 def _handle_discovery(player, travel_type):
     """
-    Find abandoned gold or an item on the road / at sea.
+    Find abandoned gold, an item, or stray cargo on the road / at sea.
     Rarity is scaled to the player's current dungeon floor.
     Items are filtered (no uniques, no scrolls) and added via add_item_to_inventory.
     """
-    find_gold = random.random() < 0.55
+    roll = random.random()
 
     if travel_type == "sea":
-        if find_gold:
+        if roll < 0.45:
             gold = random.randint(20, 80)
             player["gold"] = player.get("gold", 0) + gold
             term.print(f"\n  A barnacled crate bobs alongside. Inside: {gold} gold in waxed pouches!")
-        else:
+        elif roll < 0.75:
             rarity  = _discovery_rarity(player)
             item    = build_item(_random_item_id(), rarity)
             term.print(f"\n  A waterlogged satchel surfaces from the deep. You haul it aboard.")
             term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
             from inventory_ui import prompt_acquire_item
             prompt_acquire_item(player, item.copy())
+        else:
+            # Drifting cargo crate — 1-3 units of a random good
+            good_id = roll_cargo_good()
+            cargo   = build_cargo(good_id)
+            cargo["count"] = random.randint(1, 3)
+            term.print(f"\n  A broken-open cargo crate drifts by. You fish out the salvage!")
+            term.print(f"  Found: {cargo['name']} x{cargo['count']}  [Cargo, {cargo['weight']} wt each]")
+            from inventory_ui import prompt_acquire_item
+            prompt_acquire_item(player, cargo)
     else:
-        if find_gold:
+        if roll < 0.45:
             gold = random.randint(10, 50)
             player["gold"] = player.get("gold", 0) + gold
             term.print(f"\n  A traveler's purse lies abandoned at the roadside. You pocket {gold} gold.")
-        else:
+        elif roll < 0.75:
             rarity  = _discovery_rarity(player)
             item    = build_item(_random_item_id(), rarity)
             term.print(f"\n  A hollow tree stump — something's wedged inside.")
             term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
             from inventory_ui import prompt_acquire_item
             prompt_acquire_item(player, item.copy())
+        else:
+            # Abandoned wagon — 1-3 units of a random cargo good
+            good_id = roll_cargo_good()
+            cargo   = build_cargo(good_id)
+            cargo["count"] = random.randint(1, 3)
+            term.print(f"\n  An abandoned wagon lies overturned at the roadside.")
+            term.print(f"  Found: {cargo['name']} x{cargo['count']}  [Cargo, {cargo['weight']} wt each]")
+            from inventory_ui import prompt_acquire_item
+            prompt_acquire_item(player, cargo)
 
     term.pause("  Press Continue...")
 
 
 def _sell_to_merchant(player):
     """Let the player offload items to the traveling merchant at 75 % of city sell rate."""
+    from combat.weapon.wedding_specials import is_wedding_item_soulbound
     inv = player.get("inventory", [])
     if not inv:
+        term.print('  "Nothing I want off you — yet." The merchant shrugs.')
+        term.pause("  Press Continue...")
+        return
+
+    # Cargo sells at road cargo rates; everything else at the normal rate
+    sellable = []
+    for i in inv:
+        if i.get("type") == "cargo":
+            sellable.append((i, cargo_merchant_sell_price(i)))
+        else:
+            sellable.append((i, _sell_price(i, player)))
+    if not sellable:
         term.print('  "Nothing I want off you — yet." The merchant shrugs.')
         term.pause("  Press Continue...")
         return
@@ -460,8 +502,7 @@ def _sell_to_merchant(player):
     term.print("\n  The merchant eyes your pack with practiced interest.")
     term.print("  (Road sell rate: ~75 % of city shop value)\n")
 
-    for i, item in enumerate(inv):
-        unit_price = _sell_price(item, player)
+    for i, (item, unit_price) in enumerate(sellable):
         count = item.get("count", 1)
         stack_price = unit_price * count
         count_str = f" (x{count})" if count > 1 else ""
@@ -470,12 +511,17 @@ def _sell_to_merchant(player):
     try:
         raw = term.input("\n  Sell which item number? (0 to cancel): ")
         idx = int(raw.strip()) - 1
-        if 0 <= idx < len(inv):
-            item = inv[idx]
-            gold = _sell_price(item, player) * item.get("count", 1)
-            remove_item_by_reference(player, item, item.get("count", 1))
-            player["gold"] = player.get("gold", 0) + gold
-            term.print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
+        if 0 <= idx < len(sellable):
+            item, unit_price = sellable[idx]
+            if is_wedding_item_soulbound(item):
+                term.print(f'  [{item["name"]}] is soulbound — cannot be sold.')
+            elif is_unique_item(item):
+                term.print(f'  [{item["name"]}] is unique — cannot be sold.')
+            else:
+                gold = unit_price * item.get("count", 1)
+                remove_item_by_reference(player, item, item.get("count", 1))
+                player["gold"] = player.get("gold", 0) + gold
+                term.print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
         else:
             term.print('  "Changing your mind is free."')
     except (ValueError, IndexError):
@@ -493,9 +539,15 @@ def _handle_merchant(player):
     term.print("\n  A road-worn merchant steps out from beside a laden cart.")
     term.print('  "Wares! Quality goods — fair price for a fellow traveler!"')
 
-    # Build stock: filtered item pool, floor-influenced rarity
+    # Build stock: filtered item pool, floor-influenced rarity, ~30% cargo
     stock = []
     for _ in range(random.randint(2, 3)):
+        if random.random() < 0.30:
+            good_id = roll_cargo_good()
+            item = build_cargo(good_id)
+            your_price, road_price = cargo_merchant_stock_price(good_id, player)
+            stock.append((item, your_price, road_price))
+            continue
         item_id     = _random_item_id()
         rarity      = _merchant_stock_rarity(player)
         item        = build_item(item_id, rarity)
@@ -587,20 +639,18 @@ def _handle_hazard(player, travel_type, difficulty_mult):
 
 
 def _handle_storm(player, difficulty_mult):
-    """Sea-only: storm that delays travel and may also deal HP damage."""
+    """Sea-only: storm that may deal HP damage. Delays are flavor only (§8)."""
     max_hp = player_max_hp(player)
     term.print("\n  A black wall of clouds swallows the horizon — the storm hits fast.")
 
-    if random.random() < 0.45 * difficulty_mult:
-        damage = max(6, int(max_hp * 0.18 * difficulty_mult))
+    if random.random() < 0.58 * difficulty_mult:
+        damage = max(6, int(max_hp * 0.22 * difficulty_mult))
         player["current_hp"] = max(1, player.get("current_hp", 1) - damage)
-        advance_time(player, 90)
-        term.print(f"  Mountainous waves batter the hull for an hour and a half.")
-        term.print(f"  You take {damage} damage and arrive late.")
+        term.print(f"  Mountainous waves batter the hull for what feels like hours.")
+        term.print(f"  You take {damage} damage.")
         term.print(f"  HP: {player['current_hp']}/{max_hp}")
     else:
-        advance_time(player, 30)
-        term.print("  You reef the sails and ride out the squall. Unharmed — but delayed 30 minutes.")
+        term.print("  You reef the sails and ride out the squall. Unharmed.")
 
     term.pause("  Press Continue...")
 
@@ -649,6 +699,14 @@ def run_travel_events(player, travel_time, travel_type="land", region=None,
         mount = get_mount(player["mount_id"])
         if mount:
             mitigation = mount.get("event_mitigation", 0)
+            chance *= (1 - mitigation)
+
+    # Ships reduce the chance of travel events at sea
+    if travel_type == "sea" and player.get("ship_id"):
+        from resources.ships import get_ship
+        ship = get_ship(player["ship_id"])
+        if ship:
+            mitigation = ship.get("event_mitigation", 0)
             chance *= (1 - mitigation)
 
     quiet_stretch = True

@@ -19,6 +19,7 @@ from facilities.black_market import black_market_service
 from facilities.guild import guild_service
 from facilities.house import house_menu
 from facilities.gift_shop import gift_shop_service
+from facilities.star_tower import star_tower_service
 
 # Map service names to handler functions
 SERVICE_HANDLERS = {
@@ -35,4 +36,5 @@ SERVICE_HANDLERS = {
     "black_market":  black_market_service,
     "guild":         guild_service,
     "gift_shop":     gift_shop_service,
+    "star_tower":    star_tower_service,
 }

@@ -18,31 +18,62 @@ from gui.widgets.confirm_dialog import ok_dialog
 from combat.combat_io import BaseCombatIO, get_io, set_io, reset_io
 from combat.combat_engine import combat
 from combat.stats import enemy_stats
-from utils import strip_ansi
+from utils import strip_ansi, display_name
 
 
 # ── GUI-specific I/O bridge ──────────────────────────────────────────────────
+
+class _CombatAborted(Exception):
+    """Raised in the combat thread when its screen is torn down mid-battle."""
+
 
 class GUICombatIO(BaseCombatIO):
     """
     Bridges combat thread I/O to the tkinter GUI via queues.
     The GUI polls the output_queue; the combat thread blocks on input_queue.
+
+    stop() makes the combat thread abort cleanly: the next input() raises
+    _CombatAborted, so a dismissed CombatScreen's thread cannot keep
+    mutating shared player state (e.g. re-applying Tarnished Jade pin
+    damage) with no visible output.
     """
 
     def __init__(self):
         self.input_queue = queue.Queue()
         self.output_queue = queue.Queue()
         self._active = True
+        # Presentation pacing (docs/combat_plan_phase_design.md §7): the pacer
+        # sleeps on THIS (engine) thread so text, HP bars and flashes stay in
+        # lockstep — the HUD poller reads live state.
+        from gui.combat_pacer import CombatPacer
+        self.pacer = CombatPacer(active_fn=self.is_active)
+
+    def is_active(self):
+        return self._active
 
     def print(self, *args, **kwargs):
+        if not self._active:
+            return
         text = " ".join(str(a) for a in args)
+        self.pacer.before_print(text)
         self.output_queue.put(("OUTPUT", text))
+        self.pacer.after_print(text)
 
     def input(self, prompt=""):
+        if not self._active:
+            raise _CombatAborted()
+        self.pacer.before_input()
         self.output_queue.put(("INPUT_NEEDED", prompt))
-        return self.input_queue.get()
+        value = self.input_queue.get()
+        if not self._active:
+            # Screen was torn down while we were waiting for input.
+            raise _CombatAborted()
+        self.pacer.mark_input_received()
+        return value
 
     def clear(self):
+        if not self._active:
+            return
         self.output_queue.put(("CLEAR", None))
 
     def send_input(self, text: str):
@@ -51,7 +82,8 @@ class GUICombatIO(BaseCombatIO):
 
     def stop(self):
         self._active = False
-        # Unblock any waiting input
+        self.pacer.abort()
+        # Unblock any waiting input so the thread aborts at its next read
         self.input_queue.put("")
 
 
@@ -70,7 +102,7 @@ class CombatScreen(BaseScreen):
     """
 
     def __init__(self, parent, screen_manager,
-                 enemy_keys=None, floor=None, room_num=None,
+                 enemy_keys=None, enemies=None, floor=None, room_num=None,
                  total_rooms=None, on_result=None, is_overlay=False,
                  combat_context=None, combat_func=None, **kwargs):
         # Ensure screen_manager/player are available before use
@@ -97,11 +129,15 @@ class CombatScreen(BaseScreen):
         self._ally_target_context = False  # Set when recent output suggests ALLY target selection
         self._revive_target_context = False  # Set when recent output suggests revive (dead ally) target selection
         self._capture_context = False  # Set when recent output suggests capture target selection
-        self._target_index_map = {}  # Maps frame index → badge number for target selection
+        self._target_index_map = {}  # Maps frame index → target number for target selection
+        self._ally_engine_count = 0  # Size of the engine's ally list for the current prompt
 
         # Create enemy instances up-front so GUI can reference them
         self.enemies = []
-        if self.player and self.enemy_keys:
+        if enemies:
+            # Pre-built enemies (hallucination, custom encounters) — shared list
+            self.enemies = enemies
+        elif self.player and self.enemy_keys:
             self.enemies = [enemy_stats(k, self.player) for k in self.enemy_keys]
 
         super().__init__(parent, screen_manager, **kwargs)
@@ -110,19 +146,28 @@ class CombatScreen(BaseScreen):
         self.sm.clear_log()
         if self.combat_context == "superboss":
             self.sm.update_top_bar(f"⚔ Superboss | Floor {self.floor or '?'}")
+        elif self.combat_context == "boss_rush":
+            self.sm.update_top_bar(
+                f"⚔ Boss Rush | Echo {self.room_num or '?'}/{self.total_rooms or '?'}")
         elif self.combat_context == "travel":
             self.sm.update_top_bar("Combat | On the Road")
         elif self.combat_context == "training":
             self.sm.update_top_bar("⚔ Sparring | Training Dummy")
         else:
-            top = f"Combat | Floor {self.floor or '?'} | Room {self.room_num or '?'}/{self.total_rooms or '?'}"
+            eh_run = bool(self.player and self.player.get("_eh_in_run"))
+            if eh_run:
+                top = (f"Combat | \u2694 The Event Horizon | "
+                       f"Room {self.room_num or '?'}")
+            else:
+                top = f"Combat | Floor {self.floor or '?'} | Room {self.room_num or '?'}/{self.total_rooms or '?'}"
             # ── Pandemonium: append active curse to the top bar ─────────
             if self.player and self.player.get("pandemonium_mode"):
                 curse = self.player.get("pandemonium_curse")
                 if curse:
                     top += f" | {curse.get('icon', '☠️')} {curse.get('name', '')}"
             # ── Wonderland: append active quirk + shadows ───────────────
-            elif self.player and self.player.get("dungeon_region") == "wonderland":
+            elif (not eh_run and self.player
+                  and self.player.get("dungeon_region") == "wonderland"):
                 from wonderland_curses import format_quirk_summary
                 qs = format_quirk_summary(self.player)
                 if qs:
@@ -132,6 +177,8 @@ class CombatScreen(BaseScreen):
         self._active_ally = None  # Track which ally's turn it is
         self._actual_turn_order = None  # Parsed from engine output (labels list)
         self._turn_step_prefix = ""     # e.g. "[2/7]" for the current combatant
+        self._current_actor_name = None  # Bare actor name (card flash / damage tracking)
+        self._current_actor_label = None  # Full engine label incl. "[N]" (turn-order highlight)
 
         # ── Top: Combat HUD ──────────────────────────────────────────────────
         self.renderer = CombatRenderer(self)
@@ -143,22 +190,60 @@ class CombatScreen(BaseScreen):
         # Bind party clicks for ally target selection
         self.renderer.bind_party_clicks(self._on_party_click)
 
-        # ── Middle: Log ──────────────────────────────────────────────────────
-        log_frame = tk.LabelFrame(
-            self,
-            text=" Combat Log ",
-            bg=Theme.BG_DARK,
-            fg=Theme.TEXT_DIM,
-            font=Theme.FONT_BOLD,
-            highlightthickness=1,
-            highlightbackground=Theme.BORDER,
+        # ── Middle: combat feed + on-demand log popup ────────────────────
+        # The always-visible log pane cost ~114px of vertical budget, which
+        # starved the HUD columns at 5 enemies (2026-10-04). This compact
+        # 3-line feed keeps the latest events visible (plus a banner line
+        # for the skill being cast); the full log lives in a 📜 popup that
+        # the same button toggles open/closed.
+        self._ticker_feed = []
+        self._skill_banner = None
+        self._last_damage_actor = None  # Persists the latest damage line across turns
+        self._ticker_width = None
+
+        ticker_row = tk.Frame(self, bg=Theme.BG_MID)
+        ticker_row.pack(fill=tk.X, padx=10, pady=(0, 8))
+        ticker_row.bind("<Configure>", self._on_ticker_configure)
+
+        self.log_btn = tk.Button(
+            ticker_row,
+            text="📜 Log",
+            command=self.open_log_popup,
+            bg=Theme.BUTTON_BG,
+            fg=Theme.TEXT,
+            activebackground=Theme.BUTTON_ACTIVE_BG,
+            font=Theme.FONT_SMALL,
+            cursor="hand2",
         )
-        log_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
-        log_frame.grid_columnconfigure(0, weight=1)
-        log_frame.grid_rowconfigure(0, weight=1)
+        # Button packs first so long feed lines can never squeeze it out.
+        self.log_btn.pack(side=tk.RIGHT, padx=(0, 6), pady=3)
+
+        self.ticker_label = tk.Label(
+            ticker_row,
+            text=" ",
+            bg=Theme.BG_MID,
+            fg=Theme.TEXT,
+            font=(Theme.FONT_FAMILY, 9),
+            anchor=tk.W,
+            justify=tk.LEFT,
+            height=3,
+        )
+        self.ticker_label.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 6), pady=3)
+
+        # The full combat log (Toplevel, hidden until requested). It is a
+        # child of this screen, so Tk destroys it together with the screen.
+        # No grab — it can stay pinned open while the fight continues.
+        self.log_window = tk.Toplevel(self)
+        self.log_window.title("Combat Log")
+        self.log_window.configure(bg=Theme.BG_DARK)
+        self.log_window.geometry("660x340")
+        self.log_window.transient(self.winfo_toplevel())
+        self.log_window.withdraw()
+        self.log_window.protocol("WM_DELETE_WINDOW", self._close_log_popup)
+        self.log_window.bind("<Escape>", lambda e: self._close_log_popup())
 
         self.log_text = tk.Text(
-            log_frame,
+            self.log_window,
             height=5,
             wrap=tk.WORD,
             state=tk.DISABLED,
@@ -168,15 +253,15 @@ class CombatScreen(BaseScreen):
             highlightthickness=0,
             borderwidth=0,
         )
-        self.log_text.grid(row=0, column=0, sticky="nsew", padx=(5, 0), pady=5)
+        self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 0), pady=8)
 
         log_scroll = tk.Scrollbar(
-            log_frame,
+            self.log_window,
             command=self.log_text.yview,
             bg=Theme.BG_MID,
             troughcolor=Theme.BG_DARK,
         )
-        log_scroll.grid(row=0, column=1, sticky="ns", padx=(0, 5), pady=5)
+        log_scroll.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 8), pady=8)
         self.log_text.config(yscrollcommand=log_scroll.set)
         # Bind mouse wheel to scroll
         self.log_text.bind("<MouseWheel>", lambda e: self.log_text.yview_scroll(-1 * (e.delta // 120), "units"))
@@ -244,26 +329,53 @@ class CombatScreen(BaseScreen):
         # widget is torn down at the Tcl level without going through destroy().
         self.bind("<Destroy>", self._on_destroy_event)
 
+        # Presentation pacing: click anywhere to skip the current beat.
+        self._bind_pacing_skip(self)
+
         # Start combat thread
         self._start_combat()
         self._schedule_poll()
         self._schedule_hud_refresh()
 
+    def _bind_pacing_skip(self, widget):
+        """Bind click-to-skip recursively (doc §7.3) — add=+ keeps every
+        existing handler (target selection, buttons) intact."""
+        try:
+            widget.bind("<Button-1>", self._on_pacing_skip, add="+")
+        except tk.TclError:
+            pass
+        for child in widget.winfo_children():
+            self._bind_pacing_skip(child)
+
+    def _on_pacing_skip(self, _event=None):
+        """A click during pacing fast-forwards the current actor's beat.
+        Ignored while the engine awaits input (that click is a menu choice)."""
+        if self._pending_input_mode is None:
+            self.io.pacer.request_skip()
+
     def _update_top_bar(self):
         """Called by the game clock tick — preserves curse/quirk info in combat."""
         if self.combat_context == "superboss":
             top = f"⚔ Superboss | Floor {self.floor or '?'}"
+        elif self.combat_context == "boss_rush":
+            top = f"⚔ Boss Rush | Echo {self.room_num or '?'}/{self.total_rooms or '?'}"
         elif self.combat_context == "travel":
             top = "Combat | On the Road"
         elif self.combat_context == "training":
             top = "⚔ Sparring | Training Dummy"
         else:
-            top = f"Combat | Floor {self.floor or '?'} | Room {self.room_num or '?'}/{self.total_rooms or '?'}"
+            eh_run = bool(self.player and self.player.get("_eh_in_run"))
+            if eh_run:
+                top = (f"Combat | \u2694 The Event Horizon | "
+                       f"Room {self.room_num or '?'}")
+            else:
+                top = f"Combat | Floor {self.floor or '?'} | Room {self.room_num or '?'}/{self.total_rooms or '?'}"
             if self.player and self.player.get("pandemonium_mode"):
                 curse = self.player.get("pandemonium_curse")
                 if curse:
                     top += f" | {curse.get('icon', '☠️')} {curse.get('name', '')}"
-            elif self.player and self.player.get("dungeon_region") == "wonderland":
+            elif (not eh_run and self.player
+                  and self.player.get("dungeon_region") == "wonderland"):
                 from wonderland_curses import format_quirk_summary
                 qs = format_quirk_summary(self.player)
                 if qs:
@@ -338,6 +450,15 @@ class CombatScreen(BaseScreen):
                         self._on_party_click(frame_idx)
                     else:
                         self._on_enemy_click(frame_idx)
+                elif (self._pending_input_mode == "ally_target"
+                      and badge_num <= self._ally_engine_count):
+                    # Number refers to an ally the HUD doesn't show (bench or
+                    # inactive) — send it straight to the engine.
+                    self.io.send_input(str(badge_num))
+                    self.renderer.clear_target_highlight()
+                    self.renderer.hide_target_indicators()
+                    self.action_panel.set_target_mode(False)
+                    self.action_panel.disable_all()
             return
 
         # Map keys to action keys
@@ -366,14 +487,23 @@ class CombatScreen(BaseScreen):
             self._on_action_click(mapped)
 
     def handle_escape(self):
-        """Override: Esc does nothing in combat unless in target mode."""
-        if self._pending_input_mode in ("enemy_target", "capture_target", "ally_target"):
+        """Override: Esc cancels target selection — including ally switch.
+
+        Reached via the root-level global handler (gui/app.py) when this
+        overlay is the top screen. "ally_switch" must cancel like the other
+        target modes (2026-10-08: pressing Esc after [S] Switch should
+        return to the action menu, not touch the screen underneath).
+        """
+        if self._pending_input_mode in ("enemy_target", "capture_target",
+                                        "ally_target", "ally_switch"):
             self.io.send_input("0")
             self.renderer.clear_target_highlight()
             self.renderer.hide_target_indicators()
             self.action_panel.set_target_mode(False)
             self.action_panel.enable_all()
             self._pending_input_mode = None
+            if self.player:
+                self.player["_ally_switch_mode"] = False
 
     # ── Combat thread lifecycle ───────────────────────────────────────────────
 
@@ -407,23 +537,52 @@ class CombatScreen(BaseScreen):
                         enemies=self.enemies,
                     )
                 self.io.output_queue.put(("RESULT", result))
+            except _CombatAborted:
+                # Screen destroyed mid-battle — exit silently, no side effects.
+                pass
             except Exception as e:
                 import traceback
                 self.io.output_queue.put(("ERROR", str(e) + "\n" + traceback.format_exc()))
             finally:
                 reset_io()
 
+        # ── Presentation pacing config (docs/combat_plan_phase_design.md §7) ─
+        settings = getattr(self.sm, "settings", None) or {}
+        self.io.pacer.configure(
+            party_names=[self.player.get("name", "")] +
+                        [display_name(a) for a in self.player.get("allies", [])],
+            speed=settings.get("combat_pacing", "normal"),
+        )
+
         self._combat_thread = threading.Thread(target=run_combat, daemon=True)
         self._combat_thread.start()
 
     # ── Polling loop ──────────────────────────────────────────────────────────
 
+    def _widgets_alive(self) -> bool:
+        """True while this screen's Tcl widgets still exist.
+
+        Guards against stale after() callbacks firing for a screen whose
+        widget tree was torn down without the _destroyed flag being set
+        (e.g. tkinter reports <Destroy> with the raw path string when the
+        widget lookup already failed).
+        """
+        try:
+            return bool(self.winfo_exists())
+        except tk.TclError:
+            return False
+
     def _schedule_poll(self):
-        self._poll_id = self.after(100, self._poll)
+        # 40ms keeps the paced beats crisp (stagger is ~130ms — doc §7.5).
+        self._poll_id = self.after(40, self._poll)
 
     def _poll(self):
         """Process events from the combat thread."""
-        if self._destroyed:
+        if self._destroyed or not self._widgets_alive():
+            # Widget tree already gone (e.g. a synchronous screen switch
+            # tore it down) — stop polling for good so stale callbacks
+            # never touch dead widgets.
+            self._destroyed = True
             return
         while True:
             try:
@@ -450,7 +609,8 @@ class CombatScreen(BaseScreen):
 
     def _schedule_hud_refresh(self):
         """Poll player/enemy state and update the HUD renderer."""
-        if self._destroyed:
+        if self._destroyed or not self._widgets_alive():
+            self._destroyed = True
             return
         self._refresh_hud()
         self._hud_poll_id = self.after(200, self._schedule_hud_refresh)
@@ -543,21 +703,33 @@ class CombatScreen(BaseScreen):
             self.continue_btn.pack_forget()
             self.item_frame.pack_forget()
             self._refresh_hud()
-            # Build list of targetable party members
-            # revive_mode: only show dead allies; otherwise show alive
-            party = self._get_party_snapshot()
+            # The engine numbers its prompt list over [player] + ALL allies
+            # (front row, bench, and inactive), but the HUD only shows the
+            # front row. Map each visible frame to the engine's 1-based number
+            # by identity — frame index ≠ engine number whenever bench allies
+            # shift the list (e.g. clicking Ninetales must send her number, 6,
+            # not the Lich Queen Avatar's number 3).
+            from combat.ally import get_all_active_allies_including_defeated
+            engine_party = self._get_party_snapshot()
             if revive_mode:
-                targetable = [i for i, m in enumerate(party)
-                              if m.get("current_hp", m.get("hp", 1)) <= 0]
+                engine_list = [m for m in engine_party
+                               if m.get("current_hp", m.get("hp", 1)) <= 0]
                 prompt = "Select a fallen ally to revive"
             else:
-                targetable = [i for i, m in enumerate(party)
-                              if m.get("current_hp", m.get("hp", 1)) > 0]
+                engine_list = [m for m in engine_party
+                               if m.get("current_hp", m.get("hp", 1)) > 0]
                 prompt = "Select an ally"
-            self._target_index_map = {idx: badge_num + 1 for badge_num, idx in enumerate(targetable)}
+            engine_num = {id(m): pos for pos, m in enumerate(engine_list, start=1)}
+            self._ally_engine_count = len(engine_list)
+            displayed = [self.player] + get_all_active_allies_including_defeated(self.player)
+            self._target_index_map = {}
+            for frame_idx, member in enumerate(displayed):
+                num = engine_num.get(id(member))
+                if num is not None:
+                    self._target_index_map[frame_idx] = num
             self.action_panel.set_target_mode(True, prompt, is_ally_target=True)
-            self.renderer.show_ally_target_indicators(targetable)
-            for i in targetable:
+            self.renderer.show_ally_target_indicators(self._target_index_map)
+            for i in self._target_index_map:
                 self.renderer.highlight_ally(i)
 
         elif self._pending_input_mode == "ally_switch":
@@ -618,7 +790,40 @@ class CombatScreen(BaseScreen):
         turn_match = re.match(r'^\s*\[(\d+/\d+)\]\s+(.+)\'s\s+Turn:', text.strip())
         if turn_match:
             self._turn_step_prefix = f"[{turn_match.group(1)}]"
+            # A new turn sweeps the previous actor's event lines and the skill
+            # banner — but the latest DAMAGE line stays. Hits must not flash
+            # away when the next turn starts; the line persists until the next
+            # combatant's damage replaces it (2026-10-05 feedback). Evasion
+            # results (dodges/misses) stay too — a blinded attacker's
+            # "enemy dodges" line otherwise flashes for one pacing beat and
+            # is swept before it can be read (2026-10-08 bug report).
+            self._skill_banner = None
+            self._ticker_feed = [l for l in self._ticker_feed
+                                 if self._is_damage_line(l) or self._is_evade_line(l)]
+            self._render_ticker()
+            # HUD feedback: spotlight the combatant who is acting now, and
+            # track them for the turn-order bar highlight. The full engine
+            # label ("[3] Reality Engineer") is kept so duplicate enemy names
+            # highlight only the twin whose turn it is; the bare name still
+            # feeds the card flash and damage-line tracking.
+            actor_label = turn_match.group(2).strip()
+            actor = re.sub(r'^\[\d+\]\s*', '', actor_label).strip()
+            self._current_actor_name = actor
+            self._current_actor_label = actor_label
+            flash_name = actor
+            if flash_name.lower() == "you" and self.player:
+                flash_name = self.player.get("name", actor)
+            self.renderer.flash_entity(flash_name)
             return  # Don't log this line
+
+        # Damage lines: pulse the struck ally's card. The whole squad acts
+        # before the enemies do, so hits on allies arrive in a burst at the
+        # end of the round — the HUD should show them land.
+        if self._is_damage_line(text):
+            hit = re.search(r'→\s*(.+?):\s*\d[\d,]*\s*dmg', text)
+            if hit:
+                self.renderer.flash_entity(hit.group(1).strip(), kind="hit",
+                                           party_only=True)
 
         # Always detect target-selection context (needed for input routing)
         lowered = text.lower()
@@ -784,9 +989,15 @@ class CombatScreen(BaseScreen):
         """Extract round/floor/room/time from header and update top bar."""
         # Pattern: "  >> ROUND 2 | Floor 22 | Room 1/10 | Time: 09:14"
         clean = text.replace(">>", "").strip()
-        # ── Append active curse/quirk info only during actual dungeon combat ─
-        #     (not travel, training, or superboss fights)
-        if self.combat_context in (None, ""):
+        if self.player and self.player.get("_eh_in_run"):
+            # The rift has no floors — show the room, not the enemy level.
+            m = re.search(r"ROUND\s+(\d+)", clean)
+            rnd = m.group(1) if m else "?"
+            clean = (f"ROUND {rnd} | \u2694 The Event Horizon | "
+                     f"Room {self.room_num or '?'}")
+        elif self.combat_context in (None, ""):
+            # ── Append active curse/quirk info only during actual dungeon combat ─
+            #     (not travel, training, or superboss fights)
             if self.player and self.player.get("pandemonium_mode"):
                 curse = self.player.get("pandemonium_curse")
                 if curse:
@@ -796,6 +1007,13 @@ class CombatScreen(BaseScreen):
                 qs = format_quirk_summary(self.player)
                 if qs:
                     clean += f" | {qs}"
+        # Block time: swap the engine's HH:MM segment for the phase track
+        if "Time:" in clean and self.player:
+            from time_blocks import format_block_track
+            clean = clean.split("| Time:")[0].rstrip()
+            _track = format_block_track(self.player, include_day=False)
+            if _track:
+                clean += f" | {_track}"
         self.sm.top_name.config(text=clean)
         self.sm.top_info.config(text="")
         # Reset turn step for the new round
@@ -810,9 +1028,21 @@ class CombatScreen(BaseScreen):
         The Leave Battle button is purely cosmetic — it just dismisses the overlay.
         """
         self._cancel_polls()
+        # The fight is over — the result gets a clean feed: no leftover action
+        # lines from the last actor (2026-10-04).
+        self._skill_banner = None
+        self._ticker_feed = []
+        self._last_damage_actor = None
         self._append_log(f"\n=== Combat ended: {result.upper()} ===")
         # Clear turn step prefix so the result line isn't prefixed
         self._turn_step_prefix = ""
+
+        # Draw the eye to the log button — the full fight recap lives there now.
+        try:
+            self.log_btn.config(bg=Theme.ACCENT, fg=Theme.TEXT_HEADER)
+            self.after(2500, self._reset_log_btn)
+        except tk.TclError:
+            pass
 
         # ── Refresh HUD one last time to show empty enemy frame ──────────
         # The combat engine may have pruned dead enemies after the last
@@ -829,6 +1059,16 @@ class CombatScreen(BaseScreen):
             self.on_result(result)
 
         self._handle_result_pending = result
+
+        # ── The callback may have destroyed us synchronously ─────────────
+        # (e.g. the training-dummy flow switches straight back to the city
+        # screen). Every widget below is then already gone and touching
+        # them raises TclError "invalid command name". Only the widget
+        # check is meaningful here — _destroyed was already set True by
+        # _cancel_polls() above.
+        if not self._widgets_alive():
+            return
+
         self.action_panel.pack_forget()
         self.item_frame.pack_forget()
         self.continue_btn.config(
@@ -849,13 +1089,49 @@ class CombatScreen(BaseScreen):
                 self._return_to_city()
 
     def _handle_error(self, error_text: str):
-        """Combat thread crashed — show error and return."""
+        """Combat thread crashed — persist the traceback, show error, and return."""
         self._cancel_polls()
+
+        # Persist the full traceback. The combat log is destroyed with this
+        # screen, so a file is the only place the details survive.
+        log_path = None
+        try:
+            import os
+            import time as _time
+            from save_load import SAVE_DIR
+            os.makedirs(SAVE_DIR, exist_ok=True)
+            log_path = os.path.join(SAVE_DIR, "combat_error.log")
+            with open(log_path, "a", encoding="utf-8") as _fh:
+                _fh.write("\n" + "=" * 72 + "\n")
+                _fh.write(f"[{_time.strftime('%Y-%m-%d %H:%M:%S')}] COMBAT CRASH\n")
+                _fh.write(f"context={self.combat_context!r} floor={self.floor!r} "
+                          f"room={self.room_num!r}/{self.total_rooms!r}\n")
+                _fh.write(f"enemy_keys={self.enemy_keys!r}\n")
+                _fh.write(error_text + "\n")
+        except Exception:
+            pass
+
+        try:
+            self.sm.log("Combat crashed — details in savefile/combat_error.log",
+                        category="error")
+        except Exception:
+            pass
+
         self._append_log(f"\n!!! COMBAT ERROR !!!\n{error_text}")
-        ok_dialog(self, "Combat Error", f"An error occurred during combat:\n{error_text[:500]}")
+        ok_dialog(
+            self, "Combat Error",
+            f"An error occurred during combat:\n{error_text[:500]}\n\n"
+            f"Full traceback written to:\nsavefile/combat_error.log",
+        )
         # Notify caller (e.g. dungeon thread) so it doesn't hang waiting for a result
         if self.on_result:
             self.on_result("error")
+        # The callback may have switched screens synchronously — don't touch
+        # (or re-navigate) a screen that no longer exists. (_destroyed is
+        # already True here from _cancel_polls() above, so only the widget
+        # check tells us anything.)
+        if not self._widgets_alive():
+            return
         if self.is_overlay:
             self.sm.dismiss_overlay()
         else:
@@ -1010,21 +1286,28 @@ class CombatScreen(BaseScreen):
         enemies = self._enemies_snapshot()
         self.renderer.refresh(self.player, enemies,
                               active_ally=self._active_ally,
-                              turn_order=turn_order)
+                              turn_order=turn_order,
+                              active_label=self._current_actor_label)
 
     def _compute_turn_order(self):
         """Build a turn-order preview list sorted by speed (fastest first).
-        Only includes active (front-row) allies, matching the engine's roll_initiative."""
+        Only includes active (front-row) allies, matching the engine's roll_initiative.
+
+        Labels mirror the engine's exactly (MC name, full ally display names)
+        so the bar doesn't visibly change when the engine's first Turn Order
+        line replaces this preview (2026-10-08: the MC label used to flip
+        from the chosen name to \"You\").
+        """
         from combat.ally import get_active_allies
         entries = []
-        # Player
+        # Player — full name, exactly like the engine's turn-order label
         p_spd = self.player.get("attributes", {}).get("Speed", 10)
-        entries.append({"label": self.player.get("name", "You")[:8], "speed": p_spd})
+        entries.append({"label": self.player.get("name") or "You", "speed": p_spd})
         # Active (front-row) allies only
         for ally in get_active_allies(self.player):
             if ally.get("current_hp", 0) > 0:
                 a_spd = ally.get("attributes", {}).get("Speed", 10)
-                entries.append({"label": ally.get("name", "Ally")[:8], "speed": a_spd})
+                entries.append({"label": display_name(ally) or "Ally", "speed": a_spd})
         # Enemies — use snapshot to avoid racing the combat thread's prune
         for enemy in self._enemies_snapshot():
             if enemy.get("hp", 0) > 0:
@@ -1102,12 +1385,28 @@ class CombatScreen(BaseScreen):
         """Find the active ally from a parsed prompt context dict.
 
         Returns the ally dict if found, or None if this is the player's turn.
+
+        The engine prompt carries display_name() (nickname -> awakened_name
+        -> name), so all three forms must match. Matching the raw ``name``
+        only broke for renamed girls: the prompt said "Ran Yakumo", the
+        lookup searched "Ninetales Fox", nothing resolved, and the PLAYER's
+        action menu was rendered during the ally's turn (2026-10-06 Skylume
+        report — Black Gloves menu on Ran Yakumo's turn; workshop clicks
+        sent digits the engine consumed as the ally's skill numbers).
         """
         if not context or "ally_name" not in context:
             return None
-        ally_name = context["ally_name"]
+        ally_name = (context["ally_name"] or "").strip().lower()
+        if not ally_name:
+            return None
         for ally in self.player.get("allies", []):
-            if ally.get("name", "").lower() == ally_name.lower():
+            candidates = {
+                (ally.get("nickname") or "").strip().lower(),
+                (ally.get("awakened_name") or "").strip().lower(),
+                (ally.get("name") or "").strip().lower(),
+            }
+            candidates.discard("")
+            if ally_name in candidates:
                 return ally
         return None
 
@@ -1116,13 +1415,134 @@ class CombatScreen(BaseScreen):
     def _append_log(self, text: str):
         self.log_text.config(state=tk.NORMAL)
         self.log_text.insert(tk.END, strip_ansi(text) + "\n")
-        self.log_text.see(tk.END)
+        # Keep the popup pinned to the newest line unless the player has
+        # scrolled back to read (then leave their view alone).
+        try:
+            at_bottom = self.log_text.yview()[1] >= 0.995
+        except tk.TclError:
+            at_bottom = True
+        if at_bottom:
+            self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
+        self._set_ticker(text)
+
+    def _is_damage_line(self, line: str) -> bool:
+        """True for damage feedback lines ('Ninetales Fox [Assault] → Wolf: 87 dmg')."""
+        return bool(re.search(r'→\s*.+?:\s*\d[\d,]*\s*dmg', line, re.IGNORECASE))
+
+    def _is_evade_line(self, line: str) -> bool:
+        """True for evasion result lines (dodges, misses, wide, slips aside).
+
+        These report the OUTCOME of an action, so — like damage lines — they
+        persist across the next turn header instead of being swept instantly.
+        Blinded attackers raise enemy dodge chance by 25%, which made the
+        missing message very noticeable (2026-10-08 bug report: "enemy
+        dodging print didn't print and it silently moved to the next actor").
+        """
+        return bool(re.search(
+            r'dodges|misses|goes wide|slips aside|flails wildly|'
+            r'out of the way|deflects',
+            line, re.IGNORECASE))
+
+    def _set_ticker(self, text: str):
+        """Feed the latest log lines into the combat ticker.
+
+        The feed keeps the last few events; a skill line (">>> Name: desc",
+        printed by player_actions when a skill fires) also pins its text as
+        the banner — the old log pane used to show the description while
+        the action resolved. Damage lines persist across turn headers until
+        the next combatant's damage replaces them (2026-10-05).
+        """
+        lines = [l for l in (line.strip() for line in strip_ansi(text).splitlines()) if l]
+        if not lines:
+            return
+        for line in lines:
+            if ">> ROUND" in line:
+                # Redundant — the top bar already shows the round (feedback).
+                continue
+            if line.startswith(">>>"):
+                banner = line.lstrip(">").replace("<<<", "").strip()
+                if banner:
+                    self._skill_banner = banner
+                continue  # the banner row represents it — don't duplicate it
+            if self._is_damage_line(line):
+                # Damage messages own their feed slot: when the next combatant
+                # lands a hit it REPLACES the previous damage line instead of
+                # stacking (same-actor multi-hits still accumulate).
+                if self._last_damage_actor != self._current_actor_name:
+                    self._ticker_feed = [l for l in self._ticker_feed
+                                         if not self._is_damage_line(l)]
+                self._last_damage_actor = self._current_actor_name
+            self._ticker_feed.append(line)
+        self._ticker_feed = self._ticker_feed[-6:]
+        self._render_ticker()
+
+    def _render_ticker(self):
+        """Compose the ticker text from the skill banner + recent events."""
+        feed = self._ticker_feed[-(2 if self._skill_banner else 3):]
+        parts = [f"▶ {self._skill_banner}"] if self._skill_banner else []
+        text = "\n".join(parts + feed)
+        # Approximate capacity: 3 wrapped rows at ~7px per char. Overlong
+        # content trims from the TOP — the newest lines stay complete.
+        width = self._ticker_width or 900
+        cap = max(120, int((width - 110) / 7) * 3)
+        if len(text) > cap:
+            text = "\u2026" + text[len(text) - cap:]
+        try:
+            self.ticker_label.config(text=text or " ")
+        except tk.TclError:
+            pass
+
+    def _on_ticker_configure(self, event):
+        """Track the strip width so the feed wraps and trims correctly."""
+        if event.width == self._ticker_width:
+            return
+        self._ticker_width = event.width
+        try:
+            self.ticker_label.config(wraplength=max(200, event.width - 120))
+        except tk.TclError:
+            return
+        self._render_ticker()
 
     def _clear_log(self):
         self.log_text.config(state=tk.NORMAL)
         self.log_text.delete("1.0", tk.END)
         self.log_text.config(state=tk.DISABLED)
+        self._ticker_feed = []
+        self._skill_banner = None
+        self._last_damage_actor = None
+        self._render_ticker()
+
+    def open_log_popup(self):
+        """Toggle the full combat log (ticker button / top-bar 📜 in combat).
+
+        Clicking again hides it — no need to aim for the window's X.
+        """
+        if not self._widgets_alive():
+            return
+        try:
+            if self.log_window.state() == "normal":
+                self.log_window.withdraw()
+                return
+            self.log_window.deiconify()
+            self.log_window.lift()
+            self.log_text.see(tk.END)
+        except tk.TclError:
+            pass
+
+    def _close_log_popup(self):
+        try:
+            if self.log_window.winfo_exists():
+                self.log_window.withdraw()
+        except tk.TclError:
+            pass
+
+    def _reset_log_btn(self):
+        try:
+            if self.log_btn.winfo_exists():
+                self.log_btn.config(bg=Theme.BUTTON_BG, fg=Theme.TEXT)
+        except tk.TclError:
+            pass
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
 
@@ -1133,7 +1553,10 @@ class CombatScreen(BaseScreen):
         is torn down at the Tcl level without going through our destroy().
         Only acts on our own widget (ignores child-widget destroy events).
         """
-        if event.widget is self:
+        # event.widget falls back to the raw Tcl path string when tkinter can
+        # no longer resolve the widget (CPython's _substitute does
+        # `except KeyError: e.widget = W`), so compare against both.
+        if event.widget is self or event.widget == self._w:
             self._cancel_polls()
 
     def _cancel_polls(self):
@@ -1141,19 +1564,23 @@ class CombatScreen(BaseScreen):
         if self._poll_id:
             try:
                 self.after_cancel(self._poll_id)
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, tk.TclError):
                 pass
             self._poll_id = None
         if self._hud_poll_id:
             try:
                 self.after_cancel(self._hud_poll_id)
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, tk.TclError):
                 pass
             self._hud_poll_id = None
 
     def destroy(self):
         self._cancel_polls()
         self.io.stop()
+        # Abort the combat thread cleanly and wait briefly for it to exit,
+        # so it can't keep mutating player state after the screen is gone.
+        if self._combat_thread is not None and self._combat_thread.is_alive():
+            self._combat_thread.join(timeout=1.0)
         try:
             super().destroy()
         except (AttributeError, tk.TclError):

@@ -52,6 +52,10 @@ class BaseCombatIO:
     def clear(self):
         raise NotImplementedError
 
+    def is_active(self):
+        """Return True while this I/O bridge should keep the caller running."""
+        return True
+
     def show_hud(self, data: dict):
         """Optional: called by the GUI renderer when HUD data is available."""
         pass

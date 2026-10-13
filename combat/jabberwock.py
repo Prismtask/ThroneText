@@ -202,15 +202,8 @@ def _jabberwock_jaws_that_bite(jabber, player, ctx):
 
     def _vorpal_wound_extra(e, target, dmg):
         name = target.get("name", "The target")
-        # Apply uncleansable Vorpal Wound bleed
-        target.setdefault("active_debuffs", []).append({
-            "type": "bleed",
-            "damage": 10,
-            "remaining": 4,
-            "source": "vorpal_wound",
-            "_uncleansable": True,
-        })
-        ctx["_vorpal_wound_target"] = target  # Track for refresh
+        # Unified bleed application: uncleansable slot, refreshed on reapply
+        apply_bleed(target, 10, 4, source="vorpal_wound", uncleansable=True)
         ctx["_vorpal_wound_cooldown"] = 3     # Reapply every 3 turns
         return f"  🩸 VORPAL WOUND! {name} bleeds for 10 dmg × 4 turns (UNCLEANSABLE)"
 
@@ -657,7 +650,7 @@ def combat_jabberwock(player, floor=None, enemies=None):
 
         return None
 
-    def on_player_hit_hook(target, elist, ctx):
+    def on_player_hit_hook(target, elist, ctx, attacker=None):
         """Track damage dealt during Vorpal Beam windup for interrupt check."""
         if ctx.get("_vorpal_beam_charging") and _is_jabberwock(target):
             # We don't know exact damage here, but we can estimate from HP change
@@ -720,24 +713,11 @@ def combat_jabberwock(player, floor=None, enemies=None):
                 b for b in j.get("active_buffs", [])
                 if b.get("remaining", 999) > 0
             ]
-            for debuff in j.get("active_debuffs", []):
-                if "remaining" in debuff:
-                    debuff["remaining"] -= 1
-            j["active_debuffs"] = [
-                d for d in j.get("active_debuffs", [])
-                if d.get("remaining", 999) > 0
-            ]
+            # NOTE: Jabberwock's own debuffs tick via tick_enemy_debuffs in
+            # enemy_attack (standard enemy behavior) — do not double-tick here.
 
-        # ── Tick player/allies debuffs ──────────────────────────────────
-        for target in [player] + player.get("allies", []):
-            for debuff in target.get("active_debuffs", []):
-                if "remaining" in debuff:
-                    debuff["remaining"] -= 1
-            # Keep uncleansable debuffs (Vorpal Wound)
-            target["active_debuffs"] = [
-                d for d in target.get("active_debuffs", [])
-                if d.get("_uncleansable") or d.get("remaining", 999) > 0
-            ]
+        # Player/ally debuffs tick once per round via tick_player_debuffs in
+        # the shared superboss pipeline — do not decrement them here.
 
         # ── Clear turn order reference ──────────────────────────────────
         ctx["_current_turn_order"] = []

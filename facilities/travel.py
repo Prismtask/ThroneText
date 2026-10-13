@@ -1,7 +1,6 @@
 # facilities/travel.py
 
 from resources.cities import CITIES
-from utils import advance_time
 from character import player_max_hp
 from gui.terminal import term
 
@@ -45,7 +44,8 @@ def _danger_tag(travel_time):
 
 
 def _effective_travel_time(player, raw_time):
-    """Apply mount time reduction and daily event modifiers (e.g. Heavy Rain)."""
+    """Apply mount time reduction, cargo load penalty, and daily event
+    modifiers (e.g. Heavy Rain)."""
     effective = raw_time
     mount_id = player.get("mount_id")
     if mount_id:
@@ -58,7 +58,26 @@ def _effective_travel_time(player, raw_time):
     daily_mult = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
     if daily_mult != 1.0:
         effective = int(effective * daily_mult)
+    # Cargo load slows travel (0 → +25% between full load and overload cap)
+    from resources.trade_goods import cargo_travel_penalty
+    penalty = cargo_travel_penalty(player)
+    if penalty > 0:
+        effective = int(effective * (1 + penalty))
     return effective
+
+
+def _set_wild_entry(player, dungeon):
+    """Set the wild-dungeon entry fields on arrival (terminal-mode).
+
+    Points origin_city at the ruin's nearest city so every existing exit
+    path (flee / death / timeout) routes the player there.
+    """
+    from wild_dungeons import ensure_wild_dungeon_state
+    ensure_wild_dungeon_state(player)
+    player["wild_dungeon_id"] = dungeon["id"]
+    player["origin_city"] = dungeon.get("nearest_city", "solmere")
+    player["dungeon_region"] = dungeon.get("biome", "temperate")
+    player["location"] = "dungeon"
 
 
 def travel_to_city(player, current_city_id):
@@ -86,15 +105,33 @@ def travel_to_city(player, current_city_id):
         term.pause()
         return
 
+    # ── Cargo overload check ────────────────────────────────────────
+    from resources.trade_goods import (
+        cargo_overloaded_for_travel, cargo_total_weight, cargo_capacity,
+    )
+    if cargo_overloaded_for_travel(player):
+        term.print("\n[Your transport is overloaded with cargo!]")
+        term.print("Sell cargo at a shop market or stash it in your house before traveling.")
+        term.pause()
+        return
+
     # Show mount status if any
     mount_id = player.get("mount_id")
     if mount_id:
         from resources.mounts import get_mount
         mount = get_mount(mount_id)
         if mount:
+            load = cargo_total_weight(player)
+            cap = cargo_capacity(player)
             term.print(f"\n[Your {mount['name']} is ready. "
                   f"{int(mount['time_reduction']*100)}% faster, "
                   f"{int(mount['event_mitigation']*100)}% safer]")
+            if load > 0:
+                term.print(f"[Cargo load: {load}/{cap} wt]")
+    else:
+        load = cargo_total_weight(player)
+        if load > 0:
+            term.print(f"\n[You haul {load} wt of cargo on foot — expect heavy delays.]")
 
     options = []
     for conn in land_routes:
@@ -165,9 +202,19 @@ def embark_journey(player, dest_id, dest_name, travel_time, origin_biome="temper
         return "dead"
 
     # ── Safe arrival ─────────────────────────────────────────────────────────
-    advance_time(player, travel_time)
+    import time_blocks
+    seg_blocks = time_blocks.travel_blocks(player, travel_time)
+    camp = False
+    if (time_blocks.can_camp(player)
+            and seg_blocks >= time_blocks.blocks_remaining(player)):
+        camp = bool(term.confirm(
+            "Night falls before you arrive — make camp for the night?"))
+    time_blocks.spend_travel_segment(player, seg_blocks, camp=camp)
     player["location"] = dest_id
-
+    # Quests: arrival (visit_city objectives)
+    from quests import update_quests
+    for msg in update_quests(player, "visit_city", dest_id):
+        term.print(msg)
     term.print(f"\n{'─' * 52}")
     term.print(f"  You arrive in {dest_name}.")
     term.print(f"  HP: {player.get('current_hp', '?')}/{player_max_hp(player)}"
@@ -175,7 +222,8 @@ def embark_journey(player, dest_id, dest_name, travel_time, origin_biome="temper
     term.pause("  Press Continue to enter the city...")
 
 
-def embark_multi_leg_journey(player, segments, combat_override=None):
+def embark_multi_leg_journey(player, segments, combat_override=None,
+                             wild_dungeon=None):
     """
     Execute a multi-leg journey composed of pre-computed path segments.
 
@@ -195,6 +243,9 @@ def embark_multi_leg_journey(player, segments, combat_override=None):
             {"from", "to", "type", "raw_time", "effective_time", "biome", "cost"}
         combat_override: Optional function(player, enemy_keys, **kwargs) -> str
             If provided, called instead of combat() for travel encounters.
+        wild_dungeon: Optional wild dungeon dict. When provided, the final
+            segment may target "wild:<id>"; on arrival the wild-dungeon
+            entry fields are set instead of a city location.
 
     Returns
     -------
@@ -208,14 +259,24 @@ def embark_multi_leg_journey(player, segments, combat_override=None):
     for i, seg in enumerate(segments):
         is_final = (i == total_segments - 1)
         from_name = CITIES.get(seg["from"], {}).get("name", seg["from"])
-        to_name = CITIES.get(seg["to"], {}).get("name", seg["to"])
+        to_name = CITIES.get(seg["to"], {}).get("name")
+        if to_name is None:
+            if wild_dungeon is not None and str(seg["to"]).startswith("wild:"):
+                to_name = wild_dungeon.get("name", seg["to"])
+            else:
+                to_name = seg["to"]
 
         # ── Leg narration ─────────────────────────────────────────────────
         if seg["type"] == "sea":
-            has_ship = player.get("has_ship", False)
-            if has_ship:
+            ship_id = player.get("ship_id")
+            ship_name = None
+            if ship_id:
+                from resources.ships import get_ship
+                ship = get_ship(ship_id)
+                ship_name = ship["name"] if ship else None
+            if ship_name:
                 term.print(f"\n  ⛵ {from_name} → {to_name}: "
-                           f"{seg['effective_time']} min at sea "
+                           f"{seg['effective_time']} min at sea aboard your {ship_name} "
                            f"({seg['raw_time']} min base, ship bonus applied)")
             else:
                 term.print(f"\n  ⛵ {from_name} → {to_name}: "
@@ -246,8 +307,15 @@ def embark_multi_leg_journey(player, segments, combat_override=None):
             term.pause()
             return "dead"
 
-        # ── Advance time ──────────────────────────────────────────────────
-        advance_time(player, seg["effective_time"])
+        # ── Time: the leg's cost in blocks (§8); boundary offers camp ────
+        import time_blocks
+        seg_blocks = time_blocks.travel_blocks(player, seg["effective_time"])
+        camp = False
+        if (time_blocks.can_camp(player)
+                and seg_blocks >= time_blocks.blocks_remaining(player)):
+            camp = bool(term.confirm(
+                "Night falls on the road — make camp for the night?"))
+        time_blocks.spend_travel_segment(player, seg_blocks, camp=camp)
 
         # ── Stopover narration ────────────────────────────────────────────
         if not is_final:
@@ -255,7 +323,20 @@ def embark_multi_leg_journey(player, segments, combat_override=None):
                        "your journey...")
         else:
             # Final arrival
+            if wild_dungeon is not None:
+                _set_wild_entry(player, wild_dungeon)
+                term.print(f"\n  You reach {wild_dungeon.get('name', 'the ruins')} "
+                           f"(Lv {wild_dungeon.get('level', '?')}).")
+                term.pause("  Press Continue to descend...")
+                continue
+
             player["location"] = seg["to"]
+
+            # Quests: arrival (visit_city objectives)
+            from quests import update_quests
+            for msg in update_quests(player, "visit_city", seg["to"]):
+                term.print(msg)
+
             term.print(f"\n{'─' * 52}")
             term.print(f"  You arrive in {to_name}.")
             term.print(f"  HP: {player.get('current_hp', '?')}/{player_max_hp(player)}"

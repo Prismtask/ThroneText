@@ -1,4 +1,5 @@
 from combat.combat_io import c_print, c_input, c_clear
+from combat.helpers import ACTION_CANCELLED_MSG
 import random
 from character import player_max_hp
 from combat.status_effects import cure_curse, apply_poison, apply_healing, is_silenced, is_dreaded, format_player_status_line
@@ -20,6 +21,15 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
     # Palette's Brush: reset the once-per-turn stance flag
     from combat.weapon.palette_brush import begin_actor_turn
     begin_actor_turn(player)
+
+    # Prescript Ledger: the actor got a turn this round (waiver guard)
+    from combat.weapon.prescript_ledger import mark_acted as mark_prescript_acted
+    mark_prescript_acted(player)
+
+    # Per-action status markers (White Knight skill dodge / accuracy penalty)
+    for _e in enemies:
+        _e.pop("_skill_dodge_used", None)
+        _e.pop("_accuracy_penalty_used", None)
 
     if _action_override is None:
         # Normal player input
@@ -72,11 +82,17 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             msg, victory = execute_chiaroscuro_exhibit(player, enemies, stats, True)
         else:
             msg, victory = execute_signature_exhibit(player, enemies, stats, True)
+        if msg == ACTION_CANCELLED_MSG:
+            # Target selection canceled — reopen the menu, no turn consumed.
+            c_print(msg)
+            return "retry", False
         c_print(msg)
         if on_kill:
             for e in enemies_before:
                 if e["hp"] <= 0:
                     on_kill(e, enemies)
+        from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+        report_prescript_skill(player)
         if victory:
             return "victory", False
         return "continue", False
@@ -100,6 +116,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     killed_by_attack = [e for e in enemies_before if e["hp"] <= 0]
                     for e in killed_by_attack:
                         on_kill(e, enemies)
+                from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+                report_prescript_skill(player)
                 if victory:
                     return "victory", False
                 return "continue", False
@@ -126,12 +144,18 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     player, enemies, workshop_id,
                     p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                 )
+                if msg == ACTION_CANCELLED_MSG:
+                    # Target selection canceled — reopen the menu, no turn consumed.
+                    c_print(msg)
+                    return "retry", False
                 c_print(msg)
                 # Fire on_kill for enemies actually killed by the attack (snapshot before side effects)
                 if on_kill:
                     killed_by_attack = [e for e in enemies_before if e["hp"] <= 0]
                     for e in killed_by_attack:
                         on_kill(e, enemies)
+                from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+                report_prescript_skill(player)
                 if victory:
                     return "victory", False
                 return "continue", False
@@ -160,6 +184,10 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             p_str, p_con, p_dex, p_ler, p_wis, p_cha,
             allies=allies
         )
+        if msg == ACTION_CANCELLED_MSG:
+            # Target selection canceled — reopen the menu, no turn or cooldown cost.
+            c_print(msg)
+            return "retry", False
         c_print(msg)
         # Fire on_kill for enemies actually killed by the skill (snapshot before side effects
         # like boss-death triggers destroying linked minions)
@@ -174,6 +202,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         cd_msg = set_skill_cooldown(player, skill_id)
         if cd_msg:
             c_print(cd_msg)
+        from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+        report_prescript_skill(player)
         if victory:
             return "victory", False
         return "continue", False
@@ -205,6 +235,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         smoke_penalty = get_shadow_accuracy_penalty(player)
         if smoke_penalty > 0 and random.random() < smoke_penalty:
             c_print(f"  💨 The Caterpillar's smoke clouds your vision — your attack goes wide!")
+            return "continue", False
+
+        # ── Event Horizon: The Fool — a 10% chance the attack simply fails ──
+        from event_horizon import joker_attack_missed
+        if joker_attack_missed(player):
             return "continue", False
 
         equipped_weapon = player.get("equipped", {}).get("weapon")
@@ -254,6 +289,16 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         dmg = random.randint(4, 10) + scaling_val + get_strength_bonus(player) - effective_con_mod
         dmg = max(0, dmg)
 
+        # Consume power_buff (ally support — Overclock, Tinker Enhancement):
+        # empowers this attack
+        for buff in player.get("active_buffs", [])[:]:
+            if buff.get("type") == "power_buff":
+                val = buff.get("value", 0)
+                dmg = int(dmg * (1 + val))
+                player["active_buffs"].remove(buff)
+                c_print(f"  ⚡ Empowered! Damage increased by {int(val * 100)}%!")
+                break
+
         # Rogue sneak attack bonus vs slowed/stunned enemies
         passive = get_passive_skill(player)
         if passive and passive.get("effect", {}).get("type") == "vulnerable_bonus":
@@ -262,10 +307,24 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 dmg = int(dmg * (1 + bonus))
                 c_print(f"Sneak Attack! +{int(bonus*100)}% damage to the vulnerable target!")
 
-        # Critical hit check
-        from combat.stats import roll_critical_hit, apply_critical_damage, format_critical_tag
-        is_crit, _ = roll_critical_hit(player, "player")
-        dmg = apply_critical_damage(dmg, is_crit)
+        # Apply damage_boost buffs (multi-turn, non-consuming — e.g. Frabjous Day)
+        for buff in player.get("active_buffs", []):
+            if buff.get("type") == "damage_boost":
+                dmg = int(dmg * (1 + buff.get("value", 0)))
+
+        # Event Horizon: The Hierophant — basic attacks ×0.75
+        from event_horizon import joker_damage_multiplier
+        dmg = int(dmg * joker_damage_multiplier(player, "basic"))
+
+        # Critical hit check (crit chance over the cap converts to crit damage)
+        from combat.stats import (roll_critical_hit, apply_critical_damage,
+                                  format_critical_tag, CRIT_MULTIPLIER)
+        is_crit, _, overflow_crit = roll_critical_hit(player, "player")
+        dmg = apply_critical_damage(dmg, is_crit, multiplier=CRIT_MULTIPLIER + overflow_crit)
+
+        # Event Horizon: The Sun — crits +30%, non-crits ×0.85
+        from event_horizon import joker_crit_modifier
+        dmg = joker_crit_modifier(player, is_crit, dmg)
 
         # Wedding accessory attack bonuses
         is_first = not player.get("wedding_first_attack_done")
@@ -301,6 +360,12 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             bonus = target.get("hunters_mark_bonus", 0.50)
             final_dmg = int(final_dmg * (1 + bonus))
 
+        # Damage-taken amplification (e.g. Aura of Despair)
+        from combat.status_effects import get_damage_taken_multiplier
+        dt_mult = get_damage_taken_multiplier(target)
+        if dt_mult != 1.0:
+            final_dmg = int(final_dmg * dt_mult)
+
         # Captain's Cutlass: High Tide + Rally attack bonuses
         from combat.weapon.captain_cutlass import get_high_tide_attack_bonus, get_rally_attack_bonus
         final_dmg += get_high_tide_attack_bonus(player, final_dmg)
@@ -322,6 +387,12 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 if bonus_dmg > 0:
                     c_print(f"  ⚔️ Vorpal blessing surges! +{bonus_dmg} bonus damage!")
 
+        # Event Horizon trophies: Old Dopo Robe + Chance and Choice (single hit)
+        from combat.weapon.dopo_robe import get_robe_multiplier
+        final_dmg = int(final_dmg * get_robe_multiplier(player, player))
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        final_dmg = apply_chance_and_choice(player, final_dmg)
+
         if on_hit:
             on_hit(target, enemies)
         target["hp"] -= final_dmg
@@ -333,11 +404,21 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if ls > 0 and final_dmg > 0:
             heal = int(final_dmg * ls)
             if heal > 0:
-                actual = apply_healing(player, heal)
+                actual = apply_healing(player, heal, source=player)
                 if actual < 0:
                     c_print(f"  [Soul Siphon] The void twists the healing! You take {-actual} damage!")
                 elif actual > 0:
                     c_print(f"  [Soul Siphon] You recover {actual} HP.")
+        # Event Horizon — Death: attacks drain 10% of the damage dealt
+        _eh_ls = player.get("_eh_joker_lifesteal", 0) or 0
+        if _eh_ls > 0 and final_dmg > 0:
+            _eh_heal = int(final_dmg * _eh_ls)
+            if _eh_heal > 0:
+                _eh_actual = apply_healing(player, _eh_heal, source=player)
+                if _eh_actual < 0:
+                    c_print(f"  [Death] The void twists the drain! You take {-_eh_actual} damage!")
+                elif _eh_actual > 0:
+                    c_print(f"  [Death] You drain {_eh_actual} HP from the wound.")
         # Palette's Brush: strokes, Pigment Explosion, aura procs
         from combat.weapon.palette_brush import _actor_has_palette_brush, on_brush_attack_hit
         if _actor_has_palette_brush(player):
@@ -354,6 +435,12 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
         # Wedding on-hit effects
         apply_wedding_on_hit(player, target, enemies, final_dmg)
+
+        # Last Oath (unique rapier): basic attacks apply Expose
+        from combat.weapon.last_oath import try_last_oath_expose
+        lo_msg = try_last_oath_expose(player, target, is_crit)
+        if lo_msg:
+            c_print(lo_msg)
 
         # Vileheart Pendant: chance to poison on physical hit
         from combat.vileheart_venom import try_vileheart_venom_proc
@@ -372,6 +459,18 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         is_crit_bool = bool(crit_tag)
         from combat.helpers import format_damage_msg
         c_print(format_damage_msg(player['name'], target['name'], final_dmg, element=element, crit=is_crit_bool))
+        # ── Grandmother's Axe / Woodcutter's Broken Axe: bleed-pop passive ──
+        # Same consumption as Chrysalis: detonate the strongest bleed for 3x.
+        if equipped_weapon and target["hp"] > 0:
+            weapon_special = equipped_weapon.get("special", "")
+            if weapon_special in ("grandmothers_axe", "woodcutter_broken"):
+                if any(d.get("type") == "bleed" for d in target.get("active_debuffs", [])):
+                    chance = 0.40 if weapon_special == "grandmothers_axe" else 0.20
+                    if random.random() < chance:
+                        from combat.status_effects import detonate_bleed
+                        det_dmg, det_msgs = detonate_bleed(target)
+                        for det_msg in det_msgs:
+                            c_print(f"  {det_msg}")
         if target["hp"] <= 0:
             c_print(f"{player['name']} defeated {target['name']}!")
             if on_kill:
@@ -390,6 +489,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
     # ----- DEFEND -----
     elif action == "d":
         c_print(f"{player['name']} braces for impact, raising {player['name']} guard.")
+        from combat.weapon.prescript_ledger import report_defend as report_prescript_defend
+        report_prescript_defend(player)
         return "continue", True
 
     # ----- USE ITEM -----
@@ -418,6 +519,15 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             true_idx, item = combat_inventory[choice]
             msg = ""
             target = None
+
+            # ── Fractured Hourglass: reusable free-action cooldown reduction ──
+            from combat.fractured_hourglass import is_fractured_hourglass, use_fractured_hourglass
+            if is_fractured_hourglass(item):
+                if use_fractured_hourglass(player, is_player=True):
+                    from combat.weapon.prescript_ledger import report_item as report_prescript_item
+                    report_prescript_item(player)
+                # Free action — the turn is not consumed either way.
+                return "retry", False
 
             # ── Potion Sickness: only blocks healing consumables (not buffs/utility items) ──
             is_healing_item = (
@@ -466,12 +576,16 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                         c_print(f"{i+1}. {e['name']}")
                     try:
                         idx = int(c_input("Choice: ")) - 1
-                        target = mg_targets[idx]
-                    except:
+                    except ValueError:
                         return "retry", False
+                    if idx < 0 or idx >= len(mg_targets):
+                        return "retry", False
+                    target = mg_targets[idx]
                 else:
                     target = mg_targets[0]
                 remove_item_by_reference(player, item)
+                from combat.weapon.prescript_ledger import report_item as report_prescript_item
+                report_prescript_item(player)
                 if attempt_capture(player, target, net=item):
                     enemies.remove(target)
                 return "continue", False
@@ -595,6 +709,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 result, new_con = apply_expose(target, item["expose_armor"])
                 if result == "applied":
                     msg += f"{target['name']}'s armour is shattered! Armour reduced to {new_con}. "
+                elif result == "resisted":
+                    msg += f"{target['name']} shrugs off the armour shatter! "
                 else:
                     msg += f"{target['name']}'s armour is already fully exposed! "
             if item.get("burn_tier"):
@@ -606,6 +722,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     msg += f"The flames intensify on {target['name']}! "
                 elif result == "intensified":
                     msg += f"The blaze grows stronger on {target['name']}! "
+                elif result == "resisted":
+                    msg += f"{target['name']} shrugs off the flames! "
                 else:
                     msg += f"The burn on {target['name']} is refreshed. "
             if item.get("shock_damage"):
@@ -613,6 +731,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 result = apply_shock(target, item["shock_damage"], item.get("shock_duration", 3))
                 if result == "applied":
                     msg += f"{target['name']} is jolted with electricity! "
+                elif result == "resisted":
+                    msg += f"{target['name']} shrugs off the shock! "
                 else:
                     msg += f"The shock on {target['name']} is renewed! "
             if item.get("type") == "utility" and "damage_over_time" not in item and "stun_chance" not in item:
@@ -636,24 +756,33 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     from combat.helpers import format_damage_msg
                     msg += format_damage_msg(player['name'], target['name'], final_dmg, skill_name=item.get('name', 'Item')) + " "
             if "poison_damage" in item:
-                apply_poison(target, item["poison_damage"], item.get("poison_duration", 3))
-                msg += f"The {target['name']} is poisoned! "
+                if apply_poison(target, item["poison_damage"], item.get("poison_duration", 3)) != "resisted":
+                    msg += f"The {target['name']} is poisoned! "
             if "stun_chance" in item:
                 if random.random() < item["stun_chance"]:
-                    target["stunned"] = True
-                    msg += f"The {target['name']} is stunned and loses its next turn! "
+                    from combat.status_effects import check_status_resisted
+                    if check_status_resisted(target):
+                        msg += f"The {target['name']} shrugs off the stun! "
+                    else:
+                        target["stunned"] = True
+                        msg += f"The {target['name']} is stunned and loses its next turn! "
                 else:
                     msg += "The stun attempt fails. "
             if item.get("status") == "slow":
-                target["slowed"] = True
+                from combat.status_effects import apply_slow_to_enemy
+                apply_slow_to_enemy(target, duration=item.get("slow_duration", 2))
                 msg += f"The {target['name']} is slowed. "
             if item.get("blind_enemy"):
-                target["blinded"] = True
-                target.setdefault("active_debuffs", []).append({
-                    "type": "blind",
-                    "remaining": 3
-                })
-                msg += f"The {target['name']} is blinded (reduced dexterity). "
+                from combat.status_effects import check_status_resisted
+                if check_status_resisted(target):
+                    msg += f"The {target['name']} shrugs off the blinding powder. "
+                else:
+                    target["blinded"] = True
+                    target.setdefault("active_debuffs", []).append({
+                        "type": "blind",
+                        "remaining": 3
+                    })
+                    msg += f"The {target['name']} is blinded (reduced dexterity). "
             if "escape_bonus" in item:
                 from pandemonium_curses import is_flee_blocked
                 if is_flee_blocked(player):
@@ -684,10 +813,14 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 else:
                     c_print(f"\n💨 The {item['name']} sputters and fizzles out! Escape failed!")
                     remove_item_by_reference(player, item)
+                    from combat.weapon.prescript_ledger import report_item as report_prescript_item
+                    report_prescript_item(player)
                     return "continue", False
 
             c_print(msg)
             remove_item_by_reference(player, item)
+            from combat.weapon.prescript_ledger import report_item as report_prescript_item
+            report_prescript_item(player)
             if is_healing_item:
                 player["potion_sickness"] = 2
 
@@ -717,6 +850,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
 
     # ----- FLEE -----
     elif action == "f":
+        # Event Horizon: space is folded shut — escape is impossible
+        if player.get("_eh_in_run"):
+            c_print("The Horizon folds space around you — there is nowhere to flee!")
+            return "continue", False
+
         # Pandemonium: Crystalline Prison curse blocks all fleeing
         from pandemonium_curses import is_flee_blocked
         if is_flee_blocked(player):
@@ -793,9 +931,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 c_print(f"{i+1}. {e['name']}")
             try:
                 idx = int(c_input("Choice: ")) - 1
-                target = mg_targets[idx]
-            except:
+            except ValueError:
                 return "retry", False
+            if idx < 0 or idx >= len(mg_targets):
+                return "retry", False
+            target = mg_targets[idx]
         else:
             target = mg_targets[0]
 

@@ -314,6 +314,8 @@ def black_market_service(player, city_id):
 
     elif choice == leave_opt or choice == -1:
         service_dialogue(city_id, "black_market", "leave")
+        term.pause()
+        return
 
     term.pause()
     advance_time(player, 30)

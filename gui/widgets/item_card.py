@@ -119,6 +119,18 @@ class ItemCard(tk.Frame):
                 font=Theme.FONT_SMALL,
             ).pack(fill=tk.X, padx=8, pady=(0, 2))
 
+        # Scaling line — which attribute boosts this weapon's damage
+        from inventory import format_scaling_stat
+        scale_txt = format_scaling_stat(item)
+        if scale_txt:
+            tk.Label(
+                self,
+                text=scale_txt,
+                bg=Theme.BG_CARD,
+                fg=Theme.RARITY_LEGENDARY,
+                font=Theme.FONT_SMALL,
+            ).pack(fill=tk.X, padx=8, pady=(0, 2))
+
         # Description
         desc = item.get("description", "")
         if desc:

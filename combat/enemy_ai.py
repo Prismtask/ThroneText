@@ -3,7 +3,8 @@ from combat.combat_io import c_print
 import random
 from combat.status_effects import (
     apply_bleed, apply_curse, apply_dread, apply_weaken,
-    apply_drain, apply_silence, tick_enemy_debuffs
+    apply_drain, apply_silence, tick_enemy_debuffs, get_weaken_pct,
+    get_bleed_feast_multiplier
 )
 from resources.enemies import ENEMIES
 from combat.weapon.wedding_specials import (
@@ -19,6 +20,12 @@ from combat.helpers import _player_has_tarnished_jade
  
 
 def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0, all_enemies=None, actual_player=None):
+    # Imported once here so the name is always bound. It used to be imported
+    # inside the confusion/friendly-fire branch only, which crashed with
+    # UnboundLocalError in the reflection-damage section when that branch
+    # hadn't run (e.g. the first attack that triggers reflection damage).
+    from combat.helpers import format_damage_msg
+
     # --- Check fear BEFORE ticking (so it applies this full turn) ---
     fear_mult = 1.0
     for debuff in enemy.get("active_debuffs", []):
@@ -32,6 +39,13 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         c_print(m)
     if died:
         return "died"
+
+    # Event Horizon: Mending Roil — enemies regenerate on their turn
+    _rift_regen = enemy.get("rift_regen_pct", 0.0)
+    if _rift_regen > 0 and enemy.get("max_hp", 0) > 0 and enemy.get("hp", 0) < enemy["max_hp"]:
+        _heal = max(1, int(enemy["max_hp"] * _rift_regen))
+        enemy["hp"] = min(enemy["max_hp"], enemy["hp"] + _heal)
+        c_print(f"  🌀 {enemy['name']} mends its wounds (+{_heal} HP).")
 
     if enemy.get("asleep"):
         c_print(f"The {enemy['name']} is fast asleep...")
@@ -76,13 +90,17 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
                     c_print(f"The {enemy['name']} is confused and attacks {victim['name']} instead!")
                     raw_dmg = random.randint(2, 7) + enemy.get("str_mod", 0)
                     victim["hp"] -= raw_dmg
-                    from combat.helpers import format_damage_msg
                     c_print("  " + format_damage_msg(enemy['name'], victim['name'], raw_dmg, skill_name="Confused"))
                     if victim["hp"] <= 0:
                         c_print(f"  {victim['name']} is defeated by friendly fire!")
                     return "confused"
             c_print(f"The {enemy['name']} is confused and stumbles — it misses!")
             return "missed"
+
+    # Event Horizon: Piece of Relationship (+7 tier) — mark attackers that
+    # target an ally (regardless of whether the blow lands).
+    from combat.weapon.piece_of_relationship import maybe_mark_attacker
+    maybe_mark_attacker(enemy, player, actual_player)
 
     # --- DODGE CHECK ---
     from combat.stats import get_dodge_chance
@@ -95,6 +113,21 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     if dodge_chance > 0 and random.random() < dodge_chance:
         c_print(f"The {enemy['name']} lunges at {player['name']} — but {player['name']} dodges out of the way!")
         apply_wedding_on_dodge(player, enemy)
+        # Duskfall Veil: the veil answers every dodge with a counter-strike
+        for buff in player.get("active_buffs", []):
+            if buff.get("type") == "dodge_counter" and buff.get("remaining", 0) > 0:
+                if player.get("is_ally"):
+                    from combat.ally import get_ally_effective_attribute
+                    counter_stat = get_ally_effective_attribute(player, "Dexterity")
+                else:
+                    from combat.stats import get_effective_attribute
+                    counter_stat = get_effective_attribute(player, "Dexterity")
+                counter_dmg = max(1, int(counter_stat * buff.get("value", 0.5) / 2) + random.randint(1, 3))
+                enemy["hp"] -= counter_dmg
+                c_print("  " + format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Dusk Counter"))
+                if enemy["hp"] <= 0:
+                    c_print(f"  The {enemy['name']} is cut down by the counter!")
+                break
         return "dodged"
 
     # --- PRE-DAMAGE WEDDING EFFECTS (foxfire trick, etc.) ---
@@ -113,26 +146,41 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     # --- BASE DAMAGE ---
     block = p_con // 2 + (5 if defending else 0)
     block = int(block * armor_mult)
+    # Per-target armor scaling (e.g. White Knight Expose: ignores CON per stack)
+    _armor_scale = player.get("enemy_attack_armor_mult", 1.0)
+    try:
+        _armor_scale = max(0.0, min(1.0, float(_armor_scale)))
+    except (TypeError, ValueError):
+        _armor_scale = 1.0
+    if _armor_scale != 1.0:
+        block = int(block * _armor_scale)
 
     # Apply weaken/curse penalties to enemy attack damage
     effective_str = enemy.get("str_mod", 0)
+    weaken_pct = get_weaken_pct(enemy)
     for debuff in enemy.get("active_debuffs", []):
-        if debuff.get("type") == "weaken":
-            effective_str = max(0, effective_str - debuff.get("value", 0))
-        elif debuff.get("type") == "curse" and "Strength" in debuff.get("stats", []):
+        if debuff.get("type") == "curse" and "Strength" in debuff.get("stats", []):
             effective_str = max(0, effective_str - debuff.get("penalty", 0))
+    if weaken_pct > 0:
+        effective_str = int(effective_str * (1.0 - weaken_pct))
     
     raw_dmg = random.randint(2, 7) + effective_str + temp_str_bonus
 
     # Critical hit check
     from combat.stats import roll_critical_hit, apply_critical_damage, format_critical_tag
-    is_crit, _ = roll_critical_hit(enemy, "enemy")
+    is_crit, _, _ = roll_critical_hit(enemy, "enemy")  # enemies: capped, no overflow
     raw_dmg = apply_critical_damage(raw_dmg, is_crit)
     crit_tag = format_critical_tag(is_crit)
 
     raw_dmg = int(raw_dmg * fear_mult)
     base_dmg = raw_dmg - block
     base_dmg = max(0, base_dmg)
+
+    # Apply the enemy's own damage_boost buffs (e.g. Big Bad Wolf enrage/
+    # howl, Wicked Witch power surges). Mirrors the ally post-armor path.
+    for buff in enemy.get("active_buffs", []):
+        if buff.get("type") == "damage_boost":
+            base_dmg = int(base_dmg * (1 + buff.get("value", 0)))
 
     # --- VULNERABLE CHECK ---
     vulnerable_mult = 1.0
@@ -205,15 +253,12 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     from combat.skills import apply_passive_to_damage_taken
     enemy_dmg = apply_passive_to_damage_taken(player, enemy_dmg)
 
-    # Apply ally race passive damage reduction (Abomination, etc.)
+    # Apply ally race passive damage reduction (Abomination, Giant, etc.)
     if player.get("is_ally"):
-        from combat.ally_skills import get_race_passive
-        race_passive = get_race_passive(player.get("race"))
-        if race_passive:
-            effect = race_passive.get("effect", {})
-            if effect.get("type") == "damage_reduction":
-                reduction = effect.get("value", 0)
-                enemy_dmg = int(enemy_dmg * (1 - reduction))
+        from combat.ally_skills import get_race_damage_reduction
+        reduction = get_race_damage_reduction(player)
+        if reduction > 0:
+            enemy_dmg = int(enemy_dmg * (1 - reduction))
 
     # Palette's Brush: Umber aura damage reduction (player or ally wielder)
     from combat.weapon.palette_brush import get_brush_damage_reduction
@@ -277,6 +322,26 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         if shadow_dmg_mult > 0:
             enemy_dmg = int(enemy_dmg * (1.0 + shadow_dmg_mult))
 
+    # --- DAMAGE ABSORPTION (Slime Absorption / Adaptive Membrane) ---
+    # While active, a share of incoming damage is converted into healing.
+    absorption_pct = 0.0
+    for buff in player.get("active_buffs", []):
+        if buff.get("type") == "damage_absorption" and buff.get("remaining", 0) > 0:
+            absorption_pct += buff.get("value", 0)
+    if absorption_pct > 0 and enemy_dmg > 0:
+        absorbed = int(enemy_dmg * min(absorption_pct, 0.9))
+        if absorbed > 0:
+            enemy_dmg -= absorbed
+            if player.get("is_ally"):
+                abs_max_hp = player.get("max_hp", 100)
+            else:
+                from character import player_max_hp
+                abs_max_hp = player_max_hp(player)
+            old_hp = player["current_hp"]
+            player["current_hp"] = min(old_hp + absorbed, abs_max_hp)
+            healed = player["current_hp"] - old_hp
+            c_print(f"  {player['name']} absorbs {absorbed} damage! (+{healed} HP)")
+
     # --- BARRIER ABSORPTION ---
     from combat.status_effects import absorb_damage
     enemy_dmg, barrier_absorbed = absorb_damage(player, enemy_dmg)
@@ -284,6 +349,10 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         c_print(f"  Your barrier absorbs {barrier_absorbed} damage!")
 
     player["current_hp"] -= enemy_dmg
+
+    # Track the last elemental source that struck this unit (Perfect Mimicry)
+    if element and enemy_dmg > 0:
+        player["_last_element_hit"] = element
 
     # --- REFLECTION DAMAGE ---
     if enemy_dmg > 0:
@@ -307,12 +376,11 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         owner = "Your" if (actual_player is None or player is actual_player) else f"{player['name']}'s"
         c_print(f"  📌 {owner} Tarnished Jade embeds a pin! ({pins}/10)")
 
-    elemental_tags = {"fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
+    elemental_tags = {"fire": "[FIRE]", "water": "[WATER]", "thunder": "[THUNDER]",
                       "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]"}
     tag = elemental_tags.get(element, "")
 
     if enemy_dmg > 0:
-        from combat.helpers import format_damage_msg
         c_print(format_damage_msg(enemy['name'], player['name'], enemy_dmg, element=element, crit=bool(crit_tag)))
         # Wedding retribution effects (pharaohs_curse, infernal_crown, keening_wail)
         apply_wedding_on_damage_taken(player, enemy, enemy_dmg, "hit")
@@ -397,7 +465,7 @@ def get_race_extra_logic(enemy):
     if race == "Demon":
         def demon_weaken(e, player, dmg):
             if dmg > 0 and random.random() < 0.25:
-                result = apply_weaken(player, str_penalty=2, duration=3)
+                result = apply_weaken(player, penalty_pct=0.20, duration=3)
                 if result == "applied":
                     return f"The {e['name']}'s hellfire saps {player['name']}'s strength! STR reduced for 3 turns."
                 elif result == "refreshed":
@@ -408,8 +476,13 @@ def get_race_extra_logic(enemy):
     if race == "Vampire":
         def vampire_drain(e, player, dmg):
             if dmg > 0:
-                drained = apply_drain(player, e, drain_amount=max(1, dmg // 2))
+                # Feeds on open wounds — lifesteal doubled while the target bleeds
+                mult = get_bleed_feast_multiplier(player)
+                drain_amount = max(1, int(dmg * mult / 2))
+                drained = apply_drain(player, e, drain_amount=drain_amount)
                 if drained > 0:
+                    if mult > 1.0:
+                        return f"The {e['name']} latches onto the open wound — drains {drained} HP from {player['name']}!"
                     return f"The {e['name']} drains {drained} HP from {player['name']}'s life force!"
             return None
         return vampire_drain
@@ -426,9 +499,9 @@ def get_race_extra_logic(enemy):
     if race == "Abomination":
         def abomination_weaken(e, player, dmg):
             if dmg > 0 and random.random() < 0.35:
-                result = apply_weaken(player, str_penalty=3, duration=3)
+                result = apply_weaken(player, penalty_pct=0.25, duration=3)
                 if result == "applied":
-                    return f"The {e['name']}'s corrosive flesh weakens {player['name']}'s muscles! STR -3 for 3 turns."
+                    return f"The {e['name']}'s corrosive flesh weakens {player['name']}'s muscles! STR −25% for 3 turns."
                 elif result == "refreshed":
                     return f"The corruption deepens — {player['name']}'s strength ebbs further!"
             return None
@@ -437,9 +510,9 @@ def get_race_extra_logic(enemy):
     if race == "Giant":
         def giant_weaken(e, player, dmg):
             if dmg > 0 and random.random() < 0.30:
-                result = apply_weaken(player, str_penalty=4, duration=2)
+                result = apply_weaken(player, penalty_pct=0.30, duration=2)
                 if result == "applied":
-                    return f"The {e['name']}'s crushing blow leaves {player['name']} arms numb! STR -4 for 2 turns."
+                    return f"The {e['name']}'s crushing blow leaves {player['name']} arms numb! STR −30% for 2 turns."
                 elif result == "refreshed":
                     return f"Another bone-crushing hit — {player['name']}'s strength fails!"
             return None

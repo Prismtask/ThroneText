@@ -80,8 +80,14 @@ def attempt_capture(player, target, net=None):
         c_print(get_capture_message(target, player))
         c_print("✨" * 20)
 
-        store_captured_girl(player, target)
+        stored = store_captured_girl(player, target)
         target["captured"] = True
+
+        # Quest hook: only counts when she actually joined the household
+        if stored:
+            from quests import update_quests
+            for msg in update_quests(player, "capture_girl", "any"):
+                c_print(msg)
         return True
     else:
         c_print(f"The {target.get('name')} slips through your net and escapes!")
@@ -154,6 +160,7 @@ def store_captured_girl(player, mg):
         "exp": 0,
         "level_hp_bonus": max(0, (captured_level - 1) * 4),
         "level_cap": 10,
+        "growth_applied": 0,
     })
     c_print(f"💕 {mg.get('name')} has been added to your house in {house_city}!")
     if base_affection > 20:

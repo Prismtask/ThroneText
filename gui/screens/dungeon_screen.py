@@ -11,13 +11,14 @@ map side panel.
 
 import threading
 import queue
+import time
 import tkinter as tk
 
 from gui.screens.facility_screen import FacilityScreen
 from gui.theme import Theme
 from gui.widgets.confirm_dialog import confirm_dialog
 from gui.screens.city_screen import CityScreen
-from utils import strip_ansi
+from utils import strip_ansi, display_name
 
 
 class DungeonScreen(FacilityScreen):
@@ -56,22 +57,61 @@ class DungeonScreen(FacilityScreen):
         """Override to add a side-by-side layout: map + output."""
         self.sm.clear_log()
 
-        # ── Determine dungeon name and info ──────────────────────────────
+        # ── Determine dungeon name and info (city floors vs wild ruin) ───
         origin_city = self.player.get("origin_city", "solmere")
         from resources.cities import CITIES
         city = CITIES.get(origin_city, CITIES["solmere"])
-        dungeon_name = "Pandemonium" if self.player.get("pandemonium_mode") else f"{city['name']} Dungeon"
         region = self.player.get("dungeon_region", "temperate")
-        city_prog = self.player.get("city_floors", {}).get(origin_city, {})
-        floor = city_prog.get("floor", 1)
-        max_floor = city_prog.get("max_floor", 1)
+        self._wild_dungeon = None
+        self._eh_run = False
+        if self.player.get("_eh_in_run") and (self.player.get("event_horizon") or {}).get("run_active"):
+            # Event Horizon: endless rooms (docs/event_horizon_design.md §8)
+            import event_horizon as eh
+            state = eh.ensure_eh_state(self.player)
+            self._eh_run = True
+            dungeon_name = "Event Horizon"
+            floor = int(state.get("room", 0)) + 1
+            max_floor = None
+            region = "the Distortion"
+            motes = int(state.get("motes", 0))
+            if state.get("rush_mode"):
+                total = int(state.get("rush_total", 0) or 0)
+                felled = total - len(state.get("rush_queue") or [])
+                subtitle = f"Space-Time Distortion · Boss Rush {felled}/{total}"
+                top_line = f"{dungeon_name} \u2014 Boss Rush {felled}/{total}"
+            else:
+                subtitle = (f"Space-Time Distortion · Room {floor}"
+                            f" · ◎ {motes} Motes")
+                top_line = f"{dungeon_name} — Room {floor} · ◎ {motes}"
+        elif self.player.get("wild_dungeon_id"):
+            from wild_dungeons import get_wild_dungeon
+            wild = get_wild_dungeon(self.player, self.player["wild_dungeon_id"])
+            if wild:
+                self._wild_dungeon = wild
+                dungeon_name = wild.get("name", "Wild Dungeon")
+                region = wild.get("biome", region)
+                floor = int(wild.get("highest_floor_cleared", 0)) + 1
+                max_floor = max(1, int(wild.get("total_floors", 1) or 1))
+            else:
+                dungeon_name = "Wild Dungeon"
+                floor, max_floor = 1, 1
+            subtitle = f"{region.title()} Region · Floor {floor}"
+            top_line = f"{dungeon_name} — Floor {floor}/{max_floor}"
+        else:
+            dungeon_name = ("Pandemonium" if self.player.get("pandemonium_mode")
+                            else f"{city['name']} Dungeon")
+            city_prog = self.player.get("city_floors", {}).get(origin_city, {})
+            floor = city_prog.get("floor", 1)
+            max_floor = city_prog.get("max_floor", 1)
+            subtitle = f"{region.title()} Region · Floor {floor}"
+            top_line = f"{dungeon_name} — Floor {floor}/{max_floor}"
 
         # Store for _update_top_bar (called by clock tick)
         self._dungeon_name = dungeon_name
         self._dungeon_floor = floor
         self._dungeon_max_floor = max_floor
 
-        self.sm.update_top_bar(f"{dungeon_name} — Floor {floor}/{max_floor}")
+        self.sm.update_top_bar(top_line)
 
         # ── Dungeon info header (shown before the main layout) ───────────
         header_frame = tk.Frame(self, bg=Theme.BG_DARK)
@@ -87,14 +127,18 @@ class DungeonScreen(FacilityScreen):
 
         tk.Label(
             header_frame,
-            text=f"{region.title()} Region · Floor {floor}",
+            text=subtitle,
             bg=Theme.BG_DARK,
             fg=Theme.TEXT_DIM,
             font=Theme.FONT_SMALL,
         ).pack(pady=(2, 0))
 
         # Log dungeon entry to session log
-        self.sm.log(f"Entering {dungeon_name} — Floor {floor} ({region.title()} Region)", category="info")
+        if self._eh_run:
+            self.sm.log(f"Entering {dungeon_name} — Room {floor} "
+                        f"(The Distortion)", category="info")
+        else:
+            self.sm.log(f"Entering {dungeon_name} — Floor {floor} ({region.title()} Region)", category="info")
 
         # Main container with two columns
         container = tk.Frame(self, bg=Theme.BG_DARK)
@@ -115,10 +159,10 @@ class DungeonScreen(FacilityScreen):
         left_width = max(200, Theme.FONT_SIZE * 20)
         left_frame.config(width=left_width)
 
-        # ── Top: Map panel ─────────────────────────────────────────────────
+        # ── Top: Map panel (relabeled "Rift" during Event Horizon runs) ────
         map_frame = tk.LabelFrame(
             left_frame,
-            text=" Map ",
+            text=(" Rift " if self._eh_run else " Map "),
             bg=Theme.BG_DARK,
             fg=Theme.TEXT,
             font=Theme.FONT_BOLD,
@@ -333,7 +377,8 @@ class DungeonScreen(FacilityScreen):
 
         self.back_btn = self.styled_button(
             action_frame,
-            text="← Flee to City",
+            text=("\u2190 Leave Rift" if self._eh_run
+                  else "\u2190 Flee to City"),
             command=self._on_flee,
             width=16,
         )
@@ -358,9 +403,42 @@ class DungeonScreen(FacilityScreen):
             self.output_text.config(state=tk.DISABLED)
 
     def _update_top_bar(self):
-        """Called by the game clock tick — preserves curse/quirk info in the top bar."""
+        """Refresh the dungeon header (time spends / screen builds)."""
         p = self.player
         if not p:
+            return
+        from time_blocks import format_block_track
+        track = format_block_track(p, include_day=False)
+        # Event Horizon: endless room counter + motes (no floors)
+        if getattr(self, "_eh_run", False):
+            import event_horizon as eh
+            state = eh.ensure_eh_state(p)
+            motes = int(state.get("motes", 0))
+            if state.get("rush_mode"):
+                total = int(state.get("rush_total", 0) or 0)
+                felled = total - len(state.get("rush_queue") or [])
+                rush_top = f"{self._dungeon_name} \u2014 Boss Rush {felled}/{total}"
+                if track:
+                    rush_top += f" | {track}"
+                self.sm.update_top_bar(rush_top)
+                return
+            room = int(state.get("room", 0)) + 1
+            eh_top = (f"{self._dungeon_name} \u2014 Room {room} \u00b7 "
+                      f"\u25ce {int(state.get('motes', 0))}")
+            if track:
+                eh_top += f" | {track}"
+            self.sm.update_top_bar(eh_top)
+            return
+        # Wild ruin: floor progress lives on the dungeon record, not city_floors
+        if getattr(self, "_wild_dungeon", None) is not None:
+            from wild_dungeons import get_wild_dungeon
+            wild = get_wild_dungeon(p, p.get("wild_dungeon_id")) or self._wild_dungeon
+            floor = int(wild.get("highest_floor_cleared", 0)) + 1
+            max_floor = max(1, int(wild.get("total_floors", 1) or 1))
+            wild_top = f"{self._dungeon_name} — Floor {floor}/{max_floor}"
+            if track:
+                wild_top += f" | {track}"
+            self.sm.update_top_bar(wild_top)
             return
         # Re-read floor from city progress (may have advanced)
         origin_city = p.get("origin_city", "solmere")
@@ -368,6 +446,8 @@ class DungeonScreen(FacilityScreen):
         floor = city_prog.get("floor", self._dungeon_floor)
         max_floor = city_prog.get("max_floor", self._dungeon_max_floor)
         top = f"{self._dungeon_name} — Floor {floor}/{max_floor}"
+        if track:
+            top += f" | {track}"
         if p.get("pandemonium_mode"):
             curse = p.get("pandemonium_curse")
             if curse:
@@ -423,6 +503,7 @@ class DungeonScreen(FacilityScreen):
         import dungeon_rooms
         _orig_render = dungeon_rooms.render_ascii_map
         _orig_party = dungeon_rooms.render_party_status
+        _orig_eh_status = dungeon_rooms.render_event_horizon_status
 
         def _gui_render(rooms, explored, current_room_idx, floor, player=None):
             map_str = _orig_render(rooms, explored, current_room_idx, floor, player=player)
@@ -435,8 +516,16 @@ class DungeonScreen(FacilityScreen):
             self._update_party(player=player)
             return ""  # Suppress ASCII output to dungeon log
 
+        def _gui_eh_status(player):
+            # Event Horizon has no map — fill the Rift panel with a status block
+            text = _orig_eh_status(player)
+            if text:
+                self._update_map(text)
+            return ""  # Suppress ASCII output to dungeon log
+
         dungeon_rooms.render_ascii_map = _gui_render
         dungeon_rooms.render_party_status = _gui_party
+        dungeon_rooms.render_event_horizon_status = _gui_eh_status
 
         # ── Intercept full-backpack prompt ───────────────────────────────
         import inventory_ui
@@ -447,8 +536,34 @@ class DungeonScreen(FacilityScreen):
             from inventory import add_item_to_inventory
             if add_item_to_inventory(player, item):
                 return True
-            # Inventory full — show GUI dialog
-            return self._show_acquire_dialog(player, item)
+            # Inventory full — show the GUI dialog on the MAIN thread and block
+            # this (background) dungeon thread until the player decides.
+            # Creating tkinter widgets from this thread would corrupt Tk and
+            # produce blank/orphaned windows.
+            import queue as _queue
+            result_q = _queue.Queue()
+
+            def _show():
+                try:
+                    result_q.put(self._show_acquire_dialog(player, item))
+                except Exception:
+                    result_q.put(False)
+
+            try:
+                self.after(0, _show)
+            except (RuntimeError, tk.TclError):
+                return False
+            # No AFK timeout: the dialog is modal, so the only ways out are
+            # choosing (keep/discard) or closing it (drop) — an idle player
+            # must never auto-drop the loot. The only bail-out is the
+            # dungeon screen itself being torn down mid-prompt.
+            while True:
+                try:
+                    return result_q.get(timeout=0.5)
+                except _queue.Empty:
+                    if (getattr(self, "_stopped", False)
+                            or getattr(self, "_finished", False)):
+                        return False
 
         inventory_ui.prompt_acquire_item = _gui_acquire
 
@@ -457,6 +572,7 @@ class DungeonScreen(FacilityScreen):
         finally:
             dungeon_rooms.render_ascii_map = _orig_render
             dungeon_rooms.render_party_status = _orig_party
+            dungeon_rooms.render_event_horizon_status = _orig_eh_status
             inventory_ui.prompt_acquire_item = _orig_acquire
 
     def _show_acquire_dialog(self, player, item):
@@ -480,7 +596,8 @@ class DungeonScreen(FacilityScreen):
             candidates = get_sorted_items(player)
 
         # Filter out unique items — they cannot be discarded
-        candidates = [itm for itm in candidates if not itm.get("unique")]
+        from resources.items import is_unique_item
+        candidates = [itm for itm in candidates if not is_unique_item(itm)]
 
         result = [False]  # Mutable container: True = acquired, False = dropped
 
@@ -605,7 +722,51 @@ class DungeonScreen(FacilityScreen):
 
     # ── Combat integration ────────────────────────────────────────────────────
 
-    def _gui_combat(self, player, enemy_keys, floor=None, room_num=None, total_rooms=None):
+    def _await_combat_result(self, result_queue, label="Combat"):
+        """Block the dungeon thread until the combat overlay delivers a result.
+
+        No AFK timeout: a fight may sit parked on an input prompt for as
+        long as the player likes — being idle must never end the run. The
+        only abort path is a true deadlock: the battle screen disappeared
+        without delivering a result (its thread died silently, or the
+        screen was torn down). A deployed overlay that later vanishes gets
+        a short grace window; an overlay that never appeared (e.g. its
+        constructor crashed) gets a longer startup grace.
+        """
+        from gui.screens.combat_screen import CombatScreen
+
+        seen_overlay = False
+        missing_since = None
+        while True:
+            try:
+                return result_queue.get(timeout=0.5)
+            except queue.Empty:
+                pass
+
+            if isinstance(self.sm.get_top_screen(), CombatScreen):
+                seen_overlay = True
+                missing_since = None
+                continue
+
+            if missing_since is None:
+                missing_since = time.monotonic()
+                continue
+
+            grace = 10.0 if seen_overlay else 30.0
+            if time.monotonic() - missing_since >= grace:
+                self._append_output(
+                    f"\n[ERROR: {label} screen vanished without a result — "
+                    f"aborting the encounter.]")
+                if seen_overlay:
+                    # Dismiss the orphaned overlay on the GUI thread
+                    try:
+                        self.sm.root.after(0, self.sm.dismiss_overlay)
+                    except tk.TclError:
+                        pass  # Root is gone — app is closing anyway
+                return "timeout"
+
+    def _gui_combat(self, player, enemy_keys, floor=None, room_num=None,
+                    total_rooms=None, enemies=None):
         """Callback passed to explore_dungeon as combat_override.
 
         Shows CombatScreen as an overlay (does NOT destroy DungeonScreen),
@@ -619,6 +780,7 @@ class DungeonScreen(FacilityScreen):
             self.sm.push_overlay(
                 CombatScreen,
                 enemy_keys=enemy_keys,
+                enemies=enemies,
                 floor=floor,
                 room_num=room_num,
                 total_rooms=total_rooms,
@@ -627,13 +789,7 @@ class DungeonScreen(FacilityScreen):
             )
 
         self.sm.root.after(0, start_combat)
-        try:
-            return result_queue.get(timeout=300)  # 5-minute deadlock guard
-        except queue.Empty:
-            self._append_output("\n[ERROR: Combat timed out — returning to dungeon.]")
-            # Dismiss the orphaned overlay on the GUI thread
-            self.sm.root.after(0, self.sm.dismiss_overlay)
-            return "timeout"
+        return self._await_combat_result(result_queue, "Combat")
 
     def _gui_superboss(self, tier, floor):
         """Callback passed to explore_dungeon as superboss_override.
@@ -643,6 +799,33 @@ class DungeonScreen(FacilityScreen):
         and enemy key, then launches the CombatScreen with the custom func.
         """
         result_queue = queue.Queue()
+
+        # ── Boss Rush (Event Horizon): dict spec {"rush": True, ...} ─────
+        if isinstance(tier, dict) and tier.get("rush"):
+            import event_horizon as eh
+            boss = eh.rush_boss_by_id(tier.get("boss_id"))
+            if boss is None:
+                return "victory"
+            combat_fn = eh.rush_boss_combat(boss)
+            enemy_keys = list(boss.get("keys") or [boss["id"]])
+            index = int(tier.get("index", 1) or 1)
+            total = int(tier.get("total", 1) or 1)
+
+            def start_rush_combat():
+                from gui.screens.combat_screen import CombatScreen
+                self.sm.push_overlay(
+                    CombatScreen,
+                    enemy_keys=enemy_keys,
+                    on_result=lambda r: result_queue.put(r),
+                    is_overlay=True,
+                    combat_func=combat_fn,
+                    combat_context="boss_rush",
+                    room_num=index,
+                    total_rooms=total,
+                )
+
+            self.sm.root.after(0, start_rush_combat)
+            return self._await_combat_result(result_queue, "Boss Rush combat")
 
         # Handle Chrysalis (Pandemonium floor 20 override, passed as string tier)
         if tier == "chrysalis":
@@ -662,12 +845,27 @@ class DungeonScreen(FacilityScreen):
                 )
 
             self.sm.root.after(0, start_combat)
-            try:
-                return result_queue.get(timeout=600)
-            except queue.Empty:
-                self._append_output("\n[ERROR: Superboss combat timed out.]")
-                self.sm.root.after(0, self.sm.dismiss_overlay)
-                return "timeout"
+            return self._await_combat_result(result_queue, "Superboss combat")
+
+        # Handle White Knight (Pandemonium floor 40 override, passed as string tier)
+        if tier == "white_knight":
+            boss_key = "white_knight"
+
+            def start_combat():
+                from combat.white_knight import combat_white_knight
+                from gui.screens.combat_screen import CombatScreen
+                self.sm.push_overlay(
+                    CombatScreen,
+                    enemy_keys=[boss_key],
+                    floor=floor,
+                    on_result=lambda r: result_queue.put(r),
+                    is_overlay=True,
+                    combat_func=combat_white_knight,
+                    combat_context="superboss",
+                )
+
+            self.sm.root.after(0, start_combat)
+            return self._await_combat_result(result_queue, "Superboss combat")
 
         # ── Wonderland Superbosses (string tier names from _wonderland_superboss_dispatch) ──
         wl_superboss_map = {
@@ -708,12 +906,7 @@ class DungeonScreen(FacilityScreen):
                 )
 
             self.sm.root.after(0, start_wl_combat)
-            try:
-                return result_queue.get(timeout=600)
-            except queue.Empty:
-                self._append_output("\n[ERROR: Superboss combat timed out.]")
-                self.sm.root.after(0, self.sm.dismiss_overlay)
-                return "timeout"
+            return self._await_combat_result(result_queue, "Superboss combat")
 
         # Map tier → (boss_enemy_key, combat_function)
         superboss_map = {
@@ -765,12 +958,7 @@ class DungeonScreen(FacilityScreen):
             )
 
         self.sm.root.after(0, start_combat)
-        try:
-            return result_queue.get(timeout=600)  # 10-minute deadlock guard
-        except queue.Empty:
-            self._append_output("\n[ERROR: Superboss combat timed out.]")
-            self.sm.root.after(0, self.sm.dismiss_overlay)
-            return "timeout"
+        return self._await_combat_result(result_queue, "Superboss combat")
 
     # ── Result handling ───────────────────────────────────────────────────────
 
@@ -782,15 +970,43 @@ class DungeonScreen(FacilityScreen):
             self.sm.switch_to(CityScreen)
 
     def _on_flee(self):
-        """User clicked Flee — confirm and force exit."""
+        """User clicked the leave button — confirm and force exit.
+
+        Event Horizon runs have no flee: leaving SUSPENDS the run (resumable
+        at the site). The confirm defaults to "Keep Going" because the player
+        may still be mid-Enter on the "Press Enter to descend" prompt — an
+        accidental Yes used to flash the dialog away into the city (playtest).
+        """
         if self._confirm_dialog_open:
             return
         self._confirm_dialog_open = True
-        
+
         def _do_flee():
             self._confirm_dialog_open = False
             self._stop_facility(result="fled")
-            
+
+        if self._eh_run:
+            import event_horizon as eh
+            state = eh.ensure_eh_state(self.player)
+            best = max(int(state.get("best_room", 0)),
+                       int(state.get("room", 0)))
+            confirm_dialog(
+                parent=self,
+                title="Leave the Event Horizon?",
+                message=("There is no fleeing the rift — leaving now "
+                         "SUSPENDS your run.\n\n"
+                         f"Save & quit to the city? Resume later at the site "
+                         f"(best room: {best}).\n\n"
+                         "Abandoning your run is a separate choice after "
+                         "each room."),
+                on_yes=_do_flee,
+                on_no=lambda: setattr(self, '_confirm_dialog_open', False),
+                yes_text="Save & Quit",
+                no_text="Keep Going",
+                focus_no=True,
+            )
+            return
+
         confirm_dialog(
             parent=self,
             title="Flee Dungeon?",
@@ -888,7 +1104,7 @@ class DungeonScreen(FacilityScreen):
         for ally in front_allies:
             defeated = ally.get("defeated") or ally.get("current_hp", 0) <= 0
             members.append({
-                "name": ally["name"],
+                "name": display_name(ally),
                 "level": ally.get("level", 1),
                 "hp": 0 if defeated else ally.get("current_hp", 0),
                 "max_hp": ally.get("max_hp", 1),
@@ -903,7 +1119,7 @@ class DungeonScreen(FacilityScreen):
         for ally in back_allies:
             defeated = ally.get("defeated") or ally.get("current_hp", 0) <= 0
             members.append({
-                "name": ally["name"],
+                "name": display_name(ally),
                 "level": ally.get("level", 1),
                 "hp": 0 if defeated else ally.get("current_hp", 0),
                 "max_hp": ally.get("max_hp", 1),

@@ -616,6 +616,7 @@ CITY_SERVICE_POSITIONS: dict[str, dict[str, tuple[int, int, int]]] = {
     },
     "skylume": {
         "arcane_tower": (6, 35, 41),   # middle tower at top
+        "star_tower":   (6, 61, 65),   # rightmost tower at top
         "shop":         (12, 24, 33),
         "gift_shop":    (12, 65, 78),
         "inn":          (17, 10, 18),

@@ -9,9 +9,10 @@ Services:
   4. Craft Arcane Scroll        – Sacrifice 4 same-rarity equipment for a fusion scroll
   5. Arcane Blessings           – Temporary buffs with visible [Mystic] tag
   6. Pandemonium Warding        – Reduce next curse effect (Isle of Glass only)
+  7. Awakening Research         – Forge Awakening Sigils from superboss shards
 """
 
-from utils import advance_time
+from utils import advance_time, display_name
 from city_dialogue import service_dialogue
 from gui.terminal import term
 from combat.skills import (
@@ -212,6 +213,69 @@ SCROLL_ID_MAP = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  7. AWAKENING RESEARCH  (docs/awakening_design.md Part C.2)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+SIGIL_SHARD_COST = 4
+SIGIL_GOLD_COST = 25000
+
+
+def can_forge_sigil(player):
+    """True when the player holds enough shards + gold for one Sigil."""
+    return (player.get("awakening_shards", 0) >= SIGIL_SHARD_COST
+            and player.get("gold", 0) >= SIGIL_GOLD_COST)
+
+
+def forge_sigil(player):
+    """Consume 4 Sigil Shards + 25,000g and grant 1 Awakening Sigil.
+
+    Returns True on success, False when the player can't afford it.
+    """
+    if not can_forge_sigil(player):
+        return False
+    player["awakening_shards"] = player.get("awakening_shards", 0) - SIGIL_SHARD_COST
+    player["gold"] = player.get("gold", 0) - SIGIL_GOLD_COST
+    player["awakening_sigils"] = player.get("awakening_sigils", 0) + 1
+    return True
+
+
+def _awakening_research(player, city_id):
+    """Forge Awakening Sigils from Sigil Shards recovered from superbosses."""
+    while True:
+        term.clear()
+        shards = player.get("awakening_shards", 0)
+        sigils = player.get("awakening_sigils", 0)
+        gold = player.get("gold", 0)
+        term.print("=== AWAKENING RESEARCH ===")
+        term.print(f"Sigil Shards: {shards}   Awakening Sigils: {sigils}   Gold: {gold}")
+        term.print()
+        term.print('"Essence of the great ones," the researcher murmurs, setting a shard')
+        term.print('to the light. "Four of these and a fortune in gold — and a Sigil takes shape."')
+        term.print(f"Forge cost: {SIGIL_SHARD_COST} Sigil Shards + {SIGIL_GOLD_COST:,} gold → 1 Awakening Sigil")
+        term.print("Shards are torn from first-time superboss kills — in Wonderland's depths and beyond.")
+        term.print()
+        can_forge = can_forge_sigil(player)
+        options = [
+            f"Forge an Awakening Sigil  ({'ready' if can_forge else 'not enough shards/gold'})",
+            "Leave",
+        ]
+        choice = term.menu(options, prompt="What will you do?", allow_cancel=True, cancel_label="Leave")
+        if choice == 0:
+            if not forge_sigil(player):
+                term.print("You don't have the materials. Return with 4 Sigil Shards and 25,000 gold.")
+                term.pause()
+                continue
+            term.print("")
+            term.print("✦ The shards fuse in a spiral of pale light...")
+            term.print(f"*** AWAKENING SIGIL FORGED! (Sigils: {player['awakening_sigils']}) ***")
+            term.print("Take it to the House Lounge to Awaken a bonded companion (Lv40+, cap 40+, affection 150+).")
+            term.pause()
+            continue
+        break
+    advance_time(player, 20)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -234,6 +298,8 @@ def arcane_tower_service(player, city_id):
             _arcane_teleport(player, city_id)
         elif selected == "Skill Mastery Research":
             _skill_mastery_research(player, city_id)
+        elif selected == "Awakening Research":
+            _awakening_research(player, city_id)
         elif selected.startswith("Craft Arcane Scroll"):
             _craft_scroll(player, city_id)
         elif selected == "Arcane Blessings":
@@ -253,7 +319,6 @@ def arcane_tower_service(player, city_id):
 
     service_dialogue(city_id, "arcane_tower", "leave")
     term.pause()
-    advance_time(player, 30)
 
 
 def _build_menu_options(player, city_id):
@@ -265,6 +330,7 @@ def _build_menu_options(player, city_id):
         options.append("Skill Mastery Research")
 
     options.append("Craft Arcane Scroll (sacrifice 4 equipment)")
+    options.append("Awakening Research")
     options.append("Arcane Blessings")
 
     if city_id == "isle_of_glass":
@@ -436,6 +502,7 @@ def _arcane_teleport(player, city_id):
 
 def _skill_mastery_research(player, city_id):
     """Pay gold to add mastery progress to a skill through arcane mentoring."""
+    from combat.skills import MASTERY_THRESHOLDS, MASTERY_MAX_LEVEL
     term.print("\n--- Skill Mastery Research ---")
     term.print("The archmage can accelerate your mastery of known skills.\n")
 
@@ -453,7 +520,7 @@ def _skill_mastery_research(player, city_id):
         current_uses = player.get("skill_mastery", {}).get(sid, 0)
         mastery_label = format_mastery_label(sid, player)
         next_threshold = _next_mastery_threshold(current_uses)
-        if mastery_lvl >= 3:
+        if mastery_lvl >= MASTERY_MAX_LEVEL:
             status = f"[MAX]"
         else:
             status = f"({current_uses}/{next_threshold})"
@@ -469,21 +536,24 @@ def _skill_mastery_research(player, city_id):
     current_uses = player.get("skill_mastery", {}).get(sid, 0)
     mastery_lvl = get_skill_mastery_level(player, sid)
 
-    if mastery_lvl >= 3:
-        term.print("This skill is already fully mastered (★★★).")
+    if mastery_lvl >= MASTERY_MAX_LEVEL:
+        term.print(f"This skill is already fully mastered ({format_mastery_label(sid, player)}).")
         term.pause()
         return
 
     # Cost scales with current mastery level
-    # Mastery 0→1: needs 10 uses, costs 5000 gold
-    # Mastery 1→2: needs 15 more uses (from 10 to 25), costs 15000 gold
-    # Mastery 2→3: needs 25 more uses (from 25 to 50), costs 40000 gold
-    thresholds = [10, 25, 50]
-    costs = [5000, 15000, 40000]
+    # Mastery 0→1: needs 10 uses, costs 5,000 gold
+    # Mastery 1→2: needs 15 more uses (10→25), costs 15,000 gold
+    # Mastery 2→3: needs 25 more uses (25→50), costs 40,000 gold
+    # Mastery 3→4: needs 40 more uses (50→90), costs 80,000 gold
+    # Mastery 4→5: needs 60 more uses (90→150), costs 170,000 gold
+    thresholds = MASTERY_THRESHOLDS
+    costs = [5000, 15000, 40000, 80000, 170000]
     needed = thresholds[mastery_lvl] - current_uses
     cost = costs[mastery_lvl]
 
-    term.print(f"\n{sdef['name']} — Current Mastery: {'★' * mastery_lvl if mastery_lvl > 0 else 'None'}")
+    current_label = format_mastery_label(sid, player)
+    term.print(f"\n{sdef['name']} — Current Mastery: {current_label if current_label else 'None'}")
     term.print(f"Progress: {current_uses}/{thresholds[mastery_lvl]} uses ({needed} more needed)")
     term.print(f"Cost to advance: {cost:,} gold")
 
@@ -502,7 +572,7 @@ def _skill_mastery_research(player, city_id):
         new_lvl = add_skill_mastery_xp(player, sid)
     
     new_level = get_skill_mastery_level(player, sid)
-    new_label = '★' * new_level if new_level > 0 else 'None'
+    new_label = format_mastery_label(sid, player) or 'None'
     term.print(f"\nThe archmage guides your practice with ancient techniques.")
     term.print(f"{sdef['name']} mastery: {new_label}!")
 
@@ -512,19 +582,22 @@ def _skill_mastery_research(player, city_id):
             bonuses.append("-1 turn cooldown")
         if new_level >= 3:
             bonuses.append("+30% power & bonus effect")
-        term.print(f"Bonuses unlocked: {', '.join(bonuses[:new_level])}")
+        if new_level >= 4:
+            bonuses.append("+45% power & +1 turn effects")
+        if new_level >= 5:
+            bonuses.append("+60% power, -2 cooldown & stronger effects")
+        term.print(f"Bonuses unlocked: {', '.join(bonuses)}")
 
     term.pause()
 
 
 def _next_mastery_threshold(current_uses):
     """Return the next mastery threshold for display."""
-    if current_uses < 10:
-        return 10
-    elif current_uses < 25:
-        return 25
-    else:
-        return 50
+    from combat.skills import MASTERY_THRESHOLDS
+    for threshold in MASTERY_THRESHOLDS:
+        if current_uses < threshold:
+            return threshold
+    return MASTERY_THRESHOLDS[-1]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -879,7 +952,7 @@ def _investigate_mysterious_book(player, city_id):
             if not already_present:
                 saved["_wonderland_temp"] = True
                 keep.append(saved)
-                term.print(f"\n💫 {saved['name']} reappears from the story's edge — your journey together resumes.")
+                term.print(f"\n💫 {display_name(saved)} reappears from the story's edge — your journey together resumes.")
         elif hk in permanent_heroine_keys and player.get(permanent_heroine_keys[hk]):
             # Heroine became permanent since we saved — add to keep as permanent
             already_present = any(a.get("_heroine_key") == hk for a in keep)
@@ -944,6 +1017,13 @@ def _leave_wonderland(player):
             # Save temp heroine so they can be restored on re-entry
             # This preserves their equipment (including quest upgrades)
             saved_temp_heroines.append(ally)
+        elif hk in ("alice", "red_hood", "dorothy"):
+            # Unclassified heroine (e.g. permanent flag missing, or a
+            # house-copy whose _heroine_key was lost in an older save).
+            # NEVER drop these silently — they would vanish with their gear.
+            ally["_wonderland_temp"] = False
+            _strip_wonderland_only_from_ally(ally)
+            permanent_heroines.append(ally)
 
     # ── Save temp heroines for re-entry restoration ─────────────────────
     player["wonderland_saved_temp_heroines"] = saved_temp_heroines
@@ -967,7 +1047,7 @@ def _leave_wonderland(player):
             ensure_party_order(player)
             term.print(
                 f"\n⚠ Your party is overflowing and you have no house! "
-                f"{dropped['name']} has left."
+                f"{display_name(dropped)} has left."
             )
             term.pause()
             continue
@@ -979,7 +1059,7 @@ def _leave_wonderland(player):
             f"You must send someone to the house."
         )
 
-        ally_names = [f"{a['name']} (Lv.{a['level']})" for a in player["allies"]]
+        ally_names = [f"{display_name(a)} (Lv.{a['level']})" for a in player["allies"]]
         choice = term.menu(ally_names, prompt="Send which ally to the house?")
         if choice < 0 or choice >= len(player["allies"]):
             continue
@@ -987,7 +1067,7 @@ def _leave_wonderland(player):
         ally_to_send = player["allies"].pop(choice)
         _return_ally_to_house(player, ally_to_send, house)
         ensure_party_order(player)
-        term.print(f"{ally_to_send['name']} has been sent to the house.")
+        term.print(f"{display_name(ally_to_send)} has been sent to the house.")
 
     # ── Unfreeze time ───────────────────────────────────────────────────
     player["time_minutes"] = player.pop("wonderland_time_frozen", player["time_minutes"])

@@ -29,12 +29,15 @@ Passive income now scales with your highest dungeon floor cleared across all
 regions so it stays relevant in late game.
 """
 
-from utils import advance_time, _int_to_roman
+from utils import advance_time, _int_to_roman, display_name, display_name_with_species
 from events import format_date
 from character import player_max_hp
 import random
 from resources.enemies import AFFECTION_GIFTS, ENEMIES
 from gui.terminal import term
+from facilities.dispatch import (
+    board_label, adjust_stress, girl_status_line, dispatch_return_text, injured_text,
+)
 
 RECRUIT_AFFECTION_THRESHOLD = 50  # Minimum affection needed to recruit a girl
 
@@ -178,40 +181,67 @@ def get_current_house_allies(player):
     return player.get("allies", [])
 
 
+def _resolve_house(player, city_id=None):
+    """Return (city_id, house) for the player's home house.
+
+    Resolution order: the explicitly requested city if the player owns a
+    house there → the origin city's house if owned → the first owned house.
+
+    ``player["origin_city"]`` is repointed by travel and dungeons (nearest
+    city context), so it must never be trusted as "the home city" on its own:
+    reads and writes resolve identically here, which keeps a
+    get_house_data() → save_house_data() cycle from ever targeting a
+    different house than the one it read (that mismatch wiped savegame_1).
+    """
+    houses = player.get("houses") or {}
+    if not houses:
+        return city_id, None
+    if city_id and city_id in houses:
+        return city_id, houses[city_id]
+    origin = player.get("origin_city")
+    if origin and origin in houses:
+        return origin, houses[origin]
+    first_city = next(iter(houses))
+    return first_city, houses[first_city]
+
+
 def get_house_data(player, city_id=None):
-    """Return the list of monster girls in the first house (or specified city)."""
-    if not city_id:
-        city_id = player.get("origin_city", "solmere")
-    house = _get_house(player, city_id)
-    if not house:
+    """Return the live monster_girls list for the player's house."""
+    _, house = _resolve_house(player, city_id)
+    if house is None:
         return []
-    return house.get("monster_girls", [])
+    # Live list: callers mutate the house record in place, and a later
+    # save_house_data(player, girls) writes back to this same house.
+    return house.setdefault("monster_girls", [])
 
 
 def save_house_data(player, girls_data, city_id=None):
-    """Save monster girl data back to the house.
+    """Persist the house's monster_girls list.
 
-    If the player already owns a house in another city, the girls are sent
-    there instead of auto-creating a new house.  A new house is only
-    auto-created when the player has no house at all (fallback for early
-    captures before buying a deed).
+    The target house is resolved exactly like in get_house_data(), so a list
+    read from get_house_data() always round-trips to the same house no matter
+    where the volatile origin_city currently points. This function never
+    redirects girls to a different house than the one they were read from.
+
+    A new Hovel is only auto-created when the player owns no house at all
+    (fallback for early captures before buying a deed).
     """
-    if not city_id:
-        city_id = player.get("origin_city", "solmere")
     if not player.get("houses"):
         player["houses"] = {}
-
     houses = player["houses"]
-    if city_id not in houses:
-        if houses:
-            # Player already owns a house — send girls there instead of
-            # silently creating a duplicate house in the current city.
-            city_id = next(iter(houses))
-        else:
-            # No house at all: auto-create a basic Hovel so the player
-            # isn't locked out of the monster-girl system.
-            houses[city_id] = {"level": 1, "storage": [], "last_income_day": player.get("day", 1)}
-    houses[city_id]["monster_girls"] = girls_data
+
+    city_id, house = _resolve_house(player, city_id)
+    if house is None:
+        # No house at all: auto-create a basic Hovel so the player isn't
+        # locked out of the monster-girl system.
+        city_id = city_id or player.get("origin_city", "solmere")
+        house = {"level": 1, "storage": [], "last_income_day": player.get("day", 1)}
+        houses[city_id] = house
+
+    # Callers normally pass the live list returned by get_house_data(); only
+    # replace the stored list when a genuinely different list is supplied.
+    if girls_data is not house.get("monster_girls"):
+        house["monster_girls"] = girls_data
 
 
 # ── Sub-menus ────────────────────────────────────────────────────────────────
@@ -236,15 +266,15 @@ def _house_rest(player, city_id, house):
             from resources.enemies import ENEMIES
             template = ENEMIES.get(ally.get("key", ""), {})
             dialogue = template.get("dialogue", {})
-            recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
+            recovered_line = dialogue.get("is_recovered", f"{display_name(ally)} is back on their feet!")
             if "{name}" in recovered_line:
-                recovered_line = recovered_line.format(name=ally['name'])
+                recovered_line = recovered_line.format(name=display_name(ally))
             term.print(f"  {recovered_line}")
         elif ally.get("current_hp", 0) > 0:
             ally_old = ally["current_hp"]
             ally["current_hp"] = ally["max_hp"]
             ally_healed = ally["max_hp"] - ally_old
-            term.print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
+            term.print(f"  {display_name(ally)} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
 
     advance_time(player, rest_mins)
 
@@ -259,12 +289,12 @@ def _house_rest(player, city_id, house):
 
 
 def _house_sleep(player, city_id, house):
-    """Sleep at home — full heal + 8 hours pass. Only available between 20:00 and 04:00.
+    """Sleep at home — full heal; usable only at Night (sleep starts a new day).
     From Manor onward, also grants a Well-Rested stat buff that lasts for dungeon rooms.
     Stat bonus: +1 (Manor–Villa), +2 (Estate–Citadel), +3 (Sanctuary)."""
-    current_hour = player.get("time_minutes", 0) // 60
-    if not (current_hour >= 20 or current_hour < 4):
-        term.print("You can only sleep at home between 20:00 and 04:00.")
+    import time_blocks
+    if time_blocks.get_day_phase(player) != "night":
+        term.print("You can only sleep at home during the night.")
         term.pause()
         return
 
@@ -287,15 +317,15 @@ def _house_sleep(player, city_id, house):
             from resources.enemies import ENEMIES
             template = ENEMIES.get(ally.get("key", ""), {})
             dialogue = template.get("dialogue", {})
-            recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
+            recovered_line = dialogue.get("is_recovered", f"{display_name(ally)} is back on their feet!")
             if "{name}" in recovered_line:
-                recovered_line = recovered_line.format(name=ally['name'])
+                recovered_line = recovered_line.format(name=display_name(ally))
             term.print(f"  {recovered_line}")
         elif ally.get("current_hp", 0) > 0:
             ally_old = ally["current_hp"]
             ally["current_hp"] = ally["max_hp"]
             ally_healed = ally["max_hp"] - ally_old
-            term.print(f"  {ally['name']} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
+            term.print(f"  {display_name(ally)} healed {ally_healed} HP → {ally['max_hp']}/{ally['max_hp']}")
 
     # Apply / refresh Well-Rested buff (Manor and above)
     if buff_val > 0:
@@ -319,7 +349,7 @@ def _house_sleep(player, city_id, house):
                     "remaining": buff_rooms,
                 })
 
-    advance_time(player, 480)
+    time_blocks.end_day(player, slept=True)
 
     home_name = lvl_data["name"].lower()
     term.print(f"You settle into a deep sleep in your {home_name}.")
@@ -593,6 +623,39 @@ def _can_ascend_ally(player, ally):
     return True
 
 
+# ── Awakening (docs/awakening_design.md Part C) ─────────────────────────────
+AWAKEN_LEVEL_REQ = 40
+AWAKEN_CAP_REQ = 40
+AWAKEN_AFFECTION_REQ = 150
+
+
+def can_awaken_girl(girl):
+    """Return (eligible, reason) for the House Lounge Awaken action.
+
+    Covers the girl-side gates only (candidate, level, cap, affection, not yet
+    awakened); the Sigil cost is checked when the action is taken.
+    """
+    from combat.ally_skills import has_awakening
+    if girl.get("awakened"):
+        return False, "already awakened"
+    if not has_awakening(girl.get("key", "")):
+        return False, "no awakening available"
+    if girl.get("level", 1) < AWAKEN_LEVEL_REQ:
+        return False, f"needs Lv {AWAKEN_LEVEL_REQ}"
+    if girl.get("level_cap", 10) < AWAKEN_CAP_REQ:
+        return False, f"needs level cap {AWAKEN_CAP_REQ}"
+    if girl.get("affection", 0) < AWAKEN_AFFECTION_REQ:
+        return False, f"needs affection {AWAKEN_AFFECTION_REQ}"
+    return True, "ready"
+
+
+def _fmt_dialogue(line, **tokens):
+    """Replace {token} placeholders without str.format (dialogue-safe)."""
+    for key, val in tokens.items():
+        line = line.replace("{" + key + "}", str(val))
+    return line
+
+
 def _sort_girls(all_girls, sort_by, sort_dir):
     """Sort the combined girls list by the given criteria.
 
@@ -643,7 +706,14 @@ def _house_lounge(player, city_id, house):
         term.print(f"=== {lvl_data['name'].upper()} LOUNGE ===")
         term.print(f"Monster Girls: {total_girls}/{max_girls}")
         if allies:
-            term.print(f"Active Party: {len(allies)}/3 allies")
+            from resources.quests import format_resonance_status
+            tier = (player.get("quests") or {}).get("resonance_tier", 0)
+            term.print(f"Active Party: {len(allies)} allies")
+            term.print(format_resonance_status(tier))
+        sigil_count = player.get("awakening_sigils", 0)
+        shard_count = player.get("awakening_shards", 0)
+        if sigil_count or shard_count:
+            term.print(f"Awakening Sigils: {sigil_count}   ·   Sigil Shards: {shard_count}")
 
         # ── Filter / sort info bar ──────────────────────────────────────────
         term.print(f"Sort: [{SORT_LABELS[sort_by]}]  |  View: [{DIR_LABEL[sort_dir]}]")
@@ -673,14 +743,20 @@ def _house_lounge(player, city_id, house):
             active_tag = " [ACTIVE]" if where == "active" else ""
             cap_tag = " [CAP]" if where == "active" and g["level"] >= g.get("level_cap", 10) else ""
             aff_str = f"{aff}/{aff_cap}"
+            disp_full = display_name_with_species(g)
             if where == "active":
                 if g.get("defeated") or g.get("current_hp", 0) <= 0:
                     hp_str = "[INCAPACITATED]"
                 else:
                     hp_str = f"HP: {g['current_hp']}/{g['max_hp']}"
-                term.print(f"  {i+1}. {g['name']} (Lv {g['level']}{cap_tag}){active_tag} — {hp_str} — {status} Affection: {aff_str}{ready}")
+                term.print(f"  {i+1}. {disp_full} (Lv {g['level']}{cap_tag}){active_tag} — {hp_str} — {status} Affection: {aff_str}{ready}")
             else:
-                term.print(f"  {i+1}. {g['name']} (Lv {g['level']}){active_tag} — {status} Affection: {aff_str}{ready}")
+                duty_tag = ""
+                if g.get("dispatch_mission"):
+                    duty_tag = " [AWAY]"
+                elif int(g.get("injured_until", 0) or 0) > player.get("day", 1):
+                    duty_tag = " [INJURED]"
+                term.print(f"  {i+1}. {disp_full} (Lv {g['level']}){active_tag}{duty_tag} — {status} Affection: {aff_str}{ready}")
 
         # ── Build menu: girl options + filter controls + back ───────────────
         girl_options = []
@@ -688,7 +764,7 @@ def _house_lounge(player, city_id, house):
         for where, g in all_girls:
             aff = g.get("affection", 30)
             active_tag = " [ACTIVE]" if where == "active" else ""
-            girl_options.append(f"{g['name']} (Lv {g['level']}){active_tag} — \u2665{aff}")
+            girl_options.append(f"{display_name_with_species(g)} (Lv {g['level']}){active_tag} — \u2665{aff}")
             girl_styles.append(None)  # default style
 
         # Pad to next full row so filters start on their own row (4-column grid)
@@ -743,17 +819,33 @@ def _house_lounge(player, city_id, house):
         # ── Sub-menu for this girl ──────────────────────────────────────────
         while True:
             term.clear()
+            disp = display_name(girl)
             aff_cap = girl.get("affection_cap", 100)
             engaged = girl.get("engaged", False)
             married = girl.get("married", False)
-            term.print(f"=== {girl['name']} ===")
+            term.print(f"=== {disp} ===")
+            if girl.get("nickname"):
+                term.print(f"  Species: {girl['name']}")
             term.print(f"  Affection: {aff}/{aff_cap}")
             status_label = "Married" if married else "Engaged" if engaged else "Active" if where == "active" else "At home"
             term.print(f"  Status: {status_label}")
+            term.print(f"  {girl_status_line(girl, player.get('day', 1))}")
+            away_line = dispatch_return_text(player, girl)
+            if away_line:
+                term.print(f"  {away_line}")
+            hurt_line = injured_text(girl, player.get("day", 1))
+            if hurt_line:
+                term.print(f"  {hurt_line}")
             ring_bonus = girl.get("ring_stat_bonus")
             if ring_bonus:
                 bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
                 term.print(f"  Ring Blessing: {', '.join(bonus_lines)}")
+            from combat.ally import get_growth_label
+            growth_label = get_growth_label(girl)
+            if growth_label != "—":
+                term.print(f"  Growth: {growth_label} (late bloomer)")
+            if girl.get("awakened"):
+                term.print("  ✦ Awakened — her innate skills are empowered.")
             if where == "active":
                 cap = girl.get("level_cap", 10)
                 term.print(f"  Level: {girl['level']}/{cap}")
@@ -765,6 +857,7 @@ def _house_lounge(player, city_id, house):
 
             can_ascend = where == "active" and _can_ascend_ally(player, girl)
             at_cap = where == "active" and girl["level"] >= girl.get("level_cap", 10)
+            can_awaken, _awaken_reason = can_awaken_girl(girl)
 
             # Build dynamic menu options
             menu_options = []
@@ -775,6 +868,12 @@ def _house_lounge(player, city_id, house):
 
             menu_options.append(f"Give a gift  ({'ready' if gift_ready else 'already gifted today'})")
             menu_actions.append("gift")
+
+            bath_item = next((it for it in player.get("inventory", [])
+                              if it.get("id") == "herbal_bath_salts"), None)
+            if bath_item and not girl.get("dispatch_mission") and int(girl.get("stress", 0)) > 0:
+                menu_options.append(f"Draw a warm bath (Herbal Bath Salts ×{bath_item.get('count', 1)}, −20 stress)")
+                menu_actions.append("bath")
 
             if aff >= 60:
                 menu_options.append("Ask for blessing")
@@ -788,6 +887,9 @@ def _house_lounge(player, city_id, house):
                 menu_options.append("Propose marriage")
                 menu_actions.append("propose")
 
+            menu_options.append("Rename" if girl.get("nickname") else "Give a name")
+            menu_actions.append("rename")
+
             if can_ascend:
                 menu_options.append("Ascend (break level limit)")
                 menu_actions.append("ascend")
@@ -795,6 +897,11 @@ def _house_lounge(player, city_id, house):
                 requirements = _get_ascension_requirements(girl.get("level_cap", 10))
                 needs = ", ".join(f"{count} Stone {_int_to_roman(tier)}" for tier, count in requirements)
                 term.print(f"  [Ascend: needs {needs}]")
+
+            if can_awaken:
+                sigil_now = player.get("awakening_sigils", 0)
+                menu_options.append(f"Awaken (1 Awakening Sigil) [{'ready' if sigil_now else 'no Sigil'}]")
+                menu_actions.append("awaken")
 
             if where == "lounge":
                 menu_options.append("Recruit to party")
@@ -807,7 +914,7 @@ def _house_lounge(player, city_id, house):
             menu_options.append("Back")
             menu_actions.append("back")
 
-            choice_idx = term.menu(menu_options, prompt=f"What to do with {girl['name']}?")
+            choice_idx = term.menu(menu_options, prompt=f"What to do with {disp}?")
             if choice_idx < 0:
                 break
             action = menu_actions[choice_idx] if choice_idx < len(menu_actions) else "back"
@@ -815,17 +922,38 @@ def _house_lounge(player, city_id, house):
             if action == "back":
                 break
 
+            elif action == "rename":
+                # ── RENAME ──
+                current_nick = girl.get("nickname", "")
+                if current_nick:
+                    prompt = (f"Current name: {current_nick} (originally {girl['name']})\n"
+                              "Enter a new name, or leave blank to restore her original name:")
+                else:
+                    prompt = f"Enter a name for {girl['name']} (leave blank to cancel):"
+                new_name = term.input(prompt).strip()
+                # Single line only, and short enough for the combat HUD (12 chars shown).
+                new_name = " ".join(new_name.split())[:16]
+                if new_name:
+                    girl["nickname"] = new_name
+                    term.print(f"\n{girl['name']} will now answer to \"{new_name}\".")
+                elif current_nick:
+                    girl["nickname"] = ""
+                    term.print(f"\nShe's back to being called {girl['name']}.")
+                else:
+                    term.print("\n(No change.)")
+                term.pause()
+
             elif action == "talk":
                 if talks_left <= 0:
-                    term.print(f"\n{girl['name']} seems tired of talking. Come back tomorrow.")
+                    term.print(f"\n{disp} seems tired of talking. Come back tomorrow.")
                     term.pause()
                     continue
 
                 # Wedding gift check (affection at cap and engaged but not married)
                 if engaged and not married and aff >= aff_cap:
                     special_line = dialogue.get("house_special_gift",
-                        f"{girl['name']} pulls out a beautifully wrapped box. 'This is for you, my love.'")
-                    term.print("\n" + (special_line.format(name=girl['name']) if "{name}" in special_line else special_line))
+                        f"{disp} pulls out a beautifully wrapped box. 'This is for you, my love.'")
+                    term.print("\n" + (special_line.format(name=disp) if "{name}" in special_line else special_line))
                     # Give wedding accessory
                     wedding_id = f"wedding_{girl_key}"
                     from resources.items import build_item, ITEMS
@@ -846,7 +974,7 @@ def _house_lounge(player, city_id, house):
                     player.setdefault("engaged_girls", [])
                     if girl_key in player["engaged_girls"]:
                         player["engaged_girls"].remove(girl_key)
-                    term.print(f"\n  *** {girl['name']} is now your wife! ***")
+                    term.print(f"\n  *** {disp} is now your wife! ***")
                     term.pause()
                     continue
 
@@ -855,25 +983,30 @@ def _house_lounge(player, city_id, house):
                     # Alternate between engaged_1 and engaged_2
                     if player.get("day", 1) % 2 == 0:
                         dialog_key = "house_talk_engaged_2"
-                        default = f"{girl['name']} leans against you, smiling. 'Every day with you feels like a dream. I can't wait for our wedding.'"
+                        default = f"{disp} leans against you, smiling. 'Every day with you feels like a dream. I can't wait for our wedding.'"
                     else:
                         dialog_key = "house_talk_engaged_1"
-                        default = f"{girl['name']} beams at you, her engagement ring catching the light. 'Can you believe it? We're going to be together forever!'"
+                        default = f"{disp} beams at you, her engagement ring catching the light. 'Can you believe it? We're going to be together forever!'"
                     line = dialogue.get(dialog_key, default)
-                elif aff <= 30:
-                    dialog_key = "house_talk_low"
-                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
-                elif aff <= 60:
-                    dialog_key = "house_talk_mid"
-                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
-                elif aff <= 80:
-                    dialog_key = "house_talk_high"
-                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
                 else:
-                    dialog_key = "house_talk_max"
-                    line = dialogue.get(dialog_key, f"{girl['name']} looks at you expectantly.")
+                    if aff <= 30:
+                        aff_tier = "low"
+                    elif aff <= 60:
+                        aff_tier = "mid"
+                    elif aff <= 80:
+                        aff_tier = "high"
+                    else:
+                        aff_tier = "max"
+                    if girl.get("awakened"):
+                        # Awakened girls have their own daily-talk set
+                        dialog_key = f"awakened_talk_{aff_tier}"
+                        line = dialogue.get(dialog_key,
+                            dialogue.get(f"house_talk_{aff_tier}", f"{disp} looks at you expectantly."))
+                    else:
+                        dialog_key = f"house_talk_{aff_tier}"
+                        line = dialogue.get(dialog_key, f"{disp} looks at you expectantly.")
 
-                line = line.format(name=girl['name']) if "{name}" in line else line
+                line = line.format(name=disp) if "{name}" in line else line
                 term.print("\n" + line)
 
                 # Increase affection
@@ -886,11 +1019,13 @@ def _house_lounge(player, city_id, house):
                 _reset_daily_limits(player)
                 uid = _girl_unique_id(girl)
                 player["girl_talk_today"][uid] = player["girl_talk_today"].get(uid, 0) + 1
+                stress_now = adjust_stress(girl, -3)
+                term.print(f"  The talk eases her mind — Stress −3 (now {stress_now}).")
                 term.pause()
 
             elif action == "gift":
                 if not gift_ready:
-                    term.print(f"\n{girl['name']} has already received a gift today.")
+                    term.print(f"\n{disp} has already received a gift today.")
                     term.pause()
                     continue
 
@@ -914,13 +1049,13 @@ def _house_lounge(player, city_id, house):
 
                 # Show love/hate dialogue
                 if reaction > 0:
-                    love_line = dialogue.get("house_gift_love", f"{girl['name']} beams with joy!")
-                    term.print(love_line.format(name=girl['name']) if "{name}" in love_line else love_line)
+                    love_line = dialogue.get("house_gift_love", f"{disp} beams with joy!")
+                    term.print(love_line.format(name=disp) if "{name}" in love_line else love_line)
                 elif reaction < 0:
-                    hate_line = dialogue.get("house_gift_hate", f"{girl['name']} sighs, disappointed.")
-                    term.print(hate_line.format(name=girl['name']) if "{name}" in hate_line else hate_line)
+                    hate_line = dialogue.get("house_gift_hate", f"{disp} sighs, disappointed.")
+                    term.print(hate_line.format(name=disp) if "{name}" in hate_line else hate_line)
                 else:
-                    term.print(f"{girl['name']} shrugs indifferently.")
+                    term.print(f"{disp} shrugs indifferently.")
 
                 # Apply reaction
                 girl["affection"] = max(0, min(aff_cap, aff + reaction))
@@ -931,11 +1066,22 @@ def _house_lounge(player, city_id, house):
                 _reset_daily_limits(player)
                 uid = _girl_unique_id(girl)
                 player["girl_gift_today"][uid] = True
+                stress_delta = -12 if reaction > 0 else (-6 if reaction == 0 else 4)
+                stress_now = adjust_stress(girl, stress_delta)
+                term.print(f"  Stress {stress_delta:+d} (now {stress_now}).")
+                term.pause()
+
+            elif action == "bath":
+                from inventory import remove_item_by_reference
+                remove_item_by_reference(player, bath_item)
+                stress_now = adjust_stress(girl, -20)
+                term.print(f"\nYou draw a warm bath for {disp}. She sinks in with a long sigh and comes out loose-limbed and calm.")
+                term.print(f"  Stress −20 (now {stress_now}).")
                 term.pause()
 
             elif action == "blessing":  # Blessing
-                buff_line = dialogue.get("house_buff", f"{girl['name']} grants you a blessing.")
-                term.print(buff_line.format(name=girl['name']) if "{name}" in buff_line else buff_line)
+                buff_line = dialogue.get("house_buff", f"{disp} grants you a blessing.")
+                term.print(buff_line.format(name=disp) if "{name}" in buff_line else buff_line)
                 # Apply a buff: +1 all stats for 1 floor
                 player.setdefault("active_buffs", [])
                 player["active_buffs"] = [b for b in player["active_buffs"] if b.get("type") != "girl_blessing"]
@@ -949,14 +1095,16 @@ def _house_lounge(player, city_id, house):
                 term.pause()
 
             elif action == "kiss":  # Kiss
-                kiss_line = dialogue.get("house_bond_kiss", f"{girl['name']} kisses you tenderly.")
-                term.print(kiss_line.format(name=girl['name']) if "{name}" in kiss_line else kiss_line)
+                kiss_line = dialogue.get("house_bond_kiss", f"{disp} kisses you tenderly.")
+                term.print(kiss_line.format(name=disp) if "{name}" in kiss_line else kiss_line)
                 # Heal and boost affection
                 player["current_hp"] = min(player["current_hp"] + 20, player_max_hp(player))
                 gain = random.randint(5, 10)
                 girl["affection"] = min(aff_cap, aff + gain)
                 aff = girl["affection"]
                 term.print(f"Affection +{gain} (now {aff}/{aff_cap}). You feel renewed (healed 20 HP).")
+                stress_now = adjust_stress(girl, -4)
+                term.print(f"  She looks a little lighter — Stress −4 (now {stress_now}).")
                 term.pause()
 
             elif action == "propose":
@@ -967,8 +1115,8 @@ def _house_lounge(player, city_id, house):
                     term.pause()
                     continue
 
-                engaged_line = dialogue.get("house_engaged", f"{girl['name']} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
-                term.print("\n" + (engaged_line.format(name=girl['name']) if "{name}" in engaged_line else engaged_line))
+                engaged_line = dialogue.get("house_engaged", f"{disp} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
+                term.print("\n" + (engaged_line.format(name=disp) if "{name}" in engaged_line else engaged_line))
                 # Consume the ring
                 remove_item_by_reference(player, ring)
 
@@ -977,14 +1125,14 @@ def _house_lounge(player, city_id, house):
                 if ring_bonus:
                     girl["ring_stat_bonus"] = ring_bonus.copy()
                     bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
-                    term.print(f"  The ring's power flows into {girl['name']}: {', '.join(bonus_lines)}.")
+                    term.print(f"  The ring's power flows into {disp}: {', '.join(bonus_lines)}.")
 
                 girl["engaged"] = True
                 girl["affection_cap"] = 200
                 player.setdefault("engaged_girls", [])
                 if girl_key not in player["engaged_girls"]:
                     player["engaged_girls"].append(girl_key)
-                term.print(f"\n  *** {girl['name']} is now engaged to you! Affection cap raised to 200. ***")
+                term.print(f"\n  *** {disp} is now engaged to you! Affection cap raised to 200. ***")
                 term.pause()
                 continue
 
@@ -1021,8 +1169,8 @@ def _house_lounge(player, city_id, house):
 
                 # Dialogue 1: Ally's reaction (from monster_girls.yaml)
                 pre_line = dialogue.get("ascension_pre_ceremony",
-                    f"{girl['name']} kneels before you, her eyes closed in reverence.\n'I feel the chains upon my soul. Please... set me free.'")
-                pre_line = pre_line.format(name=girl['name'], stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
+                    f"{disp} kneels before you, her eyes closed in reverence.\n'I feel the chains upon my soul. Please... set me free.'")
+                pre_line = pre_line.format(name=disp, stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
                 term.print("\n" + pre_line)
                 term.pause("Press Continue to begin the ceremony...")
 
@@ -1030,36 +1178,92 @@ def _house_lounge(player, city_id, house):
 
                 # Dialogue 2: The ascension itself (from monster_girls.yaml)
                 post_line = dialogue.get("ascension_post_ceremony",
-                    f"The {highest_stone['name'] if highest_stone else 'stone'} shatters into motes of prismatic light!\nAncient power surges through {girl['name']}.\nHer form shimmers, breaking the seal of Level {old_cap}.")
-                post_line = post_line.format(name=girl['name'], stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
+                    f"The {highest_stone['name'] if highest_stone else 'stone'} shatters into motes of prismatic light!\nAncient power surges through {disp}.\nHer form shimmers, breaking the seal of Level {old_cap}.")
+                post_line = post_line.format(name=disp, stone=highest_stone['name'] if highest_stone else 'stone', old_cap=old_cap)
                 term.print(f"\n{'='*50}")
                 term.print("  " + post_line.replace("\n", "\n  "))
                 term.print(f"  Stones consumed: {stone_summary}")
                 term.print(f"  *** LEVEL CAP INCREASED: {old_cap} → {girl['level_cap']} ***")
                 term.print(f"{'='*50}")
 
-                term.print(f"\n{girl['name']} opens her eyes, renewed and stronger.")
+                term.print(f"\n{disp} opens her eyes, renewed and stronger.")
                 term.print("'I can feel it... the path ahead is open once more.'")
                 term.pause()
+
+            elif action == "awaken":
+                # ── AWAKEN (docs/awakening_design.md Part C) ──
+                if player.get("awakening_sigils", 0) < 1:
+                    term.print("\nYou have no Awakening Sigils.")
+                    term.print("Sigils come from your first-ever superboss kill, from Mary Sue,")
+                    term.print("or from the Arcane Tower — Awakening Research")
+                    term.print("(4 Sigil Shards + 25,000 gold). Shards drop from first-time superbosses.")
+                    term.pause()
+                    continue
+
+                from combat.ally_skills import apply_awakening_skills, get_innate_skill_def
+                awakened_name = template.get("awakened_name") or girl.get("name", disp)
+
+                # Dialogue 1: her plea
+                pre_line = dialogue.get("awakening_pre_ceremony",
+                    f"{disp} takes your hands, her eyes shining. 'I can feel it — the person I was meant to be. Please... call me by my true name.'")
+                term.print("\n" + _fmt_dialogue(pre_line, name=disp, new_name=awakened_name))
+                term.pause("Press Continue to begin the awakening...")
+
+                # Consume the Sigil and perform the awakening
+                player["awakening_sigils"] = player.get("awakening_sigils", 0) - 1
+                apply_awakening_skills(girl, girl_key)
+                girl["awakened"] = True
+                girl["awakened_name"] = awakened_name
+
+                # The one-time special scene (multi-beat)
+                scene = dialogue.get("awakening_scene",
+                    f"Light gathers around {disp} like a rising tide.\nHer old name sloughs away like a shed skin.\nWhen the glow fades she stands taller — and smiles.\n'{awakened_name}... I like the sound of that. Yours, always.'")
+                term.print(f"\n{'='*50}")
+                term.print("  " + _fmt_dialogue(scene, name=disp, new_name=awakened_name).replace("\n", "\n  "))
+                term.print(f"{'='*50}")
+
+                # Dialogue 2: her vow, under the new name
+                post_line = dialogue.get("awakening_post_ceremony",
+                    f"{awakened_name} flexes her fingers, feeling the new strength in them. 'I'm ready. Whatever comes next — we face it together.'")
+                term.print("\n" + _fmt_dialogue(post_line, name=awakened_name, new_name=awakened_name))
+
+                # Show the upgraded kit
+                term.print(f"\n  *** {disp} awakens as {awakened_name}! ***")
+                for sid in girl.get("awakened_skills", []):
+                    sdef = get_innate_skill_def(sid)
+                    if sdef:
+                        term.print(f"    ★ {sdef['name']} — {sdef.get('description', '')}")
+                term.print(f"  (Awakening Sigils left: {player['awakening_sigils']})")
+                term.pause()
+                continue
 
             elif action == "recruit":
                 # ── RECRUIT ──
                 aff = girl.get("affection", 30)
                 if aff < RECRUIT_AFFECTION_THRESHOLD:
                     denied_msg = dialogue.get("recruit_denied",
-                        f"{girl['name']} looks at you uncertainly. 'I don't know you well enough yet...'")
-                    term.print(denied_msg.format(name=girl['name']))
+                        f"{disp} looks at you uncertainly. 'I don't know you well enough yet...'")
+                    term.print(denied_msg.format(name=disp))
                     term.print(f"  (Need {RECRUIT_AFFECTION_THRESHOLD}+ affection. Currently: {aff}/{aff_cap})")
                     term.pause()
                 else:
+                    day_now = player.get("day", 1)
+                    if girl.get("dispatch_mission"):
+                        term.print(f"{disp} is away on a dispatch — she'll see you when she's back.")
+                        term.pause()
+                        continue
+                    if int(girl.get("injured_until", 0) or 0) > day_now:
+                        term.print(f"{disp} is injured (recovering until Day {girl['injured_until']}) and can't join the party yet.")
+                        term.pause()
+                        continue
                     accepted_msg = dialogue.get("recruit_accepted",
-                        f"{girl['name']} smiles warmly. 'I'll fight beside you!'")
-                    term.print(accepted_msg.format(name=girl['name']))
+                        f"{disp} smiles warmly. 'I'll fight beside you!'")
+                    term.print(accepted_msg.format(name=disp))
                     from combat.ally import recruit_ally_from_house
                     ally, msg = recruit_ally_from_house(player, girl, house)
                     term.print(msg)
                     if ally:
-                        term.print(f"{ally['name']}'s stats:")
+                        term.print(f"{display_name(ally)}'s stats:")
                         term.print(f"  HP: {ally['max_hp']}")
                         term.print(f"  STR: {ally['attributes']['Strength']}  CON: {ally['attributes']['Constitution']}  DEX: {ally['attributes']['Dexterity']}")
                     term.pause()
@@ -1068,12 +1272,12 @@ def _house_lounge(player, city_id, house):
             elif action == "dismiss":
                 # ── DISMISS ──
                 dismiss_msg = dialogue.get("dismiss",
-                    f"{girl['name']} nods quietly. 'I'll be here when you need me.'")
-                term.print(dismiss_msg.format(name=girl['name']) if "{name}" in dismiss_msg else dismiss_msg)
+                    f"{disp} nods quietly. 'I'll be here when you need me.'")
+                term.print(dismiss_msg.format(name=disp) if "{name}" in dismiss_msg else dismiss_msg)
                 from combat.ally import _return_ally_to_house
                 _return_ally_to_house(player, girl, house)
                 player["allies"] = [a for a in player.get("allies", []) if not (a.get("key") == girl.get("key") and a.get("name") == girl.get("name"))]
-                term.print(f"{girl['name']} has been returned to the lounge.")
+                term.print(f"{disp} has been returned to the lounge.")
                 term.pause()
                 break  # after dismissal, return to girl list
 
@@ -1091,6 +1295,155 @@ def get_gift_reaction(girl_key, gift_type):
 
 
 # ── Main house menu ───────────────────────────────────────────────────────────
+
+def _dispatch_board(player, city_id, house):
+    """Dispatch board (Phase 1) — send housed girls on sweeps and errands.
+
+    Operates on the effective home house (explicit city → origin → first
+    owned, via _resolve_house) even if the player opened a secondary house.
+    """
+    from resources.cities import CITIES
+    from facilities.dispatch import (
+        ensure_offers, slot_cap, star_cap, refresh_day, get_dispatch_state,
+        sanitize_flags, collect_reports,
+    )
+
+    home_city, home_house = _resolve_house(player)
+    if home_house is None:
+        term.print("You don't have a home yet.")
+        term.pause()
+        return
+
+    sanitize_flags(player, home_house)
+
+    while True:
+        term.clear()
+        d = get_dispatch_state(player)
+        level = int(home_house.get("level", 1))
+        active = list(d.get("active", []))
+        offers = ensure_offers(player, home_city, home_house)
+        city_name = CITIES.get(home_city, {}).get("name", home_city)
+
+        term.print(f"=== DISPATCH BOARD ===  ({city_name})")
+        term.print(f"  Slots: {len(active)}/{slot_cap(level)} used · "
+                   f"House limit: {'★' * star_cap(level)}")
+        for inst in active:
+            day, mins = divmod(int(inst.get("return_abs", 0)), 1440)
+            term.print(f"  Away: {'★' * int(inst.get('stars', 1))} {inst['name']}")
+            term.print(f"        Team: {', '.join(inst.get('girl_names', []))} — "
+                       f"back Day {day}, {mins // 60:02d}:{mins % 60:02d}")
+        rep_count = len(d.get("reports", []))
+        if rep_count:
+            term.print(f"  Reports: {rep_count} ready to collect")
+        term.print(f"  Offers refresh: Day {refresh_day(player.get('day', 1))} (3-day cycle)")
+        if not offers:
+            term.print("  No missions left on the board this cycle.")
+        term.print()
+
+        options, actions = [], []
+        for offer in offers:
+            options.append(f"{'★' * offer['stars']} {offer['name']} — {offer['label']}, "
+                           f"power {offer['power']}, ~{offer['hours']}h, risk {offer['risk']}")
+            actions.append(("offer", offer))
+        options.append("View active dispatches")
+        actions.append(("view", None))
+        if rep_count:
+            options.append(f"Collect reports ({rep_count})")
+            actions.append(("collect", None))
+
+        idx = term.menu(options, prompt="Choose a mission:", allow_cancel=True,
+                        cancel_label="Back", columns=2)
+        if idx < 0:
+            return
+        kind, payload = actions[idx]
+
+        if kind == "offer":
+            if len(active) >= slot_cap(level):
+                term.print("All dispatch slots are in use — wait for a team to return.")
+                term.pause()
+                continue
+            _dispatch_team_select(player, home_city, home_house, payload)
+        elif kind == "view":
+            term.clear()
+            if not active:
+                term.print("No active dispatches.")
+            for inst in active:
+                day, mins = divmod(int(inst.get("return_abs", 0)), 1440)
+                term.print(f"{'★' * int(inst.get('stars', 1))} {inst['name']}")
+                term.print(f"  Team: {', '.join(inst.get('girl_names', []))}")
+                term.print(f"  Returns: Day {day}, {mins // 60:02d}:{mins % 60:02d}")
+            term.pause()
+        elif kind == "collect":
+            collect_reports(player, home_city, home_house)
+
+
+def _dispatch_team_select(player, home_city, house, offer):
+    """Toggle-select a team, preview success, and launch the mission."""
+    from facilities.dispatch import (
+        eligible_girls, team_cap, success_chance_for, create_instance,
+    )
+    cap = team_cap(house.get("level", 1))
+    team = []
+
+    while True:
+        term.clear()
+        day = player.get("day", 1)
+        term.print(f"=== {offer['name']} ===")
+        term.print(f"  {'★' * offer['stars']} {offer['label']} · power {offer['power']} · "
+                   f"~{offer['hours']}h · risk {offer['risk']}")
+        if offer.get("floors"):
+            term.print(f"  Floors {offer['floors'][0]}–{offer['floors'][1]}")
+        term.print(f"  Team: {len(team)}/{cap} — press a name to add/remove it")
+        term.print()
+
+        LAUNCH_STYLE = {"bg": "#2f6b2f", "fg": "#e0ffe0",
+                        "active_bg": "#3f8b3f", "active_fg": "#f0fff0"}
+
+        pool = eligible_girls(player, house)
+        options, actions, styles = [], [], []
+        for g in pool:
+            mark = "★" if any(g is m for m in team) else " "
+            options.append(f"[{mark}] {display_name(g)} Lv{g.get('level', 1)} — {girl_status_line(g, day)}")
+            actions.append(("toggle", g))
+            styles.append(None)
+        if not pool:
+            term.print("No girls are available (away, injured, or burned out).")
+        if team:
+            chance = success_chance_for(offer, team, day)
+            names = ", ".join(display_name(g) for g in team)
+            options.append(f"▶ Launch — {names} (projected success ~{chance}%)")
+            actions.append(("launch", None))
+            styles.append(LAUNCH_STYLE)
+
+        idx = term.menu(options, prompt="Assemble your team:", allow_cancel=True,
+                        cancel_label="Back", styles=styles, columns=2)
+        if idx < 0:
+            return
+        kind, payload = actions[idx]
+
+        if kind == "toggle":
+            if payload in team:
+                team.remove(payload)
+            elif len(team) >= cap:
+                term.print(f"At most {cap} girls can go on one mission.")
+                term.pause()
+            else:
+                team.append(payload)
+        elif kind == "launch":
+            if not team:
+                term.print("Pick at least one girl.")
+                term.pause()
+                continue
+            names = ", ".join(display_name(g) for g in team)
+            if not term.confirm(f"Send {names} on \"{offer['name']}\"?"):
+                continue
+            inst, msg = create_instance(player, home_city, house, offer, team)
+            term.print(msg)
+            if inst:
+                advance_time(player, 30)  # organizing the send-off
+            term.pause()
+            return
+
 
 def house_menu(player, city_id):
     """Entry point called from city.py when player chooses 'Your House'."""
@@ -1119,34 +1472,59 @@ def house_menu(player, city_id):
 
         options = [
             "Rest (quick heal)",
-            "Sleep (full heal + 8 hours) — Available 20:00–04:00",
+            "Sleep (full heal; Night only)",
+            "Wait (a brief moment)",
+            "Wait (a while)",
             "Storage chest",
             "Collect income",
             "Lounge",
         ]
+        actions = ["rest", "sleep", "wait1", "waitwhile", "storage", "income", "lounge"]
+
+        options.append(board_label(player))
+        actions.append("dispatch")
+
         if house["level"] < max_level:
             next_name = HOUSE_LEVELS[house["level"] + 1]["name"]
             options.append(f"Upgrade to {next_name}")
+            actions.append("upgrade")
         options.append("Leave")
+        actions.append("leave")
 
         choice = term.menu(options, prompt="What would you like to do?")
+        action = actions[choice] if 0 <= choice < len(actions) else ("leave" if choice == -1 else None)
 
-        if choice == 0:
+        if action == "rest":
             _house_rest(player, city_id, house)
-        elif choice == 1:
+        elif action == "sleep":
             _house_sleep(player, city_id, house)
-        elif choice == 2:
+        elif action == "wait1":
+            import time_blocks
+            time_blocks.wait_blocks(player, 1)
+            term.print("Time passes...")
+            term.pause()
+        elif action == "waitwhile":
+            import time_blocks
+            result = time_blocks.wait_to_next_phase(player)
+            if result is None:
+                term.print("You wait. Wonderland waits with you. Nothing passes.")
+            elif result == "morning":
+                term.print("You sit through the night and greet the morning, exhausted.")
+            else:
+                term.print(f"A while passes... it is now {result}.")
+            term.pause()
+        elif action == "storage":
             _house_storage(player, city_id, house)
-        elif choice == 3:
+        elif action == "income":
             _house_collect_income(player, city_id, house)
-        elif choice == 4:
+        elif action == "lounge":
             _house_lounge(player, city_id, house)
-        elif choice == 5 and house["level"] >= max_level:
-            break  # Leave (at max level, Leave is index 5)
-        elif choice == 5:
-            _house_upgrade(player, city_id, house)  # Upgrade (not at max)
-        elif choice == 6 or choice == -1:
-            break  # Leave or cancelled
+        elif action == "dispatch":
+            _dispatch_board(player, city_id, house)
+        elif action == "upgrade":
+            _house_upgrade(player, city_id, house)
+        elif action == "leave":
+            break
         else:
             term.print("Invalid choice.")
             term.pause()

@@ -13,6 +13,7 @@ Superbosses:
       Charisma: 2
     boss: true
     super_boss: true
+    status_res: 0.25
   vileheart_spiderling:
     name: Vileheart Spiderling
     race: Beast
@@ -57,6 +58,7 @@ Superbosses:
       Charisma: 3
     boss: true
     super_boss: true
+    status_res: 0.25
   dream_floatsam:
     name: Dream Floatsam
     race: Construct
@@ -86,6 +88,7 @@ Superbosses:
       Charisma: 3
     boss: true
     super_boss: true
+    status_res: 0.30
   queen_of_mirrors_sylvana:
     name: Queen of Mirrors Sylvana
     race: Fey
@@ -100,6 +103,7 @@ Superbosses:
       Charisma: 6
     boss: true
     super_boss: true
+    status_res: 0.30
   heaven_banished_dragon_yinglong:
     name: Yinglong, Heaven-Banished Dragon
     race: Dragonkin
@@ -114,6 +118,7 @@ Superbosses:
       Charisma: 4
     boss: true
     super_boss: true
+    status_res: 0.40
   yinglong_heaven_pillar:
     name: Heaven Pillar
     race: Construct
@@ -158,6 +163,7 @@ Superbosses:
       Charisma: 2
     boss: true
     super_boss: true
+    status_res: 0.40
     elemental_dmg:
       water: 1.5
     elemental_res:
@@ -222,6 +228,7 @@ Superbosses:
       Charisma: 5
     boss: true
     super_boss: true
+    status_res: 0.30
   seaman_everlong:
     name: Seaman of the Everlong Ship
     race: Undead
@@ -311,6 +318,7 @@ Superbosses:
       Charisma: 6
     boss: true
     super_boss: true
+    status_res: 0.50
     elemental_res:
       dark: 0.7
       light: 1.3
@@ -331,6 +339,7 @@ Superbosses:
       Charisma: 10
     boss: true
     super_boss: true
+    status_res: 0.50
     elemental_res:
       physical: 0.8
       magical: 0.8
@@ -350,6 +359,7 @@ Superbosses:
       Charisma: 5
     boss: true
     super_boss: true
+    status_res: 0.60
     elemental_dmg:
       fire: 1.3
       dark: 1.3
@@ -359,6 +369,29 @@ Superbosses:
       dark: 0.8
       light: 1.2
       physical: 0.9
+
+  white_knight:
+    name: White Knight of the Fallen Empire
+    race: Undead
+    level: 48
+    base_hp: 1500
+    mods:
+      Strength: 12
+      Constitution: 9
+      Dexterity: 15
+      Wisdom: 8
+      Learning: 7
+      Charisma: 10
+    boss: true
+    super_boss: true
+    status_res: 0.75
+    elemental_dmg:
+      light: 1.4
+      physical: 1.2
+    elemental_res:
+      light: 0.7
+      dark: 1.3
+
   temporal_shard_pyre:
     name: "Temporal Shard: Pyre"
     race: Elemental

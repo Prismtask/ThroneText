@@ -8,6 +8,45 @@ from character import player_max_hp
 
 
 # ===========================================================================
+# UNIFIED DEBUFF SCALING CONSTANTS
+# ===========================================================================
+# Slow / Weaken use percentage magnitudes so they stay relevant at every
+# level (flat values were oppressive early and negligible in the endgame).
+SLOW_DEX_PCT = 0.25        # Slow: -25% DEX (initiative / DEX checks)
+WEAKEN_STR_PCT = 0.25      # Weaken: -25% STR (damage rolls)
+BLEED_FEAST_MULT = 2.0     # Vampire lifesteal/drain multiplier vs bleeding targets
+
+
+# ===========================================================================
+# GLOBAL STATUS RESISTANCE  (superboss system, separate from elemental_res)
+# ===========================================================================
+# Bosses may carry ``status_res`` (0.0–1.0) from their YAML template.
+# 1.0 = full immunity.  Absent field = 0.0 (existing content unchanged).
+# See docs/white_knight_design.md §3.10.
+
+def get_status_res(entity):
+    """Return the entity's status resistance chance (0.0 if none)."""
+    try:
+        return max(0.0, min(1.0, float(entity.get("status_res", 0.0) or 0.0)))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def check_status_resisted(target):
+    """Roll the target's status resistance. True = the debuff is resisted.
+
+    Call at the top of a status application; on True, skip the application
+    entirely (callers may announce it themselves where a message fits).
+    """
+    res = get_status_res(target)
+    if res <= 0.0:
+        return False
+    if res >= 1.0:
+        return True
+    return random.random() < res
+
+
+# ===========================================================================
 # BURN TIER SYSTEM
 # ===========================================================================
 
@@ -65,6 +104,11 @@ def apply_poison(target, damage, duration):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(target):
         return None
+    from combat.ally_skills import has_status_immunity
+    if has_status_immunity(target, "poison"):
+        return "immune"
+    if check_status_resisted(target):
+        return "resisted"
     existing = next(
         (d for d in target.get("active_debuffs", []) if d["type"] == "poison"),
         None,
@@ -83,6 +127,8 @@ def apply_curse(player, enemy_level=None):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
     if player.get("cursed"):
         return "already_cursed"
     penalty = max(2, player.get("level", 1) // 3)   # dynamic
@@ -93,6 +139,61 @@ def apply_curse(player, enemy_level=None):
         "penalty": penalty
     })
     return "applied"
+
+
+# ---------------------------------------------------------------------------
+# DAMAGE-TAKEN AMPLIFICATION  (applied to enemy dicts)
+# ---------------------------------------------------------------------------
+
+def apply_damage_taken_up(target, value, duration=3):
+    """Apply or refresh a damage-taken amplification (e.g. Aura of Despair).
+
+    Affected enemies take `value` extra damage from basic attacks and skills
+    alike (read via get_damage_taken_multiplier in all four attack paths).
+    Refreshing keeps the stronger value and the longer remaining duration.
+    Returns 'applied' or 'refreshed'.
+    """
+    if check_status_resisted(target):
+        return "resisted"
+    existing = next(
+        (d for d in target.get("active_debuffs", []) if d.get("type") == "damage_taken_up"),
+        None,
+    )
+    if existing:
+        existing["value"] = max(existing.get("value", 0), value)
+        existing["remaining"] = max(existing.get("remaining", 0), duration)
+        return "refreshed"
+    target.setdefault("active_debuffs", []).append({
+        "type": "damage_taken_up", "value": value, "remaining": duration
+    })
+    return "applied"
+
+
+def get_damage_taken_multiplier(target):
+    """Total damage multiplier from damage_taken_up debuffs (1.0 = none).
+
+    Sources sum; e.g. two +15% debuffs -> 1.30x damage taken.
+    """
+    bonus = sum(
+        d.get("value", 0) for d in target.get("active_debuffs", [])
+        if d.get("type") == "damage_taken_up"
+    )
+    return 1.0 + bonus
+
+
+# ---------------------------------------------------------------------------
+# FEAR IMMUNITY
+# ---------------------------------------------------------------------------
+
+def has_fear_immunity(entity):
+    """True while the entity has an active fear_immunity buff.
+
+    Granted by Through the Forest and the Headless Oath wedding accessory.
+    Checked by every party-facing fear source before applying the debuff.
+    """
+    return any(
+        b.get("type") == "fear_immunity" for b in entity.get("active_buffs", [])
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +226,8 @@ def apply_burn(target, tier=None, duration=3, damage=None):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(target):
         return None
+    if check_status_resisted(target):
+        return "resisted"
 
     tier_info = BURN_TIERS.get(tier, BURN_TIERS[2])
     damage_val = tier_info["damage"]
@@ -185,6 +288,8 @@ def apply_burn_to_player(player, tier=None, duration=3, damage=None):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
 
     tier_info = BURN_TIERS.get(tier, BURN_TIERS[1])
     damage_val = tier_info["damage"]
@@ -225,6 +330,8 @@ def apply_freeze(enemy, duration=2):
 
     Returns 'applied' or 'already_frozen'.
     """
+    if check_status_resisted(enemy):
+        return "resisted"
     if enemy.get("frozen"):
         return "already_frozen"
     enemy["frozen"] = True
@@ -238,8 +345,10 @@ def apply_expose(enemy, armor_reduction=2):
     Permanently reduces con_mod for this fight.  Cannot reduce below 0.
     Multiple applications stack up to a cap of 5 total reduction.
 
-    Returns ('applied', new_con) or ('capped', current_con).
+    Returns ('applied', new_con), ('capped', current_con), or ('resisted', current_con).
     """
+    if check_status_resisted(enemy):
+        return "resisted", enemy.get("con_mod", 0)
     total_reduction = enemy.get("expose_stacks", 0) + armor_reduction
     if total_reduction > 5:
         armor_reduction = 5 - enemy.get("expose_stacks", 0)
@@ -254,59 +363,89 @@ def apply_expose(enemy, armor_reduction=2):
 # NEW PLAYER DEBUFFS  (applied to player dicts)
 # ---------------------------------------------------------------------------
 
-def apply_weaken(player, str_penalty=2, duration=3):
-    """Apply a Weakened condition to the player.
+def apply_weaken(target, penalty_pct=WEAKEN_STR_PCT, duration=3):
+    """Apply a Weakened condition to a target (player, ally, or enemy).
 
-    Reduces effective Strength for damage rolls.  Tracked via active_debuffs
-    so get_effective_attribute() must read it (see integration notes below).
+    Reduces effective Strength for damage rolls by a percentage of current
+    STR (see WEAKEN_STR_PCT) — percentage keeps endgame stats meaningful.
+    Tracked via active_debuffs; read through get_weaken_pct().
 
     Returns 'applied' or 'refreshed'.
     """
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
-    if try_consume_afterimage(player):
+    if try_consume_afterimage(target):
         return None
+    if check_status_resisted(target):
+        return "resisted"
     existing = next(
-        (d for d in player.get("active_debuffs", []) if d["type"] == "weaken"),
+        (d for d in target.get("active_debuffs", []) if d["type"] == "weaken"),
         None,
     )
     if existing:
-        existing["remaining"] = duration
-        existing["penalty"] = max(existing.get("penalty", 0), str_penalty)
+        existing["remaining"] = max(existing.get("remaining", 0), duration)
+        existing["penalty_pct"] = max(existing.get("penalty_pct", 0.0), penalty_pct)
         return "refreshed"
-    player.setdefault("active_debuffs", []).append({
+    target.setdefault("active_debuffs", []).append({
         "type": "weaken",
-        "penalty": str_penalty,
+        "penalty_pct": penalty_pct,
         "remaining": duration,
     })
     return "applied"
 
 
-def apply_bleed(target, damage, duration=4):
-    """Apply a Bleed wound to a target (player or enemy dict).
+def apply_bleed(target, damage, duration=4, *, source=None, uncleansable=False, stacks=False):
+    """Apply a Bleed wound to a target (player, ally, or enemy dict).
 
-    Bleed deals damage each round.  Unlike poison it does NOT stack — a
-    heavier bleed (higher damage) overwrites a lighter one.
+    Unified core rules (all bleed sources go through here):
+    - One "normal" bleed per target. A stronger application replaces the
+      damage; an equal or weaker application refreshes the duration of the
+      strongest wound (mirrors Burn's lower-tier refresh — no more no-op).
+    - ``uncleansable=True`` (e.g. Vorpal Wound) keeps its own independent
+      slot, so normal bleeds can't refresh it and vice versa. Every cleanse
+      path skips it (see is_cleansable).
+    - ``stacks=True`` is the opt-in gimmick flag: appends an independent
+      wound on every application instead of merging.
+    - ``source`` tags the inflictor (e.g. "vorpal_wound") for messaging/debug.
 
-    Returns 'applied', 'refreshed', or 'no_change' (existing bleed is worse).
+    Returns 'applied', 'refreshed', or 'stacked'.
+    Returns None if an Afterimage charge absorbed the application.
     """
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(target):
         return None
+    from combat.ally_skills import has_status_immunity
+    if has_status_immunity(target, "bleed"):
+        return "immune"
+    if check_status_resisted(target):
+        return "resisted"
+
+    def _make_entry():
+        entry = {"type": "bleed", "damage": damage, "remaining": duration}
+        if source:
+            entry["source"] = source
+        if uncleansable:
+            entry["_uncleansable"] = True
+        return entry
+
+    if stacks:
+        target.setdefault("active_debuffs", []).append(_make_entry())
+        return "stacked"
+
     existing = next(
-        (d for d in target.get("active_debuffs", []) if d["type"] == "bleed"),
+        (d for d in target.get("active_debuffs", [])
+         if d["type"] == "bleed"
+         and bool(d.get("_uncleansable", False)) == uncleansable),
         None,
     )
     if existing:
         if damage > existing["damage"]:
             existing["damage"] = damage
-            existing["remaining"] = duration
-            return "refreshed"
-        return "no_change"
-    target.setdefault("active_debuffs", []).append({
-        "type": "bleed",
-        "damage": damage,
-        "remaining": duration,
-    })
+            if source:
+                existing["source"] = source
+        existing["remaining"] = max(existing.get("remaining", 0), duration)
+        return "refreshed"
+
+    target.setdefault("active_debuffs", []).append(_make_entry())
     return "applied"
 
 
@@ -318,6 +457,8 @@ def apply_silence(player, duration=2):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
     if player.get("silenced"):
         return "already_silenced"
     player["silenced"] = True
@@ -332,6 +473,8 @@ def apply_blind(player, duration=2):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
     existing = next((d for d in player.get("active_debuffs", []) if d["type"] == "blind"), None)
     if existing:
         existing["remaining"] = max(existing["remaining"], duration)
@@ -374,6 +517,8 @@ def apply_dread(player, duration=2):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
     if player.get("dreaded"):
         return "already_dreaded"
     player["dreaded"] = True
@@ -394,6 +539,8 @@ def apply_dread(player, duration=2):
 
 def apply_shock(enemy, damage, duration=3):
     """Apply Shocked to an enemy — thunder DoT with stun chance per tick."""
+    if check_status_resisted(enemy):
+        return "resisted"
     existing = next(
         (d for d in enemy.get("active_debuffs", []) if d["type"] == "shock"), None
     )
@@ -414,6 +561,8 @@ def apply_shock_to_player(player, damage, duration=3):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
     existing = next(
         (d for d in player.get("active_debuffs", []) if d["type"] == "shock"), None
     )
@@ -430,13 +579,16 @@ def apply_shock_to_player(player, damage, duration=3):
 
 
 def apply_slow_to_player(player, duration=2):
-    """Apply a timed Slow debuff to the player (-3 DEX, initiative penalty)."""
+    """Apply a timed Slow to the player (-25% DEX, see SLOW_DEX_PCT)."""
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
     existing = next(
         (d for d in player.get("active_debuffs", []) if d["type"] == "slow"), None
     )
+    player["slowed"] = True
     if existing:
         existing["remaining"] = max(existing["remaining"], duration)
         return "refreshed"
@@ -447,11 +599,41 @@ def apply_slow_to_player(player, duration=2):
     return "applied"
 
 
+def apply_slow_to_enemy(enemy, duration=2):
+    """Apply a timed Slow to an enemy (-25% DEX, see SLOW_DEX_PCT)."""
+    from combat.weapon.blank_canvas_shawl import try_consume_afterimage
+    if try_consume_afterimage(enemy):
+        return None
+    if check_status_resisted(enemy):
+        return "resisted"
+    existing = next(
+        (d for d in enemy.get("active_debuffs", []) if d["type"] == "slow"), None
+    )
+    enemy["slowed"] = True
+    if existing:
+        existing["remaining"] = max(existing.get("remaining", 0), duration)
+        return "refreshed"
+    enemy.setdefault("active_debuffs", []).append({
+        "type": "slow",
+        "remaining": duration,
+    })
+    return "applied"
+
+
+def apply_slow_penalty(target, dex):
+    """Apply the Slow DEX penalty (SLOW_DEX_PCT) if target is slowed."""
+    if target.get("slowed"):
+        return int(dex * (1.0 - SLOW_DEX_PCT))
+    return dex
+
+
 def apply_confusion_to_player(player, duration=2):
     """Apply Confusion to a player — 30% chance to hit own ally or miss."""
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(player):
         return None
+    if check_status_resisted(player):
+        return "resisted"
     existing = next(
         (d for d in player.get("active_debuffs", []) if d["type"] == "confusion"), None
     )
@@ -519,11 +701,66 @@ def get_barrier_remaining(target):
 
 
 # ---------------------------------------------------------------------------
+# 2b. DEATH WARD (Survive one lethal blow at 1 HP)
+# ---------------------------------------------------------------------------
+
+def apply_death_ward(target, duration=3, hp_pct=0.0):
+    """Grant a death ward: the next lethal blow leaves the target at 1 HP.
+
+    ``hp_pct`` (> 0) revives at that fraction of max HP instead of 1 —
+    used by Reboot Protocol's 30% emergency reboot.
+    """
+    existing = next(
+        (b for b in target.get("active_buffs", []) if b.get("type") == "death_ward"), None
+    )
+    if existing:
+        existing["remaining"] = max(existing["remaining"], duration)
+        existing["hp_pct"] = max(existing.get("hp_pct", 0.0), hp_pct)
+        return "refreshed"
+    target.setdefault("active_buffs", []).append({
+        "type": "death_ward",
+        "remaining": duration,
+        "hp_pct": hp_pct,
+    })
+    return "applied"
+
+
+def try_consume_death_ward(actor):
+    """Consume a death ward to survive a lethal blow. Returns True if saved.
+
+    Falls through to Event Horizon's The Emperor (once per battle) when no
+    ward is held — every engine death path funnels through here.
+    """
+    for buff in actor.get("active_buffs", [])[:]:
+        if buff.get("type") == "death_ward":
+            actor["active_buffs"].remove(buff)
+            hp_pct = buff.get("hp_pct", 0.0)
+            if hp_pct > 0:
+                if actor.get("is_ally"):
+                    max_hp = actor.get("max_hp", 100)
+                else:
+                    from character import player_max_hp
+                    max_hp = player_max_hp(actor)
+                actor["current_hp"] = max(1, int(max_hp * hp_pct))
+            else:
+                actor["current_hp"] = 1
+            return True
+    # Event Horizon — The Emperor: hold at 1 HP once per battle.
+    try:
+        from event_horizon import try_emperor_save
+    except Exception:
+        return False
+    return try_emperor_save(actor)
+
+
+# ---------------------------------------------------------------------------
 # 3. SLEEP (Action Lock, Breaks on Damage)
 # ---------------------------------------------------------------------------
 
 def apply_sleep(enemy, duration=3):
     """Put an enemy to sleep. Slept enemies skip turns until damaged."""
+    if check_status_resisted(enemy):
+        return "resisted"
     if enemy.get("asleep"):
         return "already_asleep"
     enemy["asleep"] = True
@@ -597,6 +834,8 @@ def consume_haste_cd_reduction(target):
 
 def apply_paralyze(enemy, duration=2):
     """Paralyze an enemy — skip all actions for N turns. Stronger than stun."""
+    if check_status_resisted(enemy):
+        return "resisted"
     if enemy.get("paralyzed"):
         return "already_paralyzed"
     enemy["paralyzed"] = True
@@ -639,6 +878,8 @@ def apply_regen(target, heal_per_tick, duration=5):
 
 def apply_entomb(enemy, duration=3):
     """Entomb an enemy in stone. Cannot flee. Healing received is halved."""
+    if check_status_resisted(enemy):
+        return "resisted"
     existing = next(
         (d for d in enemy.get("active_debuffs", []) if d["type"] == "entomb"), None
     )
@@ -672,6 +913,8 @@ def apply_void_touched(target, duration=2):
     from combat.weapon.blank_canvas_shawl import try_consume_afterimage
     if try_consume_afterimage(target):
         return None
+    if check_status_resisted(target):
+        return "resisted"
     if target.get("void_touched"):
         return "already_void_touched"
     target["void_touched"] = True
@@ -687,12 +930,32 @@ def is_void_touched(target):
     return bool(target.get("void_touched"))
 
 
-def apply_healing(target, amount):
-    """Apply healing to a target, respecting void_touched and entomb.
+def apply_healing(target, amount, source=None):
+    """Apply healing to a target, respecting void_touched, entomb and heal blocks.
+
+    `source` is the healing entity (None = unknown origin). Undead allies
+    cannot be healed by allies — self-heals (source is target) still work.
 
     Returns the actual HP change (positive = healed, negative = damage dealt).
     Mutates target['current_hp'] or target['hp'] in place.
     """
+    from combat.ally_skills import is_heal_blocked
+    if is_heal_blocked(target, source):
+        return 0
+
+    # Event Horizon — Death's toll: all other healing received is halved.
+    _eh_heal_mult = target.get("_eh_joker_healing_mult")
+    if _eh_heal_mult:
+        amount = max(1, int(amount * _eh_heal_mult))
+
+    # Pandemonium: Blighted Recovery curse — party healing is reduced.
+    # Only the player carries the curse, so check the healer (player-side
+    # casts pass source=player); ally-cast heals are handled at their call
+    # sites in combat/ally_skills.py.
+    if isinstance(source, dict):
+        from pandemonium_curses import apply_healing_reduction
+        amount = apply_healing_reduction(source, amount)
+
     hp_key = "current_hp" if "current_hp" in target else "hp"
     max_key = "max_hp" if "current_hp" in target else "max_hp"
 
@@ -730,6 +993,28 @@ def tick_enemy_debuffs(enemy):
     Returns (messages, died).
     """
     messages = []
+
+    # ── Tick the enemy's own timed buffs ──
+    # Superbosses tick their buffs in their own post_round hooks, so the engine
+    # must not double-tick them. Runtime dicts don't carry the flag (enemy_stats
+    # omits it), so look it up from the enemy template by key. Regular enemies
+    # have no other ticker, so decay theirs here (once per enemy turn). Fresh
+    # buffs skip their first tick so a "2 turn" buff covers two full turns.
+    from resources.enemies import ENEMIES as _ENEMY_TEMPLATES
+    _template = _ENEMY_TEMPLATES.get(enemy.get("key", ""), {})
+    if not _template.get("super_boss"):
+        for buff in enemy.get("active_buffs", []):
+            if "remaining" not in buff:
+                continue
+            if not buff.get("_tick_grace"):
+                buff["_tick_grace"] = True
+                continue
+            buff["remaining"] -= 1
+        enemy["active_buffs"] = [
+            b for b in enemy.get("active_buffs", [])
+            if b.get("remaining", 999) > 0
+        ]
+
     if not enemy.get("active_debuffs"):
         # Still need to handle freeze separately (stored as flat flag)
         messages, died = _tick_enemy_freeze(enemy, messages)
@@ -809,6 +1094,12 @@ def tick_enemy_debuffs(enemy):
             debuff["remaining"] -= 1
             if debuff["remaining"] <= 0:
                 enemy["active_debuffs"].remove(debuff)
+
+        elif debuff["type"] == "damage_taken_up":
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                enemy["active_debuffs"].remove(debuff)
+                messages.append(f"The despair lifts from the {enemy['name']}.")
 
         elif debuff["type"] == "elemental_weakness":
             debuff["remaining"] -= 1
@@ -897,6 +1188,24 @@ def tick_player_debuffs(player):
     if not player.get("active_debuffs"):
         return messages, False
 
+    # Event Horizon — The Star: one extra decrement on the first tick, so
+    # every debuff that lands on the party lasts one turn less (min 1 tick).
+    if player.get("_eh_joker_star"):
+        for debuff in player["active_debuffs"][:]:
+            if debuff.get("_star_short") or debuff.get("permanent"):
+                continue
+            debuff["_star_short"] = True
+            debuff["remaining"] = debuff.get("remaining", 1) - 1
+            if debuff["remaining"] <= 0:
+                player["active_debuffs"].remove(debuff)
+                messages.append("The Star hastens the curse — it fades a turn early.")
+                for dtype, flag in (("slow", "slowed"), ("blind", "blinded"),
+                                    ("silence", "silenced"), ("dread", "dreaded")):
+                    if debuff.get("type") == dtype and not any(
+                            d.get("type") == dtype
+                            for d in player["active_debuffs"]):
+                        player[flag] = False
+
     for debuff in player["active_debuffs"][:]:
         dtype = debuff["type"]
 
@@ -922,6 +1231,7 @@ def tick_player_debuffs(player):
             debuff["remaining"] -= 1
             if debuff["remaining"] <= 0:
                 player["active_debuffs"].remove(debuff)
+                player["slowed"] = False
                 messages.append("You are no longer slowed.")
 
         elif dtype == "weaken":
@@ -951,6 +1261,20 @@ def tick_player_debuffs(player):
                 player["blinded"] = False
                 player["active_debuffs"].remove(debuff)
                 messages.append("Your vision clears – the blindness fades.")
+
+        elif dtype == "eh_tower_drain":
+            # Event Horizon — The Tower: 2% max HP per battle round per full
+            # 5 flasks the actor has consumed (clamped at 1 HP, 2026-10-08).
+            if player.get("is_ally"):
+                max_hp = player.get("max_hp", player.get("current_hp", 1))
+            else:
+                max_hp = player_max_hp(player)
+            drain = max(1, int(max_hp * debuff.get("value", 0)))
+            player["current_hp"] = max(1, player["current_hp"] - drain)
+            messages.append(f"The Tower takes its toll — {drain} HP.")
+            debuff["remaining"] -= 1
+            if debuff["remaining"] <= 0:
+                player["active_debuffs"].remove(debuff)
 
         elif dtype == "vulnerable":
             debuff["remaining"] -= 1
@@ -1027,12 +1351,21 @@ def tick_player_buffs(player):
         return messages
 
     for buff in player["active_buffs"][:]:
+        # Freshly applied buffs skip their first end-of-round tick. Timed buffs
+        # tick at the END of the round they were applied in, which used to eat
+        # one round of effect (a "2 turn" buff only covered 1 full round).
+        # Skipping the first tick gives every buff its full advertised duration.
+        if not buff.get("_tick_grace"):
+            buff["_tick_grace"] = True
+            continue
+
         btype = buff.get("type")
 
         if btype == "hot":
             old_hp = player["current_hp"]
             from combat.stat_milestones import get_wisdom_bonus
             heal = buff["value"] + get_wisdom_bonus(player)
+            heal = int(heal * (player.get("_eh_joker_healing_mult") or 1))
             new_hp = min(old_hp + heal, player_max_hp(player))
             healed = new_hp - old_hp
             player["current_hp"] = new_hp
@@ -1061,6 +1394,12 @@ def tick_player_buffs(player):
             elif buff.get("value", 0) > 0:
                 messages.append(f"Barrier: {buff['value']} absorb remaining.")
 
+        elif btype == "death_ward":
+            buff["remaining"] -= 1
+            if buff["remaining"] <= 0:
+                player["active_buffs"].remove(buff)
+                messages.append("Your Undying Vow fades.")
+
         elif btype == "haste":
             buff["remaining"] -= 1
             if buff["remaining"] <= 0:
@@ -1071,9 +1410,29 @@ def tick_player_buffs(player):
             old_hp = player["current_hp"]
             from combat.stat_milestones import get_wisdom_bonus
             heal = buff["value"] + get_wisdom_bonus(player)
+            heal = int(heal * (player.get("_eh_joker_healing_mult") or 1))
             new_hp = min(old_hp + heal, player_max_hp(player))
             healed = new_hp - old_hp
             player["current_hp"] = new_hp
+            if healed > 0:
+                messages.append(f"Regeneration restores {healed} HP.")
+            buff["remaining"] -= 1
+            if buff["remaining"] <= 0:
+                player["active_buffs"].remove(buff)
+                messages.append("Your regeneration fades.")
+
+        elif btype == "regen_pct":
+            # Event Horizon Vitality flasks — % max HP per round (2026-10-07).
+            # Allies use their own max_hp key; the player uses the formula.
+            if player.get("is_ally"):
+                max_hp = player.get("max_hp", player.get("current_hp", 1))
+            else:
+                max_hp = player_max_hp(player)
+            old_hp = player["current_hp"]
+            heal = max(1, int(max_hp * buff.get("value", 0)))
+            heal = int(heal * (player.get("_eh_joker_healing_mult") or 1))
+            player["current_hp"] = min(old_hp + heal, max_hp)
+            healed = player["current_hp"] - old_hp
             if healed > 0:
                 messages.append(f"Regeneration restores {healed} HP.")
             buff["remaining"] -= 1
@@ -1116,12 +1475,16 @@ def cure_curse(player):
 
 
 def cure_bleed(player):
-    """Stop a bleed on the player. Returns 'cured' or 'not_bleeding'."""
-    bleeding = any(d["type"] == "bleed" for d in player.get("active_debuffs", []))
+    """Stop a cleansable bleed on the player. Returns 'cured' or 'not_bleeding'.
+
+    Uncleansable wounds (e.g. Vorpal Wound) are left in place.
+    """
+    bleeding = [d for d in player.get("active_debuffs", []) if d["type"] == "bleed" and is_cleansable(d)]
     if not bleeding:
         return "not_bleeding"
     player["active_debuffs"] = [
-        d for d in player.get("active_debuffs", []) if d.get("type") != "bleed"
+        d for d in player.get("active_debuffs", [])
+        if not (d.get("type") == "bleed" and is_cleansable(d))
     ]
     return "cured"
 
@@ -1152,12 +1515,39 @@ def dispel_dread(player):
 # QUERY HELPERS  (read-only; used by combat to apply effect-based modifiers)
 # ===========================================================================
 
-def get_weaken_penalty(player):
-    """Return the current Strength penalty from Weaken (0 if none)."""
-    for d in player.get("active_debuffs", []):
+def get_weaken_pct(target):
+    """Return the largest active Weaken Strength reduction (0.0 if none)."""
+    pct = 0.0
+    for d in target.get("active_debuffs", []):
         if d["type"] == "weaken":
-            return d.get("penalty", 0)
-    return 0
+            pct = max(pct, d.get("penalty_pct", 0.0))
+    return pct
+
+
+def is_bleeding(target):
+    """True if the target carries any bleed wound (cleansable or not).
+
+    Used by bleed consumers: vampire lifesteal, Chrysalis, axe pops.
+    """
+    return any(d.get("type") == "bleed" for d in target.get("active_debuffs", []))
+
+
+def get_bleed_feast_multiplier(target):
+    """Lifesteal multiplier for bleed-feeders: ×BLEED_FEAST_MULT while bleeding.
+
+    Shared by the ally Vampire race passive and the enemy vampire drain so
+    both sides of a fight follow the same feeding rule.
+    """
+    return BLEED_FEAST_MULT if is_bleeding(target) else 1.0
+
+
+def is_cleansable(debuff):
+    """True unless the debuff resists cleansing (e.g. Jabberwock's Vorpal Wound).
+
+    Every cleanse path (items, skills, Blank Canvas, passives) must skip
+    entries where this returns False.
+    """
+    return not debuff.get("_uncleansable", False)
 
 
 def is_silenced(player):
@@ -1203,6 +1593,7 @@ def get_player_status_tags(player):
         "haste":   "Hasted",
         "regen":   "Regenerating",
         "barrier": "Barrier",
+        "power_buff": "Empowered",
     }
     for d in player.get("active_debuffs", []):
         if d["type"] == "burn":
@@ -1321,22 +1712,28 @@ def detonate_burn(target, all_party=None):
 
 
 def detonate_bleed(target):
-    """Remove bleed from target, deal 3x its damage instantly.
+    """Consume the strongest bleed on target, deal 3x its damage instantly.
+
+    Shared consumption used by Chrysalis skills and the Grandmother's Axe /
+    Woodcutter's Broken Axe bleed-pop passive.
 
     Returns (damage_dealt, messages).
     Caller handles healing for Chrysalis.
     If target has no bleed, returns (0, []) — caller should use fallback.
     """
     messages = []
-    for d in target.get("active_debuffs", [])[:]:
-        if d["type"] == "bleed":
-            dmg = d["damage"] * 3
-            target_name = target.get("name", "Target")
-            if "current_hp" in target:
-                target["current_hp"] = max(0, target["current_hp"] - dmg)
-            else:
-                target["hp"] = max(0, target["hp"] - dmg)
-            messages.append(f"🩸 BLEED DETONATION! {target_name} takes {dmg} damage!")
-            target["active_debuffs"].remove(d)
-            return dmg, messages
-    return 0, messages
+    best = None
+    for d in target.get("active_debuffs", []):
+        if d["type"] == "bleed" and (best is None or d.get("damage", 0) > best.get("damage", 0)):
+            best = d
+    if best is None:
+        return 0, messages
+    dmg = best["damage"] * 3
+    target_name = target.get("name", "Target")
+    if "current_hp" in target:
+        target["current_hp"] = max(0, target["current_hp"] - dmg)
+    else:
+        target["hp"] = max(0, target["hp"] - dmg)
+    messages.append(f"🩸 BLEED DETONATION! {target_name} takes {dmg} damage!")
+    target["active_debuffs"].remove(best)
+    return dmg, messages

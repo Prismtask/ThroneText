@@ -22,7 +22,7 @@
 13. Death: `apply_death_penalty()`: 20% gold (min 10), +8h time, HP→1, return to city, wipe dungeon, clear Abyss/Jade state.
 
 ### Ally Systems
-14. Ally Skills: Barracks teaches via `learning` dict `{skill_id, exp, exp_needed}`. Innate skills from YAML, 2 per girl. Race passives in `skill_list.yaml`.
+14. Ally Skills: Barracks teaches via `learning` dict `{skill_id, exp, exp_needed}`. Innate skills from YAML, 2 per girl. Race passives in `skill_list.yaml`. Heroine facility-upgrade skills live in their own `upgrade_skills` category (not counted in the 3 learned slots, never teachable/replaceable — `is_upgrade_skill()` guard + Barracks filter; migrated on load by `character._reconcile_heroine_vorpal_skills`).
 
 ### Elemental Systems
 15. 8 Elements: Fire, Water, Ice, Lightning, Wind, Earth, Light, Dark. Each weapon has a primary element trait.
@@ -41,7 +41,7 @@
 22. `daily_effects` / `event_queue` — date-based event system via `events.py`.
 
 ### Time-of-Day Difficulty
-23. `get_time_period()` returns time period string. `get_difficulty_multiplier_from_time()` returns 1.0×–1.8× scaling based on in-game hour. Night is harder.
+23. `get_time_period()` maps legacy clock minutes to a phase id (morning/noon/night). `get_difficulty_multiplier_from_time()` is block-phase based: Morning 1.0× / Noon 1.1× / Night 1.25× (+ daily-event mods). Game time itself is action-driven via `time_blocks.py` (no wall clock).
 
 ### Consumable Balance
 24. `potion_sickness` — turns remaining on consumable cooldown, prevents potion spam.
@@ -49,9 +49,10 @@
 ### Thread Safety
 25. GUI runs facilities/combat in background threads. Use `_tprint`/`_tpause`/`_tinput` or `c_print`/`c_input`. Never raw `print()`/`input()`.
 26. End-of-Combat: `end_of_combat_cleanup()` must run on victory/flee/death to tick cooldowns, decrement buffs, clear weapon states. Also must call `clear_abyss_fang_state()` and `clear_captain_cutlass_state()`.
+27. Ally Reinforcement (locked 2026-10-12): fallen front allies (HP 0) are replaced by the **earliest living bench ally** at the start of every combat round — both loops call `reinforce_fallen_allies(player)` (`combat/ally.py`) before `roll_initiative` (`combat_engine._combat_inner` + `superboss_common.superboss_combat_loop`). A new combat loop MUST call it too. An ally flagged `defeated` but still holding HP (Big Bad Wolf SWALLOW) is NOT replaced — only HP 0 counts.
 
 ### Design Philosophy
-27. Design-First: User may request design docs then later "implement it." Translate Limbus Company concepts: Clash→initiative, Coin→crit, Sanity→buffs, E.G.O→HP cost/cooldown.
+28. Design-First: User may request design docs then later "implement it." Translate Limbus Company concepts: Clash→initiative, Coin→crit, Sanity→buffs, E.G.O→HP cost/cooldown.
 
 ## Common Pitfalls
 
@@ -61,6 +62,7 @@
 - **Superboss hooks:** Signature `enemy_turn_hook(enemy, ctx, pl, p_con, defending)` must match across all modules. Extra state → `ctx`.
 - **Ally defending:** Reset `defending_this_turn = False` at start of every ally turn.
 - **Ally cooldowns:** `superboss_common.py` must tick ally cooldowns too.
+- **Reinforcement:** any new combat loop must call `reinforce_fallen_allies(player)` before rolling initiative (fallen front allies → earliest living bench ally, every round).
 - **GUI threading:** Never tkinter from background thread → use `after()` or I/O queues.
 - **Wonderland:** `wl_` prefix for all Wonderland entities.
 - **Chrysalis:** Set HP via `enemy["hp"] = new_value` for Paradox Fracture to apply.
@@ -71,7 +73,7 @@
 - **Captain Cutlass state:** 5 persistent fields in player (`cutlass_high_tide_stacks`, `cutlass_rally_cooldown`, `cutlass_riposte_count`, etc.). Must clear via `clear_captain_cutlass_state()`.
 - **Elemental debuffs:** Check `elemental_debuffs.py` before adding new element interactions — proc chance scales with attack stat, not fixed.
 - **Potion sickness:** Prevents consumable spam. Check `player["potion_sickness"]` before allowing potion use.
-- **Time-of-day:** `get_difficulty_multiplier_from_time()` affects combat stats. Night encounters are 1.8× harder.
+- **Phase difficulty:** `get_difficulty_multiplier_from_time()` affects combat stats — Night encounters are ×1.25 (was an hourly 1.0–1.8 swing before the block-time rework).
 - **Save compatibility:** New fields MUST use `.setdefault()` in `ensure_player_fields()`. Test with old save files.
 
 ## Adding a Superboss (checklist)

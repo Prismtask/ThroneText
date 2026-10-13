@@ -3,7 +3,7 @@ from resources.constants import EXP_COEFF_A, EXP_COEFF_B, EXP_POWER
 from resources.cities import CITIES
 from character import player_max_hp
 from combat.skills import unlock_skills_for_level
-from utils import _tprint, _tpause, _tmenu
+from utils import _tprint, _tpause, _tmenu, display_name
 from events import get_daily_bonus_multiplier
 
 # ── GUI level-up dialog (safe import) ──────────────────────────────────
@@ -222,6 +222,10 @@ def check_level_cap_milestone(player, city_id):
 
 def gain_exp(player, amount):
     from combat.stat_milestones import get_learning_bonus, check_milestone_notification
+
+    # Event Horizon: character XP is frozen inside the run (docs §10.1)
+    if player.get("_eh_in_run"):
+        return False
     
     # If already at the level cap, silently discard XP (don't accumulate)
     if player["level"] >= player.get("level_cap", 10):
@@ -293,7 +297,7 @@ def gain_exp(player, amount):
 
 def gain_exp_ally(ally, amount):
     """Award XP to an ally and handle level-ups using the same HUD as player."""
-    from combat.ally import ally_max_hp
+    from combat.ally import ally_max_hp, apply_ally_growth
     from combat.ally_skills import gain_skill_learning_exp
     from combat.stat_milestones import get_learning_bonus, check_milestone_notification
 
@@ -303,7 +307,7 @@ def gain_exp_ally(ally, amount):
         from combat.ally_skills import get_learnable_skill_def
         skill_def = get_learnable_skill_def(learned_skill)
         skill_name = skill_def.get("name", learned_skill) if skill_def else learned_skill
-        _tprint(f"*** {ally['name']} has mastered {skill_name}! ***")
+        _tprint(f"*** {display_name(ally)} has mastered {skill_name}! ***")
 
     # ── Level XP is blocked at level cap ──
     if ally["level"] >= ally.get("level_cap", 10):
@@ -318,7 +322,7 @@ def gain_exp_ally(ally, amount):
     while ally["exp"] >= exp_needed_for_next_level(ally["level"]):
         # Level cap check
         if ally["level"] >= ally.get("level_cap", 10):
-            _tprint(f"\n*** LEVEL CAP REACHED: {ally['name']} is at Level {ally['level_cap']} ***")
+            _tprint(f"\n*** LEVEL CAP REACHED: {display_name(ally)} is at Level {ally['level_cap']} ***")
             _tprint("An Ascension Stone is needed to break through their limit.")
             break
 
@@ -330,14 +334,18 @@ def gain_exp_ally(ally, amount):
 
         # Choose attribute (GUI dialog or terminal menu)
         chosen, used_gui = _choose_level_attr(
-            ally["name"], ally["level"], ally.get("attributes", {})
+            display_name(ally), ally["level"], ally.get("attributes", {})
         )
 
         ally["attributes"][chosen] += 1
         new_val = ally["attributes"][chosen]
 
-        # Check for stat milestone notifications
-        milestones = check_milestone_notification(ally, old_attributes)
+        # Late-bloomer growth (docs/awakening_design.md Part A) — low-base
+        # girls gain bonus points as they level in the party.
+        growth_msgs = apply_ally_growth(ally)
+
+        # Check for stat milestone notifications (growth gains included)
+        milestones = (check_milestone_notification(ally, old_attributes) or []) + growth_msgs
         old_attributes = ally["attributes"].copy()
 
         # HP Rewards
@@ -350,7 +358,7 @@ def gain_exp_ally(ally, amount):
 
         # Show results (GUI dialog or terminal)
         _show_level_results(
-            entity_name=ally["name"],
+            entity_name=display_name(ally),
             level=ally["level"],
             chosen_attr=chosen,
             new_value=new_val,

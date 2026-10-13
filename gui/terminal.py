@@ -111,7 +111,7 @@ class Terminal:
 
     def menu(self, options: List[str], prompt: str = "Choose an option:",
              allow_cancel: bool = False, cancel_label: str = "Cancel",
-             styles: list = None):
+             styles: list = None, columns: int = 3):
         """
         Show a list of options as buttons and wait for the user to click one.
 
@@ -124,6 +124,8 @@ class Terminal:
             styles: Optional list of dicts (same length as options) for per-button
                     style overrides. Each dict can have: bg, fg, active_bg, active_fg.
                     Use None for default style.
+            columns: Buttons per row in the GUI (default 3; use 2 for long
+                     option labels such as the dispatch board).
 
         Returns:
             int: 0-based index of the chosen option, or -1 if cancelled.
@@ -135,7 +137,7 @@ class Terminal:
             self._screen._show_buttons(
                 options, prompt=prompt,
                 allow_cancel=allow_cancel, cancel_label=cancel_label,
-                styles=styles,
+                styles=styles, columns=columns,
             )
             result = self._screen._input_queue.get()  # Block until button clicked
             try:
@@ -188,6 +190,16 @@ class Terminal:
 
             self._screen.after(0, _open_overlay)
             result_queue.get()  # Block until inventory overlay is dismissed
+
+    def toast(self, message: str, category: str = "event", duration_ms: int = 4000):
+        """Show a slide-in toast (thread-safe — scheduled on the main thread).
+
+        Generic facility utility. Quest grants/completions deliberately do
+        NOT toast — they surface through the Journal and the session log.
+        """
+        if self._screen and self._screen.sm:
+            sm = self._screen.sm
+            self._screen.after(0, lambda: sm.show_toast(message, category, duration_ms))
 
     def set_curse_bar(self, floor, curse_name, curse_icon, tier_name):
         """Push Pandemonium curse info to the GUI top bar (thread-safe)."""

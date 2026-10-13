@@ -25,6 +25,7 @@ from combat.status_effects import (
     apply_dread, apply_freeze, apply_silence,
     apply_weaken, apply_drain,
     apply_burn, apply_poison,
+    has_fear_immunity,
 )
 from combat.elemental import ELEMENTS, calculate_elemental_damage
 
@@ -44,7 +45,10 @@ def _apply_confusion(player, duration=2):
 
 
 def _apply_fear(player, duration=2, value=0.25):
-    """Apply fear to a player."""
+    """Apply fear to a player (blocked by Fear immunity buffs)."""
+    if has_fear_immunity(player):
+        c_print(f"  {player.get('name', 'You')} stands firm — a protective ward repels the fear!")
+        return "immune"
     for debuff in player.get("active_debuffs", []):
         if debuff.get("type") == "fear":
             debuff["remaining"] = max(debuff.get("remaining", 0), duration)
@@ -419,7 +423,7 @@ def professor_moriarty_ai(enemy, player, dmg):
         c_print(f"\n  The {enemy['name']} studies your stance with cold precision..."
                  f"\n  'I have calculated every variable. You have already lost.'")
         # Debuff based on what he "analyzed"
-        result = apply_weaken(player, str_penalty=2, duration=3)
+        result = apply_weaken(player, penalty_pct=0.20, duration=3)
         if result == "applied":
             return (f"Moriarty's analysis exposes your weaknesses!"
                     f"\n  {player['name']}'s strength is reduced!")

@@ -14,12 +14,14 @@ class CityMapWidget(tk.Text):
     """Renders a city ASCII map with clickable service regions."""
 
     def __init__(self, parent, city_id, city, positions,
-                 on_service_click=None, on_dungeon_click=None, **kwargs):
+                 on_service_click=None, on_dungeon_click=None,
+                 closed_services=None, **kwargs):
         self.city_id = city_id
         self.city = city
         self.positions = positions
         self.on_service_click = on_service_click
         self.on_dungeon_click = on_dungeon_click
+        self.closed_services = set(closed_services or ())
 
         # Count map lines from the city's ASCII art
         from resources.city_maps import get_city_map
@@ -143,6 +145,7 @@ class CityMapWidget(tk.Text):
             "port":         "#0984e3",  # steel blue
             "shipyard":     "#636e72",  # grey
             "black_market": "#6c5ce7",  # indigo
+            "star_tower":   "#f7d794",  # soft gold
         }
 
         for svc_key, (line, start_col, end_col) in self.positions.items():
@@ -157,10 +160,11 @@ class CityMapWidget(tk.Text):
             end_idx = f"{line + 1}.{end_col}"
             self.tag_add(tag_name, start_idx, end_idx)
 
-            # Normal style
+            # Normal style (closed services dim out — docs §9)
             self.tag_configure(
                 tag_name,
-                foreground=Theme.TEXT,
+                foreground=(Theme.TEXT_DIM if svc_key in self.closed_services
+                            else Theme.TEXT),
                 background="",
             )
 

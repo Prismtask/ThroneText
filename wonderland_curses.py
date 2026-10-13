@@ -35,6 +35,8 @@ Shadow effect types:
 
 import random
 
+from utils import display_name
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # WONDERLAND QUIRK DEFINITIONS
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -907,7 +909,7 @@ def apply_wonderland_quirk_on_floor_start(player, floor):
         if heroine_key:
             dialogue = get_heroine_dialogue(heroine_key, quirk["key"])
             if dialogue:
-                dialogue_lines.append(f"\n  💬 [{ally['name']}] {dialogue}")
+                dialogue_lines.append(f"\n  💬 [{display_name(ally)}] {dialogue}")
 
     if dialogue_lines:
         lines.append("")
@@ -1200,7 +1202,7 @@ def trigger_shadow_choice(player, floor, term_func=None, count=1):
             for ch in chosen_shadows:
                 dialogue = get_heroine_shadow_choice_dialogue(heroine_key, ch["key"])
                 if dialogue:
-                    dialogue_lines.append(f"\n  💬 [{ally['name']}] {dialogue}")
+                    dialogue_lines.append(f"\n  💬 [{display_name(ally)}] {dialogue}")
                     break  # One reaction per heroine
 
     if dialogue_lines:

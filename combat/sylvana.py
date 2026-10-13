@@ -150,7 +150,7 @@ def combat_sylvana(player, floor=None, enemies=None):
         ctx["boss_extra_actions"] += 2
         ctx["extra_actions_granted_this_round"] = True
 
-    def on_player_hit_hook(target, elist, ctx):
+    def on_player_hit_hook(target, elist, ctx, attacker=None):
         """NEW: Trigger on any hit against a clone (main fix)."""
         if target.get("is_fake"):
             _trigger_mirror_rage(ctx, is_kill=False)

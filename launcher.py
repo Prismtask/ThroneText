@@ -37,6 +37,7 @@ def main():
     _setup_thread_excepthook()
     from gui.app import run_gui
     run_gui()
+    
 
 
 if __name__ == "__main__":

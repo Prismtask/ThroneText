@@ -638,6 +638,7 @@ wl_queen_of_hearts:
     Learning: 1
   boss: false
   super_boss: true
+  status_res: 0.20
 
 wl_card_soldier:
   name: Card Soldier
@@ -671,6 +672,7 @@ wl_big_bad_wolf:
     Charisma: 3
   boss: false
   super_boss: true
+  status_res: 0.25
 
 wl_wicked_witch:
   name: Wicked Witch of the West
@@ -685,6 +687,7 @@ wl_wicked_witch:
     Constitution: 3
     Dexterity: 4
     Strength: 2
+  status_res: 0.40
   elemental_res:
     water: 2.0
     fire: 1.3
@@ -708,6 +711,7 @@ wl_jabberwock:
     Charisma: -3
   boss: true
   super_boss: true
+  status_res: 0.40
   elemental_res:
     thunder: 0.8
     dark: 1.3
@@ -752,6 +756,7 @@ wl_mary_sue:
     Learning: 5
   boss: false
   super_boss: true
+  status_res: 0.60
 
 # ═══════════════════════════════════════════════════════════════════
 # MARY SUE SHADOW BOSSES

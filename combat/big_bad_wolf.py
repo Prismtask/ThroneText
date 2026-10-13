@@ -115,8 +115,10 @@ def _wolf_turn_hook(enemy, ctx, player, p_con, defending, **kwargs):
     # ── Gnashing Jaws every 3 actions ─────────────────────────────────
     if actions_count > 0 and actions_count % 3 == 0:
         def _gnash(e, p, dmg):
-            apply_bleed(p, 5, 3)
-            return f"🩸 Gnashing Jaws! {p.get('name', 'You')} bleeds: 5 dmg × 3 turns."
+            # Heavy 8×3 wound, 100% on its cycle. Unified rule: reapplication
+            # refreshes duration — no stacking/accumulation (doc updated).
+            apply_bleed(p, 8, 3)
+            return f"🩸 Gnashing Jaws! {p.get('name', 'You')} bleeds: 8 dmg × 3 turns."
         ctx["wolf_actions"] = actions_count + 1
         return 1, False, _gnash, 1.0, 3  # +3 temp str for heavy hit
 
@@ -185,6 +187,22 @@ def _post_round_hook(ctx, enemies):
     player = ctx.get("_player")
     if player is None:
         return None
+
+    # ── Tick the Wolf's timed buffs (enrage 999 ≈ permanent, howl 2 turns) ──
+    # Superboss modules own their buff ticking (the engine's generic enemy
+    # decay skips super_boss enemies), and the Wolf reads damage_boost now.
+    for buff in wolf.get("active_buffs", []):
+        if "remaining" not in buff:
+            continue
+        # Fresh buffs skip their first end-of-round tick (full-duration grace).
+        if not buff.get("_tick_grace"):
+            buff["_tick_grace"] = True
+            continue
+        buff["remaining"] -= 1
+    wolf["active_buffs"] = [
+        b for b in wolf.get("active_buffs", [])
+        if b.get("remaining", 999) > 0
+    ]
 
     # ── Case 1: An ally is already swallowed ───────────────────────────
     if ctx.get("swallowed_ally") is not None:

@@ -17,6 +17,7 @@ _HERBALIST_STOCK = [
     ("blessed_water",       "Blessed Water (50 HP + remove curse/debuff)",  65),
     ("shadow_essence",      "Shadow Essence (25 HP + dodge next attack)",   55),
     ("mana_philter",        "Mana Philter (restore random skill cooldown)", 70),
+    ("herbal_bath_salts",   "Herbal Bath Salts (−20 stress, use at your House)", 120),
 ]
 
 def herbalist_service(player, city_id):
@@ -32,7 +33,6 @@ def herbalist_service(player, city_id):
     if choice < 0 or choice >= len(_HERBALIST_STOCK):
         service_dialogue(city_id, "herbalist", "leave")
         term.pause()
-        advance_time(player, 30)
         return
     
     item_id, item_name, cost = _HERBALIST_STOCK[choice]

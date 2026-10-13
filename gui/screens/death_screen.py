@@ -48,6 +48,9 @@ class DeathScreen(BaseScreen):
         city_name = self.death_city.replace("_", " ").title()
         if self.death_type == "travel":
             detail = f"You were slain on the road to {city_name}."
+        elif self.death_type == "event_horizon":
+            detail = (f"You were slain in the Event Horizon — "
+                      f"room {self.death_floor or '?'}.")
         else:
             detail = f"You were slain on Floor {self.death_floor or '?'} of {city_name}."
         tk.Label(

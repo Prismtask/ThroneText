@@ -15,7 +15,7 @@ Curse effect types:
   damage_taken      — Player/allies take more damage from enemies
   damage_dealt      — Player/allies deal less damage to enemies
   room_damage       — Flat HP loss when entering each room
-  healing_reduction — Post-combat healing is reduced
+  healing_reduction — All party healing is reduced (combat + post-combat)
   gold_reduction    — Gold drops are reduced
   no_flee           — Fleeing is disabled
   stat_check_wis_dc — WIS-based stat check DCs are increased
@@ -277,35 +277,16 @@ def clear_curse(player):
     player.pop("pandemonium_floor_curses", None)
 
 
-def format_curse_header(player):
-    """Return a compact boxed header showing the active curse for room display.
-    
-    Returns a multi-line string with the curse name, icon, and effect,
-    or an empty string if no curse is active.
+def end_pandemonium_run(player):
+    """End a Pandemonium run: clear the run flag and all curse state.
+
+    Call on every exit path that ends the run (death, flee, timeout) so
+    stale curse data cannot linger in memory or leak into the save file.
+    Save-and-quit intentionally keeps the floor curse (see dungeon.py) so a
+    resumed floor keeps its roll — it is inert while the mode flag is off.
     """
-    curse = get_curse(player)
-    if not curse:
-        return ""
-    
-    floor = player.get("floor", "?")
-    lines = []
-    lines.append("╔" + "═" * 58 + "╗")
-    header = f"  PANDEMONIUM CURSE — Floor {floor} — {curse.get('tier_name', '')}"
-    lines.append("║" + header.ljust(58) + "║")
-    lines.append("╠" + "═" * 58 + "╣")
-    lines.append(f"║  {curse.get('icon', '☠️')}  {curse.get('name', 'Unknown Curse')}".ljust(59) + "║")
-    lines.append("║" + " " * 58 + "║")
-    desc = curse.get("desc_full", "")
-    while len(desc) > 54:
-        split = desc.rfind(" ", 0, 54)
-        if split == -1:
-            split = 54
-        lines.append(f"║  {desc[:split]}".ljust(59) + "║")
-        desc = desc[split:].strip()
-    if desc:
-        lines.append(f"║  {desc}".ljust(59) + "║")
-    lines.append("╚" + "═" * 58 + "╝")
-    return "\n".join(lines)
+    player.pop("pandemonium_mode", None)
+    clear_curse(player)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -313,7 +294,14 @@ def format_curse_header(player):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def get_curse(player):
-    """Get the current curse dict, or None."""
+    """Get the current curse dict, or None.
+
+    The raw field is ignored unless a Pandemonium run is active
+    ('pandemonium_mode'), so a stale curse left behind by death /
+    save+quit can never leak its effects into other dungeons or regions.
+    """
+    if not player.get("pandemonium_mode"):
+        return None
     return player.get("pandemonium_curse")
 
 
@@ -337,6 +325,8 @@ def apply_damage_dealt_multiplier(player, damage):
     """Decrease damage the player deals (Weakened Resolve). Returns modified damage."""
     mult = get_curse_value(player, "damage_dealt")
     if mult > 0:
+        if damage <= 0:
+            return damage  # never turn a miss/dodge (0 dmg) into 1 damage
         return max(1, int(damage * (1 - mult)))
     return damage
 
@@ -359,6 +349,8 @@ def apply_healing_reduction(player, heal_amount):
     """Reduce healing received (Blighted Recovery). Returns modified heal amount."""
     mult = get_curse_value(player, "healing_reduction")
     if mult > 0:
+        if heal_amount <= 0:
+            return heal_amount  # a zero/blocked heal stays zero
         return max(1, int(heal_amount * (1 - mult)))
     return heal_amount
 

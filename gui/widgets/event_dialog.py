@@ -27,19 +27,20 @@ _DEFAULT_DURATION = "Until the end of the day"
 
 
 def _safe_toplevel(parent=None):
-    """Return a usable tkinter toplevel/root, trying several fallbacks."""
+    """Return a usable tkinter toplevel/root, or None if unavailable.
+
+    Never creates a fresh Tk root — that flashes a blank window with the
+    default Tk icon and creates a second Tcl interpreter.
+    """
     try:
-        return parent.winfo_toplevel()
+        if parent is not None:
+            return parent.winfo_toplevel()
     except (tk.TclError, AttributeError):
         pass
     try:
-        if tk._default_root:
-            return tk._default_root
+        return tk._default_root
     except Exception:
-        pass
-    root = tk.Tk()
-    root.withdraw()
-    return root
+        return None
 
 
 def _has_gui():
@@ -67,14 +68,20 @@ def show_event_notice(events: List[dict],
         return
 
     if _is_main_thread():
-        dlg = _EventNoticeDialog(events, day_text, parent)
-        dlg.dialog.wait_window()
+        try:
+            dlg = _EventNoticeDialog(events, day_text, parent)
+            dlg.dialog.wait_window()
+        except Exception:
+            pass  # Dialog is cosmetic — never crash the game over it
     else:
         result_queue = queue.Queue()
 
         def _build():
-            dlg = _EventNoticeDialog(events, day_text, parent)
-            dlg._result_queue = result_queue
+            try:
+                dlg = _EventNoticeDialog(events, day_text, parent)
+                dlg._result_queue = result_queue
+            except Exception:
+                result_queue.put(None)
 
         root = tk._default_root
         if root is None:
@@ -94,6 +101,8 @@ class _EventNoticeDialog:
         self._result_queue = None  # Set externally for cross-thread use
 
         top = _safe_toplevel(parent) if parent else _safe_toplevel()
+        if top is None:
+            raise RuntimeError("Event Notice dialog: no tkinter root available")
         self.dialog = tk.Toplevel(top)
         self.dialog.title("Event Notice")
         self.dialog.transient(top)

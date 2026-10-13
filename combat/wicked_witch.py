@@ -128,7 +128,7 @@ def _remove_broomstick_evasion(witch):
 # ── Phase 1: Emerald Flame ──────────────────────────────────────────────────
 
 def _witch_ember_volley(witch, player):
-    """3 small fire hits on random targets. Applies Burning (3 dmg × 2 turns) per hit."""
+    """3 small fire hits on random targets. Applies Bleed (3 dmg × 3 turns) per hit."""
     targets = _get_living_targets(player)
     for i in range(3):
         if not targets:
@@ -137,7 +137,7 @@ def _witch_ember_volley(witch, player):
         dmg = random.randint(8, 12)
         c_print(f"  Ember strikes {target.get('name', 'You')}! {dmg} dmg [FIRE]")
         _deal_damage(target, dmg, "fire")
-        apply_bleed(target, 3, 2)
+        apply_bleed(target, 3, 3)
 
 
 def _witch_fireball(witch, player):
@@ -199,14 +199,18 @@ def _witch_emerald_cackle(witch, player, ctx):
         dmg = random.randint(15, 25)
         c_print(f"  {target.get('name', 'You')} takes {dmg} dmg [DARK] — Emerald Cackle")
         _deal_damage(target, dmg, "dark")
-        # 40% Fear chance (skip Dorothy)
+        # 40% Fear chance (skip Dorothy; blocked by Fear immunity buffs)
         if target.get("_heroine_key") != "dorothy" and random.random() < 0.40:
-            target.setdefault("active_debuffs", []).append({
-                "type": "fear",
-                "remaining": 1,
-                "source": "emerald_cackle",
-            })
-            c_print(f'    {target.get("name", "You")} is FEARED!')
+            from combat.status_effects import has_fear_immunity
+            if has_fear_immunity(target):
+                c_print(f'    {target.get("name", "You")} stands firm — the fear is repelled!')
+            else:
+                target.setdefault("active_debuffs", []).append({
+                    "type": "fear",
+                    "remaining": 1,
+                    "source": "emerald_cackle",
+                })
+                c_print(f'    {target.get("name", "You")} is FEARED!')
     # +15% fire damage for 1 turn
     witch.setdefault("active_buffs", []).append({
         "type": "damage_boost",

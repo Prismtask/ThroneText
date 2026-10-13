@@ -47,7 +47,7 @@ RANDOM_EVENT_POOL = [
         "id": "rainy_day",
         "name": "Heavy Rain",
         "desc": "Rain lashes the city. Travel takes 30% longer.",
-        "effect": {"travel_time_mult": 1.30},
+        "effect": {"travel_time_mult": 1.30, "rain_level": 2},
         "weight": 10,
     },
     {
@@ -465,5 +465,13 @@ def process_day_rollover(player, days_passed, old_day):
             apply_event_effects(player, evt)
             record_event(player, evt)  # Store in journal for GUI display
             all_events.append(evt)
+
+    # ── Wild dungeons: weekly spawn cycle (docs/wild_dungeon_design.md) ──
+    # Expires overdue dungeons and rolls 3-7 new ones every 7 game days.
+    # Idempotent — a cycle already rolled this week does not roll again.
+    from wild_dungeons import maybe_spawn_cycle
+    _, spawn_event = maybe_spawn_cycle(player)
+    if spawn_event:
+        all_events.append(spawn_event)
 
     return all_events

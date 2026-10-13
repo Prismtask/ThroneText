@@ -20,11 +20,13 @@ State used during combat (stored on player dict):
 
 import random
 
+from utils import display_name
+
 # ── Core lookups ───────────────────────────────────────────────────────────
 
 def get_active_wedding_item(player):
     """Return the equipped wedding accessory dict, or None."""
-    for slot in ("accessory1", "accessory2"):
+    for slot in ("accessory1", "accessory2", "accessory3"):
         item = player.get("equipped", {}).get(slot)
         if item and item.get("id", "").startswith("wedding_"):
             return item
@@ -234,14 +236,18 @@ def apply_wedding_end_of_round(player):
         if actual > 0:
             _msg(f"Seraph's Feather — divine light restores {actual} HP.")
         if bonded and player.get("active_debuffs"):
-            cleansed = player["active_debuffs"].pop(0)
-            _msg(f"Seraph's Feather — a {cleansed.get('type', 'debuff')} is cleansed!")
+            from combat.status_effects import is_cleansable
+            idx = next((i for i, d in enumerate(player["active_debuffs"]) if is_cleansable(d)), None)
+            if idx is not None:
+                cleansed = player["active_debuffs"].pop(idx)
+                _msg(f"Seraph's Feather — a {cleansed.get('type', 'debuff')} is cleansed!")
 
 
 # ── Attack Bonus (flat damage before elemental) ────────────────────────────
 
 def apply_wedding_attack_bonus(player, target, base_dmg, is_first_attack):
     """Return flat bonus damage to add to the player's attack."""
+    from combat.status_effects import check_status_resisted
     special, bonded = _active(player)
     if not special:
         return 0
@@ -251,7 +257,7 @@ def apply_wedding_attack_bonus(player, target, base_dmg, is_first_attack):
     # stampede: first attack +5 flat; bonded +5 and 25% stun
     if special == "stampede" and is_first_attack:
         bonus += 5
-        if bonded and random.random() < 0.25:
+        if bonded and random.random() < 0.25 and not check_status_resisted(target):
             target["stunned"] = True
             _msg("Thunderhoof Brooch — the stampede stuns the target!")
 
@@ -304,7 +310,7 @@ def apply_wedding_attack_bonus(player, target, base_dmg, is_first_attack):
     if special == "riddle_solved":
         if not target.get("has_acted", False):
             bonus += 12 if bonded else 8
-            if bonded:
+            if bonded and not check_status_resisted(target):
                 target["stunned"] = True  # Silence approximated as stun for 1 turn
                 _msg("Riddlelock Band — the answer strikes before the question! (Silenced)")
 
@@ -374,14 +380,20 @@ def apply_wedding_attack_bonus(player, target, base_dmg, is_first_attack):
 
 # ── On Hit (status procs) ──────────────────────────────────────────────────
 
+def _find_burn(entity):
+    """Return the entity's active burn debuff dict, or None."""
+    return next((d for d in entity.get("active_debuffs", []) if d.get("type") == "burn"), None)
+
+
 def apply_wedding_on_hit(player, target, enemies, damage_dealt):
     """Call after a successful player attack lands."""
+    from combat.status_effects import check_status_resisted
     special, bonded = _active(player)
     if not special:
         return
 
     # moth_dust: 20% blind 2 turns; bonded 3 turns and -1 DEX
-    if special == "moth_dust" and random.random() < 0.20:
+    if special == "moth_dust" and random.random() < 0.20 and not check_status_resisted(target):
         dur = 3 if bonded else 2
         target.setdefault("active_debuffs", []).append({
             "type": "blind", "remaining": dur
@@ -394,10 +406,8 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
 
     # coil_bind: 25% slow 2 turns; bonded slowed enemies +2 damage taken
     if special == "coil_bind" and random.random() < 0.25:
-        target["slowed"] = True
-        target.setdefault("active_debuffs", []).append({
-            "type": "slow", "remaining": 2
-        })
+        from combat.status_effects import apply_slow_to_enemy
+        apply_slow_to_enemy(target, duration=2)
         _msg(f"Coiled Serpent Ring — {target['name']} is slowed!")
         if bonded:
             target.setdefault("coil_bind_vulnerable", 2)
@@ -406,7 +416,7 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
     # frost_aura: 20% freeze 1 turn; bonded 35% freeze, frozen +20% next hit
     if special == "frost_aura":
         chance = 0.35 if bonded else 0.20
-        if random.random() < chance:
+        if random.random() < chance and not check_status_resisted(target):
             target["frozen"] = True
             target["freeze_duration"] = 1
             _msg(f"Frostbloom Charm — {target['name']} freezes solid!")
@@ -428,7 +438,7 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
                 _msg(f"Emberwaltz Ring — flames spread to {spread['name']}!")
 
     # dream_drain: 20% dread 2 turns; bonded dreaded enemies 40% miss
-    if special == "dream_drain" and random.random() < 0.20:
+    if special == "dream_drain" and random.random() < 0.20 and not check_status_resisted(target):
         from combat.status_effects import apply_dread
         apply_dread(player, duration=2)  # Wait, dread applies to PLAYER, not enemy
         # Actually dread is a player debuff. The design says "inflict dread for 2 turns"
@@ -442,7 +452,7 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
             target["dream_drain_miss"] = 0.40
 
     # silk_bind: 25% -2 DEX for 3 turns; bonded also -20% dodge
-    if special == "silk_bind" and random.random() < 0.25:
+    if special == "silk_bind" and random.random() < 0.25 and not check_status_resisted(target):
         target["dex_mod"] = max(0, target.get("dex_mod", 0) - 2)
         target.setdefault("silk_bind_stacks", []).append({"remaining": 3})
         _msg(f"Silkspinner Band — webs bind {target['name']}! (-2 DEX, 3 turns)")
@@ -450,7 +460,7 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
             target.setdefault("silk_bind_dodge_penalty", 0.20)
 
     # siren_song: 20% charm (stun 1 turn); bonded 2 turns and -2 WIS
-    if special == "siren_song" and random.random() < 0.20:
+    if special == "siren_song" and random.random() < 0.20 and not check_status_resisted(target):
         dur = 2 if bonded else 1
         target["stunned"] = True
         _msg(f"Coral Crown Ring — {target['name']} is charmed! ({dur} turn(s))")
@@ -460,7 +470,7 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
             _msg(f"Coral Crown Ring — {target['name']}'s will breaks! (-2 WIS)")
 
     # whip_crack: 25% -3 armor for 3 turns; bonded also -2 DEX
-    if special == "whip_crack" and random.random() < 0.25:
+    if special == "whip_crack" and random.random() < 0.25 and not check_status_resisted(target):
         target.setdefault("active_debuffs", []).append({
             "type": "sunder", "value": 3, "remaining": 3
         })
@@ -470,22 +480,20 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
             _msg(f"Whipmaster's Coil — {target['name']} is hobbled! (-2 DEX)")
 
     # abyssal_grasp: 30% -3 DEX for 3 turns (tentacle bind); bonded also slow + 3 water/turn
-    if special == "abyssal_grasp" and random.random() < 0.30:
+    if special == "abyssal_grasp" and random.random() < 0.30 and not check_status_resisted(target):
         target["dex_mod"] = max(0, target.get("dex_mod", 0) - 3)
         target.setdefault("abyssal_bind_turns", 3)
         _msg(f"Abyssal Coil — tentacles bind {target['name']}! (-3 DEX, 3 turns)")
         if bonded:
-            target["slowed"] = True
-            target.setdefault("active_debuffs", []).append({
-                "type": "slow", "remaining": 3
-            })
+            from combat.status_effects import apply_slow_to_enemy
+            apply_slow_to_enemy(target, duration=3)
             target.setdefault("active_debuffs", []).append({
                 "type": "poison", "damage": 3, "remaining": 3  # water damage approximated as poison
             })
             _msg(f"Abyssal Coil — {target['name']} is drowning in tentacles! (slowed, 3 water/turn)")
 
     # dusk_weave: 25% blind 2 turns; bonded 35% blind + slow
-    if special == "dusk_weave" and random.random() < (0.35 if bonded else 0.25):
+    if special == "dusk_weave" and random.random() < (0.35 if bonded else 0.25) and not check_status_resisted(target):
         dur = 3 if bonded else 2
         target.setdefault("active_debuffs", []).append({
             "type": "blind", "remaining": dur
@@ -493,14 +501,12 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
         target["blinded"] = True
         _msg(f"Twilight Shroud — shadows blind {target['name']}! ({dur} turns)")
         if bonded:
-            target["slowed"] = True
-            target.setdefault("active_debuffs", []).append({
-                "type": "slow", "remaining": 2
-            })
+            from combat.status_effects import apply_slow_to_enemy
+            apply_slow_to_enemy(target, duration=2)
             _msg(f"Twilight Shroud — {target['name']} is slowed by the dusk!")
 
     # stone_gaze: 20% petrify (-3 STR/DEX for 3 turns); bonded 15% chance to stun instead
-    if special == "stone_gaze" and random.random() < 0.20:
+    if special == "stone_gaze" and random.random() < 0.20 and not check_status_resisted(target):
         if bonded and random.random() < 0.15:
             target["stunned"] = True
             _msg(f"Gorgon's Veil Ring — {target['name']} is fully petrified! (Stunned)")
@@ -512,7 +518,7 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
             _msg(f"Gorgon's Veil Ring — {target['name']} begins to petrify! (-3 STR, -3 DEX, 3 turns)")
 
     # lich_grasp: 25% curse -2 all stats for 3 turns; bonded also 5 dark/turn and no heal
-    if special == "lich_grasp" and random.random() < 0.25:
+    if special == "lich_grasp" and random.random() < 0.25 and not check_status_resisted(target):
         target.setdefault("active_debuffs", []).append({
             "type": "curse", "penalty": 2, "remaining": 3, "stats": ["Strength", "Constitution", "Dexterity", "Wisdom", "Charisma", "Learning"]
         })
@@ -535,18 +541,66 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
             target["dex_mod"] = max(0, target.get("dex_mod", 0) - 2)
             _msg(f"Broodmother's Web — spiderlings gnaw at {target['name']}'s agility! (-2 DEX)")
 
-    # legendary_flame: burn 3 turns (6/turn); bonded 10/turn and spread to all
+    # legendary_flame: burn 3 turns (6/turn); bonded 10/turn and spreads to all.
+    #
+    # The bonded spread is a pure seed (2026-10-12): it only lights enemies that
+    # aren't already burning, and a spread-seeded burn never counts as a prior
+    # application — the first direct strike on a seeded enemy just fans the
+    # flame, the next one intensifies it. Without this, one AoE (which fires
+    # this hook once per enemy) applied Blaze twice to every target — spread +
+    # direct hit — instantly escalating whole packs to Inferno via the burn
+    # system's same-tier reapplication rule.
     if special == "legendary_flame":
         from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
         burn_dmg = 10 if bonded else 6
         b_tier = damage_to_burn_tier(burn_dmg)
-        apply_burn(target, b_tier, 3)
-        _msg(f"Sunfire Band — {target['name']} is engulfed in legendary flame! ({get_burn_tier_name(b_tier)})")
+
+        existing = _find_burn(target)
+        if existing is not None and existing.pop("sunfire_seed", False):
+            # Seeded by the band's own spread: this strike is the burn's first
+            # real application, so it feeds the flame instead of intensifying
+            # it (no resist roll — the burn is already lit).
+            existing["remaining"] = 3
+            _msg(f"Sunfire Band — {target['name']} is engulfed in legendary flame! "
+                 f"({get_burn_tier_name(existing.get('tier', b_tier))})")
+        else:
+            result = apply_burn(target, b_tier, 3)
+            burn = _find_burn(target)
+            tier = burn.get("tier", b_tier) if burn else b_tier
+            if result == "intensified":
+                _msg(f"Sunfire Band — {target['name']}'s flames intensify into {get_burn_tier_name(tier)}!")
+            elif result == "upgraded":
+                _msg(f"Sunfire Band — {target['name']}'s flames surge to {get_burn_tier_name(tier)}!")
+            elif result == "resisted":
+                _msg(f"Sunfire Band — {target['name']} resists the legendary flame!")
+            elif result == "refreshed":
+                _msg(f"Sunfire Band — the legendary flame on {target['name']} burns on. "
+                     f"({get_burn_tier_name(tier)})")
+            elif result is not None:
+                _msg(f"Sunfire Band — {target['name']} is engulfed in legendary flame! "
+                     f"({get_burn_tier_name(tier)})")
+
         if bonded:
+            spread_names = []
             for e in enemies:
-                if e is not target and e.get("hp", 0) > 0:
-                    apply_burn(e, b_tier, 3)
-            _msg("Sunfire Band — the flame spreads to all enemies!")
+                if e is target or e.get("hp", 0) <= 0:
+                    continue
+                if _find_burn(e) is not None:
+                    continue  # never re-ignite: the spread must not feed escalation
+                if apply_burn(e, b_tier, 3) == "applied":
+                    _find_burn(e)["sunfire_seed"] = True
+                    spread_names.append(e["name"])
+            if spread_names:
+                _msg(f"Sunfire Band — the flame spreads to {', '.join(spread_names)}!")
+
+    # starfire_breath (bonded): attacks burn for 3 turns — designed in the
+    # original spec but never implemented until 2026-10-04 (the blurb
+    # advertised it regardless; now the effect is real).
+    if special == "starfire_breath" and bonded:
+        from combat.status_effects import apply_burn, damage_to_burn_tier, get_burn_tier_name
+        b_tier = damage_to_burn_tier(6)
+        apply_burn(target, b_tier, 3)
+        _msg(f"Stardust Crown — {target['name']} is bathed in starfire! ({get_burn_tier_name(b_tier)})")
 
     # infernal_crown: +15% fire/dark damage (handled by elemental stats), melee burn 5
     # The melee burn is handled in on_damage_taken (retribution).
@@ -577,14 +631,14 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
         b_tier = damage_to_burn_tier(burn_dmg)
         apply_burn(target, b_tier, 3)
         _msg(f"Infernal Vow Band — hellfire sears {target['name']}! ({get_burn_tier_name(b_tier)})")
-        if bonded:
+        if bonded and not check_status_resisted(target):
             target.setdefault("active_debuffs", []).append({
                 "type": "fear", "value": 0.25, "remaining": 1
             })
             _msg(f"Infernal Vow Band — {target['name']} is stricken with dread!")
 
     # cosmic_gravity (bonded): once per combat steal 1 random buff on first hit
-    if special == "cosmic_gravity" and bonded and not player.get("wedding_cosmic_gravity_used"):
+    if special == "cosmic_gravity" and bonded and not player.get("wedding_cosmic_gravity_used") and not check_status_resisted(target):
         player["wedding_cosmic_gravity_used"] = True
         if target.get("active_buffs"):
             stolen = random.choice(target["active_buffs"])
@@ -669,7 +723,7 @@ def apply_wedding_on_kill(player, target, enemies):
         for ally in player.get("allies", []):
             if ally.get("current_hp", 0) > 0:
                 ally["current_hp"] = min(ally["current_hp"] + 10, ally.get("max_hp", ally["current_hp"]))
-                _msg(f"Headless Rider's Seal — {ally['name']} is healed by your oath! (+10 HP)")
+                _msg(f"Headless Rider's Seal — {display_name(ally)} is healed by your oath! (+10 HP)")
 
     # grave_reign: on kill heal 15% max HP; bonded 25% and gain +1 all stats (stacks 3x)
     if special == "grave_reign":
@@ -803,7 +857,7 @@ def apply_wedding_damage_reduction(player, damage, is_elemental=False, element=N
                 if ally.get("key") == girl_key and ally.get("current_hp", 0) > 0:
                     share = int(actual * 0.10)
                     ally["current_hp"] = min(ally["current_hp"] + share, ally.get("max_hp", ally["current_hp"]))
-                    _msg(f"Gelatinous Heart — you share {share} healing with {ally['name']}.")
+                    _msg(f"Gelatinous Heart — you share {share} healing with {display_name(ally)}.")
 
     # infernal_crown (bonded): melee attackers take 10 burn damage
     # Handled in on_damage_taken_after_hit for retribution.
@@ -813,6 +867,7 @@ def apply_wedding_damage_reduction(player, damage, is_elemental=False, element=N
 
 def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
     """Call after the enemy has hit the player (but before HP check)."""
+    from combat.status_effects import check_status_resisted
     special, bonded = _active(player)
     if not special:
         return
@@ -832,7 +887,7 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
         b_tier = damage_to_burn_tier(burn)
         apply_burn(enemy, b_tier, 2)
         _msg(f"Infernal Throne Seal — {enemy['name']} is scorched by hellfire! ({get_burn_tier_name(b_tier)})")
-        if bonded:
+        if bonded and not check_status_resisted(enemy):
             enemy.setdefault("active_debuffs", []).append({
                 "type": "fear", "value": 0.25, "remaining": 1
             })
@@ -858,7 +913,7 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
             enemy["hp"] = max(0, enemy["hp"] - wail_dmg)
             from combat.helpers import format_damage_msg
             _msg(format_damage_msg(player['name'], enemy['name'], wail_dmg, skill_name="Keening Wail"))
-            if random.random() < 0.30:
+            if random.random() < 0.30 and not check_status_resisted(enemy):
                 enemy.setdefault("active_debuffs", []).append({
                     "type": "fear", "value": 0.30, "remaining": 1
                 })
@@ -1044,11 +1099,13 @@ def apply_wedding_enemy_attack_pre_damage(player, enemy):
             enemy["hp"] = max(0, enemy["hp"] - 5)
             _msg(f"Foxfire Band — a foxfire clone takes the blow! {enemy['name']} burns for 5 damage!")
             if bonded:
-                enemy.setdefault("active_debuffs", []).append({
-                    "type": "blind", "remaining": 1
-                })
-                enemy["blinded"] = True
-                _msg(f"Foxfire Band — {enemy['name']} is blinded by the foxfire!")
+                from combat.status_effects import check_status_resisted
+                if not check_status_resisted(enemy):
+                    enemy.setdefault("active_debuffs", []).append({
+                        "type": "blind", "remaining": 1
+                    })
+                    enemy["blinded"] = True
+                    _msg(f"Foxfire Band — {enemy['name']} is blinded by the foxfire!")
             return True
     return False
 
@@ -1083,3 +1140,147 @@ def apply_wedding_stat_multiplier(player, attr_name, base_value):
     # is_bonded already checks this, so if special is active, the girl is in party
     pct = 0.12 if bonded else 0.08
     return int(base_value * (1 + pct))
+
+
+# ── Effect blurbs (round-1 combat reminder) ────────────────────────────────
+# One-line, honest summaries of each special's ACTIVE effect, used by the
+# round-1 reminder line in combat_engine. The bonded text states the upgraded
+# version. Mirrors docs/wedding_item_design.md; the extra roster covers items
+# added after the original 46. If a special is missing here, the reminder is
+# skipped rather than advertising an effect we cannot describe.
+
+_WEDDING_BLURBS = {
+    # ── Tier 1 (early companions) ──
+    "goblin_luck": ("25% chance of 5–15 bonus gold after each victory",
+                    "50% chance of 5–15 bonus gold after each victory"),
+    "tailwind": ("+8% dodge",
+                 "+8% dodge; the party gains +1 initiative at combat start"),
+    "bloom_regen": ("regenerate 3 HP at the end of each round",
+                    "regenerate 5 HP and cleanse a poison stack each round"),
+    "tinkerers_inspiration": ("20% chance for skills to skip their cooldown",
+                              "40% chance for skills to skip their cooldown"),
+    "bark_shield": ("once per floor, survive a fatal blow at 1 HP (+3 damage reduction, 4 turns)",
+                    "the survival trigger refreshes every 5 rooms"),
+    "spectral_dodge": ("+10% dodge",
+                       "+10% dodge; dodging heals you 5 HP"),
+    "stampede": ("first attack each combat deals +5 damage",
+                 "first attack deals +5 and has a 25% chance to stun for 1 turn"),
+    "moth_dust": ("attacks have a 20% chance to blind for 2 turns",
+                  "blinds last 3 turns and reduce enemy DEX by 1"),
+    "slime_absorb": ("absorb 15% of elemental damage taken as healing",
+                     "absorb 25% and share 10% of the healing with the married girl"),
+    "coil_bind": ("attacks have a 25% chance to slow for 2 turns",
+                  "slowed enemies take +2 damage from all sources"),
+    "regal_presence": ("+15% capture chance",
+                       "+15% capture chance; captured girls start with +10 affection"),
+    "mimic_jackpot": ("20% chance after combat to duplicate a consumable",
+                      "also a 10% chance to find a random gift item"),
+    "shadow_cloak": ("enemies suffer −12% accuracy against you",
+                     "start combat with 2 turns invisible — enemies target allies first"),
+    "frost_aura": ("attacks have a 20% chance to freeze for 1 turn",
+                   "freeze chance 35%; frozen enemies take +20% from the next hit"),
+
+    # ── Tier 2 (mid-game companions) ──
+    "bull_rush": ("+4 damage while above 70% HP",
+                  "+6 damage while above 50% HP"),
+    "stone_endurance": ("take 2 less damage from all sources",
+                        "take 4 less damage and become immune to stun"),
+    "blood_drain": ("heal 15% of damage dealt",
+                    "heal 25%; excess healing becomes a 3-turn heal-over-time"),
+    "blizzard_song": ("+3 ice damage per attack; 20% chance to slow for 2 turns",
+                      "slowed enemies have a 15% chance to freeze instead"),
+    "war_sister": ("+3 damage while 2 or more allies are in the party",
+                   "+5 damage and +1 STR to all allies"),
+    "keening_wail": ("below 25% HP: all enemies take 10–20 damage (30% fear chance)",
+                     "triggers below 35% HP; 15–30 damage"),
+    "neko_shadow": ("+12% dodge",
+                    "dodging counter-attacks for 50% of a normal hit"),
+    "silk_bind": ("attacks have a 25% chance to reduce enemy DEX by 2 for 3 turns",
+                  "webbed enemies also lose 20% dodge"),
+    "pharaohs_curse": ("attackers take 4 retaliation damage",
+                       "retaliation becomes 8; attackers suffer −10% accuracy"),
+    "oni_rage": ("+5 damage while below 50% HP",
+                 "below 50% HP: also +2 STR and +2 CON"),
+    "flame_dance": ("30% chance to inflict Burn for 3 turns",
+                    "Burn becomes Blaze and spreads to a second enemy"),
+    "dream_drain": ("20% chance to inflict dread for 2 turns",
+                    "dreaded enemies miss 40% of attacks instead of 25%"),
+    "headless_oath": ("immune to fear and dread",
+                      "defeating an enemy heals all allies 10 HP"),
+    "foxfire_trick": ("20% chance when attacked: a foxfire clone blocks it and burns the attacker for 5",
+                      "35% chance, and it blinds the attacker for 1 turn"),
+    "siren_song": ("attacks have a 20% chance to charm (stun) for 1 turn",
+                   "charm lasts 2 turns and reduces enemy WIS by 2"),
+    "crimson_feast": ("defeating an enemy heals 15% of max HP",
+                      "heals 25% and grants +2 CHA for 3 turns"),
+    "whip_crack": ("25% chance to reduce enemy armor by 3 for 3 turns",
+                   "vulnerable enemies also lose 2 DEX"),
+    "arena_glory": ("+5 damage against bosses",
+                    "+8 against bosses and −2 damage taken from them"),
+
+    # ── Tier 3 (late-game & legendary companions) ──
+    "matriarchs_embrace": ("+10% max HP",
+                           "allies gain +5% max HP and regenerate 2 HP/turn"),
+    "champion_charge": ("first attack deals +8 damage and gains +15% accuracy",
+                        "first attack deals +12 and ignores 50% armor"),
+    "infernal_crown": ("+15% fire and dark damage; melee attackers catch Burn",
+                       "their Burn becomes Blaze and inflicts 1-turn dread"),
+    "abyssal_grasp": ("30% chance to reduce enemy DEX by 3 for 3 turns",
+                      "bound enemies are slowed and take 3 water damage per turn"),
+    "stone_gaze": ("20% chance to petrify (−3 STR/DEX for 3 turns)",
+                   "petrified enemies have a 15% chance to be stunned instead"),
+    "legendary_flame": ("attacks leave a 3-turn Burn",
+                        "Burn becomes Blaze and spreads to all enemies"),
+    "tidal_blessing": ("heal 15% of damage dealt",
+                       "heal 25%; at combat start all enemies take 5 water damage"),
+    "dragon_judgment": ("+10% damage vs beasts, fey, dragons, and fliers",
+                        "+15% damage and ignores 30% of their elemental resistance"),
+    "riddle_solved": ("+8 damage to enemies that haven't acted yet",
+                      "+12 damage and silences the target for 1 turn"),
+    "lich_grasp": ("25% chance to curse (−2 to all enemy stats for 3 turns)",
+                   "cursed enemies take 5 dark/turn and cannot heal"),
+    "valkyrie_ride": ("+10% damage while at full HP",
+                      "allies also gain +5% damage while you're at full HP"),
+    "starfire_breath": ("attacks deal bonus damage equal to 20% of your CHA",
+                        "35% of your CHA, and attacks inflict a 3-turn Burn"),
+    "brood_swarm": ("25% chance: spiderlings deal +6 and poison for 3 turns (4/turn)",
+                    "poison becomes 8/turn and stings −2 DEX"),
+    "cosmic_gravity": ("+8% to all stats while the married girl is in the party",
+                       "+12% to all stats; steal 1 enemy buff on your first hit"),
+
+    # ── Extra roster (later additions beyond the original 46) ──
+    "overclock": ("first attack deals +10 damage",
+                  "first attack +15 and ignores 25% armor; 30% chance to refresh a skill cooldown"),
+    "blood_fury": ("+6 damage while below 50% HP",
+                   "below 70% HP: +8 damage, +2 STR and +2 CON"),
+    "dusk_weave": ("+8% dodge; 25% chance to blind for 2 turns",
+                   "+12% dodge; 35% chance to blind for 3 turns and slow"),
+    "star_waltz": ("+10% dodge; dodging counters for 50%",
+                   "+15% dodge; counters for 60% and grants +2 DEX for 2 turns"),
+    "auto_guard": ("regenerate 2 HP each round; take 3 less damage",
+                   "regenerate 3 HP; take 5 less and gain +3 CON for 3 turns at start"),
+    "seraph_light": ("+5% damage per living ally; heal 4 HP each round",
+                     "+8% per ally; heal 6 and cleanse a debuff each round"),
+    "stone_ward": ("take 2 less physical damage",
+                   "take 4 less physical damage and become immune to stun"),
+    "dragon_heart": ("+10% fire damage; 30% chance to inflict Burn for 3 turns",
+                     "+15% fire; Burn becomes Blaze and spreads"),
+    "infernal_vow": ("+8% fire and dark damage; 25% chance to inflict Burn",
+                     "+12%; 35% chance to inflict Blaze and dread"),
+    "grave_reign": ("at combat start, all enemies take 3 dark damage",
+                    "all enemies take 5 dark damage"),
+    "palettes_palette": ("no effect unless Palette is in the active party",
+                         "exhibit strokes unlock early and hit harder"),
+}
+
+
+def wedding_special_blurb(special, bonded=False):
+    """Human-readable effect of a wedding special, or "" if unknown.
+
+    Unknown specials return "" — callers should skip the reminder rather
+    than advertise an effect that cannot be described (2026-10-04).
+    """
+    entry = _WEDDING_BLURBS.get(special)
+    if not entry:
+        return ""
+    return entry[1] if bonded else entry[0]

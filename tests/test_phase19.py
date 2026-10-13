@@ -214,17 +214,29 @@ class TestPhase19BossAI(unittest.TestCase):
                         "Scarecrow King should find its brain after 5+ learning cycles")
 
     def test_snow_queen_freeze_shatter(self):
+        from unittest import mock
         from combat.wl_floor_bosses import snow_queen_ai
         enemy = dict(self.enemy)
         enemy["key"] = "wl_snow_queen"
         enemy["hp"] = enemy["max_hp"]
         player = dict(self.player)
-        # Advance to freeze timer trigger
-        for _ in range(3):
-            snow_queen_ai(enemy, player, 0)
+        # Advance to freeze timer trigger with the 40% freeze roll always
+        # failing (deterministic — the raw roll is flaky by design)
+        with mock.patch("combat.wl_floor_bosses.random.random", return_value=0.99):
+            for _ in range(3):
+                snow_queen_ai(enemy, player, 0)
         # After 3 turns, freeze_timer >= 3
         self.assertGreaterEqual(enemy.get("_wl_freeze_timer", 0), 3,
                                 "Freeze timer should advance each turn")
+
+        # A successful roll freezes, resets the timer, and primes the
+        # shatter combo
+        with mock.patch("combat.wl_floor_bosses.random.random", return_value=0.0):
+            snow_queen_ai(enemy, player, 0)
+        self.assertEqual(enemy.get("_wl_freeze_timer"), 0,
+                         "Timer should reset after a successful freeze")
+        self.assertTrue(enemy.get("_wl_shatter_ready"),
+                        "Shatter combo should prime after freezing")
 
 
 class TestPhase19Dungeon(unittest.TestCase):

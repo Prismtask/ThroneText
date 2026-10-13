@@ -65,19 +65,20 @@ _ATTR_ORDER = ["Strength", "Constitution", "Dexterity",
 
 
 def _safe_toplevel(parent=None):
-    """Return a usable tkinter toplevel/root, trying several fallbacks."""
+    """Return a usable tkinter toplevel/root, or None if unavailable.
+
+    Never creates a fresh Tk root — that flashes a blank window with the
+    default Tk icon and creates a second Tcl interpreter.
+    """
     try:
-        return parent.winfo_toplevel()
+        if parent is not None:
+            return parent.winfo_toplevel()
     except (tk.TclError, AttributeError):
         pass
     try:
-        if tk._default_root:
-            return tk._default_root
+        return tk._default_root
     except Exception:
-        pass
-    root = tk.Tk()
-    root.withdraw()
-    return root
+        return None
 
 
 def _has_gui():
@@ -219,6 +220,8 @@ class _AttrChoiceDialog:
         self._result_queue = None  # Set externally for cross-thread use
 
         top = _safe_toplevel(parent) if parent else _safe_toplevel()
+        if top is None:
+            raise LevelUpDialogError("Level-up dialog: no tkinter root available")
         self.dialog = tk.Toplevel(top)
         self.dialog.title("Level Up!")
         self.dialog.transient(top)
@@ -344,6 +347,8 @@ class _ResultsDialog:
         self._result_queue = None  # Set externally for cross-thread use
 
         top = _safe_toplevel(parent) if parent else _safe_toplevel()
+        if top is None:
+            raise LevelUpDialogError("Level-up results dialog: no tkinter root available")
         self.dialog = tk.Toplevel(top)
         self.dialog.title("Level Up!")
         self.dialog.transient(top)

@@ -8,6 +8,7 @@ from combat.status_effects import apply_bleed, apply_blind
 from combat.ally import get_alive_allies
 from combat.combat_io import c_print, c_input, c_clear
 from combat.helpers import format_damage_msg
+from utils import display_name
 
 BOSS_KEY = "rientrante_frostbound"
 SHARD_KEY = "frost_shard"
@@ -112,6 +113,7 @@ def _create_clone_from_enemy(enemy):
         "passive_skill": None,
         "innate_skills": [],
         "learned_skills": [],
+        "upgrade_skills": [],
         "learning": None,
         "skill_cooldowns": {},
         "skill_mastery": {},
@@ -660,7 +662,7 @@ def combat_rientrante(player, floor=None, enemies=None):
         # Remove any lingering clones (should be destroyed after 1 turn)
         for ally in list(player.get("allies", [])):
             if ally.get("is_clone"):
-                c_print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
+                c_print(f"\n💨 {display_name(ally)} shatters — the mirror copy fades!")
                 if ally in player["allies"]:
                     player["allies"].remove(ally)
 

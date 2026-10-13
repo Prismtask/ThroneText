@@ -1,6 +1,5 @@
 # facilities/port.py
 
-from utils import advance_time
 from city_dialogue import service_dialogue
 from resources.cities import CITIES
 from character import player_max_hp
@@ -16,6 +15,18 @@ def _danger_tag(travel_time):
     return "  [Short hop]"
 
 
+def _apply_cargo_and_daily(player, travel_time, ship_cap):
+    """Apply daily time multiplier and cargo load penalty to a sea voyage."""
+    from resources.trade_goods import cargo_travel_penalty
+    daily_mult = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
+    if daily_mult != 1.0:
+        travel_time = int(travel_time * daily_mult)
+    penalty = cargo_travel_penalty(player, ship_cap)
+    if penalty > 0:
+        travel_time = int(travel_time * (1 + penalty))
+    return travel_time
+
+
 def port_service(player, city_id):
     """Portmaster — ferry tickets and personal ship sailing, now with sea events."""
     service_dialogue(city_id, "port", "enter")
@@ -29,21 +40,47 @@ def port_service(player, city_id):
         term.pause()
         return
 
-    has_ship  = player.get("has_ship", False)
-    ship_name = player.get("ship_type", "vessel").title() if has_ship else None
+    ship_id = player.get("ship_id")
+    ship = None
+    if ship_id:
+        from resources.ships import get_ship
+        ship = get_ship(ship_id)
+    ship_name = ship["name"] if ship else None
+
+    from resources.trade_goods import (
+        cargo_travel_penalty, cargo_overloaded_for_travel,
+        cargo_total_weight,
+    )
+    ship_cap = ship.get("cargo_capacity", 0) if ship else 0
 
     term.print(f"\n--- {city['name']} Docks ---")
-    if has_ship:
-        term.print(f"  Your {ship_name} is moored and ready. (30% faster, no ticket cost)")
+    if ship:
+        term.print(f"  Your {ship_name} is moored and ready. "
+                   f"({int(ship['sea_time_reduction']*100)}% faster, no ticket cost)")
     else:
         term.print("  You do not own a ship — passenger ticket required (100g per voyage).")
+    load = cargo_total_weight(player)
+    if load > 0:
+        cap_str = f"{load}/{ship_cap} wt" if ship_cap > 0 else f"{load} wt (no ship — hauled aboard)"
+        term.print(f"  Cargo load: {cap_str}")
+
+    # ── Cargo overload check (own ship only; ferries just slow you down) ──
+    if ship and cargo_overloaded_for_travel(player, ship_cap):
+        term.print("\n[Your ship is overloaded with cargo!]")
+        term.print("Sell cargo at a shop market or stash it in your house before sailing.")
+        term.pause()
+        return
 
     options = []
     for conn in sea_routes:
         dest_name   = CITIES.get(conn["dest"], {}).get("name", conn["dest"])
         raw_time    = conn["travel_time"]
-        actual_time = int(raw_time * 0.7) if has_ship else raw_time
-        cost        = 0 if has_ship else 100
+        if ship:
+            actual_time = int(raw_time * (1 - ship["sea_time_reduction"]))
+        else:
+            actual_time = raw_time
+        actual_time = _apply_cargo_and_daily(player, actual_time, ship_cap)
+        cost        = 0 if ship else 100
         tag         = _danger_tag(actual_time)
         options.append(f"{dest_name} — {actual_time} min, {cost}g{tag}")
 
@@ -56,12 +93,12 @@ def port_service(player, city_id):
     chosen      = sea_routes[choice]
     dest_id     = chosen["dest"]
     dest_name   = CITIES.get(dest_id, {}).get("name", dest_id)
-    cost        = 0 if has_ship else 100
-    travel_time = int(chosen["travel_time"] * 0.7) if has_ship else chosen["travel_time"]
-    # Daily events: Heavy Rain makes voyages take longer
-    daily_mult  = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
-    if daily_mult != 1.0:
-        travel_time = int(travel_time * daily_mult)
+    cost        = 0 if ship else 100
+    if ship:
+        travel_time = int(chosen["travel_time"] * (1 - ship["sea_time_reduction"]))
+    else:
+        travel_time = chosen["travel_time"]
+    travel_time = _apply_cargo_and_daily(player, travel_time, ship_cap)
 
     if player.get("gold", 0) < cost:
         term.print("\n  You cannot afford a passage ticket.")
@@ -70,7 +107,7 @@ def port_service(player, city_id):
 
     player["gold"] -= cost
 
-    if has_ship:
+    if ship:
         term.print(f"\n  You captain your {ship_name} out of the harbour, bow aimed at {dest_name}...")
     else:
         term.print(f"\n  You board the passenger ferry bound for {dest_name}...")
@@ -89,7 +126,9 @@ def port_service(player, city_id):
         return   # city.py detects hp == 0 and propagates the death
 
     # ── Safe arrival ──────────────────────────────────────────────────────────
-    advance_time(player, travel_time)
+    import time_blocks
+    time_blocks.spend_blocks(player,
+                             time_blocks.travel_blocks(player, travel_time))
     player["location"] = dest_id
 
     term.print(f"\n{'─' * 52}")

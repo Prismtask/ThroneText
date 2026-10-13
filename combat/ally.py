@@ -6,15 +6,52 @@ from combat.stats import compute_enemy_attributes
 from resources.enemies import ENEMIES, ENEMY_RACES
 from resources.races_classes import ATTRIBUTES
 from inventory import get_total_equipment_mods, remove_item_by_reference
+from resources.quests import get_resonance_grade
+from utils import display_name
+from combat.helpers import ACTION_CANCELLED_MSG
 
 ALLY_STAT_MULTIPLIER = 0.85   # Allies are slightly stronger at base
-ALLY_LEVEL_STAT_BONUS = 0.18 # Allies gain a bit more stat per level above level 1
+ALLY_LEVEL_STAT_BONUS = 1.0 / 6.0  # Capture level scaling matches the manual +1/level total (parity)
 ALLY_HP_MULTIPLIER = 0.75    # Allies have slightly more HP baseline
+
+# ── Late-bloomer growth (docs/awakening_design.md Part A) ────────────────
+# Low-base girls earn bonus attribute points while leveling in the party.
+GROWTH_TARGET_SUM = 42   # base-stat-sum parity target (Lich Queen parity at Lv 50)
+GROWTH_MAX_RATE = 0.6    # points-per-level cap
 
 # ── Party size constants ──────────────────────────────────────────────────────
 MAX_PARTY_SIZE = 8        # Total party slots (player + up to 7 allies)
-ACTIVE_PARTY_SIZE = 4     # Maximum combat participants (including player, so 3 allies max in combat)
 MAX_ALLIES = 7            # Maximum allies in party (player + 7 = 8 total)
+
+# Front-row and bench capacities are governed by the player's Command
+# Resonance grade — see resources/quests.RESONANCE_GRADES and
+# docs/quest_system_design.md. Tier 0 (Unattuned) = 2 front / 0 bench;
+# tier 5 (Crescendo) = 4 front / 4 bench, the historical fixed caps.
+
+
+def get_resonance_tier(player):
+    """The player's Command Resonance tier (0 if quest state is missing)."""
+    return int((player.get("quests") or {}).get("resonance_tier", 0))
+
+
+def get_party_capacity(player):
+    """Return (max_front_allies, max_bench_allies).
+
+    The front count is ALLIES only — the player always occupies the first
+    slot of the combat row. Bench count is the reserve pool.
+    """
+    grade = get_resonance_grade(get_resonance_tier(player))
+    return max(1, grade["front"] - 1), max(0, grade["bench"])
+
+
+def get_active_limit(player):
+    """Max number of ALLIES allowed in the front (active) row."""
+    return get_party_capacity(player)[0]
+
+
+def get_bench_limit(player):
+    """Max number of ALLIES allowed on the reserve bench."""
+    return get_party_capacity(player)[1]
 
 
 # ── Party order management ───────────────────────────────────────────────────
@@ -22,9 +59,11 @@ MAX_ALLIES = 7            # Maximum allies in party (player + 7 = 8 total)
 def ensure_party_order(player):
     """Initialize or repair the party_order list for the player.
     
-    party_order is a list of indices into player['allies'], where:
-      - First (ACTIVE_PARTY_SIZE - 1) entries are the FRONT row (active combat)
-      - Remaining entries are the BACK row (reserve)
+    party_order is a list of indices into player['allies'], ordered by
+    deployment priority:
+      - First get_active_limit(player) entries are the FRONT row (in combat)
+      - The next get_bench_limit(player) entries are the BENCH (switchable)
+      - Remaining entries are inactive (beyond current command capacity)
     The player themselves is always active and not in this list.
     """
     allies = player.get("allies", [])
@@ -44,12 +83,12 @@ def ensure_party_order(player):
 
 
 def get_active_allies(player):
-    """Return allies in the FRONT row (active in combat). Max 3 allies."""
+    """Return allies in the FRONT row (active in combat)."""
     ensure_party_order(player)
     allies = player.get("allies", [])
     order = player.get("party_order", [])
     result = []
-    for idx in order[:ACTIVE_PARTY_SIZE - 1]:  # first 3 slots = active
+    for idx in order[:get_active_limit(player)]:
         if idx < len(allies):
             ally = allies[idx]
             if not ally.get("defeated") and ally.get("current_hp", 0) > 0:
@@ -58,12 +97,14 @@ def get_active_allies(player):
 
 
 def get_reserve_allies(player):
-    """Return allies in the BACK row (reserve, not in combat)."""
+    """Return allies on the BENCH (reserve — switchable, not deployed)."""
     ensure_party_order(player)
     allies = player.get("allies", [])
     order = player.get("party_order", [])
+    active_limit = get_active_limit(player)
+    bench_limit = get_bench_limit(player)
     result = []
-    for idx in order[ACTIVE_PARTY_SIZE - 1:]:  # slots 4+ = reserve
+    for idx in order[active_limit:active_limit + bench_limit]:
         if idx < len(allies):
             ally = allies[idx]
             if not ally.get("defeated") and ally.get("current_hp", 0) > 0:
@@ -77,19 +118,21 @@ def get_all_active_allies_including_defeated(player):
     allies = player.get("allies", [])
     order = player.get("party_order", [])
     result = []
-    for idx in order[:ACTIVE_PARTY_SIZE - 1]:
+    for idx in order[:get_active_limit(player)]:
         if idx < len(allies):
             result.append(allies[idx])
     return result
 
 
 def get_all_reserve_allies_including_defeated(player):
-    """Return all allies in the BACK row (including defeated ones, for display)."""
+    """Return bench allies (including defeated ones, for display)."""
     ensure_party_order(player)
     allies = player.get("allies", [])
     order = player.get("party_order", [])
+    active_limit = get_active_limit(player)
+    bench_limit = get_bench_limit(player)
     result = []
-    for idx in order[ACTIVE_PARTY_SIZE - 1:]:
+    for idx in order[active_limit:active_limit + bench_limit]:
         if idx < len(allies):
             result.append(allies[idx])
     return result
@@ -98,8 +141,8 @@ def get_all_reserve_allies_including_defeated(player):
 def swap_party_member(player, ally_index):
     """Swap an ally between front and back rows by their absolute index in allies list.
     
-    If the ally is in the front row, they swap with the first available back row ally.
-    If the ally is in the back row, they swap with the first available front row ally.
+    If the ally is in the front row, they swap with the first bench ally.
+    Otherwise (bench or inactive) they swap with the first front-row ally.
     Returns (message, success_bool).
     """
     ensure_party_order(player)
@@ -111,13 +154,15 @@ def swap_party_member(player, ally_index):
         return "Invalid ally selection.", False
 
     ally_name = allies[ally_index]["name"]
-    active_limit = ACTIVE_PARTY_SIZE - 1
+    active_limit = get_active_limit(player)
+    bench_limit = get_bench_limit(player)
 
     if ally_index in order[:active_limit]:
-        # Ally is in front — swap with first back row ally
-        back_indices = order[active_limit:]
+        # Ally is in front — swap with first bench ally
+        back_indices = order[active_limit:active_limit + bench_limit]
         if not back_indices:
-            return f"{ally_name} is already in the front row and there are no back row allies to swap with.", False
+            return (f"{ally_name} is already in the front row and there is no "
+                    f"one on the bench to swap with.", False)
         target_idx = back_indices[0]
         # Swap positions in order
         pos_a = order.index(ally_index)
@@ -126,7 +171,7 @@ def swap_party_member(player, ally_index):
         target_name = allies[target_idx]["name"]
         return f"{ally_name} moves to the back row. {target_name} steps forward!", True
     else:
-        # Ally is in back — swap with first front row ally
+        # Ally is on the bench (or inactive) — swap with first front-row ally
         front_indices = order[:active_limit]
         if not front_indices:
             return f"There are no front row allies to swap with.", False
@@ -151,7 +196,8 @@ def do_ally_switch(player, front_ally_idx, reserve_ally_idx):
     allies = player.get("allies", [])
     order = player.get("party_order", [])
     n = len(allies)
-    active_limit = ACTIVE_PARTY_SIZE - 1
+    active_limit = get_active_limit(player)
+    bench_limit = get_bench_limit(player)
 
     if front_ally_idx < 0 or front_ally_idx >= n:
         return "Invalid front ally selection.", False
@@ -164,8 +210,8 @@ def do_ally_switch(player, front_ally_idx, reserve_ally_idx):
     # Verify positions
     if front_ally_idx not in order[:active_limit]:
         return f"{front_name} is not in the front row.", False
-    if reserve_ally_idx not in order[active_limit:]:
-        return f"{reserve_name} is not in the back row.", False
+    if reserve_ally_idx not in order[active_limit:active_limit + bench_limit]:
+        return f"{reserve_name} is not on the bench.", False
 
     # Swap positions in order
     pos_a = order.index(front_ally_idx)
@@ -182,13 +228,14 @@ def can_switch(player):
 
 
 def auto_fill_active_slots(player):
-    """If there are fewer than ACTIVE_PARTY_SIZE-1 active allies, pull from reserve to fill slots.
-    Call this at combat start to ensure the front row is fully populated.
-    Returns list of messages about who moved."""
+    """If there are fewer than get_active_limit(player) living front allies,
+    pull from the bench to fill the slots. Call at combat start so the front
+    row is fully populated. Returns list of messages about who moved."""
     ensure_party_order(player)
     allies = player.get("allies", [])
     order = player.get("party_order", [])
-    active_limit = ACTIVE_PARTY_SIZE - 1
+    active_limit = get_active_limit(player)
+    bench_limit = get_bench_limit(player)
     msgs = []
 
     # Count currently alive active allies
@@ -202,9 +249,9 @@ def auto_fill_active_slots(player):
     if needed <= 0:
         return msgs
 
-    # Find alive reserve allies to pull forward
+    # Find alive bench allies to pull forward
     reserve_alive = []
-    for idx in order[active_limit:]:
+    for idx in order[active_limit:active_limit + bench_limit]:
         if idx < len(allies) and not allies[idx].get("defeated") and allies[idx].get("current_hp", 0) > 0:
             reserve_alive.append(idx)
 
@@ -225,6 +272,50 @@ def auto_fill_active_slots(player):
         if front_idx < len(allies):
             msgs.append(f"{allies[front_idx]['name']} moves to the back row.")
 
+    return msgs
+
+
+def reinforce_fallen_allies(player):
+    """Replace fallen FRONT-row allies with the earliest living bench ally.
+
+    Reinforcement rule (2026-10-12): the bench is a reinforcement line — at
+    the start of every combat round, any front ally who fell is swapped out
+    for the earliest (party_order) living reserve ally, so the front row is
+    always staffed. The fallen retire to the bench (still revivable).
+
+    "Fallen" = HP 0 only. An ally who is flagged ``defeated`` but still has
+    HP (e.g. the Big Bad Wolf's SWALLOW) is NOT swapped — that condition is
+    temporary and restored in place by its fight.
+
+    Returns list of swap messages (empty when nothing changes).
+    """
+    ensure_party_order(player)
+    allies = player.get("allies", [])
+    order = player.get("party_order", [])
+    active_limit = get_active_limit(player)
+    bench_limit = get_bench_limit(player)
+    msgs = []
+
+    fallen = [
+        idx for idx in order[:active_limit]
+        if idx < len(allies) and allies[idx].get("current_hp", 0) <= 0
+    ]
+    reserves = [
+        idx for idx in order[active_limit:active_limit + bench_limit]
+        if idx < len(allies)
+        and not allies[idx].get("defeated")
+        and allies[idx].get("current_hp", 0) > 0
+    ]
+
+    for front_idx in fallen:
+        if not reserves:
+            break
+        back_idx = reserves.pop(0)      # earliest bench ally first
+        pos_a = order.index(front_idx)
+        pos_b = order.index(back_idx)
+        order[pos_a], order[pos_b] = order[pos_b], order[pos_a]
+        msgs.append(f"{allies[back_idx]['name']} steps in for the fallen "
+                    f"{allies[front_idx]['name']}!")
     return msgs
 
 
@@ -252,6 +343,108 @@ def ally_max_hp(ally):
     return int(15 + con * 3 + bonus)
 
 
+def compute_girl_attributes(girl):
+    """Return the attribute dict for a housed girl record.
+
+    Stored attributes win (they preserve manual level-up picks). Otherwise
+    the values are computed from the enemy template + level scaling + any
+    engagement-ring bonus. Shared by create_ally_from_girl() and the
+    dispatch system (facilities/dispatch.py).
+    """
+    stored = girl.get("attributes")
+    if stored and all(attr in stored for attr in ATTRIBUTES):
+        return dict(stored)
+
+    enemy_key = girl.get("key")
+    template = ENEMIES.get(enemy_key) if enemy_key else None
+    if not template:
+        return {attr: 1 for attr in ATTRIBUTES}
+
+    base_attrs = compute_enemy_attributes(enemy_key)
+    level = girl.get("level", 1)
+    scaled = {}
+    for attr in ATTRIBUTES:
+        base = base_attrs.get(attr, 0)
+        level_bonus = (level - 1) * ALLY_LEVEL_STAT_BONUS
+        scaled[attr] = max(1, int(base * ALLY_STAT_MULTIPLIER + level_bonus))
+
+    ring_bonus = girl.get("ring_stat_bonus")
+    if ring_bonus:
+        for attr, val in ring_bonus.items():
+            scaled[attr] = scaled.get(attr, 0) + val
+    return scaled
+
+
+def get_growth_rate(entity):
+    """Late-bloomer growth rate (attribute points per level) for a monster girl.
+
+    Derived from the girl's base-stat-sum deficit vs GROWTH_TARGET_SUM; a
+    template `growth:` override in the enemy YAML wins. Heroines and
+    non-monster-girls return 0 (see docs/awakening_design.md Part A).
+    """
+    if entity.get("_heroine_key") or entity.get("_wonderland_temp"):
+        return 0.0
+    key = entity.get("key")
+    template = ENEMIES.get(key) if key else None
+    if not template or not template.get("monster_girl") or template.get("_heroine"):
+        return 0.0
+    override = template.get("growth")
+    if override is not None:
+        try:
+            return max(0.0, min(GROWTH_MAX_RATE, float(override)))
+        except (TypeError, ValueError):
+            pass
+    base_attrs = compute_enemy_attributes(key)
+    base_sum = sum(base_attrs.get(attr, 0) for attr in ATTRIBUTES)
+    return max(0.0, min(GROWTH_MAX_RATE, (GROWTH_TARGET_SUM - base_sum) * 0.85 / 50.0))
+
+
+def get_growth_label(entity):
+    """Display band for the growth system ("High"/"Medium"/"Low"/"—")."""
+    rate = get_growth_rate(entity)
+    if rate <= 0 or int(49 * rate) <= 0:  # no growth point by Lv 50
+        return "—"
+    if rate >= 0.35:
+        return "High"
+    if rate >= 0.15:
+        return "Medium"
+    return "Low"
+
+
+def apply_ally_growth(ally):
+    """Apply late-bloomer growth points owed at the ally's current level.
+
+    `growth_applied` (persisted on ally + house records) tracks points already
+    granted, making this idempotent. New points go to the girl's highest
+    current attribute (tie-break: ATTRIBUTES order). Returns display lines for
+    anything granted. Call after the manual level-up point and before the HP
+    recalculation so Constitution growth counts toward max HP.
+    """
+    if not ally.get("attributes"):
+        return []
+    rate = get_growth_rate(ally)
+    if rate <= 0:
+        return []
+    level = int(ally.get("level", 1))
+    target = int((level - 1) * rate)
+    try:
+        applied = int(ally.get("growth_applied", 0) or 0)
+    except (TypeError, ValueError):
+        applied = 0
+    gain = target - applied
+    if gain <= 0:
+        return []
+    attrs = ally["attributes"]
+    counts = {}
+    for _ in range(gain):
+        best = max(ATTRIBUTES, key=lambda a: (attrs.get(a, 0), -ATTRIBUTES.index(a)))
+        attrs[best] = attrs.get(best, 0) + 1
+        counts[best] = counts.get(best, 0) + 1
+    ally["growth_applied"] = max(applied, target)
+    parts = ", ".join(f"+{n} {attr}" for attr, n in counts.items())
+    return [f"[Late Bloomer] {display_name(ally)}: {parts} (growth)"]
+
+
 def create_ally_from_girl(girl):
     """Convert a house monster girl dict into a combat-ready ally dict.
 
@@ -261,15 +454,18 @@ def create_ally_from_girl(girl):
     enemy_key = girl.get("key")
     template = ENEMIES.get(enemy_key)
     if not template:
-        # Fallback for missing template
+        # Fallback for missing template — still preserves stored HP/stress.
         from combat.elemental import neutral_profile
         level = girl.get("level", 1)
-        return {
+        stored_hp = girl.get("current_hp")
+        fallback_hp = 30 if stored_hp is None else max(1, min(int(stored_hp), 30))
+        fallback = {
             "name": girl.get("name", "Companion"),
+            "nickname": girl.get("nickname", ""),
             "key": enemy_key or "unknown",
             "level": level,
             "attributes": {attr: 1 for attr in ATTRIBUTES},
-            "current_hp": 30,
+            "current_hp": fallback_hp,
             "max_hp": 30,
             "equipped": {"weapon": None, "armor": None, "accessory1": None, "accessory2": None},
             "active_buffs": [],
@@ -285,35 +481,28 @@ def create_ally_from_girl(girl):
             "affection": girl.get("affection", 20),
             "exp": girl.get("exp", 0),
             "level_hp_bonus": _fix_level_hp_bonus(girl),
+            "growth_applied": int(girl.get("growth_applied", 0) or 0),
+            "stress": int(girl.get("stress", 0)),
+            "consecutive_dispatch": int(girl.get("consecutive_dispatch", 0)),
+            "last_dispatch": girl.get("last_dispatch"),
+            "last_dispatch_day": int(girl.get("last_dispatch_day", 0) or 0),
+            "injured_until": int(girl.get("injured_until", 0) or 0),
             "elemental_res": neutral_profile(),
             "elemental_dmg": neutral_profile(),
         }
+        if girl.get("acc3_unlocked"):
+            fallback["acc3_unlocked"] = True
+            fallback["equipped"]["accessory3"] = None
+        return fallback
 
-    attrs = compute_enemy_attributes(enemy_key)
-    level = girl.get("level", 1)
-
-    # Attributes: use stored values if available (preserves manual level-up picks),
-    # otherwise compute from formula for newly captured or legacy girls.
-    stored_attrs = girl.get("attributes")
-    if stored_attrs and all(attr in stored_attrs for attr in ATTRIBUTES):
-        scaled_attrs = dict(stored_attrs)
-    else:
-        # Scale down attributes for balance with level-based scaling
-        scaled_attrs = {}
-        for attr in ATTRIBUTES:
-            base = attrs.get(attr, 0)
-            level_bonus = (level - 1) * ALLY_LEVEL_STAT_BONUS
-            scaled = max(1, int(base * ALLY_STAT_MULTIPLIER + level_bonus))
-            scaled_attrs[attr] = scaled
-
-    # Apply engagement ring stat bonus (from proposal)
-    ring_bonus = girl.get("ring_stat_bonus")
-    if ring_bonus:
-        for attr, val in ring_bonus.items():
-            scaled_attrs[attr] = scaled_attrs.get(attr, 0) + val
+    # Attributes: stored level-up picks win; otherwise computed from the
+    # enemy template formula (+ engagement ring bonus) in a shared helper
+    # that the dispatch system also uses for housed girls.
+    scaled_attrs = compute_girl_attributes(girl)
 
     ally = {
         "name": girl.get("name", template["name"]),
+        "nickname": girl.get("nickname", ""),
         "key": enemy_key,
         "level": girl.get("level", template["level"]),
         "attributes": scaled_attrs,
@@ -336,19 +525,41 @@ def create_ally_from_girl(girl):
         "exp": girl.get("exp", 0),
         "level_hp_bonus": _fix_level_hp_bonus(girl),
         "level_cap": girl.get("level_cap", 10),
+        "growth_applied": int(girl.get("growth_applied", 0) or 0),
         "defeated": False,
+        "stress": int(girl.get("stress", 0)),
+        "consecutive_dispatch": int(girl.get("consecutive_dispatch", 0)),
+        "last_dispatch": girl.get("last_dispatch"),
+        "last_dispatch_day": int(girl.get("last_dispatch_day", 0) or 0),
+        "injured_until": int(girl.get("injured_until", 0) or 0),
+        # Awakening (docs/awakening_design.md Part C) — persisted so the
+        # upgraded kit + displayed name survive the house round trip.
+        "awakened": girl.get("awakened", False),
+        "awakened_name": girl.get("awakened_name", ""),
+        "awakened_skills": list(girl.get("awakened_skills", []) or []),
         # Skill system fields
         "passive_skill": girl.get("passive_skill", None),  # Race-based passive
         "innate_skills": girl.get("innate_skills", []),    # 2 innate skills unique to girl
         "learned_skills": girl.get("learned_skills", []),  # List of learned skill_ids
+        "upgrade_skills": girl.get("upgrade_skills", []),  # Heroine facility upgrade skills (own category)
         "learning": girl.get("learning", None),             # Current skill being learned: {"skill_id": "...", "exp": 0, "exp_needed": 300}
         "skill_cooldowns": girl.get("skill_cooldowns", {}), # skill_id -> cooldown_remaining
         "skill_mastery": girl.get("skill_mastery", {}),     # skill_id -> exp_count (for mastery levels)
     }
+    # Beating Root — the third accessory slot survives the house round-trip
+    if girl.get("acc3_unlocked"):
+        ally["acc3_unlocked"] = True
+        ally["equipped"]["accessory3"] = None
 
-    # Compute HP based on scaled Constitution + level
+    # Compute HP based on scaled Constitution + level. A stored current_hp on
+    # the house record is preserved (dispatch injuries / prior state) instead
+    # of always landing at full — the round-trip is written back on dismiss.
     ally["max_hp"] = ally_max_hp(ally)
-    ally["current_hp"] = ally["max_hp"]
+    stored_hp = girl.get("current_hp")
+    if stored_hp is None:
+        ally["current_hp"] = ally["max_hp"]
+    else:
+        ally["current_hp"] = max(1, min(int(stored_hp), ally["max_hp"]))
 
     # Add elemental stats from race
     from combat.elemental import compute_ally_elemental
@@ -359,6 +570,32 @@ def create_ally_from_girl(girl):
     # Initialize skill system
     from combat.ally_skills import initialize_ally_skills
     initialize_ally_skills(ally, enemy_key, template.get("race"))
+
+    # ── Wonderland heroine identity ──────────────────────────────────
+    # House-recruited heroines must carry their heroine identity, otherwise
+    # get_heroine_in_party() can't find them and the Wonderland inn creates
+    # duplicate copies (which then lose their equipment when leaving).
+    heroine_key = _HEROINE_TEMPLATE_KEYS_INVERSE.get(enemy_key)
+    if heroine_key:
+        ally["_heroine_key"] = heroine_key
+        ally["_wonderland_temp"] = False  # house heroines are permanent
+        if girl.get("_heroine_passive"):
+            ally["_heroine_passive"] = girl["_heroine_passive"]
+        if girl.get("_heroine_permanent_passive"):
+            ally["_heroine_permanent_passive"] = girl["_heroine_permanent_passive"]
+        # Restore equipment stashed on the house record (inventory was full
+        # when she was sent home — her gear is preserved there, not destroyed).
+        stashed = girl.get("equipped")
+        if stashed:
+            for slot in ("weapon", "armor", "accessory1", "accessory2",
+                         "accessory3"):
+                item = stashed.get(slot)
+                if item:
+                    ally["equipped"][slot] = item
+            from combat.elemental import compute_ally_elemental
+            e_res, e_dmg = compute_ally_elemental(ally)
+            ally["elemental_res"] = e_res
+            ally["elemental_dmg"] = e_dmg
 
     return ally
 
@@ -374,8 +611,10 @@ def get_ally_effective_attribute(ally, attr_name):
             total -= debuff.get("penalty", 2)
 
     if attr_name == "Strength":
-        from combat.status_effects import get_weaken_penalty
-        total -= get_weaken_penalty(ally)
+        from combat.status_effects import get_weaken_pct
+        weaken_pct = get_weaken_pct(ally)
+        if weaken_pct > 0:
+            total = int(total * (1.0 - weaken_pct))
 
     for buff in ally.get("active_buffs", []):
         if buff.get("type") in ("blessing", "well_rested") or buff.get("stat") == "all":
@@ -383,21 +622,18 @@ def get_ally_effective_attribute(ally, attr_name):
         elif buff.get("stat") == attr_name:
             total += buff.get("value", 0)
 
-    # Apply race passive stat bonuses
-    from combat.ally_skills import get_race_passive
-    race = ally.get("race")
-    if race:
-        passive = get_race_passive(race)
-        if passive:
-            effect = passive.get("effect", {})
-            if effect.get("type") in ("damage_reduction", "life_steal", "regen"):
-                pass  # Handled elsewhere, not attribute bonuses
-            elif effect.get("stat") == "all":
-                affected = effect.get("stats", [])
-                if attr_name in affected:
-                    total += effect.get("value", 0)
-            elif effect.get("stat") == attr_name:
+    # Apply race passive stat bonuses (supports `type: multi` blocks)
+    from combat.ally_skills import get_race_passive_effects
+    for effect in get_race_passive_effects(ally.get("race")):
+        if effect.get("type"):
+            continue  # type-tagged effects are handled outside attribute math
+        if effect.get("stat") == "all":
+            if attr_name in effect.get("stats", []):
                 total += effect.get("value", 0)
+        elif effect.get("stat") == "multi":
+            total += effect.get("stats", {}).get(attr_name, 0)
+        elif effect.get("stat") == attr_name:
+            total += effect.get("value", 0)
 
     # Tarnished Jade pin bonuses
     from combat.weapon.tarnished_jade import get_tarnished_jade_str_bonus, get_tarnished_jade_wis_bonus, is_tarnished_jade_weakened
@@ -412,6 +648,12 @@ def get_ally_effective_attribute(ally, attr_name):
     # Author's Pen passive: +4 all stats while in Wonderland
     from combat.weapon.authors_pen import get_authors_pen_stat_bonus
     total += get_authors_pen_stat_bonus(ally, attr_name)
+
+    # Event Horizon: Entropy (−% all attributes, run-scoped)
+    for debuff in ally.get("active_debuffs", []):
+        if debuff.get("type") == "eh_entropy":
+            total = int(total * (1.0 - min(0.95, debuff.get("value", 0))))
+            break
 
     return total
 
@@ -432,9 +674,10 @@ def format_ally_status_line(ally, idx=None, is_active=False):
     prefix = f"[{idx}]" if idx is not None else "   "
     active_mark = " >" if is_active else ""
     mg_symbol = " ♀" if ally.get("monster_girl") else ""
+    disp = display_name(ally)[:12]
     if ally.get("defeated") or ally.get("current_hp", 0) <= 0:
-        return f"{prefix} {ally['name'][:12]:<12} [INCAPACITATED]{mg_symbol}{active_mark}"
-    return f"{prefix} {ally['name'][:12]:<12} {ally['current_hp']:>3}/{ally['max_hp']:<3}{mg_symbol}{active_mark}"
+        return f"{prefix} {disp:<12} [INCAPACITATED]{mg_symbol}{active_mark}"
+    return f"{prefix} {disp:<12} {ally['current_hp']:>3}/{ally['max_hp']:<3}{mg_symbol}{active_mark}"
 
 
 def format_ally_buff_line(ally):
@@ -490,6 +733,13 @@ def equip_ally_item(ally, item, player, target_slot=None):
     # EXCEPTION: woodcutters_broken_axe / grandmothers_axe on Red Hood
     # EXCEPTION: silver_slippers / ruby_slippers on Dorothy
     item_id = item.get("id", "")
+
+    # Event Horizon / player-only items (e.g. Piece of Relationship) refuse
+    # to be equipped by anyone but the MC.
+    if item.get("player_only"):
+        return (f"{item['name']} will only answer to "
+                f"{player.get('name', 'its bearer')} — it cannot be worn by an ally.")
+
     is_vorpal_on_alice = (
         item_id in ("vorpal_blade_rusted", "vorpal_blade") and
         ally.get("_heroine_key") == "alice"
@@ -503,17 +753,21 @@ def equip_ally_item(ally, item, player, target_slot=None):
         ally.get("_heroine_key") == "dorothy"
     )
     if ally.get("_wonderland_temp") and not is_vorpal_on_alice and not is_axe_on_redhood and not is_slippers_on_dorothy:
-        return f"Cannot equip gear on {ally['name']} — they are not a permanent ally yet."
+        return f"Cannot equip gear on {display_name(ally)} — they are not a permanent ally yet."
 
     item_slot = item["slot"]
-    # Resolve dual accessory slots
+    # Resolve dual accessory slots (+ unlocked third — Beating Root, docs §10.6)
     if item_slot == "accessory":
-        if target_slot in ("accessory1", "accessory2"):
+        acc3 = bool(ally.get("acc3_unlocked"))
+        if target_slot in ("accessory1", "accessory2") or (
+                target_slot == "accessory3" and acc3):
             pass  # use caller-specified slot
         elif ally.get("equipped", {}).get("accessory1") is None:
             target_slot = "accessory1"
         elif ally.get("equipped", {}).get("accessory2") is None:
             target_slot = "accessory2"
+        elif acc3 and ally.get("equipped", {}).get("accessory3") is None:
+            target_slot = "accessory3"
         else:
             target_slot = "accessory1"
     else:
@@ -523,7 +777,7 @@ def equip_ally_item(ally, item, player, target_slot=None):
     if old:
         # Return old item to player inventory
         if not add_item_to_inventory(player, old):
-            return f"Cannot equip {item['name']} on {ally['name']} — your inventory is full."
+            return f"Cannot equip {item['name']} on {display_name(ally)} — your inventory is full."
     ally["equipped"][target_slot] = item
     # Remove item from player inventory
     if item in player.get("inventory", []):
@@ -549,7 +803,7 @@ def equip_ally_item(ally, item, player, target_slot=None):
         from combat.ally_skills import swap_dorothy_to_vorpal_skills
         swap_dorothy_to_vorpal_skills(ally)
 
-    return f"Equipped {item['name']} on {ally['name']}."
+    return f"Equipped {item['name']} on {display_name(ally)}."
 
 
 def unequip_ally_slot(ally, slot, player):
@@ -574,7 +828,7 @@ def unequip_ally_slot(ally, slot, player):
         ally.get("_heroine_key") == "dorothy"
     )
     if ally.get("_wonderland_temp") and not is_vorpal_on_alice and not is_axe_on_redhood and not is_slippers_on_dorothy:
-        return f"Cannot unequip from {ally['name']} — they are not a permanent ally yet."
+        return f"Cannot unequip from {display_name(ally)} — they are not a permanent ally yet."
 
     if slot in ally.get("equipped", {}) and ally["equipped"][slot]:
         item = ally["equipped"][slot]
@@ -601,10 +855,55 @@ def unequip_ally_slot(ally, slot, player):
                 from combat.ally_skills import revert_dorothy_to_normal_skills
                 revert_dorothy_to_normal_skills(ally)
 
-            return f"Unequipped {item['name']} from {ally['name']}."
+            return f"Unequipped {item['name']} from {display_name(ally)}."
         else:
-            return f"Cannot unequip {item['name']} from {ally['name']} — your inventory is full!"
+            return f"Cannot unequip {item['name']} from {display_name(ally)} — your inventory is full!"
     return "Nothing equipped in that slot."
+
+
+def _ally_to_house_record(ally, stashed_equipment):
+    """Build the house record for an ally returning home.
+
+    HP and dispatch state persist on the record (Phase 1 — dispatch injuries
+    must survive the party round-trip). A defeated ally comes home at 1 HP
+    with a stress bump; house rest / nightly regen handles recovery.
+    """
+    hp = int(ally.get("current_hp", 0))
+    if ally.get("defeated") or hp <= 0:
+        hp = 1
+        ally["stress"] = min(100, int(ally.get("stress", 0)) + 10)
+    record = {
+        "key": ally.get("key"),
+        "name": ally["name"],
+        "nickname": ally.get("nickname", ""),
+        "level": ally["level"],
+        "affection": ally.get("affection", 30),
+        "affection_cap": ally.get("affection_cap", 100),
+        "engaged": ally.get("engaged", False),
+        "married": ally.get("married", False),
+        "exp": ally.get("exp", 0),
+        "level_hp_bonus": ally.get("level_hp_bonus", 0),
+        "level_cap": ally.get("level_cap", 10),
+        "growth_applied": int(ally.get("growth_applied", 0) or 0),
+        "attributes": dict(ally.get("attributes", {})),
+        "current_hp": max(1, hp),
+        "stress": int(ally.get("stress", 0)),
+        "consecutive_dispatch": int(ally.get("consecutive_dispatch", 0)),
+        "last_dispatch": ally.get("last_dispatch"),
+        "last_dispatch_day": int(ally.get("last_dispatch_day", 0) or 0),
+        "injured_until": int(ally.get("injured_until", 0) or 0),
+        # Awakening — keeps the upgraded kit + displayed name on return home
+        "awakened": ally.get("awakened", False),
+        "awakened_name": ally.get("awakened_name", ""),
+        "awakened_skills": list(ally.get("awakened_skills", []) or []),
+        # Heroine facility upgrade skills (own category — not learned skills)
+        "upgrade_skills": list(ally.get("upgrade_skills", []) or []),
+        # Beating Root — the third accessory slot persists on the house record
+        "acc3_unlocked": bool(ally.get("acc3_unlocked", False)),
+    }
+    if stashed_equipment:
+        record["equipped"] = stashed_equipment
+    return record
 
 
 def dismiss_allies_back_to_house(player):
@@ -625,68 +924,62 @@ def dismiss_allies_back_to_house(player):
     house.setdefault("monster_girls", [])
 
     for ally in allies:
+        stashed_equipment = {}
         # Skip returning equipped items for temp heroines (their gear is innate)
         if not ally.get("_wonderland_temp"):
-            # Return equipped items to player
-            for slot in ["weapon", "armor", "accessory1", "accessory2"]:
+            # Return equipped items to player; if inventory is full, stash the
+            # item on the house record instead of destroying it.
+            for slot in ["weapon", "armor", "accessory1", "accessory2",
+                         "accessory3"]:
                 item = ally.get("equipped", {}).get(slot)
                 if item:
-                    if not add_item_to_inventory(player, item):
-                        c_print(f"Your inventory is full! {item['name']} from {ally['name']} was dropped.")
-                    ally["equipped"][slot] = None
+                    if add_item_to_inventory(player, item):
+                        ally["equipped"][slot] = None
+                    else:
+                        c_print(f"Your inventory is full! {item['name']} from {display_name(ally)} was kept in house storage.")
+                        stashed_equipment[slot] = item
+                        ally["equipped"][slot] = None
 
-        # Add back to house (only if not already there)
+        # Add back to house (only if not already there). HP/stress persist.
         existing = [g for g in house["monster_girls"] if g.get("key") == ally["key"] and g.get("name") == ally["name"]]
         if not existing:
-            house["monster_girls"].append({
-                "key": ally["key"],
-                "name": ally["name"],
-                "level": ally["level"],
-                "affection": ally.get("affection", 30),
-                "affection_cap": ally.get("affection_cap", 100),
-                "engaged": ally.get("engaged", False),
-                "married": ally.get("married", False),
-                "exp": ally.get("exp", 0),
-                "level_hp_bonus": ally.get("level_hp_bonus", 0),
-                "level_cap": ally.get("level_cap", 10),
-                "attributes": dict(ally.get("attributes", {})),
-            })
+            house["monster_girls"].append(_ally_to_house_record(ally, stashed_equipment))
 
 
 def _return_ally_to_house(player, ally, house):
     """Return a single ally to the house's monster_girls list."""
     from inventory import add_item_to_inventory
 
+    stashed_equipment = {}
     # Skip returning equipped items for temp heroines (their gear is innate)
     if not ally.get("_wonderland_temp"):
-        # Return equipped items to player
-        for slot in ["weapon", "armor", "accessory1", "accessory2"]:
+        # Return equipped items to player; if inventory is full, stash the
+        # item on the house record instead of destroying it.
+        for slot in ["weapon", "armor", "accessory1", "accessory2",
+                     "accessory3"]:
             item = ally.get("equipped", {}).get(slot)
             if item:
-                if not add_item_to_inventory(player, item):
-                    c_print(f"Your inventory is full! {item['name']} from {ally['name']} was dropped.")
-                ally["equipped"][slot] = None
+                if add_item_to_inventory(player, item):
+                    ally["equipped"][slot] = None
+                else:
+                    c_print(f"Your inventory is full! {item['name']} from {display_name(ally)} was kept in house storage.")
+                    stashed_equipment[slot] = item
+                    ally["equipped"][slot] = None
 
-    # Add back to house (only if not already there)
+    # Add back to house (only if not already there). HP/stress persist.
     existing = [g for g in house.get("monster_girls", []) if g.get("key") == ally.get("key") and g.get("name") == ally.get("name")]
     if not existing:
-        house.setdefault("monster_girls", []).append({
-            "key": ally.get("key"),
-            "name": ally["name"],
-            "level": ally["level"],
-            "affection": ally.get("affection", 30),
-            "affection_cap": ally.get("affection_cap", 100),
-            "engaged": ally.get("engaged", False),
-            "married": ally.get("married", False),
-            "exp": ally.get("exp", 0),
-            "level_hp_bonus": ally.get("level_hp_bonus", 0),
-            "level_cap": ally.get("level_cap", 10),
-            "attributes": dict(ally.get("attributes", {})),
-        })
+        house.setdefault("monster_girls", []).append(_ally_to_house_record(ally, stashed_equipment))
 
 
 def recruit_ally_from_house(player, girl, house):
     """Recruit a monster girl from house to active party (max 7 allies, 8 total party)."""
+    day = player.get("day", 1)
+    if girl.get("dispatch_mission"):
+        return None, f"{display_name(girl)} is away on a dispatch and can't join the party right now."
+    if int(girl.get("injured_until", 0) or 0) > day:
+        return None, (f"{display_name(girl)} is injured and recovering until Day "
+                      f"{int(girl.get('injured_until', 0))} — she can't join the party yet.")
     allies = player.get("allies", [])
     if len(allies) >= MAX_ALLIES:
         # Party is full — ask who to replace
@@ -696,7 +989,7 @@ def recruit_ally_from_house(player, girl, house):
                 status = "[INCAPACITATED]"
             else:
                 status = f"HP {a['current_hp']}/{a['max_hp']}"
-            ally_names.append(f"{a['name']} — {status}")
+            ally_names.append(f"{display_name(a)} — {status}")
         ally_names.append("Cancel")
         from gui.terminal import term
         choice = term.menu(ally_names, prompt=f"Your party is full ({MAX_ALLIES}/{MAX_ALLIES}). Replace which ally?")
@@ -713,7 +1006,15 @@ def recruit_ally_from_house(player, girl, house):
     house["monster_girls"] = [g for g in house["monster_girls"]
                                 if not (g.get("key") == girl.get("key") and g.get("name") == girl.get("name"))]
 
-    return ally, f"{ally['name']} has joined your party!"
+    msg = f"{display_name(ally)} has joined your party!"
+
+    # Quest hook: recruitment milestones (Command Resonance backfill)
+    from quests import update_quests
+    quest_msgs = update_quests(player, "recruit_ally", "any")
+    if quest_msgs:
+        msg += "\n" + "\n".join(quest_msgs)
+
+    return ally, msg
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -842,9 +1143,18 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     # Reset defending flag each turn so it only applies if they choose Defend THIS turn
     ally["defending_this_turn"] = False
 
+    # Per-action status markers (White Knight skill dodge / accuracy penalty)
+    for _e in enemies:
+        _e.pop("_skill_dodge_used", None)
+        _e.pop("_accuracy_penalty_used", None)
+
     # Palette's Brush: reset the once-per-turn stance flag
     from combat.weapon.palette_brush import begin_actor_turn
     begin_actor_turn(ally)
+
+    # Prescript Ledger: the actor got a turn this round (waiver guard)
+    from combat.weapon.prescript_ledger import mark_acted as mark_prescript_acted
+    mark_prescript_acted(ally)
 
     # Palette heroine: color cycle each turn + deferred Signature strike
     from combat.palette_ally import (
@@ -854,7 +1164,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     from combat.weapon.palette_brush import _actor_has_palette_brush, COLOR_NAMES as _BRUSH_COLORS
     if is_palette_ally(ally) and not _actor_has_palette_brush(ally):
         color = advance_palette_ally_color(ally)
-        c_print(f"  🎨 {ally['name']}'s brush settles on {_BRUSH_COLORS[color]}.")
+        c_print(f"  🎨 {display_name(ally)}'s brush settles on {_BRUSH_COLORS[color]}.")
         if has_pending_signature(ally):
             msg = fire_palette_signature(ally, player, enemies, on_kill)
             c_print(msg)
@@ -869,7 +1179,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     _, valid_actions, _disabled = _ally_action_menu(ally, player, enemies)
 
     # REMOVED: Redundant text headers and duplicate action list prints
-    action = c_input(f"  ({ally['name']}) Choose action: ").strip().lower()
+    action = c_input(f"  ({display_name(ally)}) Choose action: ").strip().lower()
     while action not in valid_actions:
         c_print(f"  Invalid choice. Available: {', '.join(valid_actions)}")
         action = c_input("  Choose: ").strip().lower()
@@ -885,14 +1195,14 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         player["_ally_switch_mode"] = True
         player["_ally_switch_front"] = ally["name"]
         try:
-            c_print(f"\n  {ally['name']} prepares to swap with a reserve ally...")
+            c_print(f"\n  {display_name(ally)} prepares to swap with a reserve ally...")
             c_print("\n  --- BACKUP PARTY (Back Row) ---")
             for i, r_ally in enumerate(reserve):
-                c_print(f"  [{i+1}] {r_ally['name']} — HP: {r_ally['current_hp']}/{r_ally['max_hp']}")
+                c_print(f"  [{i+1}] {display_name(r_ally)} — HP: {r_ally['current_hp']}/{r_ally['max_hp']}")
             c_print("  [0] Cancel")
 
             try:
-                choice = c_input(f"  Pick an ally to swap {ally['name']} with: ").strip()
+                choice = c_input(f"  Pick an ally to swap {display_name(ally)} with: ").strip()
                 if choice == "0":
                     return "retry"
                 idx = int(choice) - 1
@@ -970,11 +1280,17 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             msg, victory = execute_chiaroscuro_exhibit(ally, enemies, stats, False)
         else:
             msg, victory = execute_signature_exhibit(ally, enemies, stats, False)
+        if msg == ACTION_CANCELLED_MSG:
+            # Target selection canceled — do not consume the ally's turn.
+            c_print(msg)
+            return "retry"
         c_print(msg)
         killed = [e for e in enemies if e["hp"] <= 0 and id(e) in alive_before]
         if on_kill:
             for e in killed:
                 on_kill(e, enemies)
+        from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+        report_prescript_skill(ally)
         if victory:
             return "victory"
         return "continue"
@@ -998,6 +1314,8 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     killed_by_attack = [e for e in enemies_before if e["hp"] <= 0]
                     for e in killed_by_attack:
                         on_kill(e, enemies)
+                from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+                report_prescript_skill(ally)
                 if victory:
                     return "victory"
                 return "continue"
@@ -1023,12 +1341,18 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     ally, enemies, workshop_id,
                     a_str, a_con, a_dex, a_ler, a_wis, a_cha, is_player=False,
                 )
+                if msg == ACTION_CANCELLED_MSG:
+                    # Target selection canceled — do not consume the ally's turn.
+                    c_print(msg)
+                    return "retry"
                 c_print(msg)
                 # Fire on_kill for enemies actually killed by the attack (snapshot before side effects)
                 if on_kill:
                     killed_by_attack = [e for e in enemies_before if e["hp"] <= 0]
                     for e in killed_by_attack:
                         on_kill(e, enemies)
+                from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+                report_prescript_skill(ally)
                 if victory:
                     return "victory"
                 return "continue"
@@ -1036,7 +1360,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         # Normal skills (no gloves)
         from combat.ally_skills import get_usable_skills_in_combat, execute_ally_skill, format_ally_mastery_label
         if is_silenced(ally):
-            c_print(f"  {ally['name']} is silenced and cannot use skills!")
+            c_print(f"  {display_name(ally)} is silenced and cannot use skills!")
             return "retry"
 
         skill_idx = int(action) - 1
@@ -1060,12 +1384,18 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         # on_kill side effects (e.g. boss death destroying linked minions).
         alive_before = {id(e) for e in enemies if e["hp"] > 0}
         msg, victory = execute_ally_skill(ally, player, skill_id, skill_def, enemies, all_allies)
+        if msg == ACTION_CANCELLED_MSG:
+            # Target selection canceled — reopen the menu, no turn or cooldown cost.
+            c_print(f"  {msg}")
+            return "retry"
         c_print(f"  {msg}")
         # Determine enemies killed by the skill (before on_kill side effects)
         killed_by_skill = [e for e in enemies if e["hp"] <= 0 and id(e) in alive_before]
         if on_kill:
             for e in killed_by_skill:
                 on_kill(e, enemies)
+        from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
+        report_prescript_skill(ally)
         if victory:
             return "victory"
         return "continue"
@@ -1087,16 +1417,21 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
 
         # --- ENEMY DODGE CHECK ---
         from combat.stats import roll_dodge
-        is_dodged, dodge_chance = roll_dodge(target, ally)
+        is_dodged, dodge_chance = roll_dodge(target, ally, extra_chance=target.get("ally_accuracy_penalty", 0.0))
         if is_dodged:
-            c_print(f"  The {target['name']} dodges {ally['name']}'s attack!")
+            c_print(f"  The {target['name']} dodges {display_name(ally)}'s attack!")
             return "continue"
 
         # ── Wonderland Shadow: Caterpillar's Smoke — accuracy penalty ──
         from wonderland_curses import get_shadow_accuracy_penalty
         smoke_penalty = get_shadow_accuracy_penalty(player)
         if smoke_penalty > 0 and random.random() < smoke_penalty:
-            c_print(f"  💨 The smoke clouds {ally['name']}'s vision — the attack goes wide!")
+            c_print(f"  💨 The smoke clouds {display_name(ally)}'s vision — the attack goes wide!")
+            return "continue"
+
+        # ── Event Horizon: The Fool — a 10% chance the attack simply fails ──
+        from event_horizon import joker_attack_missed
+        if joker_attack_missed(ally):
             return "continue"
 
         equipped_weapon = ally.get("equipped", {}).get("weapon")
@@ -1140,20 +1475,44 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         dmg = random.randint(3, 8) + scaling_val + get_strength_bonus(ally) - effective_con_mod
         dmg = max(0, dmg)
 
+        # Consume power_buff (empowers this attack — e.g. Overclock from an ally)
+        for buff in ally.get("active_buffs", [])[:]:
+            if buff.get("type") == "power_buff":
+                val = buff.get("value", 0)
+                dmg = int(dmg * (1 + val))
+                ally["active_buffs"].remove(buff)
+                c_print(f"  ⚡ {display_name(ally)} is Empowered! Damage increased by {int(val * 100)}%!")
+                break
+
         # Hunter's Mark: increased damage taken
         if target.get("hunters_mark"):
             mark_bonus = target.get("hunters_mark_bonus", 0.15)
             dmg = int(dmg * (1 + mark_bonus))
+
+        # Damage-taken amplification (e.g. Aura of Despair)
+        from combat.status_effects import get_damage_taken_multiplier
+        dt_mult = get_damage_taken_multiplier(target)
+        if dt_mult != 1.0:
+            dmg = int(dmg * dt_mult)
 
         # Apply damage_boost buffs (multi-turn, non-consuming)
         for buff in ally.get("active_buffs", []):
             if buff.get("type") == "damage_boost":
                 dmg = int(dmg * (1 + buff.get("value", 0)))
 
-        # Critical hit check
-        from combat.stats import roll_critical_hit, apply_critical_damage, format_critical_tag
-        is_crit, _ = roll_critical_hit(ally, "ally", dex=a_dex, lrn=a_ler)
-        dmg = apply_critical_damage(dmg, is_crit)
+        # Event Horizon: The Hierophant — basic attacks ×0.75
+        from event_horizon import joker_damage_multiplier
+        dmg = int(dmg * joker_damage_multiplier(ally, "basic"))
+
+        # Critical hit check (crit chance over the cap converts to crit damage)
+        from combat.stats import (roll_critical_hit, apply_critical_damage,
+                                  format_critical_tag, CRIT_MULTIPLIER)
+        is_crit, _, overflow_crit = roll_critical_hit(ally, "ally", dex=a_dex, lrn=a_ler)
+        dmg = apply_critical_damage(dmg, is_crit, multiplier=CRIT_MULTIPLIER + overflow_crit)
+
+        # Event Horizon: The Sun — crits +30%, non-crits ×0.85
+        from event_horizon import joker_crit_modifier
+        dmg = joker_crit_modifier(ally, is_crit, dmg)
 
         # Apply elemental damage
         from combat.elemental import calculate_elemental_damage
@@ -1182,6 +1541,10 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         final_dmg += get_high_tide_attack_bonus(ally, final_dmg)
         final_dmg += get_rally_attack_bonus(ally, final_dmg)
         final_dmg = max(0, final_dmg)
+
+        # Pandemonium: Weakened Resolve curse — allies deal less damage too
+        from pandemonium_curses import apply_damage_dealt_multiplier
+        final_dmg = apply_damage_dealt_multiplier(player, final_dmg)
         
         # Wonderland: Jabberwock's Bane — bonus damage vs boss enemies
         if target.get("boss"):
@@ -1193,10 +1556,36 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 if bonus_dmg > 0:
                     c_print(f"  ⚔️ Vorpal blessing surges! +{bonus_dmg} bonus damage!")
         
+        # Race passive damage bonuses (Angel vs Demons, Clockwork vs shocked)
+        from combat.ally_skills import get_race_damage_multiplier
+        _race_mult = get_race_damage_multiplier(ally, target)
+        if _race_mult != 1.0:
+            final_dmg = int(final_dmg * _race_mult)
+
+        # Event Horizon trophies: Old Dopo Robe + Chance and Choice (single hit)
+        from combat.weapon.dopo_robe import get_robe_multiplier
+        final_dmg = int(final_dmg * get_robe_multiplier(ally, player))
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        final_dmg = apply_chance_and_choice(ally, final_dmg)
+
         target["hp"] -= final_dmg
+        # Event Horizon — Death: allies drain 10% of the damage dealt
+        _eh_ls = ally.get("_eh_joker_lifesteal", 0) or 0
+        if _eh_ls > 0 and final_dmg > 0:
+            _eh_heal = int(final_dmg * _eh_ls)
+            if _eh_heal > 0:
+                from combat.status_effects import apply_healing as _eh_apply_heal
+                _eh_actual = _eh_apply_heal(ally, _eh_heal, source=ally)
+                if _eh_actual > 0:
+                    c_print(f"  [Death] {display_name(ally)} drains {_eh_actual} HP.")
         # ── Sky Piercer: execute non-superboss enemies left at/below threshold ──
         from combat.weapon.sky_piercer import check_sky_piercer_execute
         check_sky_piercer_execute(ally, target, final_dmg)
+        # Last Oath (unique rapier): basic attacks apply Expose
+        from combat.weapon.last_oath import try_last_oath_expose
+        _lo_msg = try_last_oath_expose(ally, target, is_crit)
+        if _lo_msg:
+            c_print(_lo_msg)
         # Palette's Brush: strokes, Pigment Explosion, aura procs
         from combat.weapon.palette_brush import _actor_has_palette_brush, on_brush_attack_hit
         if _actor_has_palette_brush(ally):
@@ -1237,21 +1626,20 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                             if trait:
                                 from combat.elemental_traits import apply_trait_on_kill
                                 apply_trait_on_kill(trait, ally, target, enemies)
-                            c_print(f"  {ally['name']} defeated {target['name']}!")
+                            c_print(f"  {display_name(ally)} defeated {target['name']}!")
 
-        # Apply race passive life steal (Vampire)
-        from combat.ally_skills import get_race_passive
+        # Apply race passive life steal (Vampire; doubled while the target bleeds)
+        from combat.ally_skills import get_race_lifesteal, get_race_passive
+        from combat.status_effects import get_bleed_feast_multiplier
         race_passive = get_race_passive(ally.get("race"))
-        if race_passive:
-            effect = race_passive.get("effect", {})
-            if effect.get("type") == "life_steal" and final_dmg > 0:
-                ls = effect.get("value", 0)
-                heal = int(final_dmg * ls)
-                old_hp = ally["current_hp"]
-                ally["current_hp"] = min(old_hp + heal, ally["max_hp"])
-                actual = ally["current_hp"] - old_hp
-                if actual > 0:
-                    c_print(f"  [{race_passive['name']}] {ally['name']} recovers {actual} HP!")
+        rp_ls = get_race_lifesteal(ally)
+        if race_passive and rp_ls > 0 and final_dmg > 0:
+            heal = int(final_dmg * rp_ls * get_bleed_feast_multiplier(target))
+            old_hp = ally["current_hp"]
+            ally["current_hp"] = min(old_hp + heal, ally["max_hp"])
+            actual = ally["current_hp"] - old_hp
+            if actual > 0:
+                c_print(f"  [{race_passive['name']}] {display_name(ally)} recovers {actual} HP!")
 
         verb = "strikes"
         if "Dexterity" in scaling_stats:
@@ -1262,7 +1650,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         crit_tag = format_critical_tag(is_crit)
         is_crit_bool = bool(crit_tag)
         from combat.helpers import format_damage_msg
-        c_print("  " + format_damage_msg(ally['name'], target['name'], final_dmg, element=element, crit=is_crit_bool))
+        c_print("  " + format_damage_msg(display_name(ally), target['name'], final_dmg, element=element, crit=is_crit_bool))
         if target["hp"] <= 0:
             if on_kill:
                 on_kill(target, enemies)
@@ -1270,17 +1658,25 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             if trait:
                 from combat.elemental_traits import apply_trait_on_kill
                 apply_trait_on_kill(trait, ally, target, enemies)
-            c_print(f"  {ally['name']} defeated {target['name']}!")
+            c_print(f"  {display_name(ally)} defeated {target['name']}!")
             # Captain's Cutlass: High Tide stack on kill (player and ally wielders)
             from combat.weapon.captain_cutlass import check_high_tide_kill
             check_high_tide_kill(ally, target)
             check_high_tide_kill(player, target)
+        else:
+            # Orc race passive: chance to stun on a basic attack
+            from combat.ally_skills import maybe_stun_on_basic
+            _stun_msg = maybe_stun_on_basic(ally, target)
+            if _stun_msg:
+                c_print(f"  {_stun_msg}")
         return "continue"
 
     # ----- DEFEND -----
     elif action == "d":
-        c_print(f"  {ally['name']} braces for impact, raising their guard.")
+        c_print(f"  {display_name(ally)} braces for impact, raising their guard.")
         ally["defending_this_turn"] = True
+        from combat.weapon.prescript_ledger import report_defend as report_prescript_defend
+        report_prescript_defend(ally)
         return "continue"
 
     # ----- USE ITEM -----
@@ -1307,13 +1703,22 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             msg = ""
             target = None
 
+            # ── Fractured Hourglass: reusable free-action cooldown reduction ──
+            from combat.fractured_hourglass import is_fractured_hourglass, use_fractured_hourglass
+            if is_fractured_hourglass(item):
+                if use_fractured_hourglass(ally, is_player=False):
+                    from combat.weapon.prescript_ledger import report_item as report_prescript_item
+                    report_prescript_item(ally)
+                # Free action — the ally's turn is not consumed either way.
+                return "retry"
+
             # ── Potion Sickness: only blocks healing consumables (not buffs/utility items) ──
             is_healing_item = (
                 item.get("type") == "consumable" and
                 item.get("power", 0) > 0
             )
             if is_healing_item and ally.get("potion_sickness", 0) > 0:
-                c_print(f"  {ally['name']} is still queasy from the last potion! ({ally['potion_sickness']} turn(s) remaining)")
+                c_print(f"  {display_name(ally)} is still queasy from the last potion! ({ally['potion_sickness']} turn(s) remaining)")
                 return "retry"
 
             # Items that need an enemy target: utility items with debuff/damage keys.
@@ -1349,7 +1754,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 new_hp = min(old_hp + item["power"], ally["max_hp"])
                 healed_amount = new_hp - old_hp
                 ally["current_hp"] = new_hp
-                msg += f"{ally['name']} recovers {healed_amount} HP. "
+                msg += f"{display_name(ally)} recovers {healed_amount} HP. "
 
             if "heal_over_time" in item:
                 ally.setdefault("active_buffs", []).append({
@@ -1357,7 +1762,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     "value": item["heal_over_time"],
                     "remaining": item.get("duration", 3)
                 })
-                msg += f"{ally['name']} starts regenerating {item['heal_over_time']} HP each turn. "
+                msg += f"{display_name(ally)} starts regenerating {item['heal_over_time']} HP each turn. "
 
             if "temp_stat" in item:
                 stat = item["temp_stat"]
@@ -1367,7 +1772,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     "value": val,
                     "remaining": item.get("duration", 4)
                 })
-                msg += f"{ally['name']}'s {stat} increases by {val} for {item.get('duration',4)} turns. "
+                msg += f"{display_name(ally)}'s {stat} increases by {val} for {item.get('duration',4)} turns. "
 
             if "defense_buff" in item:
                 ally.setdefault("active_buffs", []).append({
@@ -1375,7 +1780,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     "value": item["defense_buff"],
                     "remaining": item.get("duration", 3)
                 })
-                msg += f"Damage taken by {ally['name']} reduced by {item['defense_buff']} for {item.get('duration',3)} turns. "
+                msg += f"Damage taken by {display_name(ally)} reduced by {item['defense_buff']} for {item.get('duration',3)} turns. "
 
             if item.get("cure_curse"):
                 from combat.status_effects import cure_curse
@@ -1407,6 +1812,8 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 result, new_con = apply_expose(target, item["expose_armor"])
                 if result == "applied":
                     msg += f"{target['name']}'s armour is shattered! Armour reduced to {new_con}. "
+                elif result == "resisted":
+                    msg += f"{target['name']} shrugs off the armour shatter! "
                 else:
                     msg += f"{target['name']}'s armour is already fully exposed! "
             if item.get("burn_tier"):
@@ -1418,6 +1825,8 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     msg += f"The flames intensify on {target['name']}! "
                 elif result == "intensified":
                     msg += f"The blaze grows stronger on {target['name']}! "
+                elif result == "resisted":
+                    msg += f"{target['name']} shrugs off the flames! "
                 else:
                     msg += f"The burn on {target['name']} is refreshed. "
             if item.get("shock_damage"):
@@ -1425,6 +1834,8 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                 result = apply_shock(target, item["shock_damage"], item.get("shock_duration", 3))
                 if result == "applied":
                     msg += f"{target['name']} is jolted with electricity! "
+                elif result == "resisted":
+                    msg += f"{target['name']} shrugs off the shock! "
                 else:
                     msg += f"The shock on {target['name']} is renewed! "
             if item.get("type") == "utility" and "damage_over_time" not in item and "stun_chance" not in item:
@@ -1442,34 +1853,45 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
                     from combat.weapon.sky_piercer import check_sky_piercer_execute
                     check_sky_piercer_execute(ally, target, final_dmg)
                     from combat.helpers import format_damage_msg
-                    msg += format_damage_msg(ally['name'], target['name'], final_dmg, skill_name=item.get('name', 'Item')) + " "
+                    msg += format_damage_msg(display_name(ally), target['name'], final_dmg, skill_name=item.get('name', 'Item')) + " "
 
             if "poison_damage" in item:
                 from combat.status_effects import apply_poison
-                apply_poison(target, item["poison_damage"], item.get("poison_duration", 3))
-                msg += f"{target['name']} is poisoned! "
+                if apply_poison(target, item["poison_damage"], item.get("poison_duration", 3)) != "resisted":
+                    msg += f"{target['name']} is poisoned! "
 
             if "stun_chance" in item:
                 if random.random() < item["stun_chance"]:
-                    target["stunned"] = True
-                    msg += f"{target['name']} is stunned! "
+                    from combat.status_effects import check_status_resisted
+                    if check_status_resisted(target):
+                        msg += f"{target['name']} shrugs off the stun! "
+                    else:
+                        target["stunned"] = True
+                        msg += f"{target['name']} is stunned! "
                 else:
                     msg += "The stun attempt fails. "
 
             if item.get("status") == "slow":
-                target["slowed"] = True
+                from combat.status_effects import apply_slow_to_enemy
+                apply_slow_to_enemy(target, duration=item.get("slow_duration", 2))
                 msg += f"{target['name']} is slowed. "
 
             if item.get("blind_enemy"):
-                target["blinded"] = True
-                target.setdefault("active_debuffs", []).append({
-                    "type": "blind",
-                    "remaining": 3
-                })
-                msg += f"{target['name']} is blinded. "
+                from combat.status_effects import check_status_resisted
+                if check_status_resisted(target):
+                    msg += f"{target['name']} shrugs off the blinding powder. "
+                else:
+                    target["blinded"] = True
+                    target.setdefault("active_debuffs", []).append({
+                        "type": "blind",
+                        "remaining": 3
+                    })
+                    msg += f"{target['name']} is blinded. "
 
             c_print(f"  {msg}")
             remove_item_by_reference(player, item)
+            from combat.weapon.prescript_ledger import report_item as report_prescript_item
+            report_prescript_item(ally)
             if is_healing_item:
                 ally["potion_sickness"] = 2
 
@@ -1499,6 +1921,8 @@ _HEROINE_TEMPLATE_KEYS = {
     "dorothy":   "wonderland_dorothy",
     "palette":   "wonderland_palette",
 }
+
+_HEROINE_TEMPLATE_KEYS_INVERSE = {v: k for k, v in _HEROINE_TEMPLATE_KEYS.items()}
 
 _HEROINE_INTERNAL_KEYS = {
     "alice":     "wl_alice_state",
@@ -1657,6 +2081,7 @@ def create_heroine_ally(player, heroine_key, floor=None):
         "passive_skill": None,
         "innate_skills": [],
         "learned_skills": [],
+        "upgrade_skills": [],
         "learning": None,
         "skill_cooldowns": {},
         "skill_mastery": {},

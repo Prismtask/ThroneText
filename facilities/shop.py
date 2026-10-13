@@ -1,6 +1,6 @@
 # facilities/shop.py
 import random
-from resources.items import ITEMS, build_item, ITEM_RARITY
+from resources.items import ITEMS, build_item, ITEM_RARITY, is_unique_item
 from resources.cities import CITIES
 from utils import advance_time
 from inventory import add_item_to_inventory, get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items
@@ -40,6 +40,92 @@ def _sell_price(item, player):
     return int(base * (1 + (charisma - 8) / 100))
 
 
+_SELL_RARITY_KEYWORDS = {"common", "uncommon", "rare", "epic", "legendary", "unique"}
+
+_SELL_TYPE_KEYWORDS = {
+    "weapon": "weapon", "weapons": "weapon",
+    "armor": "armor", "armour": "armor",
+    "accessory": "accessory", "accessories": "accessory",
+    "equipment": "equipment",
+    "consumable": "consumable", "consumables": "consumable",
+    "scroll": "scroll", "scrolls": "scroll",
+    "utility": "utility",
+}
+
+
+def _sell_filter_matches(item, rarity, type_filter):
+    """True if an item matches a rarity and/or type filter (both optional)."""
+    if rarity and item.get("rarity", "common") != rarity:
+        return False
+    if not type_filter:
+        return True
+    if type_filter == "equipment":
+        return item.get("type") == "equipment"
+    if type_filter in ("weapon", "armor", "accessory"):
+        return item.get("slot") == type_filter
+    return item.get("type") == type_filter
+
+
+def _parse_sell_selection(raw, all_items):
+    """Parse sell input into a set of indices into all_items.
+
+    Supports explicit numbers/ranges ('1 3 5', '1-4'), 'all', and keyword
+    filters by rarity ('common'), type ('weapon', 'consumable'), or both
+    ('common weapon', 'rare armor'). Separate filters combine as a union;
+    an adjacent rarity+type pair matches items satisfying both.
+    """
+    tokens = raw.replace(",", " ").split()
+    wants_all = "all" in tokens
+    tokens = [t for t in tokens if t != "all"]
+
+    indices = set()
+    filters = []
+
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if any(ch.isdigit() for ch in tok):
+            if "-" in tok:
+                try:
+                    a, b = tok.split("-", 1)
+                    indices.update(range(int(a) - 1, int(b)))
+                except ValueError:
+                    pass
+            else:
+                try:
+                    indices.add(int(tok) - 1)
+                except ValueError:
+                    pass
+            i += 1
+            continue
+
+        rarity = tok if tok in _SELL_RARITY_KEYWORDS else None
+        type_filter = _SELL_TYPE_KEYWORDS.get(tok)
+        if rarity or type_filter:
+            nxt = tokens[i + 1] if i + 1 < len(tokens) else None
+            nxt_rarity = nxt if nxt in _SELL_RARITY_KEYWORDS else None
+            nxt_type = _SELL_TYPE_KEYWORDS.get(nxt) if nxt else None
+            if rarity and nxt_type:
+                filters.append((rarity, nxt_type))            # e.g. 'common weapon'
+                i += 2
+                continue
+            if type_filter and nxt_rarity:
+                filters.append((nxt_rarity, type_filter))     # e.g. 'weapon common'
+                i += 2
+                continue
+            filters.append((rarity, type_filter))
+        i += 1
+
+    if wants_all and not indices and not filters:
+        return set(range(len(all_items)))
+
+    for rarity, type_filter in filters:
+        for idx, item in enumerate(all_items):
+            if _sell_filter_matches(item, rarity, type_filter):
+                indices.add(idx)
+    return indices
+
+
 def sell_items(player):
     from inventory import remove_item_by_reference
     inv = player.get("inventory", [])
@@ -67,27 +153,13 @@ def sell_items(player):
         else:
             term.print(f"{i+1}. {item['name']}{count_str} ({item['type']}) {tag} — {stack_price} gold")
     
+    term.print("Tip: you can sell by rarity/type — e.g. 'common', 'uncommon weapon', 'rare armor'.")
     raw = term.input("Sell which items? (e.g. '1 3 5', '1-4', or 'all'). 0 to cancel: ").strip().lower()
     if raw in ("", "0", "cancel"):
         term.print("Cancelled.")
         return
 
-    indices = set()
-    if raw == "all":
-        indices = set(range(len(all_items)))
-    else:
-        for part in raw.split():
-            if "-" in part:
-                try:
-                    a, b = part.split("-", 1)
-                    indices.update(range(int(a) - 1, int(b)))
-                except ValueError:
-                    pass
-            else:
-                try:
-                    indices.add(int(part) - 1)
-                except ValueError:
-                    pass
+    indices = _parse_sell_selection(raw, all_items)
 
     indices = sorted([i for i in indices if 0 <= i < len(all_items)], reverse=True)
     if not indices:
@@ -102,7 +174,7 @@ def sell_items(player):
         item = all_items[i]
         if is_wedding_item_soulbound(item):
             term.print(f"  - {item['name']} [SOULBOUND — cannot be sold]")
-        elif item.get("unique"):
+        elif is_unique_item(item):
             term.print(f"  - {item['name']} [UNIQUE — cannot be sold]")
         else:
             filtered_indices.append(i)
@@ -126,6 +198,121 @@ def sell_items(player):
 
     player["gold"] = player.get("gold", 0) + total_gold
     term.print(f"Sold {len(filtered_indices)} item stack(s) for {total_gold} gold.")
+
+
+def _cargo_market(player, city_id):
+    """Permit-gated cargo trading: buy local stock, sell held cargo."""
+    from inventory import remove_item_by_reference, get_cargo_items
+    from resources.trade_goods import (
+        TRADE_GOODS, build_cargo, cargo_buy_price, cargo_sell_price,
+        cargo_total_weight, cargo_capacity, cargo_overload_limit,
+        roll_daily_cargo_stock, DAILY_RESTOCK, cargo_demand, THEMES,
+    )
+
+    if not player.get("trade_permit"):
+        term.print("\nA guarded counter sits behind a velvet rope.")
+        term.print("The clerk waves you off. 'Trade permit required.'")
+        term.pause()
+        return
+
+    stock_key = f"cargo_stock_{city_id}"
+    day_key   = f"last_cargo_day_{city_id}"
+
+    if stock_key not in player or player.get(day_key) != player.get("day", 1):
+        # 2-3 distinct goods, 5 units each, origin-weighted selection
+        goods = roll_daily_cargo_stock(city_id, random.randint(2, 3))
+        player[stock_key] = [[gid, DAILY_RESTOCK] for gid in goods]
+        player[day_key] = player.get("day", 1)
+
+    stock  = player[stock_key]
+    weight = cargo_total_weight(player)
+    cap    = cargo_capacity(player)
+    limit  = cargo_overload_limit(player)
+
+    def _load_line():
+        if cap > 0:
+            return f"Load: {weight}/{cap} wt  (overload cap {limit})"
+        return f"Load: {weight}/0 wt — no mount (can't buy cargo)"
+
+    while True:
+        term.clear()
+        term.print("=== CARGO MARKET ===")
+        term.print(f"Gold: {player.get('gold', 0)}")
+        term.print(_load_line())
+        theme_parts = "  |  ".join(f"{t} ×{cargo_demand(city_id, t):.1f}" for t in THEMES)
+        term.print(f"Local demand — {theme_parts}")
+        if cap <= 0:
+            term.print("(Buy a mount or caravan at the Trade Hall to haul goods.)")
+        term.print("")
+
+        choice = term.menu(["Buy goods", "Sell cargo", "Back"], prompt="Options:")
+
+        if choice == 0:
+            # ── Buy ─────────────────────────────────────────────────
+            stock = [entry for entry in stock if entry[1] > 0]
+            if not stock:
+                term.print("Nothing left in stock today. Come back tomorrow.")
+                term.pause()
+                continue
+            buy_options = []
+            for gid, units in stock:
+                g = TRADE_GOODS[gid]
+                price = cargo_buy_price(gid, player)
+                buy_options.append(f"{g['name']} — {price}g  (wt {g['weight']})  [{units} left]")
+            buy_choice = term.menu(buy_options, prompt="Buy which good?", allow_cancel=True)
+            if buy_choice < 0:
+                continue
+            gid, units = stock[buy_choice]
+            g = TRADE_GOODS[gid]
+            price = cargo_buy_price(gid, player)
+            if player.get("gold", 0) < price:
+                term.print("Not enough gold.")
+                term.pause()
+                continue
+            if weight + g["weight"] > limit:
+                term.print(f"Your transport can't haul that — overload cap is {limit} wt.")
+                term.pause()
+                continue
+            player["gold"] -= price
+            item = build_cargo(gid)
+            if add_item_to_inventory(player, item):
+                stock[buy_choice][1] -= 1
+                weight += g["weight"]
+                term.print(f"You load {g['name']} ({g['weight']} wt) for {price}g.")
+                advance_time(player, 15)
+            else:
+                player["gold"] += price
+                term.print("Could not add cargo to inventory.")
+            term.pause()
+
+        elif choice == 1:
+            # ── Sell ────────────────────────────────────────────────
+            cargo_items = get_cargo_items(player)
+            if not cargo_items:
+                term.print("You have no cargo to sell.")
+                term.pause()
+                continue
+            sell_options = []
+            for item in cargo_items:
+                count = item.get("count", 1)
+                price = cargo_sell_price(item, player, city_id)
+                count_str = f" (x{count})" if count > 1 else ""
+                sell_options.append(f"{item['name']}{count_str} — {price * count}g ({price}g each)")
+            sell_choice = term.menu(sell_options, prompt="Sell which cargo?", allow_cancel=True)
+            if sell_choice < 0:
+                continue
+            item = cargo_items[sell_choice]
+            price = cargo_sell_price(item, player, city_id)
+            gold = price * item.get("count", 1)
+            weight -= item.get("weight", 0) * item.get("count", 1)
+            remove_item_by_reference(player, item, item.get("count", 1))
+            player["gold"] = player.get("gold", 0) + gold
+            term.print(f"Sold {item['name']} for {gold}g.")
+            advance_time(player, 15)
+            term.pause()
+
+        elif choice == 2 or choice == -1:
+            break
 
 
 def upgrade_backpack(player):
@@ -163,7 +350,7 @@ def city_shop(player, city_id="solmere"):
         stock_size = shop_config.get("stock_size", 8)
         
         # Filter out unique items, ascension stones (temple-only), and wonderland-only items
-        available_item_ids = [k for k, v in ITEMS.items() if not v.get("unique") and v.get("type") != "ascension" and not v.get("wonderland_only") and not v.get("black_market_only")]
+        available_item_ids = [k for k, v in ITEMS.items() if not v.get("unique") and v.get("type") != "ascension" and not v.get("wonderland_only") and not v.get("black_market_only") and not v.get("no_random_stock")]
         
         for _ in range(stock_size):
             item_id = random.choice(available_item_ids)
@@ -192,6 +379,9 @@ def city_shop(player, city_id="solmere"):
                 # Consumables/utility/scroll: flat price, no rarity multiplier
                 base_price = shop_config.get("base_price_consumable", 45)
             player[stock_key].append((item, base_price))
+        # Travel staple: every shop carries one Portable Camp (§8 camping)
+        if not any(i.get("id") == "portable_camp" for i, _p in player[stock_key]):
+            player[stock_key].append((build_item("portable_camp", "common"), 250))
         player[day_key] = player.get("day", 1)
     shop_stock = player[stock_key]
 
@@ -223,11 +413,16 @@ def city_shop(player, city_id="solmere"):
 
     while True:
         show_shop()
+        cargo_label = (
+            "Cargo Market" if player.get("trade_permit")
+            else "??? — Requires Trade Permit"
+        )
         choice = term.menu([
             "Buy",
             "Sell",
             "Upgrade Backpack",
             "View Stats",
+            cargo_label,
             "Back to City"
         ], prompt="Options:")
         
@@ -292,9 +487,10 @@ def city_shop(player, city_id="solmere"):
                 term.print("Character stats are only available in GUI mode.")
                 advance_time(player, 10)
                 term.pause()
-        elif choice == 4 or choice == -1:
+        elif choice == 4:
+            _cargo_market(player, city_id)
+        elif choice == 5 or choice == -1:
             service_dialogue(city_id, "shop", "leave")
-            advance_time(player, 30)
             break
         else:
             service_dialogue(city_id, "shop", "fail")

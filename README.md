@@ -1,12 +1,14 @@
 # Pandemonium
 
-A rich, story-driven text-based dungeon crawler RPG built in Python with an optional tkinter GUI.
+A text-based dungeon crawler RPG built in Python with a tkinter GUI.
+
+> **Status:** Pre-1.0 beta — features, balance, and save formats may change between builds.
 
 ---
 
 ## Overview
 
-**Pandemonium** is a deep, classic-style text RPG where you explore dangerous dungeons, manage a growing adventuring party, build relationships with cities, and face increasingly powerful foes — including 14 epic superbosses that change the battlefield with unique mechanics. Beyond the standard world lies the hidden **Wonderland** — a storybook-themed 50-floor dungeon with its own superbosses, heroine quests, and a six-phase final boss. The ultimate endgame challenge awaits in the **Pandemonium** dungeon itself: a 50-floor crystalline hell where every floor curses you with escalating corruption.
+**Pandemonium** is a text RPG where you explore dangerous dungeons, manage a growing adventuring party, build relationships with cities, and face increasingly powerful foes — including 15 epic superbosses that change the battlefield with unique mechanics. The ultimate endgame challenge awaits in the **Pandemonium** dungeon itself: a crystalline hell where every floor curses you with escalating corruption.
 
 You start as a fresh adventurer in the city of **Solmere** and gradually unlock more cities, better gear, a house, monster-girl companions, and powerful abilities. Time passes realistically, affecting travel danger, encounter rates, and inn prices. Every choice matters.
 
@@ -22,20 +24,22 @@ You start as a fresh adventurer in the city of **Solmere** and gradually unlock 
 - [Dungeon System](#dungeon-system)
 - [Superboss System](#superboss-system)
 - [Pandemonium Dungeon (Endgame)](#pandemonium-dungeon-endgame)
+- [Event Horizon (Endless Rift)](#event-horizon-endless-rift)
 - [Wonderland System](#wonderland-system)
 - [Combat System](#combat-system)
-- [Legendary Weapons & Unique Gear](#legendary-weapons--unique-gear)
+- [Unique Equipment](#unique-equipment)
 - [Stat Milestones](#stat-milestones)
 - [Monster Girl & Ally System](#monster-girl--ally-system)
 - [Engagement & Marriage](#engagement--marriage)
 - [Heroine Quest System](#heroine-quest-system)
+- [Quests & The Journal](#quests--the-journal)
 - [Player Housing](#player-housing)
+- [Companion Dispatch & Errands](#companion-dispatch--errands)
 - [Progression & Leveling](#progression--leveling)
 - [Travel & Exploration](#travel--exploration)
 - [Your First Adventure](#your-first-adventure)
 - [Skill System](#skill-system)
 - [Controls](#controls)
-- [GUI Mode](#gui-mode)
 - [Technical Info](#technical-info)
 - [FAQ](#faq)
 - [Keybind Quick Reference](#keybind-quick-reference)
@@ -48,7 +52,7 @@ New to Pandemonium? Here's a step-by-step walkthrough of your first session — 
 
 ### Step 1 — Create Your Character
 
-1. Run `python main.py` (or `Pandemonium.exe`) and choose **New Game**.
+1. Run `python launcher.py` (or `Pandemonium.exe`) and choose **New Game**.
 2. Pick a **race** and **class**. If you're unsure, **Human Warrior** is the most forgiving combo:
    - Human has no stat penalties and gets +1 to all attributes from Jack of All Trades.
    - Warrior boosts Strength and Constitution — more damage, more HP.
@@ -89,14 +93,15 @@ After clearing Floor 1 (or if your HP gets dangerously low), head back to the ci
 - **Travel to new cities** — once you have some levels and gold, head to **Greyharbor** or **Elderfen** to see different biomes and services.
 - **Buy a house** — save up 300g and visit a Trade Hall (Greyharbor has one) to buy a Hovel deed. Houses give passive income and storage.
 - **Raise your level cap** — once you hit Level 10, clear Floor 10 in a second biome's dungeon, then Ascend at any Guild.
-- **Discover Wonderland** — visit Veilholt's Arcane Tower once you're strong enough. A 50-floor storybook dungeon awaits with unique superbosses, heroine companions, and legendary Vorpal weapons.
+- **Discover Wonderland** — visit Veilholt's Arcane Tower once you're strong enough. A 50-floor storybook dungeon awaits with unique superbosses, heroine companions, and Vorpal weapons.
 - **Challenge Pandemonium** — after clearing Floor 40 in 4 biomes, the ultimate 50-floor endgame dungeon unlocks beneath the Isle of Glass.
+- **Cross the Event Horizon** — once your deepest floor reaches 20, a watcher with a black hole for a head marks a tear in the sky east of Veilholt. An endless room-based rift: flasks grant run-long buffs to one chosen girl, Entropy raises both danger and payout, and death or abandon wipes the run — so know when to step out.
 
 ---
 
 ## How to Play
 
-1. **Run the game:** `python main.py` (or run `Pandemonium.exe` if using the built release)
+1. **Run the game:** `python launcher.py` (or run `Pandemonium.exe` if using the built release)
 2. **Create a new character** or load an existing save from multiple slots.
 3. You begin in your origin city. Use the city menu to rest, shop, gear up, or take bounties.
 4. When ready, **enter the dungeon** and descend floor by floor.
@@ -244,7 +249,7 @@ Each city has its own **themed dungeon** with biome-appropriate enemies.
 ### Boss Floors
 - Every **5th floor** is a **true boss fight** with a powerful enemy.
 - Every **20th floor** is a **superboss fight** — mechanically unique, multi-phase battles (see [Superboss System](#superboss-system)).
-- In Pandemonium, the 20th and 40th floors trigger superboss encounters with unique arena flavor text.
+- In Pandemonium, the **first visit** to the 20th and 40th floors triggers its two exclusive superbosses — **Chrysalis** and the **White Knight** (see [Pandemonium Exclusive](#pandemonium-exclusive)).
 
 ### Progression
 - **Per-city floor tracking**: each city remembers its own current floor and maximum cleared floor.
@@ -260,7 +265,7 @@ Each city has its own **themed dungeon** with biome-appropriate enemies.
 
 ### Difficulty
 - Enemy level scales with floor number (roughly ±6 to +3 range).
-- Time of day affects enemy strength and travel danger.
+- Time of day affects enemy strength and travel danger (Pandemonium excepted — it always uses its fixed dusk baseline; see [Time of Day in Pandemonium](#time-of-day-in-pandemonium)).
 - Biome filtering ensures desert dungeons feature desert races, coastal dungeons feature coastal creatures, etc.
 - **Death Penalty**: dying in a dungeon costs you 20% of your gold (minimum 10 gold). You return to your last city.
 
@@ -268,13 +273,13 @@ Each city has its own **themed dungeon** with biome-appropriate enemies.
 
 ## Superboss System
 
-Pandemonium features **14 mechanically unique superbosses** across three encounter pools. Every superboss is a multi-phase fight with signature gimmicks, custom HUD effects, and unique legendary drops.
+Pandemonium features **15 mechanically unique superbosses** across three encounter pools. Every superboss is a multi-phase fight with signature gimmicks, custom HUD effects, and unique drops.
 
 ### Global Pool (8 Superbosses)
 
 Every **20th floor** in standard dungeons pits you against one of 8 superbosses drawn from a shuffled pool:
 
-| # | Superboss | Theme | Signature Mechanic | Legendary Drop |
+| # | Superboss | Theme | Signature Mechanic | Unique Drop |
 |---|-----------|-------|--------------------|----------------|
 | 1 | **Broodmother Vileheart** | Toxic lair | Spawns swarms of spiderlings; applies poison & web | Vileheart Pendant (poison-on-hit accessory) |
 | 2 | **Dream-Devouring Slitcurrent** | Dream distortion | Phases between Dream and Nightmare forms | **Abyss Fang** (dark damage weapon) |
@@ -294,13 +299,17 @@ Every **20th floor** in standard dungeons pits you against one of 8 superbosses 
 ### Pandemonium Exclusive
 - **Chrysalis, the Entangled One** — appears on Pandemonium Floor 20.
 - Three Temporal Aspects (Past/Present/Future) share an immortal health pool. Only the Present Aspect can be damaged — and only during **Paradox Fracture** windows.
-- Drops **Chronoweave Mantle** (temporal defense armor) and **Fractured Hourglass** (full cooldown reset consumable).
+- Drops **Chronoweave Mantle** (temporal defense armor) and **Fractured Hourglass** (reusable consumable — reduces all your cooldowns by 1 as a free action; recharges in 3 turns).
+- **The White Knight of the Fallen Empire** — appears on Pandemonium Floor 40 (first visit only).
+- An Undead paladin of holy light with three phases of accuracy denial: a 55% passive dodge, telegraphed **Oathguard** states (70% dodge, up to 2 ripostes per round that brand attackers with **Expose**), then a 50% **skill dodge** in **Last Vigil**. States warn a turn ahead and end in a negative-dodge window — hold your burst for it.
+- Each Expose stack makes the Knight's attacks ignore 10% CON; 6 stacks on one hero triggers a sure-hit **Judgment Burst** (Defend halves), and three heroes carrying stacks flares a +25% damage oath. Phase bars are sealed at 65% / 30% HP so no burst can skip a phase.
+- Drops **Last Oath** (unique rapier — basic attacks apply Expose, doubled on crits) on first victory.
 
 ### Wonderland Superbosses
 
 Every **10th floor** in the Wonderland dungeon features its own unique superboss:
 
-| Floor | Superboss | Theme | Legendary Drop |
+| Floor | Superboss | Theme | Unique Drop |
 |-------|-----------|-------|----------------|
 | 10 | **Queen of Hearts** | Royal Decrees, Card Soldiers, Temper Tantrum, Mercy Rule | Rose-Tinted Crown |
 | 20 | **Big Bad Wolf** | Swallow mechanic (removes allies), Huff and Puff AoE, 15% Enrage | Woodcutter's Broken Axe |
@@ -346,9 +355,104 @@ Every floor in Pandemonium rolls a **random curse** that persists for the entire
 - **Enhanced loot**: 70% drop rate, rarity heavily skewed toward Epic/Legendary.
 - **2.5× gold multiplier** plus guaranteed bonus gold.
 - Bosses on floors 5, 10, 15, 25, 30, 35, 45, 50.
-- **Floor 20**: Chrysalis, the Entangled One — Pandemonium's exclusive superboss (see [Pandemonium Exclusive](#pandemonium-exclusive)).
-- **Floor 40**: A global-pool superboss encounter.
-- Pandemonium enemies deal **1.7× damage**.
+- **Floor 20**: Chrysalis, the Entangled One — one of Pandemonium's two exclusive superbosses (see [Pandemonium Exclusive](#pandemonium-exclusive)).
+- **Floor 40**: The White Knight of the Fallen Empire — Pandemonium's second exclusive superboss, fought on your first visit to the floor only (see [Pandemonium Exclusive](#pandemonium-exclusive)).
+- Pandemonium enemies carry a **×1.7 stat boost** (HP and attributes) on top of the fixed dusk baseline — see [Time of Day in Pandemonium](#time-of-day-in-pandemonium).
+
+### Time of Day in Pandemonium
+The clock doesn't change Pandemonium's difficulty. Time-of-day scaling is switched off — no dawn, noon, night, or midnight swings — and enemies always carry the **dusk baseline** (**×1.4** to HP and attributes) instead. That fixed dusk multiplier is applied **on top of Pandemonium's own ×1.7 stat boost**, so the dungeon plays the same whether you enter at noon or midnight. Daily world events (such as Full Moon) still apply as usual.
+
+---
+
+## Event Horizon (Endless Rift)
+
+Once your deepest dungeon floor reaches **20**, the Horizon Watcher — **Vesper Erebus**, a robed man with a black hole for a head and a voice that echoes from somewhere further away — finds you in any city and marks **The Event Horizon** on your world map, east of Veilholt.
+
+### The Rules of the Rift
+- **Room-based and endless** — no floors, no superbosses, no curses. Roughly 70% battles, plus **rift merchants** (spending **Horizon Motes**), mote storms, and still pools.
+- **No drops, no XP, no bounty progress.** The Horizon pays **gold at the end of a run**, scaled by rooms cleared **and Entropy** — the deeper and greedier you push, the bigger the payout.
+- **Flasks** — every cleared room offers one (rift merchants sell them too): a random buff, permanent for the run, drunk by **one actor of your choice** (your character or any monster girl, bench included). Six archetypes across seven grades that climb with depth — see [Flasks of the Horizon](#flasks-of-the-horizon).
+- **Entropy** — builds +1 per room from room 5 (−1% all party attributes per stack, cap −45%). Every 10 stacks it permanently gains a random **affliction** (Burn, Silence, Dread…) shown in your inventory — rift battles open with debuffs drawn only from the afflictions you carry.
+- **Trials & cards** — from room 10, every 5th room forces a card choice: negative cards empower every enemy for the rest of the run (and add Entropy — richer payout), while every 15th room offers a positive team card instead; every 50th room grants a **deep boon** (pick 1 of 3 positive cards). See [Trials & Cards](#trials--cards).
+- **Run end** — save & quit suspends a run (resume at the site; its flasks, cards and Entropy stay dormant inside the rift while you're away); death or abandon wipes it (only your best room is kept forever) and pays out. A summary tallies the run: rooms, gold, cards, and flask effects.
+
+Enemies start gentle and climb without end: the rift always opens at warm-up strength, gaining a level every three rooms — and it freezes its difficulty at the dusk baseline, so a run plays the same at any hour.
+
+### Flasks of the Horizon
+Every cleared room (and every rift merchant) offers **one flask**. Once you choose who drinks — your character, an active ally, a benched ally, or even a fallen one (the buff waits for the revive) — the buff is consumed immediately and lasts the **entire run**. Flasks stack with each other and with cards.
+
+Flask **grade** climbs with depth (grade VII is reachable from around room 36), and every **25-room milestone** guarantees a grade VI–VII flask:
+
+| Archetype | Effect | I | II | III | IV | V | VI | VII |
+|---|---|---|---|---|---|---|---|---|
+| **Fervor** | +% damage dealt | 2% | 3% | 4% | 5% | 6% | 8% | 10% |
+| **Prism** | +% elemental damage (all elements) | 2% | 3% | 4% | 5% | 6% | 8% | 10% |
+| **Bastion** | +% damage reduction | 1% | 2% | 2.5% | 3% | 4% | 5% | 6% |
+| **Might** | + to a random attribute | +1 | +2 | +3 | +4 | +5 | +6 | +8 |
+| **Vitality** | regenerate % max HP per round | 0.5% | 0.75% | 1% | 1.25% | 1.5% | 1.75% | 2% |
+| **Edge** | +% crit chance | 1% | 1.5% | 2% | 2.5% | 3% | 4% | 5% |
+
+### Trials & Cards
+From **room 10, every 5th room** is a trial: three cards are drawn and you must pick one. Every **15th room** is a positive (team) card; other trials are negative (enemy handicaps). A negative card empowers **every enemy for the rest of the run** — and each tier adds **Entropy**, which fattens the final payout. Card tiers unlock with depth, and the same card at different tiers **stacks**; every card is one-of-a-kind per run, so the deck can eventually be spent.
+
+**Negative cards** — applied to every enemy for the rest of the run:
+
+| Card | Effect (T1 / T2 / T3 / T4) | Entropy |
+|---|---|---|
+| **Status Ward** | +8/12/16/20% status resistance | +2/+4/+6/+8 |
+| **Bloodlust** | +6/9/12/15% damage dealt | +2/+4/+6/+8 |
+| **Marrow** | +10/15/20/25% max HP | +2/+4/+6/+8 |
+| **Elemental Surge** | +6/9/12/15% all elemental damage | +2/+4/+6/+8 |
+| **Mending Roil** | regenerate 2/3/4/5% max HP per enemy turn | +2/+4/+6/+8 |
+| **Chitin** | +8/12/16/20% CON & DEX | +2/+4/+6/+8 |
+
+**Positive cards** — bless the whole team, permanent for the run:
+
+| Card | Effect (T1 / T2 / T3 / T4) |
+|---|---|
+| **Unity** | +4/6/8/10% damage dealt |
+| **Bulwark** | +4/6/8/10% damage reduction |
+| **Harmony** | regenerate 1/2/3/4 HP per round |
+| **Insight** | +2/3/4/5 all attributes |
+| **Aftershock** | +5/8/10/12% elemental damage |
+| **Celerity** | +1/2/3/4 DEX and +2/3/4/5% crit |
+
+- **Deep boons** — every **50th room** grants an extra deep boon on top of any trial: pick 1 of 3 positive cards.
+- **The Joker** — every **25th cleared room**, the Horizon offers a skippable, off-deck card: party-wide **+10% damage dealt** and **+5% damage taken**, permanent for the run.
+
+### Trophies of the Deep
+The rift's trophies are **unique** and come from run milestones. The death penalty is gold-only, so they are never lost — and every unique carries a lore description you can read with **Examine** in your bag.
+
+| Room | Trophy | Slot | Effect |
+|------|--------|------|--------|
+| 50 | **Chance and Choice** | Accessory (any actor) | Every strike flips a coin — ×0.25 or ×1.75 damage |
+| 75 | **Old Dopo Robe** | Armor (any actor) | Sword pilgrim's armor — stronger with every blade in your company |
+| 100 | **Piece of Relationship** | Accessory (player only) | Grows with the number of monster girls who truly love you (200 affection) |
+| 125+ | **Beating Root** | Consumable trophy | Every 25 rooms past 100 — permanently opens a third accessory slot for one actor |
+
+#### Chance and Choice — room 50
+A coin, simple in one's eye: **once per damaging action**, a 50/50 flip scales that action (all of its hits) to **×0.25** (disaster) or **×1.75** (fortune). The expected value is exactly ×1.0 — pure volatility, no expected-power change. Applies to direct damaging actions only (not damage-over-time, heals, or traps), and any actor can wear it. Base: +5 DEX, +3 CHA.
+
+#### Old Dopo Robe — room 75
+Sword-synergy armor. The effect requires the **wearer** to wield a sword-family weapon (`sword`, `blade`, `greatsword`, `rapier`, or `cutlass`):
+- Wearer damage **×1.40**.
+- Each **other** sword-wielding ally — active or bench — grants the wearer **+5% damage, uncapped**, and each of those allies deals **×1.15** damage when they act.
+
+Base: +8 CON, +4 DEX.
+
+#### Piece of Relationship — room 100
+A player-only accessory that grows with your household. At the start of every battle it counts your owned allies (active + bench) at **200 affection** — fully bonded girls — and grants:
+
+| Bonded allies | You gain | Each bonded ally gains |
+|---|---|---|
+| 2–3 (+2) | +10% damage | +5% damage |
+| 4–6 (+4) | +10% damage, +2% dodge, +2% crit | +10% damage |
+| 7+ (+7) | +20% damage, +5% dodge, +5% crit | +15% damage, +5% dodge, +5% crit |
+
+At **+7** it also brands enemies: when an ally is targeted by an attack (hit or miss), the attacker gains **Hunter's Mark** (+20% damage taken for 2 turns). You have two accessory slots, so it can be worn alongside a wedding accessory. Base: +6 CHA, +4 WIS.
+
+#### Beating Root — room 125, then every 25 rooms past 100
+A consumable trophy: give one to a **single actor** (your character or one ally) and they consume it to permanently unlock **their own third accessory slot**. Copies arrive at r125, r150, r175, … — eight copies outfit a full 8-actor roster (clearing to r300).
 
 ---
 
@@ -414,8 +518,8 @@ Skills are the core of combat progression. Every class has its own skill tree, a
 
 ### How Skills Work
 
-- **Class skills** unlock automatically at specific levels (3, 5, 8, 10, 15).
-- Each class has **5 active skills** and **1 passive skill**. Passives are always active once unlocked.
+- **Class skills** unlock automatically at specific levels (3, 5, 8, 10, 12, 15).
+- Each class has **6 active skills** and **1 passive skill**. Passives are always active once unlocked.
 - Skills have **cooldowns** measured in combat rounds. After using a skill, you must wait the listed number of rounds before using it again. Cooldowns tick down by 1 at the end of each round.
 - Skills scale with your **primary attribute + Learning**, making them stronger than basic attacks as you invest in those stats.
 - **Silence** status prevents all skill usage — keep an eye out for enemies that can silence you.
@@ -427,7 +531,7 @@ Accessible from any city menu, the **Skill Book** shows:
 - Your **class passive** — always active, no input needed.
 - Every **active skill** in your class tree, sorted by tier:
   - **Tier 1 (Level 3–8):** Your first 3 skills.
-  - **Tier 2 (Level 10–15):** Your advanced 2 skills.
+  - **Tier 2 (Level 10–15):** Your advanced 3 skills.
 - Each skill's **unlock level**, **cooldown**, and description.
 - Locked skills show `[LOCKED]`; skills on cooldown show `[CD: N]`.
 - **Ally skills** — every recruited monster girl's passive, innate skills, and learnable skills are also displayed.
@@ -470,7 +574,8 @@ Allies can study **learnable skills** from three categories:
 Combat is **turn-based** with an **initiative roll** each round.
 
 ### Party Size
-- **You** (the player) + up to **3 allies**.
+- Command capacity is governed by your **Command Resonance** grade (see [Quests & The Journal](#quests--the-journal)).
+- You start fielding **yourself + 1 ally**; the Archivist's Field Studies grow the front row and the reserve bench all the way to **you + 3 allies (3 front, 4 bench)** at the **Crescendo** grade.
 - Enemies: up to **5** per encounter.
 
 ### Combat HUD
@@ -519,15 +624,15 @@ Combat is **turn-based** with an **initiative roll** each round.
 ### Weapon Scaling
 - Weapons scale with one of six attributes: **STR, DEX, LRN, WIS, CHA, or CON**.
 - **Constitution weapons** (Tower Shield, Iron Gauntlets, Bulwark Mace, Thorned Plate) deal half damage but grant damage reduction equal to CON÷2 when equipped.
-- The legendary **Abyss Fang** dual-scales with both STR and DEX.
+- The unique **Abyss Fang** dual-scales with both STR and DEX.
 
 ---
 
-## Legendary Weapons & Unique Gear
+## Unique Equipment
 
-Superbosses and special quests drop legendary equipment with powerful active abilities and unique passives:
+Superbosses and special quests drop unique equipment — items with powerful active abilities and signature passives:
 
-### Legendary Weapons
+### Unique Weapons
 
 #### Abyss Fang
 - **Source**: Dropped by the Dream-Devouring Slitcurrent (superboss).
@@ -546,7 +651,7 @@ Superbosses and special quests drop legendary equipment with powerful active abi
 - **Stats**: +7 STR, +4 DEX.
 - **Special**: Replaces **all** class skills with 9 unique workshop attack patterns. Build up to **Furioso** — a devastating ultimate attack. Changes the entire way you play in combat.
 
-### Legendary Armor
+### Unique Armor
 
 #### Tarnished Jade
 - **Source**: Dropped by Yinglong (superboss).
@@ -556,7 +661,7 @@ Superbosses and special quests drop legendary equipment with powerful active abi
 - **Source**: Dropped by Chrysalis, the Entangled One (Pandemonium Floor 20).
 - **Temporal Defense**: Reduces damage taken from enemies that haven't acted yet in the round.
 
-### Legendary Accessories
+### Unique Accessories
 
 #### Vileheart Pendant
 - **Source**: Dropped by Broodmother Vileheart (superboss).
@@ -612,22 +717,24 @@ Every **5 points** in a base attribute grants a permanent passive bonus. These a
 
 ### Recruitment
 - Once a monster girl's affection reaches **50+**, you can **recruit** her as an active **ally**.
-- Allies join your combat party (max 3 active at a time).
+- Allies join your combat party — how many can stand with you at once is governed by your **Command Resonance** grade (see [Quests & The Journal](#quests--the-journal)).
 - Allies gain EXP from battles, level up, and have their own level cap (starts at 10).
 
 ### Ally Skills
-- **Race Passive**: Each ally inherits a passive skill based on their monster girl race.
+- **Race Passive**: Each ally inherits a passive skill based on their monster girl race — every race's full kit (dodge, regeneration, elemental affinity, immunities, and more) is live in combat.
 - **2 Innate Skills**: Every monster girl has two unique innate combat skills.
+- **Late-Bloomer Growth**: Girls captured at a low base gain bonus attributes as they level in your party — a fully-raised Goblin Girl ends even with a Lich Queen in raw stats. Her Growth band (High / Medium / Low) is shown in the House Lounge and Skill Book.
+- **Awakening**: Twelve girls can be Awakened at the House Lounge (Lv 40 · cap 40 · affection 150 · 1 Awakening Sigil) — both innate skills upgraded, a new name, and a one-time scene. Sigils are scarce: 5 per save (first superboss, Mary Sue, or forged at the Arcane Tower from 4 Sigil Shards + 25,000g).
 - **Learnable Skills**: Allies can learn additional skills from three categories — Offensive, Defensive, and Support. One skill can be studied at a time; learning progresses via combat EXP.
 - **Skill Mastery**: As allies use their skills, their mastery improves, increasing effectiveness.
 - **Ally Equipment**: Allies have full equipment slots (weapon, armor, accessory1, accessory2) and benefit from enhancement and elemental bonuses.
 
-> 💍 **Marriage**: Once a girl reaches 100 affection, you can propose with an engagement ring. At 200 affection, she gifts you a legendary Wedding Accessory. See the full [Engagement & Marriage](#engagement--marriage) section.
+> 💍 **Marriage**: Once a girl reaches 100 affection, you can propose with an engagement ring. At 200 affection, she gifts you a unique Wedding Accessory. See the full [Engagement & Marriage](#engagement--marriage) section.
 
 ### Ally Management
 - Allies have their own stats, equipment slots, HP, and level cap.
 - In combat, you control every ally turn directly — they can attack, use skills, use items, or defend.
-- You can swap active allies at your House.
+- **Party Positions (City)**: On the hero card in any city, click one ally, then click a second ally to swap their front-row / bench positions.
 - **Party Swap in Combat**: when an ally falls, you can swap in a reserve ally between rooms.
 - House level determines how many monster girls you can store (2 → 4 → 8 → 14 → 24 → 50 → 75 → 100).
 
@@ -643,7 +750,7 @@ Once a monster girl's affection reaches **100**, you can propose with an engagem
 - Affection cap rises to **200** after engagement.
 
 ### Wedding Accessories
-- At **200 affection**, the married girl gifts you a **Legendary Wedding Accessory** — a unique soulbound item with powerful combat effects.
+- At **200 affection**, the married girl gifts you a **Unique Wedding Accessory** — a soulbound item with powerful combat effects.
 - Each monster girl has a **distinct accessory** with its own special ability. Over 40 unique wedding accessories exist.
 - **Bonded Mechanic**: If the married girl is in your active combat party, the accessory's effects are **amplified**.
 
@@ -682,8 +789,24 @@ Three story-linked heroines await in Wonderland, each with a weapon upgrade ques
    - Alice → The Jabberwock (Floor 40)
    - Red Hood → Big Bad Wolf (Floor 20)
    - Dorothy → Wicked Witch of the West (Floor 30)
-3. **Visit the Godmother** — a hidden NPC in Wonderland's Temple who upgrades the rusted weapon into its legendary form.
+3. **Visit the Godmother** — a hidden NPC in Wonderland's Temple who upgrades the rusted weapon into its restored form.
 4. Each upgrade requires a **crafting material** dropped by the corresponding superboss (Vorpal Blade Fragment, Crimson Hood Scrap, or Emerald Flame Crystal).
+
+---
+
+## Quests & The Journal
+
+Pandemonium's quest system lives in your **Journal** (Inventory → Journal tab, or press `I` from a city).
+
+- **Main Quests come to you** — story beats arrive on their own. The first, *The Stellar Summons*, finds you right after the tutorial: an Archivist in Skylume has questions about the bonds between handlers and monster girls.
+- **Side Quests are offered by NPCs** — talk to people; accept or decline as you like.
+- **Bounties** keep their own Journal tab, with their own deadlines.
+- Every entry tracks objectives with ✓/☐ marks and a status (ACTIVE / READY / COMPLETE); finished quests stay in the Journal as a paper trail.
+- Story beats (letters, summons) play as conversation windows when you **enter a city** — never mid-dungeon.
+
+The Archivist's **Field Studies** continue the story across the game. His **Command Resonance** grades — Pitch, Timbre, Cadence, Chord, Crescendo — are the Archive's measure of a handler's growing command.
+
+The Archivist's parting gift, the **resonance blank**, lives in your bag under Key Items: a shattered glass orb that records your grade, growing whole as your household does — **Shattered → Cracked → Mending → Whole → Radiant → Resonant**. Examine it any time to see your current grade and what the Star Tower wants next.
 
 ---
 
@@ -716,6 +839,19 @@ Owning a house gives you:
 > Passive income also scales with your highest dungeon floor cleared globally, keeping it relevant in late game. Income is capped at 10 accumulated days.
 
 > Wealthier cities (Skylume, Tidebreak, Isle of Glass) yield higher passive income. You can move your house by buying a new deed, but you can only ever have one.
+
+---
+
+## Companion Dispatch & Errands
+
+Your house isn't just a home — it's a base of operations. The **Dispatch Board** (in your house menu) sends housed monster girls on timed missions while you adventure elsewhere.
+
+- **Sweeps** farm dungeon floors you've already cleared, scaled to bands around your deepest progress.
+- **Errands** — foraging, courier runs, caravan escorts, scouting, surveys — are the safe options, and they scale with your progress too.
+- Missions resolve on their own as game time passes. Rewards (gold, items, EXP, a little city Favor) wait in a **report** at the board.
+- **Stress & Mood:** every companion carries 0–100 Stress. Rested, high-affection girls are *Spirited*; worn ones turn *Tired* and *Weary*, and at 90+ a girl is *Burned Out* and refuses work. Stress raises injury odds. Recover via nightly rest, Talk / Gifts / Kisses at the lounge, **Herbal Bath Salts** (Herbalist), and the Temple's **Day of Respite**.
+- **Injuries:** girls can come home hurt — and a disaster can leave one **Downed** (1 HP, recovering for 2 days). Downed girls can't be dispatched or recruited until healed; housed girls regain 25% HP per night at home.
+- **Scale:** your house level sets concurrent dispatches (1 → 2 → 2 → 3), team size (up to 4), the difficulty cap (up to ★6), and the board size (4–7 offers every 3 days).
 
 ---
 
@@ -835,35 +971,16 @@ s     Swap party member (when an ally has fallen)
 
 ---
 
-## GUI Mode
-
-Pandemonium includes an optional **tkinter-based graphical interface** alongside the terminal mode:
-
-- **Launch**: `python launcher.py` and select "GUI Mode".
-- **Features**:
-  - Dark fantasy themed UI with custom color palette
-  - Real-time scrolling terminal output panel
-  - Interactive menus, confirmations, and input prompts
-  - Splash screen and main menu with save management
-  - City screen with service buttons and dungeon map
-  - Combat screen with HUD, action buttons, and status display
-  - Inventory/equipment management with drag-and-drop style interface
-  - Settings persistence (font size, theme preferences)
-- **Fallback**: GUI mode wraps the same game logic — save files are fully compatible between terminal and GUI modes.
-- The GUI is built as a layered system: `gui/app.py` (main window) → `gui/screens/` (screen controllers) → `gui/widgets/` (reusable components).
-
----
-
 ## Technical Info
 
-- **Language:** Python 3 (core game has no external dependencies; GUI mode requires tkinter, which is bundled with Python).
-- **Entry Points:** `main.py` (terminal) or `launcher.py` (mode selector). Build to `.exe` with `make_exe.py` (uses PyInstaller).
+- **Language:** Python 3 (no external dependencies; the GUI uses tkinter, which is bundled with Python).
+- **Entry Point:** `launcher.py` (GUI; the PyInstaller target). Build to `.exe` with `make_exe.py`.
 - **Saves:** Stored in the `savefile/` folder as JSON. Multiple save slots supported; delete option available from main menu.
 - **Data:** Enemy and skill data are loaded from YAML files in `resources/` for easy modding.
 - **Modular Design:** Easy to extend with new cities, enemies, items, superbosses, skills, or facilities.
 - **Save Compatibility:** New fields are automatically added to old save files when loaded with `character.py` migration.
 - **Project Structure:**
-  - `combat/` — Combat engine, AI, player actions, UI, stats, allies, superbosses (14 total), legendary weapons
+  - `combat/` — Combat engine, AI, player actions, UI, stats, allies, superbosses (15 total), unique weapons
   - `facilities/` — All city services (shop, inn, guild, blacksmith, temple, Godmother, etc.)
   - `gui/` — tkinter GUI with screens (15), widgets (8), theme, terminal emulation
   - `resources/` — Game data (enemies, items, skills, cities, dialogues)
@@ -895,8 +1012,8 @@ Check for:
 - **Silence** status — you cannot use any skills while Silenced.
 - **Level requirement** — you may have previewed a skill not yet unlocked for your level.
 
-### "How do I get the legendary weapons?"
-Legendary weapons and gear drop from specific superbosses:
+### "How do I get the unique equipment?"
+Unique weapons and gear drop from specific superbosses:
 
 | Item | Source | Type |
 |------|--------|------|
@@ -920,7 +1037,7 @@ Visit the **Arcane Tower in Veilholt** and look for a mysterious book. Wonderlan
 1. Raise a monster girl's affection to **100** through gifts and dungeon victories.
 2. Buy an **engagement ring** from any Gift Shop (Ruby, Sapphire, Emerald, Topaz, Amethyst, or Diamond).
 3. Propose! Once engaged, raise affection to **200**.
-4. At 200 affection, she gifts you a **legendary Wedding Accessory** with unique combat effects that are amplified when she's in your party.
+4. At 200 affection, she gifts you a **Unique Wedding Accessory** with powerful combat effects that are amplified when she's in your party.
 See [Engagement & Marriage](#engagement--marriage) for full details.
 
 ### "What do the Black Silence Gloves do?"
@@ -930,10 +1047,7 @@ They **replace all your class skills** with 9 unique workshop attack patterns. Y
 Not currently. Attribute allocations are permanent, so choose carefully! That said, equipment, blessings, barracks training, and stat milestones all add substantial bonuses on top of your base stats.
 
 ### "How do I save my game?"
-You can save from any city menu (`[S]ave & Return`) or after clearing a dungeon room. There are **multiple save slots** — you can keep separate characters or backup saves. Saves are stored as JSON in the `savefile/` folder and are fully compatible between terminal and GUI modes.
-
-### "What's the difference between terminal mode and GUI mode?"
-Both modes play the exact same game with the same save files. **Terminal mode** (`python main.py`) runs in your console/command prompt. **GUI mode** (`python launcher.py` → GUI) uses a tkinter window with clickable buttons, themed panels, and scrollable text output. Choose whichever you prefer — you can switch anytime.
+You can save from any city menu (`[S]ave & Return`) or after clearing a dungeon room. There are **multiple save slots** — you can keep separate characters or backup saves. Saves are stored as JSON in the `savefile/` folder.
 
 ---
 

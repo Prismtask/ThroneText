@@ -13,6 +13,7 @@ MOUNTS = {
         "cost": 100,
         "time_reduction": 0.15,      # 15 % faster overland travel
         "event_mitigation": 0.10,    # 10 % less chance of any travel event
+        "cargo_capacity": 30,        # cargo weight units it can haul
     },
     "horse": {
         "name": "Horse",
@@ -20,6 +21,7 @@ MOUNTS = {
         "cost": 300,
         "time_reduction": 0.25,
         "event_mitigation": 0.20,
+        "cargo_capacity": 60,
     },
     "war_horse": {
         "name": "War Horse",
@@ -27,6 +29,8 @@ MOUNTS = {
         "cost": 800,
         "time_reduction": 0.35,
         "event_mitigation": 0.30,
+        "cargo_capacity": 90,
+        "monthly_fee": 30,           # high-tier mounts pay upkeep
     },
     "caravan": {
         "name": "Caravan",
@@ -34,6 +38,8 @@ MOUNTS = {
         "cost": 2000,
         "time_reduction": 0.45,
         "event_mitigation": 0.40,
+        "cargo_capacity": 180,
+        "monthly_fee": 80,
     },
 }
 

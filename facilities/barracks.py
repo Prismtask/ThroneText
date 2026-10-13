@@ -1,21 +1,26 @@
 # facilities/barracks.py
-from utils import advance_time, clear_screen
+from utils import advance_time, clear_screen, display_name
 from city_dialogue import service_dialogue
 from combat.ally_skills import (
     teach_ally_skill, replace_ally_learned_skill, MAX_LEARNED_SKILLS,
     get_learnable_skills_by_category, 
-    get_learnable_skill_def, format_skill_learning_progress
+    get_learnable_skill_def, format_skill_learning_progress,
+    meets_skill_requirements, is_upgrade_skill
 )
 from gui.terminal import term, get_terminal
 
 
-TIER_LABELS = {1: "I", 2: "II", 3: "III", 4: "IV"}
-TIER_NAMES = {1: "Novice", 2: "Adept", 3: "Veteran", 4: "Master"}
+TIER_LABELS = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI"}
+TIER_NAMES = {1: "Novice", 2: "Adept", 3: "Veteran", 4: "Master", 5: "Elite", 6: "Legend"}
 
 
 def barracks_service(player, city_id):
     """Barracks: train to gain temporary stat buffs, spar with dummy, or teach allies skills."""
     service_dialogue(city_id, "barracks", "enter")
+
+    from resources.quests import format_resonance_status
+    tier = (player.get("quests") or {}).get("resonance_tier", 0)
+    term.print(format_resonance_status(tier))
     
     choice = term.menu([
         "Train (225 gold – gain +2 Strength for next dungeon run)",
@@ -45,7 +50,8 @@ def barracks_service(player, city_id):
         return
 
     term.pause()
-    advance_time(player, 30)
+    if choice in (0, 1):  # training/teaching cost time — leaving is free
+        advance_time(player, 30)
 
 
 def teach_skill_menu(player):
@@ -58,7 +64,7 @@ def teach_skill_menu(player):
         return
     
     term.clear()
-    options = [f"{ally_data['name']} (Level {ally_data['level']})" for ally_data in allies]
+    options = [f"{display_name(ally_data)} (Level {ally_data['level']})" for ally_data in allies]
     
     choice = term.menu(options, prompt="=== TEACH SKILL ===\nSelect an ally to teach:")
     
@@ -72,7 +78,7 @@ def teach_skill_menu(player):
 def teach_ally_skill_submenu(player, ally_data):
     """Submenu to choose which skill to teach an ally."""
     term.clear()
-    term.print(f"=== TEACH SKILL TO {ally_data['name'].upper()} ===")
+    term.print(f"=== TEACH SKILL TO {display_name(ally_data).upper()} ===")
     
     # Show current learning status
     if ally_data.get("learning"):
@@ -80,8 +86,8 @@ def teach_ally_skill_submenu(player, ally_data):
         if not term.confirm("Replace current learning?"):
             return
     
-    # Show learned skills
-    learned = ally_data.get("learned_skills", [])
+    # Show learned skills (facility upgrade skills are their own category)
+    learned = [sid for sid in ally_data.get("learned_skills", []) if not is_upgrade_skill(sid)]
     if learned:
         term.print(f"\nAlready knows: {', '.join(learned[:3])}" + (" ..." if len(learned) > 3 else ""))
     
@@ -101,18 +107,24 @@ def teach_ally_skill_submenu(player, ally_data):
     select_skill_from_category(player, ally_data, category)
 
 
-def _format_tier_line(skill_def, ally_level):
+def _format_tier_line(skill_def, ally):
     """Return a formatted skill listing line with tier/cost/lock status."""
     tier = skill_def.get("tier", 1)
     exp_cost = skill_def.get("exp_cost", 300)
     req_level = skill_def.get("required_level", 1)
+    req_cap = skill_def.get("required_cap", 0)
     name = skill_def.get("name", "Unknown")
     desc = skill_def.get("description", "")
     tier_name = TIER_NAMES.get(tier, "Unknown")
+    ally_level = ally.get("level", 1)
+    ally_cap = ally.get("level_cap", 10)
     
-    if ally_level < req_level:
+    if ally_level < req_level or (req_cap and ally_cap < req_cap):
         lock = "[LOCKED]"
-        return f"  {lock} {name} (Tier {TIER_LABELS.get(tier, '?')} {tier_name}) — Requires Lv.{req_level} | {exp_cost} EXP"
+        reqs = f"Requires Lv.{req_level}"
+        if req_cap:
+            reqs += f" + Cap {req_cap}"
+        return f"  {lock} {name} (Tier {TIER_LABELS.get(tier, '?')} {tier_name}) — {reqs} | {exp_cost} EXP"
     else:
         return f"  {name} (Tier {TIER_LABELS.get(tier, '?')} {tier_name}) — {exp_cost} EXP\n      {desc}"
 
@@ -121,7 +133,7 @@ def select_skill_from_category(player, ally_data, category):
     """Let player choose a specific skill to teach, grouped by tier."""
     term.clear()
     term.print(f"=== SELECT {category.upper()} SKILL ===")
-    term.print(f"Ally: {ally_data['name']} (Level {ally_data['level']})")
+    term.print(f"Ally: {display_name(ally_data)} (Level {ally_data['level']})")
     
     skills_dict = get_learnable_skills_by_category(category)
     learned = set(ally_data.get("learned_skills", []))
@@ -152,14 +164,13 @@ def select_skill_from_category(player, ally_data, category):
         
         idx = len(options)
         skill_index_map[idx] = (sid, sdef)
-        line = _format_tier_line(sdef, ally_level)
+        line = _format_tier_line(sdef, ally_data)
         term.print(f"{idx + 1}.{line}")
         
         # Build short option label for buttons
         name = sdef.get("name", "Unknown")
-        req = sdef.get("required_level", 1)
         exp_cost = sdef.get("exp_cost", 300)
-        lock = " [LOCKED]" if ally_level < req else ""
+        lock = "" if meets_skill_requirements(ally_data, sdef) else " [LOCKED]"
         options.append(f"{name}{lock} — {exp_cost} EXP")
     
     choice = term.menu(options, prompt=f"Choose a {category} skill:", allow_cancel=True)
@@ -173,29 +184,38 @@ def select_skill_from_category(player, ally_data, category):
     req_level = chosen_skill_def.get("required_level", 1)
     tier = chosen_skill_def.get("tier", 1)
     
-    # Check level requirement
-    if ally_level < req_level:
+    # Check level + level-cap (ascension) requirements
+    if not meets_skill_requirements(ally_data, chosen_skill_def):
         term.clear()
-        term.print(f"{ally_data['name']} is not experienced enough to learn this skill.")
-        term.print(f"Required: Level {req_level} | Current: Level {ally_level}")
+        term.print(f"{display_name(ally_data)} does not meet the requirements to learn this skill.")
+        if ally_level < req_level:
+            term.print(f"Required: Level {req_level} | Current: Level {ally_level}")
+        required_cap = chosen_skill_def.get("required_cap", 0)
+        if required_cap and ally_data.get("level_cap", 10) < required_cap:
+            term.print(f"Required: Level Cap {required_cap} | Current: Level Cap {ally_data.get('level_cap', 10)}")
+            term.print("Ascend her at the House Lounge first.")
         term.pause()
         return
     
     # ── Cap check: if ally already knows 3 skills, must replace one ──
+    # Facility upgrade skills (Frabjous Day / Through the Forest / Emerald
+    # City's Light) are their own category — they never count toward the cap
+    # and are never offered as replacement candidates.
     learned_list = ally_data.get("learned_skills", [])
+    replaceable_list = [sid for sid in learned_list if not is_upgrade_skill(sid)]
     replaced_skill_id = None  # Track which skill is being replaced
     
-    if len(learned_list) >= MAX_LEARNED_SKILLS:
+    if len(replaceable_list) >= MAX_LEARNED_SKILLS:
         # Show replacement menu
         term.clear()
-        term.print(f"=== SKILL SLOTS FULL ({len(learned_list)}/{MAX_LEARNED_SKILLS}) ===")
-        term.print(f"{ally_data['name']} already knows the maximum number of skills.")
+        term.print(f"=== SKILL SLOTS FULL ({len(replaceable_list)}/{MAX_LEARNED_SKILLS}) ===")
+        term.print(f"{display_name(ally_data)} already knows the maximum number of skills.")
         term.print(f"You must replace an existing skill to learn {skill_name}.")
         term.print()
         
         # Build replacement options with skill names
         replace_options = []
-        for sid in learned_list:
+        for sid in replaceable_list:
             sdef = get_learnable_skill_def(sid)
             sname = sdef.get("name", sid) if sdef else sid
             mastery = ally_data.get("skill_mastery", {}).get(sid, 0)
@@ -207,10 +227,10 @@ def select_skill_from_category(player, ally_data, category):
             allow_cancel=True
         )
         
-        if replace_choice < 0 or replace_choice >= len(learned_list):
+        if replace_choice < 0 or replace_choice >= len(replaceable_list):
             return  # Cancelled
         
-        replaced_skill_id = learned_list[replace_choice]
+        replaced_skill_id = replaceable_list[replace_choice]
         replaced_sdef = get_learnable_skill_def(replaced_skill_id)
         replaced_name = replaced_sdef.get("name", replaced_skill_id) if replaced_sdef else replaced_skill_id
         
@@ -226,7 +246,7 @@ def select_skill_from_category(player, ally_data, category):
     else:
         # Confirm teaching (normal path)
         term.clear()
-        term.print(f"Teach {ally_data['name']} the skill: {skill_name}?")
+        term.print(f"Teach {display_name(ally_data)} the skill: {skill_name}?")
         term.print(f"Description: {chosen_skill_def.get('description', '')}")
         term.print(f"Tier: {TIER_LABELS.get(tier, '?')} ({TIER_NAMES.get(tier, 'Unknown')})")
         term.print(f"Learning cost: {exp_cost} EXP")
@@ -248,9 +268,9 @@ def select_skill_from_category(player, ally_data, category):
                 success = teach_ally_skill(party_ally, chosen_skill_id)
             if success:
                 if replaced_skill_id:
-                    term.print(f"\n{ally_data['name']} replaced {replaced_name} and is now learning {skill_name}!")
+                    term.print(f"\n{display_name(ally_data)} replaced {replaced_name} and is now learning {skill_name}!")
                 else:
-                    term.print(f"\n{ally_data['name']} is now learning {skill_name}!")
+                    term.print(f"\n{display_name(ally_data)} is now learning {skill_name}!")
                 term.print(f"Progress: 0 / {exp_cost} EXP")
             break
     
@@ -265,7 +285,7 @@ def select_skill_from_category(player, ally_data, category):
                 break
         save_house_data(player, house_data)
     else:
-        term.print(f"\nFailed to teach skill (already learning, already knows it, or level too low).")
+        term.print(f"\nFailed to teach skill (already learning, already knows it, or level/cap requirements unmet).")
     
     term.pause()
 

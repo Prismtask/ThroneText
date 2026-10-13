@@ -23,8 +23,7 @@ ELEMENTAL_TRAITS = {
     "fire": {
         "name": "Ignite",
         "desc": "Applies a burn tier based on rarity",
-        "on_hit_burn_tier": 2,   # base tier: Burn (6/turn) at common
-        "rarity_bonus": 1,       # +1 tier per rarity above common
+        "on_hit_burn_tier": 2,   # common tier: Burn (6/turn); full curve is IGNITE_TIER_BY_RARITY
     },
     "water": {
         "name": "Douse",
@@ -75,6 +74,15 @@ ELEMENTAL_TRAITS = {
 
 RARITY_TIER = {"common": 0, "uncommon": 1, "rare": 2, "epic": 3, "legendary": 4}
 
+# Ignite (fire) uses its own tuned rarity curve instead of the generic
+# +1-per-rarity bonus — the curve advertised in the v0.1.6 burn rework:
+# Common=Burn, Uncommon=Blaze, Rare=Blaze, Epic=Inferno, Legendary=Conflagration.
+# Unknown rarities (e.g. "unique") fall back to the common tier; revisit if a
+# unique weapon is ever given a primary_element.
+IGNITE_TIER_BY_RARITY = {
+    "common": 2, "uncommon": 3, "rare": 3, "epic": 4, "legendary": 5,
+}
+
 
 # ── Helper Functions ──────────────────────────────────────────────────────────
 
@@ -122,6 +130,10 @@ def get_trait_for_weapon(weapon: dict, rarity: str) -> dict | None:
             resolved[key] = min(5, resolved[key] + bonus * tier)
 
     # Special non-linear cases
+    # Fire: Ignite follows its own tuned rarity curve (see IGNITE_TIER_BY_RARITY).
+    if element == "fire":
+        resolved["on_hit_burn_tier"] = IGNITE_TIER_BY_RARITY.get(
+            rarity, IGNITE_TIER_BY_RARITY["common"])
     if element == "water" and tier >= 3:   # epic+
         resolved["on_kill_cd_reduce"] = 2
     if element == "light" and tier >= 2:   # rare+

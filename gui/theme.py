@@ -6,6 +6,8 @@ Dark theme optimized for ASCII art preservation and readability.
 
 import platform
 
+from version import GAME_VERSION, IS_BETA
+
 # ── Font Configuration ────────────────────────────────────────────────────────
 # Monospace is mandatory: combat HUD, dungeon map, and stat tables rely on
 # fixed-width alignment. A proportional font will break the layout.
@@ -54,6 +56,9 @@ class Theme:
 
     # Fonts (monospace family is mandatory for ASCII art)
     FONT_FAMILY = FONT_FAMILY
+    FONT_SIZE = FONT_SIZE
+    FONT_SIZE_LARGE = FONT_SIZE_LARGE
+    FONT_SIZE_SMALL = FONT_SIZE_SMALL
     FONT = FONT
     FONT_BOLD = FONT_BOLD
     FONT_LARGE = FONT_LARGE
@@ -125,7 +130,7 @@ class Theme:
 WINDOW_MIN_WIDTH = 900
 WINDOW_MIN_HEIGHT = 700
 WINDOW_DEFAULT_SIZE = f"{WINDOW_MIN_WIDTH}x{WINDOW_MIN_HEIGHT}"
-WINDOW_TITLE = "Pandemonium"
+WINDOW_TITLE = f"Pandemonium v{GAME_VERSION}" + (" (beta)" if IS_BETA else "")
 
 # ── Layout Constants ──────────────────────────────────────────────────────────
 TOP_BAR_HEIGHT = 40

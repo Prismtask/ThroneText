@@ -15,6 +15,8 @@ import tkinter as tk
 import os
 import tempfile
 
+from _tk_test_utils import shared_tk_root
+
 
 class TestPhase4Settings(unittest.TestCase):
     """Verify settings persistence."""
@@ -126,14 +128,9 @@ class TestPhase4Screens(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.root = tk.Tk()
-        cls.root.withdraw()
+        cls.root = shared_tk_root()
         from gui.screen_manager import ScreenManager
         cls.sm = ScreenManager(cls.root, player={"name": "Test", "gold": 100, "location": "solmere"})
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.root.destroy()
 
     def test_settings_screen_instantiation(self):
         from gui.screens.settings_screen import SettingsScreen
@@ -165,14 +162,9 @@ class TestPhase4KeyboardSupport(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.root = tk.Tk()
-        cls.root.withdraw()
+        cls.root = shared_tk_root()
         from gui.screen_manager import ScreenManager
         cls.sm = ScreenManager(cls.root)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.root.destroy()
 
     def test_base_screen_has_handle_escape(self):
         from gui.screens.base_screen import BaseScreen
@@ -235,12 +227,10 @@ class TestPhase4Utils(unittest.TestCase):
         self.assertTrue(hasattr(ScreenManager, "show_toast"))
         self.assertTrue(hasattr(ScreenManager, "_open_log_window"))
         # _log_entries is an instance attribute, verify it's set in __init__
-        root = tk.Tk()
-        root.withdraw()
+        root = shared_tk_root()
         sm = ScreenManager(root)
         self.assertTrue(hasattr(sm, "_log_entries"))
         self.assertIsInstance(sm._log_entries, list)
-        root.destroy()
 
 
 if __name__ == "__main__":

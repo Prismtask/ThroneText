@@ -18,6 +18,8 @@ called from combat/status_effects.py apply_* functions and the Paint system.
 # HELPERS
 # ═══════════════════════════════════════════════════════════════════
 
+from utils import display_name
+
 SHAWL_ITEM_ID = "blank_canvas_shawl"
 
 AFTERIMAGE_TURNS = 2
@@ -42,10 +44,11 @@ def _max_hp_of(actor, is_player):
 
 
 def _cleanse_actor(actor):
-    """Remove all debuffs (except Fixative-locked paint) + debuff flags."""
+    """Remove all cleansable debuffs (except Fixative-locked paint) + debuff flags."""
+    from combat.status_effects import is_cleansable
     actor["active_debuffs"] = [
         d for d in actor.get("active_debuffs", [])
-        if d.get("type") == "paint" and d.get("fixed")
+        if (d.get("type") == "paint" and d.get("fixed")) or not is_cleansable(d)
     ]
     for flag in ("stunned", "slowed", "blinded", "silenced", "dreaded",
                  "frozen", "confused", "cursed", "void_touched"):
@@ -130,7 +133,7 @@ def use_blank_canvas(actor, is_player, player):
                 member["current_hp"] = min(old_hp + heal, max_hp)
                 actual = member["current_hp"] - old_hp
                 if actual > 0:
-                    msgs.append(f"🩹 {member['name']} is healed for {actual} HP.")
+                    msgs.append(f"🩹 {display_name(member)} is healed for {actual} HP.")
         msgs.insert(0, f"🖼️  {actor['name']} sweeps the canvas clean — the whole party's "
                         "wounds and curses are wiped away!")
         _grant_afterimage(actor)

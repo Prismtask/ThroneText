@@ -32,6 +32,17 @@ def _ensure_count(item):
     if "count" not in item:
         item["count"] = 1
 
+def format_scaling_stat(item):
+    """Return '▸ Scales: STR + DEX' for weapons with a scaling stat, else ''."""
+    if not item:
+        return ""
+    raw = item.get("scaling_stat")
+    if not raw:
+        return ""
+    stats = raw if isinstance(raw, list) else [raw]
+    abbr = " + ".join(s[:3].upper() for s in stats if s)
+    return f"▸ Scales: {abbr}" if abbr else ""
+
 def get_inventory_caps(player):
     """Return (equipment_cap, other_cap) based on upgrades and allies."""
     upgrade = player.get("inventory_upgrade", 0)
@@ -43,16 +54,16 @@ def get_inventory_caps(player):
 def count_inventory(player):
     inv = player.get("inventory", [])
     equip_count = sum(1 for i in inv if i.get("type") == "equipment")
-    # Key items and crafting materials don't take up bag space
-    other_count = sum(1 for i in inv if i.get("type") not in ("equipment", "key_item", "crafting_material"))
+    # Key items, crafting materials, and cargo don't take up bag space
+    other_count = sum(1 for i in inv if i.get("type") not in ("equipment", "key_item", "crafting_material", "cargo"))
     return equip_count, other_count
 
 def add_item_to_inventory(player, item):
     """Add item to inventory if there's space. Returns True if added, False if full.
     Key items and crafting materials bypass capacity checks."""
     _ensure_count(item)
-    # Key items and crafting materials don't take up bag space — always add
-    if item.get("type") in ("key_item", "crafting_material"):
+    # Key items, crafting materials, and cargo don't take up bag space — always add
+    if item.get("type") in ("key_item", "crafting_material", "cargo"):
         inv = player.setdefault("inventory", [])
         for existing in inv:
             if _items_stackable(existing, item):
@@ -90,14 +101,19 @@ def get_sorted_equipment(player):
     return equip
 
 def get_sorted_items(player):
-    """Return non-equipment, non-key items sorted by rarity descending, then by name."""
+    """Return non-equipment, non-key, non-cargo items sorted by rarity descending, then by name."""
     inv = player.get("inventory", [])
-    items = [i for i in inv if i.get("type") not in ("equipment", "key_item", "crafting_material")]
+    items = [i for i in inv if i.get("type") not in ("equipment", "key_item", "crafting_material", "cargo")]
     items.sort(key=lambda x: (
         -RARITY_ORDER.get(x.get("rarity", "common"), 0),
         x.get("name", "")
     ))
     return items
+
+def get_cargo_items(player):
+    """Return cargo goods from inventory (excluded from normal sell lists)."""
+    inv = player.get("inventory", [])
+    return [i for i in inv if i.get("type") == "cargo"]
 
 def get_key_items(player):
     """Return key items and crafting materials from inventory."""
@@ -161,14 +177,18 @@ def consume_stackable_items(player, predicate, amount_needed):
 
 def equip_item(player, item, target_slot=None):
     item_slot = item["slot"]
-    # Resolve dual accessory slots
+    # Resolve dual accessory slots (+ unlocked third — Beating Root, docs §10.6)
     if item_slot == "accessory":
-        if target_slot in ("accessory1", "accessory2"):
+        acc3 = bool(player.get("acc3_unlocked"))
+        if target_slot in ("accessory1", "accessory2") or (
+                target_slot == "accessory3" and acc3):
             pass  # use caller-specified slot
         elif player.get("equipped", {}).get("accessory1") is None:
             target_slot = "accessory1"
         elif player.get("equipped", {}).get("accessory2") is None:
             target_slot = "accessory2"
+        elif acc3 and player.get("equipped", {}).get("accessory3") is None:
+            target_slot = "accessory3"
         else:
             target_slot = "accessory1"
     else:
@@ -192,20 +212,20 @@ def equip_item(player, item, target_slot=None):
 
 
 def unequip_slot(player, slot):
+    """Unequip the given slot. Returns a result string for UI/logging."""
     if slot in player["equipped"] and player["equipped"][slot]:
         item = player["equipped"][slot]
         if add_item_to_inventory(player, item):
             player["equipped"][slot] = None
-            _tprint(f"Unequipped {item['name']}.")
             # Recalculate elemental profile
             from combat.elemental import compute_player_elemental
             res, dmg = compute_player_elemental(player)
             player["elemental_res"] = res
             player["elemental_dmg"] = dmg
+            return f"Unequipped {item['name']}."
         else:
-            _tprint(f"Cannot unequip {item['name']} — your inventory is full!")
-    else:
-        _tprint("Nothing equipped in that slot.")
+            return f"Cannot unequip {item['name']} — your inventory is full!"
+    return "Nothing equipped in that slot."
 
 def get_total_equipment_mods(player):
     total = {}
@@ -217,12 +237,18 @@ def get_total_equipment_mods(player):
 
 
 def is_combat_only_item(item):
-    """Return True if this item requires an enemy target and can only be used in combat.
-    
+    """Return True if this item only functions in combat.
+
     Items like flasks, bombs, and throwing weapons that deal damage or apply
-    debuffs to enemies have no valid target outside of combat.
+    debuffs to enemies have no valid target outside of combat. The Fractured
+    Hourglass is combat-only too — its temporal energy only bends skill
+    cooldowns, which exist in battle.
     Escape/flee items are NOT combat-only — they can be used freely.
     """
+    # Fractured Hourglass: reusable cooldown-reduction item (combat only,
+    # never consumed — handled by combat.fractured_hourglass)
+    if item.get("special") == "cooldown_reset":
+        return True
     if item.get("type") != "utility":
         return False
     # Escape / flee items work without a specific enemy target
@@ -250,6 +276,11 @@ def use_consumable(player, item, combat_state=None):
     outside of combat — those items have no valid target.
     """
     if item["type"] == "consumable":
+        # The Fractured Hourglass only works in combat (skill cooldowns) —
+        # outside battle it must never be consumed or fall through to healing.
+        if item.get("special") == "cooldown_reset":
+            return ("The Fractured Hourglass only bends time in battle — "
+                    "its sands are inert out here.")
         if "temp_stat" in item:
             duration = item.get("duration", 3)
             stat = item["temp_stat"]

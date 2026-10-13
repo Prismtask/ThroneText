@@ -314,7 +314,7 @@ CITIES = {
         "name": "Skylume",
         "biome": "magical",
         "description": "Towers of crystallised leyline energy pierce the clouds above this arcane city. Magic items trade for a premium.",
-        "services": ["shop", "inn", "arcane_tower", "gift_shop"],
+        "services": ["shop", "inn", "arcane_tower", "gift_shop", "star_tower"],
         "dialogues": {
             "receptionist": SKYLUME_RECEPTIONIST_DIALOGUE,
             "shop": SKYLUME_SHOPKEEPER_DIALOGUE,

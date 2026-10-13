@@ -1,4 +1,4 @@
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input, c_clear, get_io
 import random
 from character import player_max_hp
 
@@ -178,6 +178,11 @@ def apply_tarnished_jade_turn_start(actor, enemies, is_player=True):
     Returns True if Divine Lament or Wedge Backlash triggered.
     """
     if not _actor_has_tarnished_jade(actor):
+        return False
+
+    # If the combat thread was abandoned (its screen destroyed), stop
+    # dealing silent damage to the actor.
+    if not get_io().is_active():
         return False
 
     pins = actor.get("tarnished_jade_pins", 0)

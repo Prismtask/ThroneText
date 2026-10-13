@@ -1,5 +1,6 @@
 from inventory import (get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items,
-                       add_item_to_inventory, remove_item_by_reference)
+                       add_item_to_inventory, remove_item_by_reference, format_scaling_stat)
+from resources.items import is_unique_item
 from utils import _tprint, _tpause, _tclear, _tmenu, _tinput
 
 
@@ -13,7 +14,9 @@ def _format_equipment_stat_line(item):
         f"{stat[:3]} {'+' if v >= 0 else ''}{v}"
         for stat, v in mods.items()
     )
-    return f"[{slot}{(' | ' + mod_s) if mod_s else ''}]"
+    line = f"[{slot}{(' | ' + mod_s) if mod_s else ''}]"
+    scale = format_scaling_stat(item)
+    return f"{line}  {scale}" if scale else line
 
 
 def prompt_acquire_item(player, item):
@@ -41,7 +44,7 @@ def prompt_acquire_item(player, item):
         header = "-- Items --"
 
     # Filter out unique items — they cannot be discarded
-    candidates = [itm for itm in candidates if not itm.get("unique")]
+    candidates = [itm for itm in candidates if not is_unique_item(itm)]
 
     if not candidates:
         _tprint(f"You have no {cat_name.lower()} to discard. The item is dropped.")

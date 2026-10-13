@@ -23,16 +23,17 @@ from combat.player_actions import handle_player_turn
 from combat.combat_ui import (
     print_combat_hud, print_turn_order, print_round_header, print_pre_initiative_enemies
 )
-from combat.status_effects import tick_player_debuffs, tick_player_buffs
+from combat.status_effects import tick_player_debuffs, tick_player_buffs, try_consume_death_ward
 from combat.ally import (
     get_alive_allies, get_active_allies, compute_ally_stats, handle_ally_turn,
     auto_fill_active_slots, can_switch, swap_party_member,
+    reinforce_fallen_allies,
 )
 from combat.weapon.wedding_specials import (
     begin_wedding_combat, end_wedding_combat,
     apply_wedding_combat_start, apply_wedding_end_of_round
 )
-from utils import format_time
+from utils import format_time, display_name
 from combat.combat_io import c_print, c_input, c_clear
 
 
@@ -49,14 +50,20 @@ def roll_initiative(player, enemies):
     from combat.stat_milestones import get_wisdom_bonus
     from combat.weapon.black_silence_gloves import get_gloves_initiative_bonus
     from combat.weapon.palette_brush import get_brush_initiative_bonus
-    from combat.status_effects import get_haste_initiative_bonus
+    from combat.status_effects import get_haste_initiative_bonus, apply_slow_penalty
+    from event_horizon import joker_initiative_bonus
     from wonderland_curses import roll_d20_with_looking_glass
     d20_roll, _ = roll_d20_with_looking_glass(player, verbose=False)
-    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_brush_initiative_bonus(player) + get_haste_initiative_bonus(player)
+    p_dex = apply_slow_penalty(player, p_dex)
+    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_brush_initiative_bonus(player) + get_haste_initiative_bonus(player) + joker_initiative_bonus(player)
     combatants.append({
         "type": "player",
         "speed": player_speed,
-        "label": "You",
+        # The MC's name, not "You" — the GUI preview bar already used the
+        # name, so the engine's first Turn Order line used to flip the card
+        # to "You" mid-fight (2026-10-08 bug report). Damage lines also use
+        # the name, so everything on screen now agrees.
+        "label": player.get("name") or "You",
         "entity": player,
         "extra_turn": None,
     })
@@ -65,14 +72,12 @@ def roll_initiative(player, enemies):
     allies = get_active_allies(player)
     for idx, ally in enumerate(allies):
         a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
-        eff_dex = a_dex
-        if ally.get("slowed"):
-            eff_dex = max(-10, eff_dex - 3)
-        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_brush_initiative_bonus(ally) + get_haste_initiative_bonus(ally)
+        eff_dex = apply_slow_penalty(ally, a_dex)
+        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_brush_initiative_bonus(ally) + get_haste_initiative_bonus(ally) + joker_initiative_bonus(ally)
         combatants.append({
             "type": "ally",
             "speed": speed,
-            "label": f"{ally['name']}",
+            "label": f"{display_name(ally)}",
             "entity": ally,
             "extra_turn": None,
         })
@@ -88,9 +93,7 @@ def roll_initiative(player, enemies):
     shadow_init_bonus = get_shadow_initiative_bonus(player)
 
     for idx, enemy in enumerate(enemies):
-        eff_dex = enemy["dex_mod"]
-        if enemy.get("slowed"):
-            eff_dex = max(-10, eff_dex - 3)
+        eff_dex = apply_slow_penalty(enemy, enemy["dex_mod"])
         speed = random.randint(1, 20) + eff_dex + pandemonium_speed_bonus + shadow_init_bonus + enemy.get("initiative_bonus", 0)
         combatants.append({
             "type": "enemy",
@@ -128,9 +131,12 @@ def _tick_all_state(player):
             tick_authors_pen_cooldown(ally)
 
     from combat.skills import tick_skill_cooldowns
+    from combat.fractured_hourglass import tick_hourglass_cooldown
     tick_skill_cooldowns(player)
+    tick_hourglass_cooldown(player)
     for ally in player.get("allies", []):
         tick_skill_cooldowns(ally)
+        tick_hourglass_cooldown(ally)
 
     if player.get("berserk_turns", 0) > 0:
         player["berserk_turns"] -= 1
@@ -178,8 +184,12 @@ def _tick_all_state(player):
     for m in msgs:
         c_print(m)
     if died:
-        c_print("  You have been slain.")
-        return "dead"
+        if try_consume_death_ward(player):
+            if not player.pop("_eh_emperor_saved", False):
+                c_print("  Your Undying Vow flares — you survive at 1 HP!")
+        else:
+            c_print("  You have been slain.")
+            return "dead"
 
     for m in tick_player_buffs(player):
         c_print(m)
@@ -189,9 +199,9 @@ def _tick_all_state(player):
         if ally.get("potion_sickness", 0) > 0:
             ally["potion_sickness"] -= 1
             if ally["potion_sickness"] == 0:
-                c_print(f"  {ally['name']}'s stomach settles.")
+                c_print(f"  {display_name(ally)}'s stomach settles.")
             else:
-                c_print(f"  {ally['name']} potion sickness — {ally['potion_sickness']} turn(s) remaining.")
+                c_print(f"  {display_name(ally)} potion sickness — {ally['potion_sickness']} turn(s) remaining.")
 
         # Wonderland: Painting Roses for allies too
         if rose_reduction > 0:
@@ -206,47 +216,63 @@ def _tick_all_state(player):
                     debuff["remaining"] = max(1, debuff.get("remaining", 1) - int(rose_reduction))
         ally_msgs, ally_died = tick_player_debuffs(ally)
         for m in ally_msgs:
-            c_print(f"  {ally['name']}: {m}")
+            c_print(f"  {display_name(ally)}: {m}")
         if ally_died:
-            c_print(f"  {ally['name']} succumbs to their wounds!")
+            if try_consume_death_ward(ally):
+                if not ally.pop("_eh_emperor_saved", False):
+                    c_print(f"  Undying Vow holds — {display_name(ally)} survives at 1 HP!")
+            else:
+                c_print(f"  {display_name(ally)} succumbs to their wounds!")
         for m in tick_player_buffs(ally):
-            c_print(f"  {ally['name']}: {m}")
+            c_print(f"  {display_name(ally)}: {m}")
 
-    # Apply race passive regen (Fey, etc.)
+    # Apply race passive regen (Fey 10%, Undead 5%)
     for ally in get_alive_allies(player):
-        from combat.ally_skills import get_race_passive
-        race_passive = get_race_passive(ally.get("race"))
-        if race_passive:
-            effect = race_passive.get("effect", {})
-            if effect.get("type") == "regen":
-                regen_val = int(ally["max_hp"] * effect.get("value", 0))
-                if regen_val > 0:
-                    old_hp = ally["current_hp"]
-                    ally["current_hp"] = min(old_hp + regen_val, ally["max_hp"])
-                    actual = ally["current_hp"] - old_hp
-                    if actual > 0:
-                        c_print(f"  [{race_passive['name']}] {ally['name']} regenerates {actual} HP.")
+        from combat.ally_skills import get_race_passive, get_race_regen
+        regen_rate = get_race_regen(ally)
+        if regen_rate > 0:
+            race_passive = get_race_passive(ally.get("race"))
+            regen_val = int(ally["max_hp"] * regen_rate)
+            if regen_val > 0:
+                old_hp = ally["current_hp"]
+                ally["current_hp"] = min(old_hp + regen_val, ally["max_hp"])
+                actual = ally["current_hp"] - old_hp
+                if actual > 0:
+                    label = race_passive["name"] if race_passive else "Regeneration"
+                    c_print(f"  [{label}] {display_name(ally)} regenerates {actual} HP.")
 
     apply_wedding_end_of_round(player)
     return None
 
 
-def _end_combat_with_result(player, result):
-    """Tick all combat state and return the requested result, unless DoT kills the player."""
+def clear_battle_scoped_state(player):
+    """Reset battle-scoped state for the player + allies WITHOUT ticking.
+
+    Factored out of :func:`_end_combat_with_result` so defensive exits can
+    scrub the same state — an Event Horizon combat interrupted mid-battle
+    (GUI abort → "timeout" → suspend) never reaches its ending handler, and
+    its battle state (Tarnished Jade curse/pins, glove cycle, Crystal
+    Atelier dodge, ...) would otherwise leak into the suspended run's save.
+    """
     clear_abyss_fang_state(player)
     clear_authors_pen_state(player)
-    # Clear Tarnished Jade combat state (pins/backlash are battle-scoped)
+    # Tarnished Jade combat state (pins/backlash are battle-scoped)
     player["tarnished_jade_pins"] = 0
     player["tarnished_jade_weakened"] = False
-    # Clear Black Silence Gloves state for player
+    # Black Silence Gloves cycle
     from combat.weapon.black_silence_gloves import clear_gloves_state
     clear_gloves_state(player)
-    # Clear Palette's Brush + Blank Canvas Shawl state for player
+    # Palette's Brush + Blank Canvas Shawl
     from combat.weapon.palette_brush import clear_brush_state
     from combat.weapon.blank_canvas_shawl import clear_shawl_state
     from combat.palette_ally import clear_palette_ally_state
     clear_brush_state(player)
     clear_shawl_state(player)
+    from combat.weapon.prescript_ledger import reset_all_state as reset_prescript_state
+    reset_prescript_state(player)
+    # Event Horizon trophy: Piece of Relationship battle buffs are battle-scoped
+    from combat.weapon.piece_of_relationship import clear_battle_buffs
+    clear_battle_buffs(player)
     # Clear ally specials
     for ally in player.get("allies", []):
         clear_abyss_fang_state(ally)
@@ -255,8 +281,22 @@ def _end_combat_with_result(player, result):
         clear_brush_state(ally)
         clear_shawl_state(ally)
         clear_palette_ally_state(ally)
+        ally["tarnished_jade_pins"] = 0
+        ally["tarnished_jade_weakened"] = False
+    # Crystal Atelier's 2-turn dodge is granted by a battle action — never
+    # let the last fight's dodge linger into the next room / a suspend save.
+    for actor in [player] + list(player.get("allies", [])):
+        buffs = actor.get("active_buffs")
+        if buffs:
+            actor["active_buffs"] = [b for b in buffs
+                                     if b.get("source") != "crystal_atelier"]
     # Reset potion sickness between combats
     player["potion_sickness"] = 0
+
+
+def _end_combat_with_result(player, result):
+    """Tick all combat state and return the requested result, unless DoT kills the player."""
+    clear_battle_scoped_state(player)
     tick_result = _tick_all_state(player)
     return tick_result if tick_result == "dead" else result
 
@@ -276,10 +316,22 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None, enem
     for ally in player.get("allies", []):
         _reconcile_heroine_vorpal_skills(ally, player)
 
+    from combat.weapon.prescript_ledger import reset_all_state as reset_prescript_state
+    reset_prescript_state(player)
+
     begin_wedding_combat(player, floor, room_num)
+    # Solo fights (§5 hallucinations): allies never join — park them for the
+    # duration of the encounter so every party/initiative/reinforcement path
+    # sees a party of one.
+    solo_saved = None
+    if player.get("_combat_solo"):
+        solo_saved = player.get("allies", [])
+        player["allies"] = []
     try:
         return _combat_inner(player, enemy_keys, floor, room_num, total_rooms, enemies=enemies)
     finally:
+        if solo_saved is not None:
+            player["allies"] = solo_saved
         end_wedding_combat(player)
 
 
@@ -288,6 +340,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
     clear_abyss_fang_state(player)
     clear_captain_cutlass_state(player)
     clear_authors_pen_state(player)
+    # Wonderland Shadow: Down the Rabbit Hole — imported at function level so
+    # the name is always bound. It used to be imported inside the player's
+    # turn branch only, which crashed with UnboundLocalError in the ally
+    # branch when an ally acted before the player had taken a turn.
+    from wonderland_curses import get_shadow_skip_chance
     from combat.weapon.tarnished_jade import _actor_has_tarnished_jade
     # Pins only start accumulating if the Jade is actually equipped
     player["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(player) else 0
@@ -379,6 +436,16 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             c_print("All enemies have been defeated!")
             return _end_combat_with_result(player, "victory")
 
+        # Content round hooks (e.g. the hallucination's stack-III flicker):
+        # per-enemy callables run at round start, after upkeep.
+        for _hk_enemy in list(enemies):
+            _hook = _hk_enemy.get("round_hook")
+            if _hook:
+                try:
+                    _hook(_hk_enemy, player, enemies)
+                except Exception:
+                    pass
+
         p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
         c_clear()
@@ -392,6 +459,27 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         # --- Wedding Accessory: combat start (Round 1 only) ---
         if round_num == 1:
             apply_wedding_combat_start(player, enemies)
+            enemies[:] = prune_dead(enemies)
+            if not enemies:
+                c_print("\n  All enemies have been defeated!")
+                return _end_combat_with_result(player, "victory")
+
+        # --- Event Horizon: Entropy battle-start debuffs + POR battle buffs ---
+        if round_num == 1:
+            from event_horizon import apply_entropy_battle_start
+            apply_entropy_battle_start(player)
+            # The Moon — each battle start deals 2 buffs & 2 debuffs per actor.
+            from event_horizon import apply_joker_battle_start
+            apply_joker_battle_start(player)
+            from combat.weapon.piece_of_relationship import apply_battle_start as _por_battle_start
+            _por_battle_start(player)
+
+        # --- Event Horizon — Judgement: round-start pure pulse ---
+        from event_horizon import joker_judgement_pulse
+        _jdg_msgs = joker_judgement_pulse(player, enemies, round_num)
+        if _jdg_msgs:
+            for _m in _jdg_msgs:
+                c_print(_m)
             enemies[:] = prune_dead(enemies)
             if not enemies:
                 c_print("\n  All enemies have been defeated!")
@@ -417,16 +505,24 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                         c_print("\n  All enemies have been defeated!")
                         return _end_combat_with_result(player, "victory")
 
+        # Prescript Ledger — issue this round's Prescripts and mark the Target
+        from combat.weapon.prescript_ledger import issue_prescripts
+        issue_prescripts(player, enemies)
+
+        # Reinforcement rule (2026-10-12): fallen front allies are replaced
+        # by the earliest living bench ally before this round's initiative.
+        for _rmsg in reinforce_fallen_allies(player):
+            c_print(f"  {_rmsg}")
+
         c_print("\n  Rolling initiative...")
         turn_order = roll_initiative(player, enemies)
 
         # Black Silence Gloves: First Strike detection
         from combat.weapon.black_silence_gloves import set_first_strike, _actor_has_black_silence_gloves
         if _actor_has_black_silence_gloves(player):
-            # Player acts first if their entry comes before all enemies
+            # Player acts first only if they are the very first combatant (before allies too)
             player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
-            enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
-            is_first = player_idx is not None and (not enemy_indices or player_idx < min(enemy_indices))
+            is_first = player_idx == 0
             set_first_strike(player, is_first)
             if is_first:
                 c_print("  🖤 Silence strikes first! +15% damage this round.")
@@ -435,25 +531,26 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         for ally in player.get("allies", []):
             if ally.get("current_hp", 0) > 0 and _actor_has_black_silence_gloves(ally):
                 ally_idx = next((i for i, c in enumerate(turn_order) if c.get("entity") is ally), None)
-                enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
-                is_first = ally_idx is not None and (not enemy_indices or ally_idx < min(enemy_indices))
+                is_first = ally_idx == 0
                 set_first_strike(ally, is_first)
                 if is_first:
-                    c_print(f"  🖤 {ally['name']} strikes first! +15% damage this round.")
+                    c_print(f"  🖤 {display_name(ally)} strikes first! +15% damage this round.")
 
-        # Wedding Accessory: First Strike detection (Round 1 only)
+        # Wedding Accessory: round-1 reminder of the item's REAL effect.
+        # (2026-10-04: replaced a false "you strike first!" line — no such
+        # mechanic ever existed; the line now states the special's effect.)
         if round_num == 1:
-            from combat.weapon.wedding_specials import get_active_wedding_item, is_bonded, get_wedding_girl_key
+            from combat.weapon.wedding_specials import (
+                get_active_wedding_item, is_bonded, wedding_special_blurb,
+            )
             wedding_item = get_active_wedding_item(player)
             if wedding_item:
-                player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
-                enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
-                is_first = player_idx is not None and (not enemy_indices or player_idx < min(enemy_indices))
-                if is_first:
-                    name = wedding_item.get("name", "Wedding Accessory")
-                    bonded = is_bonded(player, wedding_item)
-                    bond_tag = " [Bonded]" if bonded else ""
-                    c_print(f"  ♥ Your {name}{bond_tag} thrums with power — you strike first!")
+                name = wedding_item.get("name", "Wedding Accessory")
+                bonded = is_bonded(player, wedding_item)
+                bond_tag = " [Bonded]" if bonded else ""
+                effect = wedding_special_blurb(wedding_item.get("special"), bonded)
+                if effect:
+                    c_print(f"  ♥ Your {name}{bond_tag} — {effect}.")
 
         # Abyss Tempo: add extra player turns
         abyss_count = get_abyssal_tempo_count(player)
@@ -462,11 +559,12 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                                 if c["type"] == "player"), None)
             if first_p_idx is not None:
                 base_speed = turn_order[first_p_idx]["speed"]
+                pname = player.get("name") or "You"
                 for extra_num in range(1, 3):
                     turn_order.insert(first_p_idx + extra_num, {
                         "type": "player",
                         "speed": base_speed,
-                        "label": "You (Abyss Extra)",
+                        "label": f"{pname} (Abyss Extra)",
                         "entity": player,
                         "extra_turn": extra_num + 1,
                     })
@@ -483,7 +581,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                         turn_order.insert(ally_idx + extra_num, {
                             "type": "ally",
                             "speed": base_speed,
-                            "label": f"{ally['name']} (Abyss Extra)",
+                            "label": f"{display_name(ally)} (Abyss Extra)",
                             "entity": ally,
                             "extra_turn": extra_num + 1,
                         })
@@ -497,7 +595,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 turn_order.insert(first_p_idx + 1, {
                     "type": "player",
                     "speed": base_speed,
-                    "label": "You (Berserk)",
+                    "label": f"{player.get('name') or 'You'} (Berserk)",
                     "entity": player,
                     "extra_turn": "berserk",
                 })
@@ -545,16 +643,34 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                     c_print(f"  ⚔️  ABYSS TEMPO — Extra Action {combatant['extra_turn']}/3!")
 
                 # ── Wonderland Shadow: Down the Rabbit Hole — skip turn chance ──
-                from wonderland_curses import get_shadow_skip_chance
                 skip_chance = get_shadow_skip_chance(player)
                 if skip_chance > 0 and random.random() < skip_chance:
                     c_print(f"\n  🕳️  The ground shifts beneath you — you lose your footing and miss your turn!")
                     continue
 
+                # ── Event Horizon: The Hanged Man — no acting in round 1 ──
+                if round_num == 1 and player.get("_eh_joker_skip_r1"):
+                    c_print("\n  ♠ The Hanged Man suspends you — you cannot act this round.")
+                    continue
+
                 while True:
+                    hp_before_action = {id(e): e.get("hp", 0) for e in live_enemies}
+                    from event_horizon import debuff_signature, joker_mirror_debuffs
+                    _eh_debuffs_before = debuff_signature(live_enemies)
                     result, new_def = handle_player_turn(
                         player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     )
+                    # Prescript Ledger: report enemies damaged by the action (HP-delta)
+                    if result != "retry":
+                        from combat.weapon.prescript_ledger import report_damage as report_prescript_damage
+                        for e in live_enemies:
+                            if hp_before_action.get(id(e), e.get("hp", 0)) > e.get("hp", 0):
+                                report_prescript_damage(player, e)
+                    # Event Horizon — Justice: the party's own debuffs bounce back
+                    if result != "retry":
+                        for _m in joker_mirror_debuffs(player, player, live_enemies,
+                                                       _eh_debuffs_before):
+                            c_print(_m)
                     if result != "retry":
                         break
 
@@ -577,19 +693,38 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                     continue
 
                 if combatant.get("extra_turn"):
-                    c_print(f"  ⚔️  ABYSS TEMPO — {ally['name']} Extra Action {combatant['extra_turn']}/3!")
+                    c_print(f"  ⚔️  ABYSS TEMPO — {display_name(ally)} Extra Action {combatant['extra_turn']}/3!")
 
                 # ── Wonderland Shadow: Down the Rabbit Hole — ally skip chance ──
                 skip_chance = get_shadow_skip_chance(player)
                 if skip_chance > 0 and random.random() < skip_chance:
-                    c_print(f"\n  🕳️  The ground shifts beneath {ally['name']} — they stumble and miss their turn!")
+                    c_print(f"\n  🕳️  The ground shifts beneath {display_name(ally)} — they stumble and miss their turn!")
+                    continue
+
+                # ── Event Horizon: The Hanged Man — no acting in round 1 ──
+                if round_num == 1 and ally.get("_eh_joker_skip_r1"):
+                    c_print(f"\n  ♠ The Hanged Man suspends {display_name(ally)} — they cannot act this round.")
                     continue
 
                 # Player controls ally's action
                 while True:
+                    hp_before_action = {id(e): e.get("hp", 0) for e in live_enemies}
+                    from event_horizon import debuff_signature, joker_mirror_debuffs
+                    _eh_debuffs_before = debuff_signature(live_enemies)
                     result = handle_ally_turn(
                         ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     )
+                    # Prescript Ledger: report enemies damaged by the action (HP-delta)
+                    if result != "retry":
+                        from combat.weapon.prescript_ledger import report_damage as report_prescript_damage
+                        for e in live_enemies:
+                            if hp_before_action.get(id(e), e.get("hp", 0)) > e.get("hp", 0):
+                                report_prescript_damage(ally, e)
+                    # Event Horizon — Justice: the party's own debuffs bounce back
+                    if result != "retry":
+                        for _m in joker_mirror_debuffs(player, ally, live_enemies,
+                                                       _eh_debuffs_before):
+                            c_print(_m)
                     if result != "retry":
                         break
 
@@ -606,7 +741,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                                 future_others.append(turn_order[i])
                         if future_enemies:
                             turn_order[step_idx + 1:] = future_others + future_enemies
-                            c_print(f"\n  🌪️ {ally['name']} pushes enemies to the bottom of initiative!")
+                            c_print(f"\n  🌪️ {display_name(ally)} pushes enemies to the bottom of initiative!")
                     enemies[:] = prune_dead(enemies)
                     if not enemies:
                         c_print("\n  All enemies have been defeated!")
@@ -658,10 +793,18 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                     target_con = a_con
 
                 extra = get_race_extra_logic(enemy)
+                from event_horizon import debuff_signature, joker_mirror_debuffs
+                _eh_debuffs_before = debuff_signature(alive_party)
                 enemy["_combat_round"] = round_num
                 outcome = enemy_attack(enemy, target, target_con, is_defending, extra_logic=extra, all_enemies=enemies, actual_player=player)
                 if outcome == "dead":
-                    if target is player:
+                    if try_consume_death_ward(target):
+                        if not target.pop("_eh_emperor_saved", False):
+                            if target is player:
+                                c_print("  Your Undying Vow flares — you survive at 1 HP!")
+                            else:
+                                c_print(f"  Undying Vow holds — {target['name']} survives at 1 HP!")
+                    elif target is player:
                         c_print("  You have been slain.")
                         return _end_combat_with_result(player, "dead")
                     else:
@@ -676,6 +819,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                             defeated_line = defeated_line.format(name=target['name'])
                         c_print(f"  {defeated_line}")
 
+                # Event Horizon — Justice: the enemy's debuffs mirror back
+                for _m in joker_mirror_debuffs(player, enemy, alive_party,
+                                               _eh_debuffs_before):
+                    c_print(_m)
+
         enemies[:] = prune_dead(enemies)
         if not enemies:
             c_print("\n  All enemies have been defeated!")
@@ -688,6 +836,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
 
         # ── Author's Pen: compute last round's damage for Rewrite ──
         compute_last_round_damage(player)
+
+        # ── Prescript Ledger: round-end resolution (waive / punish / retribution / regen) ──
+        from combat.weapon.prescript_ledger import evaluate_round
+        if evaluate_round(player, enemies) == "dead":
+            return _end_combat_with_result(player, "dead")
 
         tick_result = _tick_all_state(player)
         if tick_result == "dead":

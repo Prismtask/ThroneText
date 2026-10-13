@@ -24,7 +24,7 @@ State keys on the actor dict (cleared at combat end):
 import random
 
 from combat.combat_io import c_print, c_input
-from combat.helpers import format_damage_msg
+from combat.helpers import format_damage_msg, ACTION_CANCELLED_MSG
 from combat.elemental import calculate_elemental_damage
 
 # ═══════════════════════════════════════════════════════════════════
@@ -277,26 +277,41 @@ def _apply_color_debuff_to_enemy(target, color):
     kind = COLOR_DEBUFF.get(color)
     if kind == "burn":
         result = apply_burn(target, tier=2, duration=3)
+        if result == "resisted":
+            return f"{target['name']} shrugs it off!"
         return f"{target['name']} ignites! (Burn tier 2, 3 turns)" if result != "refreshed" else f"{target['name']} keeps burning!"
     if kind == "slow":
-        target["slowed"] = True
-        target.setdefault("active_debuffs", []).append({"type": "slow", "remaining": 2})
+        from combat.status_effects import apply_slow_to_enemy
+        if apply_slow_to_enemy(target, duration=2) == "resisted":
+            return f"{target['name']} shrugs it off!"
         return f"{target['name']} is slowed! (2 turns)"
     if kind == "shock":
-        apply_shock(target, 3, 3)
+        if apply_shock(target, 3, 3) == "resisted":
+            return f"{target['name']} shrugs it off!"
         return f"{target['name']} is shocked! (3 dmg x 3 turns)"
     if kind == "blind":
+        from combat.status_effects import check_status_resisted
+        if check_status_resisted(target):
+            return f"{target['name']} shrugs it off!"
         target["blinded"] = True
         target.setdefault("active_debuffs", []).append({"type": "blind", "remaining": 2})
         return f"{target['name']} is blinded! (2 turns)"
     if kind == "weaken":
-        target.setdefault("active_debuffs", []).append({"type": "weaken", "value": 1, "remaining": 3})
-        return f"{target['name']} is weakened! (-1 STR, 3 turns)"
+        from combat.status_effects import apply_weaken
+        if apply_weaken(target, duration=3) == "resisted":
+            return f"{target['name']} shrugs it off!"
+        return f"{target['name']} is weakened! (-25% STR, 3 turns)"
     if kind == "silence":
+        from combat.status_effects import check_status_resisted
+        if check_status_resisted(target):
+            return f"{target['name']} shrugs it off!"
         target["silenced"] = True
         target.setdefault("active_debuffs", []).append({"type": "silence", "remaining": 2})
         return f"{target['name']} is silenced! (2 turns)"
     if kind == "dread":
+        from combat.status_effects import check_status_resisted
+        if check_status_resisted(target):
+            return f"{target['name']} shrugs it off!"
         target["dreaded"] = True
         target.setdefault("active_debuffs", []).append({"type": "dread", "remaining": 2})
         return f"{target['name']} is filled with dread! (2 turns)"
@@ -316,23 +331,25 @@ def _roll_aura_procs(actor, target):
         if color == "crimson":
             from combat.status_effects import apply_burn
             tier = _aura_value(actor, "crimson", "tier", 2)
-            apply_burn(target, tier=tier, duration=3)
-            msgs.append(f"  🔴 Brush aura: {target['name']} ignites! (Burn tier {tier})")
+            if apply_burn(target, tier=tier, duration=3) != "resisted":
+                msgs.append(f"  🔴 Brush aura: {target['name']} ignites! (Burn tier {tier})")
         elif color == "azure":
+            from combat.status_effects import apply_slow_to_enemy
             dur = _aura_value(actor, "azure", "dur", 2)
-            target["slowed"] = True
-            target.setdefault("active_debuffs", []).append({"type": "slow", "remaining": dur})
-            msgs.append(f"  🔵 Brush aura: {target['name']} is slowed! ({dur} turns)")
+            if apply_slow_to_enemy(target, duration=dur) != "resisted":
+                msgs.append(f"  🔵 Brush aura: {target['name']} is slowed! ({dur} turns)")
         elif color == "gold":
             from combat.status_effects import apply_shock
             dmg = _aura_value(actor, "gold", "dmg", 3)
-            apply_shock(target, dmg, 3)
-            msgs.append(f"  🟡 Brush aura: {target['name']} is shocked! ({dmg} dmg x 3)")
+            if apply_shock(target, dmg, 3) != "resisted":
+                msgs.append(f"  🟡 Brush aura: {target['name']} is shocked! ({dmg} dmg x 3)")
         elif color == "alabaster":
+            from combat.status_effects import check_status_resisted
             dur = _aura_value(actor, "alabaster", "dur", 2)
-            target["silenced"] = True
-            target.setdefault("active_debuffs", []).append({"type": "silence", "remaining": dur})
-            msgs.append(f"  ⚪ Brush aura: {target['name']} is silenced! ({dur} turns)")
+            if not check_status_resisted(target):
+                target["silenced"] = True
+                target.setdefault("active_debuffs", []).append({"type": "silence", "remaining": dur})
+                msgs.append(f"  ⚪ Brush aura: {target['name']} is silenced! ({dur} turns)")
     return msgs
 
 
@@ -446,6 +463,11 @@ def _exhibit_roll(actor, target, mult, element, ignore_con, stats):
     # Masterclass: Exhibit damage +15% while Palette is in the party
     if _masterclass_active(actor):
         dmg = int(dmg * (1 + MASTERCLASS_DMG_BONUS))
+    # Prescript Ledger — clash empowerment vs the Prescript's Target
+    from combat.weapon.prescript_ledger import get_clash_bonus as get_prescript_clash_bonus
+    prescript_clash = get_prescript_clash_bonus(actor, target)
+    if prescript_clash:
+        dmg = int(dmg * (1 + prescript_clash))
     return calculate_elemental_damage(dmg, actor, target, element)
 
 
@@ -485,10 +507,10 @@ def execute_chiaroscuro_exhibit(actor, enemies, stats, is_player=True):
         try:
             choice = int(c_input("Select target for Chiaroscuro: ")) - 1
             if choice < 0 or choice >= len(alive):
-                return "Invalid target.", False
+                return ACTION_CANCELLED_MSG, False
             target = alive[choice]
         except ValueError:
-            return "Invalid input.", False
+            return ACTION_CANCELLED_MSG, False
     else:
         target = alive[0]
 
@@ -520,10 +542,10 @@ def execute_signature_exhibit(actor, enemies, stats, is_player=True):
         try:
             choice = int(c_input("Select target for Signature: ")) - 1
             if choice < 0 or choice >= len(alive):
-                return "Invalid target.", False
+                return ACTION_CANCELLED_MSG, False
             target = alive[choice]
         except ValueError:
-            return "Invalid input.", False
+            return ACTION_CANCELLED_MSG, False
     else:
         target = alive[0]
 
@@ -583,10 +605,13 @@ def tick_palette_brush_passives(actor):
             if actual > 0:
                 msgs.append(f"🎨 {actor['name']}'s Azure glaze restores {actual} HP.")
 
-    # Alabaster: clear 1 self-debuff per turn
+    # Alabaster: clear 1 cleansable self-debuff per turn
     if stance == "light" and actor.get("active_debuffs"):
-        removed = actor["active_debuffs"].pop(0)
-        msgs.append(f"⚪ {actor['name']}'s Alabaster self-cleans {removed.get('type', 'a debuff').upper()}.")
+        from combat.status_effects import is_cleansable
+        idx = next((i for i, d in enumerate(actor["active_debuffs"]) if is_cleansable(d)), None)
+        if idx is not None:
+            removed = actor["active_debuffs"].pop(idx)
+            msgs.append(f"⚪ {actor['name']}'s Alabaster self-cleans {removed.get('type', 'a debuff').upper()}.")
 
     return msgs
 

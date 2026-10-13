@@ -14,6 +14,7 @@ import random
 
 from combat.combat_io import c_input
 from combat.helpers import format_damage_msg
+from utils import display_name
 from combat.elemental import calculate_elemental_damage
 from combat.weapon.palette_brush import (
     COLOR_ORDER as COLOR_CYCLE,
@@ -83,7 +84,7 @@ def start_palette_signature(ally):
     """Begin painting — the Signature strikes on her NEXT turn."""
     ally["palette_signature_pending"] = True
     color = COLOR_NAMES[get_palette_ally_color(ally)]
-    return (f"  🖋️  {ally['name']} begins painting the target's name in {color}... "
+    return (f"  🖋️  {display_name(ally)} begins painting the target's name in {color}... "
             f"The Signature will strike NEXT turn! (cannot be defended)")
 
 
@@ -94,7 +95,7 @@ def fire_palette_signature(ally, player, enemies, on_kill=None):
     live = [e for e in enemies if e["hp"] > 0]
     target = _pick_enemy(live, "  Signature target: ")
     if target is None:
-        return f"  🖋️  {ally['name']}'s Signature fizzles — no enemies remain."
+        return f"  🖋️  {display_name(ally)}'s Signature fizzles — no enemies remain."
 
     from combat.ally import compute_ally_stats
     _s, _c, _d, a_ler, a_wis, _ch = compute_ally_stats(ally)
@@ -105,7 +106,7 @@ def fire_palette_signature(ally, player, enemies, on_kill=None):
     dmg = calculate_elemental_damage(dmg, ally, target, element)
     target["hp"] = max(0, target["hp"] - dmg)
 
-    msgs = [format_damage_msg(ally["name"], target["name"], dmg,
+    msgs = [format_damage_msg(display_name(ally), target["name"], dmg,
                               element=element, skill_name="Signature")]
     if target["hp"] <= 0:
         msgs.append(f"  {target['name']} is defeated!")
@@ -130,7 +131,7 @@ def palette_spectrum_attack(ally, player, enemies):
     scaling = a_ler + a_wis // 2
     elements = ["fire", "water", "thunder", "wind", "earth", "light", "dark"]
 
-    msgs = [f"  🌈 {ally['name']} scatters a Spectrum of three colors!"]
+    msgs = [f"  🌈 {display_name(ally)} scatters a Spectrum of three colors!"]
     for _ in range(SPECTRUM_HITS):
         if target["hp"] <= 0:
             break
@@ -140,7 +141,7 @@ def palette_spectrum_attack(ally, player, enemies):
         dmg = calculate_elemental_damage(dmg, ally, target, element)
         if dmg > 0:
             target["hp"] = max(0, target["hp"] - dmg)
-        msgs.append(format_damage_msg(ally["name"], target["name"], max(0, dmg),
+        msgs.append(format_damage_msg(display_name(ally), target["name"], max(0, dmg),
                                       element=element, skill_name="Spectrum"))
 
     if target["hp"] <= 0:

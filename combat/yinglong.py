@@ -41,6 +41,7 @@ from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_weaken, format_player_status_line
 from character import player_max_hp
 from combat.combat_io import c_print, c_input, c_clear
+from utils import display_name
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -224,11 +225,11 @@ def _inner_dragon_combat(player, outer_enemies=None):
                 for ally in player.get("allies", []):
                     if ally.get("current_hp", 0) > 0:
                         if ally.pop("defending_this_turn", False):
-                            c_print(f"{ally['name']} DEFENDED — the Wedge's energy is deflected from them!")
+                            c_print(f"{display_name(ally)} DEFENDED — the Wedge's energy is deflected from them!")
                         else:
                             ally_dmg = int(ally["max_hp"] * WEDGE_HP_DMG_PCT)
                             ally["current_hp"] -= ally_dmg
-                            c_print(f"Pure divine force — {ally_dmg} unblockable damage to {ally['name']}!")
+                            c_print(f"Pure divine force — {ally_dmg} unblockable damage to {display_name(ally)}!")
                 if player["current_hp"] <= 0:
                     c_print(f"{player['name']} is crushed by Heaven's weight inside the Dragon!")
                     return "dead"
@@ -363,7 +364,7 @@ def combat_yinglong(player, floor=None, enemies=None):
     }
 
     # ── Player Hit Hook (Immortality & Bonus Damage) ────────────────
-    def on_player_hit_hook(target, elist, ctx):
+    def on_player_hit_hook(target, elist, ctx, attacker=None):
         if not _is_boss(target):
             return
             
@@ -537,8 +538,8 @@ def combat_yinglong(player, floor=None, enemies=None):
         def dragon_extra(e, p, dmg):
             msgs = []
             if dmg > 0 and random.random() < 0.30:
-                if apply_weaken(p, str_penalty=3, duration=2) == "applied":
-                    msgs.append("🐉 Heaven's Judgment — your strength crumbles! (STR -3, 2 turns)")
+                if apply_weaken(p, penalty_pct=0.25, duration=2) == "applied":
+                    msgs.append("🐉 Heaven's Judgment — your strength crumbles! (STR −25%, 2 turns)")
             return "\n".join(msgs) if msgs else None
 
         return 1, False, dragon_extra, 1.0, immortal_bonus
@@ -566,11 +567,11 @@ def combat_yinglong(player, floor=None, enemies=None):
                 for ally in player.get("allies", []):
                     if ally.get("current_hp", 0) > 0:
                         if ally.pop("defending_this_turn", False):
-                            c_print(f"{ally['name']} DEFENDED — the Wedge's energy is deflected from them!")
+                            c_print(f"{display_name(ally)} DEFENDED — the Wedge's energy is deflected from them!")
                         else:
                             ally_dmg = int(ally["max_hp"] * WEDGE_HP_DMG_PCT)
                             ally["current_hp"] -= ally_dmg
-                            c_print(f"Pure divine force — {ally_dmg} unblockable damage to {ally['name']}!")
+                            c_print(f"Pure divine force — {ally_dmg} unblockable damage to {display_name(ally)}!")
                 if player["current_hp"] <= 0:
                     c_print(f"{player['name']} is pinned to heaven and cannot continue!")
                     return "dead"

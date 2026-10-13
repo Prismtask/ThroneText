@@ -72,6 +72,29 @@ def _tmenu(options, prompt="Choose an option:", allow_cancel=False, cancel_label
         return -1
 
 
+def display_name(entity):
+    """Return an ally/girl's chosen name (nickname), awakened name, or species name.
+
+    Resolution: nickname → awakened_name → name. The underlying ``name`` field
+    is never overwritten — it is the species name and part of the girl's unique
+    identity (save matching, daily talk tracking).
+    """
+    if not entity:
+        return ""
+    return ((entity.get("nickname") or "").strip()
+            or (entity.get("awakened_name") or "").strip()
+            or entity.get("name", ""))
+
+
+def display_name_with_species(entity):
+    """Return 'Nickname (Awakened Name / Species)' when renamed, otherwise the base name."""
+    if not entity:
+        return ""
+    nick = (entity.get("nickname") or "").strip()
+    base = (entity.get("awakened_name") or "").strip() or entity.get("name", "")
+    return f"{nick} ({base})" if nick else base
+
+
 def _get_wonderland_max_floor(player):
     """Return the highest floor reached in Wonderland dungeon."""
     wl_prog = player.get("city_floors", {}).get("wonderland", {})
@@ -105,8 +128,9 @@ def apply_death_penalty(player):
     # Apply penalty
     player["gold"] = max(0, gold - penalty_gold)
 
-    # Advance time for recovery (8 hours)
-    advance_time(player, 480)
+    # Advance time for recovery (8 hours ≈ 4 blocks in the block model)
+    import time_blocks
+    time_blocks.spend_blocks(player, 4)
 
     # Heal player to 1 HP
     player["current_hp"] = 1
@@ -123,11 +147,24 @@ def apply_death_penalty(player):
     # Wipe dungeon progress
     for key in ("saved_dungeon_floor", "saved_dungeon_rooms", "saved_dungeon_room_index"):
         player.pop(key, None)
+    # Wipe wild-dungeon run state (defensive — normal exits clean up first)
+    player.pop("wild_dungeon_id", None)
+    player.pop("_wild_prev_floor", None)
+    for key in ("saved_wild_floor", "saved_wild_rooms", "saved_wild_room_index"):
+        player.pop(key, None)
 
     # Clear any lingering combat state
     if "abyss_triple_actions" in player:
         player["abyss_triple_actions"] = 0
     player.pop("abyss_tempo_pending", None)
+
+    # Event Horizon: scrub the transient in-run flag + pay the deferred death
+    # payout AFTER the toll (the payout itself is exempt — docs §10.2)
+    player.pop("_eh_in_run", None)
+    pending = player.pop("_eh_pending_payout", 0)
+    if pending:
+        player["gold"] = player.get("gold", 0) + pending
+        _tprint(f"  ◎ The Event Horizon's withheld fortune arrives: +{pending} gold.")
 
     # Save game
     from save_load import save_game
@@ -212,95 +249,47 @@ def format_time(total_minutes):
 
 
 def advance_time(player, minutes):
-    """Advance player's time by minutes, handling day rollover cleanly.
+    """Advance game time by `minutes` using the block model.
 
-    While in Wonderland, real time does not advance — only an internal
-    Wonderland clock ticks forward.
+    Delegates to time_blocks (docs/time_system_design.md): ≤15 min free,
+    16–90 = 1 block, 91+ = 2 blocks; overflow eats into the next day.
+    Whole days (1440+) roll the day once per 1440 (tests / scripted skips).
+    Sleep is a caller-side special path: `time_blocks.end_day(player, slept=True)`.
     """
-    if player.get("wonderland_active"):
-        player["wl_internal_time"] = player.get("wl_internal_time", 0) + minutes
-        return format_time(player)
+    import time_blocks
+    return time_blocks.advance_time(player, minutes)
 
-    if "time_minutes" not in player:
-        player["time_minutes"] = 8 * 60  # Start at 08:00
-    if "day" not in player:
-        player["day"] = 1
 
-    old_day = player["day"]
-    player["time_minutes"] += minutes
-    
-    # 1440 minutes = 24 hours
-    if player["time_minutes"] >= 1440:
-        days_passed = player["time_minutes"] // 1440
-        player["day"] += days_passed
-        player["time_minutes"] %= 1440
-        
-        # ── Process day-based events ─────────────────────────────────────
-        from events import process_day_rollover, display_event_alert, queue_event_alerts
-        events = process_day_rollover(player, days_passed, old_day)
-        
-        if events:
-            if player.get("location") == "dungeon":
-                # Queue alerts to show when player returns to the city
-                queue_event_alerts(player, events)
-            else:
-                # Show immediately (GUI mode suppresses console via journal)
-                for evt in events:
-                    display_event_alert(evt)
-        
-        # CHECK BOUNTY EXPIRY AFTER DAY ROLLOVER
-        from facilities.guild import check_bounty_expiry
-        expired = check_bounty_expiry(player)
-        if expired:
-            # Record expired bounties in the journal instead of printing to console
-            from events import ensure_journal
-            ensure_journal(player)
-            day = player.get("day", 1)
-            for b in expired:
-                player["journal"]["events"].append({
-                    "day": day,
-                    "name": "Bounty Expired",
-                    "desc": f"Bounty for {b['target_name']} expired (deadline passed).",
-                    "tag": "[BOUNTY]",
-                    "fixed": False,
-                })
-        
-    return format_time(player["time_minutes"])
+# ── Time-of-day → difficulty (block phases, docs §7) ────────────────────────
+
+PHASE_DIFFICULTY = {"morning": 1.0, "noon": 1.1, "night": 1.25}
 
 
 def get_time_period(total_minutes):
-    """Determine time period for difficulty scaling."""
+    """Phase id from legacy clock minutes (block model: day starts 06:00)."""
     hour = (total_minutes // 60) % 24
-    if 0 <= hour <= 3:
-        return "midnight"  # Very punishing
-    elif 4 <= hour <= 7:
-        return "dawn"
-    elif hour == 12 or 13 <= hour <= 14:  # Noon period
+    if 6 <= hour < 14:
+        return "morning"
+    if 14 <= hour < 22:
         return "noon"
-    elif 17 <= hour <= 20:  # Dusk
-        return "dusk"
-    elif 21 <= hour <= 23:
-        return "night"
-    return "normal"
+    return "night"
 
 
 def get_difficulty_multiplier_from_time(player):
-    """Get time-based difficulty multiplier (time-of-day + daily events)."""
-    if "time_minutes" not in player:
+    """Phase-based difficulty multiplier (docs §7).
+
+    Morning 1.0 / Noon 1.1 / Night 1.25, with daily-event modifiers
+    (Peaceful Skies −10% / Crimson Dawn +15% / Full Moon handled in stats)
+    multiplying on top.
+    """
+    if not player:
         return 1.0
-    period = get_time_period(player["time_minutes"])
-    if period == "midnight":
-        mult = 1.8  # Very punishing for early-mid game
-    elif period == "dawn":
-        mult = 1.1
-    elif period == "noon":
-        mult = 1.25
-    elif period == "dusk":
-        mult = 1.4
-    elif period == "night":
-        mult = 1.6
-    else:
-        mult = 1.0
+    try:
+        import time_blocks
+        phase = time_blocks.get_day_phase(player)
+    except Exception:
+        phase = get_time_period(player.get("time_minutes", 8 * 60))
+    mult = PHASE_DIFFICULTY.get(phase, 1.0)
 
     # Daily events: Peaceful Skies (-10%) / Crimson Dawn (+15%)
     difficulty_mod = player.get("daily_effects", {}).get("difficulty_mod", 0.0)

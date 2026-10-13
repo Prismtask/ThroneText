@@ -11,7 +11,7 @@ Room types:
 import random
 from character import player_max_hp
 from combat.stats import compute_player_stats
-from utils import clear_screen, advance_time, _tprint, _tpause, _tclear, _tmenu, _tinput
+from utils import clear_screen, advance_time, _tprint, _tpause, _tclear, _tmenu, _tinput, display_name
 from resources.items import ITEMS, ITEM_RARITY, build_item
 from inventory import add_item_to_inventory, remove_item_by_reference
 from leveling import gain_exp, gain_exp_ally
@@ -22,6 +22,10 @@ from combat.ally import get_alive_allies
 from facilities.travel_events import (
     _random_item_id, _item_stat_line, _charisma_discount,
     _merchant_price, _sell_price, _merchant_stock_rarity, _add_to_inv
+)
+from resources.trade_goods import (
+    roll_cargo_good, build_cargo,
+    cargo_merchant_stock_price, cargo_merchant_sell_price,
 )
 
 # ── Room type weights ─────────────────────────────────────────────
@@ -167,7 +171,7 @@ def _select_party_member(player, stat_name=None, dc=None):
                 prob = _calc_pass_probability(mstat, dc)
                 line += f"  |  Pass: {prob:.0%}"
         else:
-            line = f"{member['name']} — HP: {member['current_hp']}/{member['max_hp']}"
+            line = f"{display_name(member)} — HP: {member['current_hp']}/{member['max_hp']}"
             if show_prob:
                 mstat = _get_member_stat(member, stat_name, player)
                 prob = _calc_pass_probability(mstat, dc)
@@ -291,6 +295,56 @@ def render_ascii_map(rooms, explored, current_room_idx, floor, player=None):
     return "\n".join(lines)
 
 
+def render_event_horizon_status(player):
+    """Left-panel stand-in for the floor map during Event Horizon runs.
+
+    The rift has no map (rooms, not floors) — the GUI redirects this to the
+    Map panel (relabeled "Rift"); terminal mode prints it like a map render.
+    """
+    import event_horizon as eh
+
+    state = eh.ensure_eh_state(player)
+    room = int(state.get("room", 0))
+    best = max(int(state.get("best_room", 0) or 0), room)
+    motes = int(state.get("motes", 0))
+    if state.get("rush_mode"):
+        queue = list(state.get("rush_queue") or [])
+        total = int(state.get("rush_total", 0) or 0)
+        felled = max(0, total - len(queue))
+        lines = [
+            "",
+            "   E V E N T   H O R I Z O N",
+            "  ─────────────────────────────",
+            f"   ⚔ RUSH    {felled}/{total} echoes   Best {best}",
+            f"   Echo level {eh.rush_level(player)}  (flat scaling)",
+        ]
+        if queue:
+            boss = eh.rush_boss_by_id(queue[0])
+            if boss:
+                lines.append(f"   Next echo — {boss.get('name', '?')}")
+        return "\n".join(lines)
+    entropy = int(state.get("entropy", 0))
+    entropy_pct = int(round(eh.entropy_stat_penalty(entropy) * 100))
+    next_step = ((entropy // eh.EH_ENTROPY_STEP_STACKS) + 1) * eh.EH_ENTROPY_STEP_STACKS
+    next_trial = max(eh.EH_TRIAL_MIN_ROOM,
+                     ((room // eh.EH_TRIAL_EVERY) + 1) * eh.EH_TRIAL_EVERY)
+    next_milestone = (((room // eh.EH_MILESTONE_FLASK_EVERY) + 1)
+                      * eh.EH_MILESTONE_FLASK_EVERY)
+    affliction_gap = eh.EH_ENTROPY_AFFLICTION_EVERY - (
+        entropy % eh.EH_ENTROPY_AFFLICTION_EVERY)
+    return "\n".join([
+        "",
+        "   E V E N T   H O R I Z O N",
+        "  ─────────────────────────────",
+        f"   Room      {room + 1}        Best {best}",
+        f"   Motes     ◎ {motes}",
+        f"   Entropy   {entropy}  (−{entropy_pct}% attrs — next at {next_step})",
+        f"   Next affliction  +{affliction_gap} stacks",
+        f"   Next trial       after room {next_trial}",
+        f"   Next milestone   r{next_milestone} (flask)",
+    ])
+
+
 def render_party_status(player):
     """Return an ASCII string showing all party members with HP and buff/debuff tags.
     
@@ -328,7 +382,7 @@ def render_party_status(player):
             abar = _hp_bar(ahp, amax, width=8)
             atag = _get_entity_buff_tags(ally)
             dflag = "†" if (ally.get("defeated") or ahp <= 0) else " "
-            lines.append(f"  {dflag}{ally['name'][:12]:<12} {abar} {ahp:>3}/{amax:<3}{atag}")
+            lines.append(f"  {dflag}{display_name(ally)[:12]:<12} {abar} {ahp:>3}/{amax:<3}{atag}")
     else:
         lines.append("  [FRONT] (empty)")
 
@@ -341,7 +395,7 @@ def render_party_status(player):
             abar = _hp_bar(ahp, amax, width=8)
             atag = _get_entity_buff_tags(ally)
             dflag = "†" if (ally.get("defeated") or ahp <= 0) else " "
-            lines.append(f"  {dflag}{ally['name'][:12]:<12} {abar} {ahp:>3}/{amax:<3}{atag}")
+            lines.append(f"  {dflag}{display_name(ally)[:12]:<12} {abar} {ahp:>3}/{amax:<3}{atag}")
     else:
         lines.append("  [BACK] (empty)")
 
@@ -401,7 +455,7 @@ def handle_fountain_room(player, floor):
                 heal = int(ally["max_hp"] * 0.15)
                 ally["current_hp"] = min(old_hp + heal, ally["max_hp"])
                 actual = ally["current_hp"] - old_hp
-                _tprint(f"  {ally['name']} healed {actual} HP.")
+                _tprint(f"  {display_name(ally)} healed {actual} HP.")
             _tpause()
             return "continue"
 
@@ -419,9 +473,15 @@ def handle_merchant_room(player, floor):
     _tprint('"Wares! Quality goods — fair price for a fellow crawler!"')
     _tprint("=" * 50)
 
-    # Build stock: 2–3 items, floor-influenced rarity
+    # Build stock: 2–3 items, floor-influenced rarity, ~30% cargo
     stock = []
     for _ in range(random.randint(2, 3)):
+        if random.random() < 0.30:
+            good_id = roll_cargo_good()
+            item = build_cargo(good_id)
+            your_price, road_price = cargo_merchant_stock_price(good_id, player)
+            stock.append((item, your_price, road_price))
+            continue
         item_id = _random_item_id()
         rarity = _merchant_stock_rarity(player)
         item = build_item(item_id, rarity)
@@ -461,18 +521,27 @@ def handle_merchant_room(player, floor):
                 return "continue"
 
             _tprint("\nYour inventory:")
+            sellable = []
+            for i in inv:
+                if i.get("type") == "cargo":
+                    sellable.append((i, cargo_merchant_sell_price(i)))
+                else:
+                    sellable.append((i, _sell_price(i, player)))
+            if not sellable:
+                _tprint('  "Nothing I want off you."')
+                _tpause()
+                return "continue"
             sell_options = []
-            for i, item in enumerate(inv):
-                unit_price = _sell_price(item, player)
+            for item, unit_price in sellable:
                 count = item.get("count", 1)
                 stack_price = unit_price * count
                 count_str = f" (x{count})" if count > 1 else ""
                 sell_options.append(f"{item['name']}{count_str}  —  {stack_price}g")
 
             sell_idx = _tmenu(sell_options, prompt="Sell which item?", allow_cancel=True, cancel_label="Never mind")
-            if 0 <= sell_idx < len(inv):
-                item = inv[sell_idx]
-                gold = _sell_price(item, player) * item.get("count", 1)
+            if 0 <= sell_idx < len(sellable):
+                item, unit_price = sellable[sell_idx]
+                gold = unit_price * item.get("count", 1)
                 remove_item_by_reference(player, item, item.get("count", 1))
                 player["gold"] = player.get("gold", 0) + gold
                 _tprint(f'  Sold [{item["name"]}] for {gold}g.')
@@ -559,7 +628,7 @@ def handle_trap_room(player, floor):
     total = roll + stat
     success = total >= dc
 
-    name = member.get("name", "You") if member is player else member["name"]
+    name = member.get("name", "You") if member is player else display_name(member)
     _tprint(f"\n{name} attempts to disarm the trap...")
     _tprint(f"Roll: {roll} + {stat} (DEX+WIS) = {total} vs DC {dc}")
 
@@ -588,7 +657,7 @@ def handle_trap_room(player, floor):
             _tprint(f"HP: {player['current_hp']}/{max_hp}")
         else:
             member["current_hp"] = max(1, member["current_hp"] - damage)
-            _tprint(f"\n💥  The trap springs! {member['name']} takes {damage} damage.")
+            _tprint(f"\n💥  The trap springs! {display_name(member)} takes {damage} damage.")
             _tprint(f"HP: {member['current_hp']}/{member['max_hp']}")
 
         if member is player and player["current_hp"] <= max_hp * 0.25:
@@ -643,7 +712,7 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
 
     success, roll, total, stat = _roll_stat_check(member, event["stat"], dc, player)
 
-    name = member.get("name", "You") if member is player else member["name"]
+    name = member.get("name", "You") if member is player else display_name(member)
     _tprint(f"\n{name} attempts the task...")
     _tprint(f"Roll: {roll} + {stat} ({event['stat']}) = {total} vs DC {dc}")
 
@@ -693,7 +762,7 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 damage = max(5, int(max_hp * 0.10))
                 member["current_hp"] = max(1, member.get("current_hp", max_hp) - damage)
                 _tprint(f"\n❌  Failure! Disturbed spirits lash out!")
-                _tprint(f"{member['name']} takes {damage} damage. HP: {member['current_hp']}/{max_hp}")
+                _tprint(f"{display_name(member)} takes {damage} damage. HP: {member['current_hp']}/{max_hp}")
 
     elif event_key == "monster_approaching":
         if success:
@@ -782,7 +851,7 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 max_hp = member.get("max_hp", member.get("current_hp", 10))
                 damage = max(5, int(max_hp * 0.08))
                 member["current_hp"] = max(1, member.get("current_hp", max_hp) - damage)
-                _tprint(f"{member['name']} takes {damage} damage from flying crockery. HP: {member['current_hp']}/{max_hp}")
+                _tprint(f"{display_name(member)} takes {damage} damage from flying crockery. HP: {member['current_hp']}/{max_hp}")
 
     elif event_key == "wl_paint_roses":
         if success:
@@ -821,7 +890,7 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 max_hp = member.get("max_hp", member.get("current_hp", 10))
                 damage = max(3, int(max_hp * 0.06))
                 member["current_hp"] = max(1, member.get("current_hp", max_hp) - damage)
-                _tprint(f"{member['name']} takes {damage} damage in the chaos. HP: {member['current_hp']}/{max_hp}")
+                _tprint(f"{display_name(member)} takes {damage} damage in the chaos. HP: {member['current_hp']}/{max_hp}")
 
     elif event_key == "wl_cat_riddle":
         if success:

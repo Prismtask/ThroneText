@@ -183,8 +183,8 @@ def combat_ignis(player, floor=None, enemies=None):
 
             # ── Final Form: 50 % chance to Weaken on hit ──
             if ctx["final_form"] and dmg > 0 and random.random() < 0.50:
-                if apply_weaken(p, str_penalty=3, duration=2) == "applied":
-                    msgs.append("🔩 Ignis's blows sap your muscles — Weakened! (STR −3, 2 turns)")
+                if apply_weaken(p, penalty_pct=0.25, duration=2) == "applied":
+                    msgs.append("🔩 Ignis's blows sap your muscles — Weakened! (STR −25%, 2 turns)")
 
             return "\n".join(msgs) if msgs else None
 

@@ -131,6 +131,36 @@ class SettingsScreen(BaseScreen):
             font=Theme.FONT,
         ).pack(anchor=tk.W, padx=10, pady=4)
 
+        # Combat pacing — beat length between combat actions (doc §7).
+        cp_frame = tk.Frame(game, bg=Theme.BG_DARK)
+        cp_frame.pack(fill=tk.X, padx=10, pady=4)
+
+        tk.Label(
+            cp_frame,
+            text="Combat pacing:",
+            bg=Theme.BG_DARK,
+            fg=Theme.TEXT,
+            font=Theme.FONT,
+            anchor=tk.W,
+        ).pack(side=tk.LEFT)
+
+        self.pacing_var = tk.StringVar(value=self.sm.settings.get("combat_pacing", "normal"))
+        ttk.Combobox(
+            cp_frame,
+            textvariable=self.pacing_var,
+            values=["instant", "fast", "normal", "slow"],
+            state="readonly",
+            width=10,
+        ).pack(side=tk.LEFT, padx=8)
+
+        tk.Label(
+            cp_frame,
+            text="(pause between combat actions — instant = original pace)",
+            bg=Theme.BG_DARK,
+            fg=Theme.TEXT_DIM,
+            font=Theme.FONT_SMALL,
+        ).pack(side=tk.LEFT)
+
         # ── Audio (reserved) section ───────────────────────────────────────────
         audio = tk.LabelFrame(
             container,
@@ -180,6 +210,7 @@ class SettingsScreen(BaseScreen):
         self.sm.settings["keyboard_mode"] = self.keyboard_var.get()
         self.sm.settings["show_splash"] = self.splash_var.get()
         self.sm.settings["sound_enabled"] = self.sound_var.get()
+        self.sm.settings["combat_pacing"] = self.pacing_var.get()
         save_settings(self.sm.settings)
 
         # Apply font size immediately
@@ -208,5 +239,6 @@ class SettingsScreen(BaseScreen):
         self.keyboard_var.set(self.sm.settings["keyboard_mode"])
         self.splash_var.set(self.sm.settings["show_splash"])
         self.sound_var.set(self.sm.settings["sound_enabled"])
+        self.pacing_var.set(self.sm.settings["combat_pacing"])
         save_settings(self.sm.settings)
         self.sm.log("Settings reset to defaults.")

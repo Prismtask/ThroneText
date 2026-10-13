@@ -10,7 +10,7 @@ Actor-based: works for the player and any ally who has it equipped.
 
 from combat.combat_io import c_print
 
-_SLOTS = ("accessory1", "accessory2", "accessory")
+_SLOTS = ("accessory1", "accessory2", "accessory3", "accessory")
 
 
 def _get_equipped_sky_piercer(actor):

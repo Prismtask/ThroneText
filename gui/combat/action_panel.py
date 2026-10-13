@@ -10,6 +10,7 @@ import tkinter as tk
 from gui.theme import Theme
 from combat.action_menu import get_action_menu
 from combat.ally import _ally_action_menu
+from utils import display_name
 
 
 class ActionPanel(tk.Frame):
@@ -17,6 +18,10 @@ class ActionPanel(tk.Frame):
     Bottom action bar for the combat screen.
     Dynamically generates buttons based on the current combatant's available actions.
     """
+
+    # Button rows the panel ALWAYS reserves (see _reserve_rows) so 1-row and
+    # 2-row menus render at identical height — spare room from the HUD rework.
+    MIN_ROWS = 2
 
     def __init__(self, parent, on_action=None, **kwargs):
         """
@@ -53,7 +58,9 @@ class ActionPanel(tk.Frame):
             anchor=tk.W,
         )
 
-        # Cooldown messages
+        # Cooldown messages — ALWAYS two lines tall, even when empty, so the
+        # panel height never jumps between 1-line and 2-line cooldown lists
+        # (mirrors the reserved second button row below).
         self.cooldown_label = tk.Label(
             self,
             text="",
@@ -61,9 +68,16 @@ class ActionPanel(tk.Frame):
             fg=Theme.TEXT_DIM,
             font=(Theme.FONT_FAMILY, 9),
             anchor=tk.W,
+            justify=tk.LEFT,
+            height=2,
             wraplength=700,
         )
         self.cooldown_label.pack(fill=tk.X, pady=(4, 0))
+
+        # Wrap cooldown text at the panel's real width instead of a fixed
+        # 700px cap — uses the space freed by the HUD rework.
+        self._cooldown_wrap = 700
+        self.bind("<Configure>", self._on_panel_configure)
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -79,30 +93,36 @@ class ActionPanel(tk.Frame):
         disabled_keys = []
         if active_ally is not None:
             menu_str, valid_actions, disabled_keys = _ally_action_menu(active_ally, player, enemies)
-            ally_name = active_ally.get("name", "Ally")
+            ally_name = display_name(active_ally) or "Ally"
         else:
             menu_str, valid_actions, disabled_keys = get_action_menu(player, enemies)
 
-        # Visual distinction for ally turns
+        # Header is always "ACTIONS" — player and ally turns must match.
+        # The lighter panel tint is the only remaining ally-turn cue.
+        self.section_label.config(text="ACTIONS", fg=Theme.TEXT_DIM)
         if ally_name:
-            self.section_label.config(
-                text=f"▶ {ally_name}'s Turn — Choose Action",
-                fg="#3498db",
-            )
             self.config(bg="#16213e")
             self.btn_container.config(bg="#16213e")
         else:
-            self.section_label.config(text="ACTIONS", fg=Theme.TEXT_DIM)
             self.config(bg=Theme.BG_DARK)
             self.btn_container.config(bg=Theme.BG_DARK)
 
-        # Create buttons in rows of 7
+        # Create buttons in rows of 7. A second row is ALWAYS reserved (even
+        # when this menu only needs one) so the panel — and therefore the
+        # whole bottom section — keeps the same size on every turn. The HUD
+        # rework left enough spare room for this (2026-10-07 feedback).
         MAX_PER_ROW = 7
-        row_frame = None
+        rows = []
+
+        def _row_for(index):
+            while len(rows) * MAX_PER_ROW <= index:
+                rf = tk.Frame(self.btn_container, bg=self.btn_container["bg"])
+                rf.pack(fill=tk.X, pady=1)
+                rows.append(rf)
+            return rows[index // MAX_PER_ROW]
+
         for i, key in enumerate(valid_actions):
-            if i % MAX_PER_ROW == 0:
-                row_frame = tk.Frame(self.btn_container, bg=self.btn_container["bg"])
-                row_frame.pack(fill=tk.X, pady=1)
+            row_frame = _row_for(i)
             label = self._label_for_key(key, menu_str)
             btn = tk.Button(
                 row_frame,
@@ -124,10 +144,7 @@ class ActionPanel(tk.Frame):
 
         # Disabled buttons (used workshops) — greyed out, not clickable
         for i, key in enumerate(disabled_keys):
-            idx = len(valid_actions) + i
-            if idx % MAX_PER_ROW == 0:
-                row_frame = tk.Frame(self.btn_container, bg=self.btn_container["bg"])
-                row_frame.pack(fill=tk.X, pady=1)
+            row_frame = _row_for(len(valid_actions) + i)
             label = self._label_for_key(key, menu_str)
             btn = tk.Button(
                 row_frame,
@@ -141,6 +158,10 @@ class ActionPanel(tk.Frame):
             )
             btn.pack(side=tk.LEFT, padx=4, pady=2)
             self._buttons[key] = btn
+
+        # Pad a short menu with an invisible spacer row so a 1-row menu gets
+        # exactly the same height as a 2-row menu (constant panel size).
+        self._reserve_rows(rows)
 
         # Cooldown messages
         if cooldowns:
@@ -169,9 +190,11 @@ class ActionPanel(tk.Frame):
             ("2", "Release to Wild"),
             ("3", "Bond (+20 Affection)"),
         ]
+        row_frame = tk.Frame(self.btn_container, bg=Theme.BG_DARK)
+        row_frame.pack(fill=tk.X, pady=1)
         for key, label in choices:
             btn = tk.Button(
-                self.btn_container,
+                row_frame,
                 text=f"[{key}] {label}",
                 bg=Theme.BUTTON_BG,
                 fg=Theme.BUTTON_FG,
@@ -187,6 +210,10 @@ class ActionPanel(tk.Frame):
             btn.bind("<Leave>", lambda e=None, b=btn: b.config(bg=Theme.BUTTON_BG))
             btn.pack(side=tk.LEFT, padx=4, pady=2)
             self._buttons[key] = btn
+
+        # Same row reservation as the regular panel so this prompt keeps the
+        # exact panel height (see _reserve_rows).
+        self._reserve_rows([row_frame])
 
     def set_target_mode(self, enabled: bool, prompt: str = "Select a target", is_ally_target: bool = False):
         """Enable/disable target selection mode."""
@@ -221,6 +248,23 @@ class ActionPanel(tk.Frame):
             btn.config(state=tk.DISABLED)
 
     # ── Internals ─────────────────────────────────────────────────────────────
+
+    def _reserve_rows(self, rows):
+        """Pad `rows` with invisible spacer frames up to MIN_ROWS so short
+        menus keep the same panel height as full two-row menus."""
+        self.update_idletasks()
+        row_h = rows[0].winfo_reqheight() if rows else 0
+        while len(rows) < self.MIN_ROWS:
+            spacer = tk.Frame(self.btn_container, bg=self.btn_container["bg"], height=row_h)
+            spacer.pack(fill=tk.X, pady=1)
+            rows.append(spacer)
+
+    def _on_panel_configure(self, event):
+        """Re-wrap cooldown text at the panel's actual (spare) width."""
+        wrap = max(300, event.width - 4)
+        if wrap != self._cooldown_wrap:
+            self._cooldown_wrap = wrap
+            self.cooldown_label.config(wraplength=wrap)
 
     def _click(self, key):
         """Handle button click with brief visual flash."""

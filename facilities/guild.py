@@ -98,6 +98,7 @@ def generate_bounties(player, city_id):
             "id": f"bounty_{random.randint(10000, 99999)}",
             "target_enemy": target,
             "target_name": enemy_data["name"],
+            "target_level": enemy_level,
             "required": kills_needed,
             "difficulty": difficulty_display,   # Store the formatted dynamic rank + stars
             "days_given": deadline,
@@ -110,6 +111,33 @@ def generate_bounties(player, city_id):
 def clamp(value, min_val, max_val):
     """Helper to keep difficulty strictly within boundaries."""
     return max(min_val, min(max_val, value))
+
+
+# ── Prescript Ledger gate: Level 20+ bounty completions ──────────────
+HIGH_BOUNTY_LEVEL = 20
+
+
+def _bounty_target_level(bounty):
+    """Best-effort target level (stored at generation; template fallback for old saves)."""
+    lvl = bounty.get("target_level")
+    if lvl is None:
+        lvl = (ENEMIES.get(bounty.get("target_enemy")) or {}).get("level", 0)
+    return int(lvl or 0)
+
+
+def _record_bounty_completion(player, bounty):
+    """Count a turned-in bounty. Returns (total, high, counted_high).
+
+    `high_bounties_completed` (Level 20+ targets) is the Prescript Ledger gate;
+    `bounties_completed` counts every honored contract.
+    """
+    player["bounties_completed"] = player.get("bounties_completed", 0) + 1
+    counted_high = _bounty_target_level(bounty) >= HIGH_BOUNTY_LEVEL
+    if counted_high:
+        player["high_bounties_completed"] = player.get("high_bounties_completed", 0) + 1
+    return (player["bounties_completed"],
+            player.get("high_bounties_completed", 0),
+            counted_high)
 
 def _get_floor_pool(floor, biome, boss=False):
     """
@@ -304,54 +332,102 @@ def _ascend_level_cap(player, city_id):
 
 
 def _legendary_rewards(player, city_id):
-    """Guild legacy rewards: Sky Piercer for defeating 5 distinct superbosses.
+    """Guild legacy rewards: Sky Piercer and the Prescript Ledger.
 
-    The option always exists but is rejected unless the requirement is met.
+    Two entries, each claimable once, each with its own requirement.
     """
     term.clear()
-    required = 5
-    progress = len(set(player.get("defeated_superbosses", [])))
-
     term.print("=== GUILD LEGACY REWARDS ===")
     term.print("The Guild Master unrolls a ledger older than the guild itself.")
     term.print("")
+
+    sky_required = 5
+    sky_progress = len(set(player.get("defeated_superbosses", [])))
+    ledger_required = 10
+    ledger_progress = player.get("high_bounties_completed", 0)
+
     term.print("  ☁️  Sky Piercer — unique accessory")
     term.print("     Executes non-Super-Boss enemies left at low HP by your attacks.")
-    term.print(f"     Requirement: defeat {required} different Super Bosses")
-    term.print(f"     Progress: {min(progress, required)}/{required}")
-
+    term.print(f"     Requirement: defeat {sky_required} different Super Bosses")
     if player.get("sky_piercer_claimed"):
+        term.print("     Status: CLAIMED")
+    else:
+        term.print(f"     Progress: {min(sky_progress, sky_required)}/{sky_required}")
+
+    term.print("")
+    term.print("  📜  Prescript Ledger — unique accessory")
+    term.print("     Records every honored contract. Its pages issue commands in battle:")
+    term.print("     fulfil them for Grace; let them slip and Karma comes due.")
+    term.print(f"     Requirement: fulfill {ledger_required} guild bounties against Level {HIGH_BOUNTY_LEVEL}+ targets")
+    if player.get("prescript_ledger_claimed"):
+        term.print("     Status: CLAIMED")
+    else:
+        term.print(f"     Progress: {min(ledger_progress, ledger_required)}/{ledger_required}")
+
+    options = []
+    claims = []
+    if not player.get("sky_piercer_claimed"):
+        options.append("Claim Sky Piercer")
+        claims.append("sky")
+    if not player.get("prescript_ledger_claimed"):
+        options.append("Claim Prescript Ledger")
+        claims.append("ledger")
+    if not options:
         term.print("")
-        term.print("*** CLAIM REJECTED ***")
-        term.print("The Sky Piercer already rests with you. The ledger is closed.")
+        term.print("Both relics already rest with you. The ledger is closed.")
         term.pause()
         return
 
-    if progress < required:
-        term.print("")
-        term.print("*** CLAIM REJECTED ***")
-        term.print(f"The ledger is incomplete. Defeat {required - progress} more different Super Bosses to prove your worth.")
-        term.pause()
+    term.print("")
+    choice = term.menu(options, prompt="Make your claim:", allow_cancel=True, cancel_label="Back")
+    if choice < 0 or choice >= len(claims):
         return
+    claim = claims[choice]
 
     from resources.items import build_item
     from inventory import add_item_to_inventory
-    item = build_item("sky_piercer")
+
+    if claim == "sky":
+        if sky_progress < sky_required:
+            term.print("")
+            term.print("*** CLAIM REJECTED ***")
+            term.print(f"The ledger is incomplete. Defeat {sky_required - sky_progress} more different Super Bosses to prove your worth.")
+            term.pause()
+            return
+        item = build_item("sky_piercer")
+        add_item_to_inventory(player, item)
+        player["sky_piercer_claimed"] = True
+        term.print("")
+        term.print("The Guild Master bows. 'Take it. The sky will not forget your name.'")
+        term.print(f"*** Received unique accessory: {item['name']} ***")
+        term.pause()
+        return
+
+    if ledger_progress < ledger_required:
+        term.print("")
+        term.print("*** CLAIM REJECTED ***")
+        term.print(f"The ledger is incomplete. Honour {ledger_required - ledger_progress} more bounties against Level {HIGH_BOUNTY_LEVEL}+ targets.")
+        term.pause()
+        return
+    item = build_item("prescript_ledger")
     add_item_to_inventory(player, item)
-    player["sky_piercer_claimed"] = True
+    player["prescript_ledger_claimed"] = True
     term.print("")
-    term.print("The Guild Master bows. 'Take it. The sky will not forget your name.'")
+    term.print("The Guild Master traces a new page. 'Every contract honored was already written here.'")
     term.print(f"*** Received unique accessory: {item['name']} ***")
     term.pause()
 
 
-def _traveling_merchant(player):
+def _traveling_merchant(player, city_id):
     """Market Day event: a traveling merchant sells wares inside the guild hall."""
     from facilities.travel_events import (
         _random_item_id, _merchant_stock_rarity, _merchant_price,
         _charisma_discount, _item_stat_line,
     )
     from resources.items import build_item
+    from resources.trade_goods import (
+        roll_cargo_good, build_cargo, cargo_merchant_stock_price,
+    )
     from inventory import add_item_to_inventory
 
     term.clear()
@@ -359,9 +435,15 @@ def _traveling_merchant(player):
     term.print('  A road-worn merchant has set up a stall in the corner of the guild hall.')
     term.print('  "Wares! Quality goods — fair price for a fellow traveler!"\n')
 
-    # Build stock: filtered item pool, floor-influenced rarity (no legendaries)
+    # Build stock: filtered item pool, floor-influenced rarity, ~30% cargo
     stock = []
     for _ in range(random.randint(2, 3)):
+        if random.random() < 0.30:
+            good_id = roll_cargo_good(city_id)
+            item = build_cargo(good_id)
+            your_price, road_price = cargo_merchant_stock_price(good_id, player)
+            stock.append((item, your_price, road_price))
+            continue
         item_id     = _random_item_id()
         rarity      = _merchant_stock_rarity(player)
         item        = build_item(item_id, rarity)
@@ -389,15 +471,14 @@ def _traveling_merchant(player):
     options.append("Leave the stall")
 
     while True:
-        choice = term.menu(options, prompt="What will you do?",
-                           allow_cancel=True, cancel_label="Leave the stall")
+        choice = term.menu(options, prompt="What will you do?")
 
         if choice == -1 or choice == len(options) - 1:
             term.print('  "Safe roads, traveler!"')
             break
 
         if choice == len(options) - 2:  # Sell
-            _merchant_sell(player)
+            _merchant_sell(player, city_id)
             break
 
         if 0 <= choice < len(stock):
@@ -417,10 +498,13 @@ def _traveling_merchant(player):
     term.pause()
 
 
-def _merchant_sell(player):
+def _merchant_sell(player, city_id=None):
     """Sell items to the guild-hall traveling merchant at road rates."""
     from facilities.travel_events import _sell_price, _item_stat_line
+    from resources.trade_goods import cargo_merchant_sell_price
     from inventory import remove_item_by_reference
+    from combat.weapon.wedding_specials import is_wedding_item_soulbound
+    from resources.items import is_unique_item
 
     inv = player.get("inventory", [])
     if not inv:
@@ -428,11 +512,22 @@ def _merchant_sell(player):
         term.pause()
         return
 
+    # Cargo sells at the local demand rate; everything else at the road rate
+    sellable = []
+    for i in inv:
+        if i.get("type") == "cargo":
+            sellable.append((i, cargo_merchant_sell_price(i, city_id)))
+        else:
+            sellable.append((i, _sell_price(i, player)))
+    if not sellable:
+        term.print('  "Nothing I want off you — yet." The merchant shrugs.')
+        term.pause()
+        return
+
     term.print("\n  The merchant eyes your pack with practiced interest.")
     term.print("  (Road sell rate: ~75% of city shop value)\n")
 
-    for i, item in enumerate(inv):
-        unit_price  = _sell_price(item, player)
+    for i, (item, unit_price) in enumerate(sellable):
         count       = item.get("count", 1)
         stack_price = unit_price * count
         count_str   = f" (x{count})" if count > 1 else ""
@@ -441,12 +536,17 @@ def _merchant_sell(player):
     try:
         raw = term.input("\n  Sell which item number? (0 to cancel): ")
         idx = int(raw.strip()) - 1
-        if 0 <= idx < len(inv):
-            item = inv[idx]
-            gold = _sell_price(item, player) * item.get("count", 1)
-            remove_item_by_reference(player, item, item.get("count", 1))
-            player["gold"] = player.get("gold", 0) + gold
-            term.print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
+        if 0 <= idx < len(sellable):
+            item, unit_price = sellable[idx]
+            if is_wedding_item_soulbound(item):
+                term.print(f'  [{item["name"]}] is soulbound — cannot be sold.')
+            elif is_unique_item(item):
+                term.print(f'  [{item["name"]}] is unique — cannot be sold.')
+            else:
+                gold = unit_price * item.get("count", 1)
+                remove_item_by_reference(player, item, item.get("count", 1))
+                player["gold"] = player.get("gold", 0) + gold
+                term.print(f'  Sold [{item["name"]}] for {gold}g. "A fair deal for the road!"')
         else:
             term.print('  "Changing your mind is free."')
     except (ValueError, IndexError):
@@ -514,7 +614,7 @@ def guild_service(player, city_id="solmere"):
         elif choice == 4:
             _legendary_rewards(player, city_id)
         elif merchant_active and choice == 5:
-            _traveling_merchant(player)
+            _traveling_merchant(player, city_id)
         elif choice == len(options) - 1 or choice == -1:
             service_dialogue(city_id, "receptionist", "leave")
             advance_time(player, 15)
@@ -623,6 +723,9 @@ def _manage_bounties(player, city_id):
                 term.print(f"Bounty Complete! Earned {gold_reward} gold and {favor_reward} Favor in {CITIES[b['city']]['name']}.{note}")
                 player["gold"] = player.get("gold", 0) + gold_reward
                 player["favor"][city_id] = player["favor"].get(city_id, 0) + favor_reward
+                total_contracts, high_contracts, _counted_high = _record_bounty_completion(player, b)
+                term.print(f"(The Guild's ledger records {total_contracts} honored contracts — "
+                           f"{high_contracts} against Level {HIGH_BOUNTY_LEVEL}+ foes.)")
                 active.pop(choice)
                 advance_time(player, 10)
                 term.pause()

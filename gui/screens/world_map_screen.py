@@ -11,6 +11,9 @@ world map that supports:
                 The right panel becomes a live travel log.
                 The dot pauses at each city; sea segments trigger a port prompt.
                 Combat and other events fire mid-segment.
+
+  Both modes support drag-panning: press and drag the map to reach cities
+  that lie outside the window (small windows, or as the map grows).
 """
 
 import tkinter as tk
@@ -22,7 +25,11 @@ from gui.theme import Theme
 from gui.widgets.confirm_dialog import confirm_dialog
 
 from resources.cities import CITIES
-from resources.items import ITEMS, build_item, ITEM_RARITY
+from resources.items import ITEMS, build_item, ITEM_RARITY, is_unique_item
+from resources.trade_goods import (
+    roll_cargo_good, build_cargo,
+    cargo_merchant_stock_price, cargo_merchant_sell_price,
+)
 from facilities.pathfinding import find_shortest_path
 from facilities.travel_events import (
     _random_item_id, _discovery_rarity, _merchant_stock_rarity,
@@ -30,45 +37,27 @@ from facilities.travel_events import (
 )
 from inventory import add_item_to_inventory, remove_item_by_reference
 from combat.stats import get_effective_attribute
-from utils import advance_time, get_difficulty_multiplier_from_time
+from utils import get_difficulty_multiplier_from_time
 from character import player_max_hp
 from events import get_daily_bonus_multiplier
+from wild_dungeons import (
+    get_active_dungeons, get_wild_dungeon, maybe_spawn_cycle,
+    build_journey_to_dungeon,
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  CITY LAYOUT
 # ═══════════════════════════════════════════════════════════════════════════
-
-_CITY_POSITIONS = {
-    "stormhold": (80, 60),
-    "thornwall": (230, 80),
-    "solmere":    (200, 160),
-    "greyharbor": (120, 220),
-    "elderfen":   (310, 230),
-    "irondeep":   (450, 140),
-    "skylume":    (580, 80),
-    "cinderpeak": (570, 190),
-    "veilholt":   (680, 140),
-    "sunreach":   (170, 330),
-    "brinewatch": (60, 410),
-    "mirefall":   (250, 380),
-    "ashkara":    (100, 480),
-    "dunemar":    (200, 510),
-    "saltmarsh":  (310, 430),
-    "tidebreak":    (450, 400),
-    "coralhaven":   (600, 380),
-    "blackwake":    (520, 500),
-    "isle_of_glass": (650, 500),
-}
-
-_REGIONS = {
-    "North":       ("stormhold", "thornwall"),
-    "Central":     ("solmere", "greyharbor", "elderfen"),
-    "East":        ("irondeep", "skylume", "cinderpeak", "veilholt"),
-    "South":       ("sunreach", "brinewatch", "mirefall", "ashkara",
-                    "dunemar", "saltmarsh"),
-    "Far Reaches": ("tidebreak", "coralhaven", "blackwake", "isle_of_glass"),
-}
+# Positions/regions live in resources/world_layout.py so runtime systems
+# (e.g. wild_dungeons.py) can place markers without importing GUI modules.
+# Private aliases keep the rest of this file unchanged.
+from resources.world_layout import (
+    CITY_POSITIONS as _CITY_POSITIONS,
+    REGIONS as _REGIONS,
+    NODE_W as _NODE_W,
+    NODE_H as _NODE_H,
+)
 
 _REGION_COLORS = {
     "North":       "#1a3a5c",
@@ -102,11 +91,36 @@ _SERVICE_ICONS = {
     "gift_shop": "\U0001f381", "guild": "\U0001f465",
 }
 
-_NODE_W = 120
-_NODE_H = 38
 _ANIM_STEPS = 30        # animation frames per segment
 _ANIM_INTERVAL = 40     # ms between frames
 _EVENT_CHECKPOINTS = 3  # event slots per segment
+
+# Wild dungeon marker appearance (canvas px)
+_WILD_MARKER_W = 96
+_WILD_MARKER_H = 30
+_WILD_MARKER_FILL = "#2b1622"
+_WILD_MARKER_OUTLINE = "#c44dff"
+_WILD_MARKER_SELECTED = "#f1c40f"
+
+# Wild dungeon marker glyphs by biome — themed after each biome's races
+# (see resources/enemies/biome_races.py). Fallback is the skull glyph.
+_WILD_BIOME_ICONS = {
+    "tundra":      "\u2744",        # ❄
+    "temperate":   "\U0001F33F",    # 🌿
+    "swamp":       "\U0001F438",    # 🐸
+    "mountain":    "\u26F0",        # ⛰
+    "magical":     "\u2728",        # ✨
+    "volcanic":    "\U0001F30B",    # 🌋
+    "forest":      "\U0001F332",    # 🌲
+    "savanna":     "\U0001F981",    # 🦁
+    "coastal":     "\U0001F30A",    # 🌊
+    "desert":      "\U0001F335",    # 🌵
+    "tropical":    "\U0001F334",    # 🌴
+    "sea_caves":   "\U0001F41A",    # 🐚
+    "pandemonium": "\U0001F48E",    # 💎
+    "wonderland":  "\U0001F407",    # 🐇
+}
+_WILD_FALLBACK_ICON = "\u2620"      # ☠
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -122,12 +136,22 @@ class WorldMapScreen(BaseScreen):
     def __init__(self, parent, screen_manager, travel_mode=False, **kwargs):
         self._mode = self.MODE_BROWSE
         self._selected_city = None
+        self._selected_wild = None       # dungeon id of the selected wild dungeon
+        self._wild_rect_ids = {}         # dungeon_id -> canvas rect item id (marker)
+        self._wild_hitboxes = {}         # dungeon_id -> (x1, y1, x2, y2)
+        self._selected_horizon = False   # Event Horizon site selected
+        self._horizon_rect_id = None     # canvas rect id of the site marker
+        self._horizon_hitbox = None      # (x1, y1, x2, y2)
         self._node_rects = {}
         self._canvas = None
         self._info_frame = None
         self._travel_mode = travel_mode  # True = travel mode (pathfinding + highlights + Travel Here)
         self._path_result = None        # cached pathfinding result for travel mode
         self._route_lines = {}           # (a,b) sorted tuple → [canvas line IDs]
+
+        # Map panning (drag) state
+        self._drag_start = None          # (x, y) where the mouse was pressed
+        self._dragging_map = False       # True once the drag threshold is passed
 
         # Travel state
         self._travel_segments = []
@@ -143,8 +167,9 @@ class WorldMapScreen(BaseScreen):
         self._travel_seg_start = (0, 0)
         self._travel_seg_end = (0, 0)
         self._travel_player_dead = False
-        self._travel_time_acc = 0.0   # fractional minutes accumulated during animation
         self._travel_combat_result = None  # set by _check, handled on overlay dismiss
+        self._travel_wild = None      # wild dungeon dict when journeying to a ruin
+        self._travel_horizon = None   # EH site dict when journeying to the distortion
 
         super().__init__(parent, screen_manager, **kwargs)
 
@@ -168,14 +193,6 @@ class WorldMapScreen(BaseScreen):
         c = CITIES.get(city_id, {})
         return "port" in c.get("services", [])
 
-    @property
-    def tick_interval_ms(self):
-        """During animation, per-frame stepping handles time advancement.
-        The background clock should stay quiet so it doesn't double-tick."""
-        if self._travel_segments:
-            return 86_400_000  # effectively never (once per day)
-        return 2000            # Default: 1 game minute per 2 real seconds
-
     def _update_top_bar(self):
         """Show the origin city format with live time — same as CityScreen."""
         if not self.player:
@@ -189,11 +206,13 @@ class WorldMapScreen(BaseScreen):
         _cur = _cf.get("floor", 1)
         _max = _cf.get("max_floor", 1)
         from events import format_date
-        from utils import format_time
-        text = (
-            f"{self.player['name']} | {city_name} | Floor {_cur}/{_max} | "
-            f"{format_date(self.player)} | {format_time(self.player)}"
-        )
+        from time_blocks import format_block_track
+        track = format_block_track(self.player, include_day=False)
+        segments = [self.player['name'], city_name, f"Floor {_cur}/{_max}"]
+        if track:
+            segments.append(track)
+        segments.append(format_date(self.player))
+        text = " | ".join(segments)
         self.sm.update_top_bar(text)
 
     # ── UI construction ──────────────────────────────────────────────────
@@ -232,7 +251,24 @@ class WorldMapScreen(BaseScreen):
         self._draw_routes()
         self._draw_city_nodes()
 
-        self._canvas.bind("<Button-1>", self._on_canvas_click)
+        # ── Wild dungeons: expire overdue + idempotent weekly spawn, then draw ──
+        # (docs/wild_dungeon_design.md §2 — world-map open is a safe check point)
+        if self.player:
+            spawned, _ = maybe_spawn_cycle(self.player)
+            if spawned:
+                self.sm.log(
+                    f"{len(spawned)} wild dungeon(s) surfaced "
+                    f"— check the world map.",
+                    category="event",
+                )
+            self._draw_wild_dungeons()
+            self._draw_event_horizon()
+
+        # Allow drag-panning when the map is larger than the viewport
+        self._update_map_scrollregion()
+        self._canvas.bind("<ButtonPress-1>", self._on_canvas_press)
+        self._canvas.bind("<B1-Motion>", self._on_canvas_drag)
+        self._canvas.bind("<ButtonRelease-1>", self._on_canvas_release)
         self._canvas.bind("<Motion>", self._on_canvas_motion)
 
         # Bottom bar
@@ -245,18 +281,13 @@ class WorldMapScreen(BaseScreen):
         )
         self._btn_back.pack(side=tk.LEFT, padx=4)
 
-        self._btn_travel = self.styled_button(
-            self._bottom_bar, text="\u25b6 Travel Here",
-            command=self._on_travel_here, width=16, bg=Theme.ACCENT,
-        )
-
         self._btn_legend = self.styled_button(
             self._bottom_bar, text="Show Legend",
             command=self._show_legend, width=16,
         )
         self._btn_legend.pack(side=tk.RIGHT, padx=4)
 
-        self.bind("<Escape>", lambda e: self._on_escape())
+        self.bind("<Escape>", self._on_escape_event)
         self.focus_set()
 
     # ── Drawing ──────────────────────────────────────────────────────────
@@ -384,8 +415,10 @@ class WorldMapScreen(BaseScreen):
                 mid_x = (cx1 + cx2) / 2
                 mid_y = (cy1 + cy2) / 2
                 raw_time = conn.get("travel_time", 0)
+                import time_blocks as _tb_edge
+                edge_blocks = _tb_edge.travel_blocks(self.player, raw_time)
                 self._canvas.create_text(
-                    mid_x, mid_y - 6, text=f"{raw_time}m",
+                    mid_x, mid_y - 6, text=f"{edge_blocks}b",
                     fill=Theme.TEXT_DIM, font=(Theme.FONT_FAMILY, 7),
                     tags=("route_label",),
                 )
@@ -426,35 +459,305 @@ class WorldMapScreen(BaseScreen):
                 )
             self._node_rects[city_id] = rect_id
 
+    def _draw_wild_dungeons(self):
+        """Draw markers for active wild dungeons (distinct from city nodes)."""
+        self._wild_rect_ids = {}
+        self._wild_hitboxes = {}
+        for dungeon in get_active_dungeons(self.player):
+            dungeon_id = dungeon.get("id")
+            position = dungeon.get("position")
+            if not dungeon_id or not position:
+                continue
+            x, y = position[0], position[1]
+            x1 = x - _WILD_MARKER_W // 2
+            y1 = y - _WILD_MARKER_H // 2
+            x2 = x1 + _WILD_MARKER_W
+            y2 = y1 + _WILD_MARKER_H
+            selected = (dungeon_id == self._selected_wild)
+            rect_id = self._canvas.create_rectangle(
+                x1, y1, x2, y2,
+                fill=_WILD_MARKER_FILL,
+                outline=_WILD_MARKER_SELECTED if selected else _WILD_MARKER_OUTLINE,
+                width=2.5 if selected else 1.5,
+                tags=("wild_node", dungeon_id),
+            )
+            icon = _WILD_BIOME_ICONS.get(dungeon.get("biome"), _WILD_FALLBACK_ICON)
+            self._canvas.create_text(
+                x, y,
+                text=f"{icon} Lv {dungeon.get('level', '?')}",
+                fill=Theme.RARITY_LEGENDARY,
+                font=(Theme.FONT_FAMILY, 8, "bold"),
+                tags=("wild_node", dungeon_id),
+            )
+            self._wild_rect_ids[dungeon_id] = rect_id
+            self._wild_hitboxes[dungeon_id] = (x1, y1, x2, y2)
+
+    # ── Event Horizon site (endless run; docs/event_horizon_design.md §6.1) ──
+
+    def _draw_event_horizon(self):
+        """Draw the distortion's site marker once the unlock gate is met."""
+        from event_horizon import EVENT_HORIZON_POSITION, site_unlocked
+        self._horizon_rect_id = None
+        self._horizon_hitbox = None
+        if not self.player or not site_unlocked(self.player):
+            return
+        px, py = EVENT_HORIZON_POSITION
+        x1, y1 = px - 75, py - 15
+        x2, y2 = px + 75, py + 15
+        selected = self._selected_horizon
+        self._horizon_rect_id = self._canvas.create_rectangle(
+            x1, y1, x2, y2,
+            fill="#12101d",
+            outline=_WILD_MARKER_SELECTED if selected else "#8e6bff",
+            width=2.5 if selected else 2,
+            tags=("horizon_node",),
+        )
+        self._canvas.create_text(
+            px, py, text="\U0001F300 EVENT HORIZON",
+            fill="#c9b6ff",
+            font=(Theme.FONT_FAMILY, 8, "bold"),
+            tags=("horizon_node",),
+        )
+        self._horizon_hitbox = (x1, y1, x2, y2)
+
+    def _find_horizon_at(self, ex, ey):
+        """True when the click hits the EH marker (widget -> canvas coords)."""
+        if self._horizon_hitbox is None:
+            return False
+        ex = self._canvas.canvasx(ex)
+        ey = self._canvas.canvasy(ey)
+        x1, y1, x2, y2 = self._horizon_hitbox
+        return x1 <= ex <= x2 and y1 <= ey <= y2
+
+    def _select_horizon(self):
+        self._selected_horizon = True
+        if self._horizon_rect_id:
+            self._canvas.itemconfig(self._horizon_rect_id,
+                                    outline=_WILD_MARKER_SELECTED, width=2.5)
+        self._build_horizon_info_panel()
+
+    def _deselect_horizon(self):
+        self._selected_horizon = False
+        if self._horizon_rect_id:
+            self._canvas.itemconfig(self._horizon_rect_id,
+                                    outline="#8e6bff", width=2)
+        self._show_info_placeholder()
+
+    def _build_horizon_info_panel(self):
+        """EH site details: run status, best depth, travel estimate."""
+        import event_horizon as eh
+        inner = self._make_scrollable_info()
+        site = eh.event_horizon_site(self.player)
+        if site is None:
+            self._show_info_placeholder()
+            return
+        state = eh.ensure_eh_state(self.player)
+        active = bool(state.get("run_active"))
+        room = int(state.get("room", 0))
+        best = int(state.get("best_room", 0))
+        nearest_id = site.get("nearest_city", "solmere")
+        nearest = CITIES.get(nearest_id, {}).get("name", nearest_id)
+
+        est_travel = None
+        try:
+            journey = eh.build_journey_to_site(self.player)
+            if journey is not None:
+                est_travel = journey["total_time"]
+        except Exception:
+            journey = None
+        est_blocks = self._journey_blocks(journey) if journey else None
+
+        tk.Label(inner, text="THE EVENT HORIZON",
+                 bg=Theme.BG_CARD, fg="#8e6bff",
+                 font=Theme.FONT_BOLD).pack(anchor=tk.W, padx=10, pady=(10, 2))
+        tk.Label(inner, text="[\U0001F300 Space-Time Distortion \u00b7 Endless]",
+                 bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+                 font=Theme.FONT_SMALL).pack(anchor=tk.W, padx=10)
+
+        sep = tk.Frame(inner, bg=Theme.BORDER, height=1)
+        sep.pack(fill=tk.X, padx=8, pady=6)
+        tk.Label(inner, text="RUN STATUS",
+                 bg=Theme.BG_CARD, fg=Theme.TEXT,
+                 font=(Theme.FONT_FAMILY, 9, "bold")).pack(
+            anchor=tk.W, padx=10, pady=(0, 4))
+
+        rows = [
+            ("Status", (f"Suspended at room {room + 1}" if active and room > 0
+                        else ("Ready to begin" if not active else "In progress"))),
+            ("Deepest room", str(best)),
+            ("Nearest city", nearest),
+            ("Est. travel", (f"≈{est_blocks} blocks"
+                             if est_blocks is not None else "no route")),
+        ]
+        for label, value in rows:
+            row = tk.Frame(inner, bg=Theme.BG_CARD)
+            row.pack(fill=tk.X, padx=10, pady=1)
+            tk.Label(row, text=label, bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+                     font=Theme.FONT_SMALL).pack(side=tk.LEFT)
+            tk.Label(row, text=value, bg=Theme.BG_CARD, fg=Theme.TEXT,
+                     font=Theme.FONT_SMALL).pack(side=tk.RIGHT)
+
+        tk.Label(
+            inner,
+            text=("Endless rooms \u2014 every clear deepens the distortion. "
+                  "Feed flasks to one actor or spread them; carry hard trial "
+                  "cards for a richer payout. Progress suspends on save & "
+                  "quit, and is lost on death or abandon."),
+            bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+            font=Theme.FONT_SMALL, wraplength=270, justify=tk.LEFT,
+        ).pack(anchor=tk.W, padx=10, pady=(6, 8))
+
+        self.styled_button(
+            inner,
+            text="\u25b6 Travel to the Distortion",
+            command=self._on_travel_to_horizon,
+            width=24, bg=Theme.ACCENT, fg=Theme.TEXT_HEADER,
+        ).pack(pady=(2, 12))
+
     # ── Canvas events ────────────────────────────────────────────────────
 
+    def _update_map_scrollregion(self):
+        """Size the canvas scroll region to the drawn map content.
+
+        Without a scroll region Tk anchors the view at (0, 0) and anything
+        past the window edge is unreachable.  A content-based region lets
+        the player drag the map when the window is small (and keeps working
+        automatically if the map grows later).
+        """
+        bbox = self._canvas.bbox("all")
+        if not bbox:
+            return
+        pad = 40  # breathing room around the outermost nodes
+        self._canvas.configure(
+            scrollregion=(bbox[0] - pad, bbox[1] - pad,
+                          bbox[2] + pad, bbox[3] + pad),
+            confine=True,
+        )
+
     def _find_city_at(self, ex, ey):
+        # Mouse events arrive in widget coords; the map lives in canvas
+        # coords, which shift when the view is drag-panned.
+        ex = self._canvas.canvasx(ex)
+        ey = self._canvas.canvasy(ey)
         for city_id, (cx, cy) in _CITY_POSITIONS.items():
             if cx <= ex <= cx + _NODE_W and cy <= ey <= cy + _NODE_H:
                 return city_id
         return None
 
+    def _find_wild_at(self, ex, ey):
+        """Return the wild dungeon id whose marker contains the click point.
+
+        Mouse events arrive in widget coords; the map lives in canvas
+        coords, which shift when the view is drag-panned — same conversion
+        as _find_city_at, so markers stay clickable after panning.
+        """
+        ex = self._canvas.canvasx(ex)
+        ey = self._canvas.canvasy(ey)
+        for dungeon_id, (x1, y1, x2, y2) in self._wild_hitboxes.items():
+            if x1 <= ex <= x2 and y1 <= ey <= y2:
+                return dungeon_id
+        return None
+
+    # ── Drag-panning ─────────────────────────────────────────────────────
+
+    def _on_canvas_press(self, event):
+        """Arm a potential drag and remember the pan anchor."""
+        self._drag_start = (event.x, event.y)
+        self._dragging_map = False
+        self._canvas.scan_mark(event.x, event.y)
+
+    def _on_canvas_drag(self, event):
+        """Pan the map once the pointer moves past the click threshold."""
+        if self._drag_start is None:
+            return
+        dx = event.x - self._drag_start[0]
+        dy = event.y - self._drag_start[1]
+        if not self._dragging_map and max(abs(dx), abs(dy)) >= 4:
+            self._dragging_map = True
+            self._canvas.config(cursor="fleur")
+        if self._dragging_map:
+            self._canvas.scan_dragto(event.x, event.y, gain=1)
+
+    def _on_canvas_release(self, event):
+        """Finish a drag, or treat a stationary press as a city click."""
+        was_dragging = self._dragging_map
+        self._drag_start = None
+        self._dragging_map = False
+        self._canvas.config(cursor="")
+        if was_dragging:
+            return  # a pan, not a click — don't select a city
+        self._on_canvas_click(event)
+
     def _on_canvas_motion(self, event):
+        if self._dragging_map:
+            return  # keep the panning cursor while dragging
         if self._mode == self.MODE_TRAVEL:
             return
-        city = self._find_city_at(event.x, event.y)
-        self._canvas.config(cursor="hand2" if city else "")
+        target = self._find_city_at(event.x, event.y) or \
+            self._find_wild_at(event.x, event.y) or \
+            self._find_horizon_at(event.x, event.y)
+        self._canvas.config(cursor="hand2" if target else "")
 
     def _on_canvas_click(self, event):
         if self._mode == self.MODE_TRAVEL:
             return
         city = self._find_city_at(event.x, event.y)
-        if city is None:
+        if city is not None:
+            if self._selected_wild is not None:
+                self._deselect_wild()
+            if self._selected_horizon:
+                self._deselect_horizon()
+            if city == self._selected_city:
+                self._deselect_city()
+            else:
+                self._select_city(city)
             return
-        if city == self._selected_city:
-            self._deselect_city()
-        else:
-            self._select_city(city)
+        wild_id = self._find_wild_at(event.x, event.y)
+        if wild_id is not None:
+            if self._selected_horizon:
+                self._deselect_horizon()
+            if wild_id == self._selected_wild:
+                self._deselect_wild()
+            else:
+                self._select_wild(wild_id)
+            return
+        if self._find_horizon_at(event.x, event.y):
+            if self._selected_wild is not None:
+                self._deselect_wild()
+            if self._selected_city is not None:
+                self._deselect_city()
+            if self._selected_horizon:
+                self._deselect_horizon()
+            else:
+                self._select_horizon()
+
+    def _on_escape_event(self, _event=None):
+        """Frame-level <Escape> binding.
+
+        Returns "break" so the root-level global handler (gui/app.py) does
+        not dispatch the same keypress a second time — both bindings fire
+        while this screen itself holds focus.
+        """
+        self._on_escape()
+        return "break"
+
+    def handle_escape(self):
+        """Root-dispatched Escape (focus on a child widget).
+
+        The BaseScreen default calls sm.go_back(), which rebuilds the
+        previous screen beneath any active overlay. Mirror the frame-level
+        binding instead (deselect, or leave the map only when idle).
+        """
+        self._on_escape()
 
     def _on_escape(self):
         if self._mode == self.MODE_TRAVEL:
             return
-        if self._selected_city is not None:
+        if self._selected_wild is not None:
+            self._deselect_wild()
+        elif self._selected_horizon:
+            self._deselect_horizon()
+        elif self._selected_city is not None:
             self._deselect_city()
         else:
             self._go_back()
@@ -476,17 +779,18 @@ class WorldMapScreen(BaseScreen):
             self._canvas.itemconfig(self._node_rects[city_id],
                                     outline="#f1c40f", width=2)
 
-        # In travel mode: compute path, highlight it, show route info + Travel Here
+        # In travel mode: compute path, highlight it, show route info.
+        # The "Travel Here" button lives inside the info panel itself
+        # (see _build_travel_info_panel), matching the wild dungeon panel.
         if self._travel_mode and city_id != self.city_id:
             self._path_result = find_shortest_path(self.player, self.city_id, city_id)
             if self._path_result and self._path_result["segments"]:
                 self._highlight_path(self._path_result)
             self._build_travel_info_panel(city_id, self._path_result)
-            self._btn_travel.pack(side=tk.LEFT, padx=4, before=self._btn_legend)
         else:
             self._path_result = None
             self._build_city_info_panel(city_id)
-            # No Travel Here button in browse mode
+            # No Travel Here in browse mode
 
     def _deselect_city(self):
         self._clear_path_highlight()
@@ -500,7 +804,46 @@ class WorldMapScreen(BaseScreen):
             )
         self._selected_city = None
         self._show_info_placeholder()
-        self._btn_travel.pack_forget()
+
+    # ── Browse: wild dungeon selection ───────────────────────────────────
+
+    def _select_wild(self, dungeon_id):
+        """Select a wild dungeon marker and show its info panel."""
+        if self._selected_city is not None:
+            self._deselect_city()
+        self._restore_wild_marker(self._selected_wild)
+        self._selected_wild = dungeon_id
+        rect_id = self._wild_rect_ids.get(dungeon_id)
+        if rect_id:
+            try:
+                self._canvas.itemconfig(rect_id,
+                                        outline=_WILD_MARKER_SELECTED,
+                                        width=2.5)
+            except tk.TclError:
+                pass
+        dungeon = get_wild_dungeon(self.player, dungeon_id)
+        if dungeon:
+            self._build_wild_info_panel(dungeon)
+
+    def _deselect_wild(self):
+        """Clear the wild dungeon selection and restore the placeholder."""
+        self._restore_wild_marker(self._selected_wild)
+        self._selected_wild = None
+        self._show_info_placeholder()
+
+    def _restore_wild_marker(self, dungeon_id):
+        """Restore a wild marker's default outline after deselection."""
+        if not dungeon_id:
+            return
+        rect_id = self._wild_rect_ids.get(dungeon_id)
+        if not rect_id:
+            return
+        try:
+            self._canvas.itemconfig(rect_id,
+                                    outline=_WILD_MARKER_OUTLINE,
+                                    width=1.5)
+        except tk.TclError:
+            pass
 
     # ── Path highlighting ────────────────────────────────────────────────
 
@@ -541,7 +884,7 @@ class WorldMapScreen(BaseScreen):
         self._clear_info_panel()
         tk.Label(
             self._info_frame,
-            text="Click a city on the\nmap to view details.",
+            text="Click a city or a ruin marker\non the map to view details.\n\nDrag the map to pan.",
             bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
             font=Theme.FONT_SMALL, justify=tk.CENTER,
         ).pack(expand=True)
@@ -629,11 +972,121 @@ class WorldMapScreen(BaseScreen):
                 raw = conn.get("travel_time", 0)
                 icon = "\u26f5" if ctype == "sea" else "\U0001f9b6"
                 type_label = "Sea" if ctype == "sea" else "Land"
+                import time_blocks as _tb_conn
+                conn_blocks = _tb_conn.travel_blocks(self.player, raw)
                 tk.Label(inner,
-                         text=f"  {icon} {dest_name} — {raw} min ({type_label})",
+                         text=f"  {icon} {dest_name} — ≈{conn_blocks} blocks ({type_label})",
                          bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
                          font=Theme.FONT_SMALL).pack(
                     anchor=tk.W, padx=10, pady=(1, 0))
+
+    def _build_wild_info_panel(self, dungeon):
+        """Show wild dungeon details + the previewable reward pool."""
+        inner = self._make_scrollable_info()
+
+        biome = str(dungeon.get("biome", "unknown")).title()
+        level = dungeon.get("level", 1)
+        total_floors = dungeon.get("total_floors", 1)
+        cleared = dungeon.get("highest_floor_cleared", 0)
+        day = self.player.get("day", 1) if self.player else 1
+        days_left = max(0, int(dungeon.get("expire_day", day)) - day)
+        nearest_id = dungeon.get("nearest_city", "solmere")
+        nearest = CITIES.get(nearest_id, {}).get("name", nearest_id)
+
+        # ── Header ───────────────────────────────────────────────────────
+        tk.Label(inner, text=dungeon.get("name", "Wild Dungeon").upper(),
+                 bg=Theme.BG_CARD, fg=_WILD_MARKER_OUTLINE,
+                 font=Theme.FONT_BOLD).pack(anchor=tk.W, padx=10, pady=(10, 2))
+        biome_icon = _WILD_BIOME_ICONS.get(dungeon.get("biome"), _WILD_FALLBACK_ICON)
+        tk.Label(inner, text=f"[{biome_icon} {biome} \u00b7 Wild Dungeon]",
+                 bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+                 font=Theme.FONT_SMALL).pack(anchor=tk.W, padx=10)
+
+        # ── Details ──────────────────────────────────────────────────────
+        sep = tk.Frame(inner, bg=Theme.BORDER, height=1)
+        sep.pack(fill=tk.X, padx=8, pady=6)
+        tk.Label(inner, text="DUNGEON",
+                 bg=Theme.BG_CARD, fg=Theme.TEXT,
+                 font=(Theme.FONT_FAMILY, 9, "bold")).pack(
+            anchor=tk.W, padx=10, pady=(0, 4))
+
+        # ── Travel-time estimate (same math as the embark flow; the
+        #    off-road leg rolls fresh each call, so this is an estimate) ──
+        est_travel = None
+        est_blocks = None
+        ferry_cost = 0
+        if self.player:
+            try:
+                journey = build_journey_to_dungeon(self.player, dungeon)
+            except Exception:
+                journey = None
+            if journey is not None:
+                est_travel = journey["total_time"]
+                est_blocks = self._journey_blocks(journey)
+                ferry_cost = journey["total_cost"]
+
+        rows = [
+            ("Level", str(level)),
+            ("Floors", str(total_floors)),
+            ("Expires", f"in {days_left} day(s)" if days_left > 0 else "today"),
+            ("Est. travel", (f"≈{est_blocks} blocks"
+                             if est_blocks is not None else "no route")),
+            ("Nearest city", nearest),
+        ]
+        if ferry_cost > 0:
+            rows.append(("Ferry cost", f"{ferry_cost}g"))
+        if cleared > 0:
+            rows.append(("Progress", f"{cleared}/{total_floors} floors"))
+        for label, value in rows:
+            row = tk.Frame(inner, bg=Theme.BG_CARD)
+            row.pack(fill=tk.X, padx=10, pady=1)
+            tk.Label(row, text=label, bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+                     font=Theme.FONT_SMALL).pack(side=tk.LEFT)
+            tk.Label(row, text=value, bg=Theme.BG_CARD, fg=Theme.TEXT,
+                     font=Theme.FONT_SMALL).pack(side=tk.RIGHT)
+
+        tk.Label(
+            inner,
+            text=(f"Clear every floor to claim the pool. "
+                  f"Fleeing or falling returns you to {nearest}. "
+                  f"Retryable until it crumbles."),
+            bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+            font=Theme.FONT_SMALL, wraplength=270, justify=tk.LEFT,
+        ).pack(anchor=tk.W, padx=10, pady=(6, 2))
+
+        # ── Reward pool preview ──────────────────────────────────────────
+        sep2 = tk.Frame(inner, bg=Theme.BORDER, height=1)
+        sep2.pack(fill=tk.X, padx=8, pady=6)
+        tk.Label(inner, text="REWARD POOL",
+                 bg=Theme.BG_CARD, fg=Theme.TEXT,
+                 font=(Theme.FONT_FAMILY, 9, "bold")).pack(
+            anchor=tk.W, padx=10, pady=(0, 4))
+
+        for entry in dungeon.get("reward_pool", []):
+            item_id = entry.get("item_id", "")
+            rarity = str(entry.get("rarity", "common")).lower()
+            item_name = ITEMS.get(item_id, {}).get("name", item_id)
+            color = Theme.RARITY_COLORS.get(rarity, Theme.RARITY_COMMON)
+            row = tk.Frame(inner, bg=Theme.BG_CARD)
+            row.pack(fill=tk.X, padx=10, pady=1)
+            tk.Label(row, text=item_name, bg=Theme.BG_CARD, fg=color,
+                     font=Theme.FONT_SMALL, anchor=tk.W, justify=tk.LEFT,
+                     wraplength=180).pack(side=tk.LEFT)
+            tk.Label(row, text=f"[{rarity.upper()}]", bg=Theme.BG_CARD,
+                     fg=color, font=(Theme.FONT_FAMILY, 7)).pack(side=tk.RIGHT)
+
+        tk.Label(inner, text="Item stats are rolled on acquisition.",
+                 bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+                 font=(Theme.FONT_FAMILY, 7, "italic")).pack(
+            anchor=tk.W, padx=10, pady=(6, 10))
+
+        # ── Travel button ────────────────────────────────────────────────
+        self.styled_button(
+            inner,
+            text="\u25b6 Travel to Dungeon",
+            command=lambda: self._on_travel_to_dungeon(dungeon.get("id")),
+            width=22, bg=Theme.ACCENT, fg=Theme.TEXT_HEADER,
+        ).pack(pady=(2, 12))
 
     def _build_travel_info_panel(self, city_id, path_result):
         """Show destination details + route breakdown + Travel Here button (travel mode)."""
@@ -681,7 +1134,8 @@ class WorldMapScreen(BaseScreen):
 
             tk.Label(inner, text="",
                      bg=Theme.BG_CARD, font=(Theme.FONT_FAMILY, 2)).pack()
-            tk.Label(inner, text=f"Total: {path_result['total_time']} min",
+            tk.Label(inner,
+                     text=(f"Total: ≈{self._journey_blocks(path_result)} blocks"),
                      bg=Theme.BG_CARD, fg=Theme.TEXT,
                      font=Theme.FONT_BOLD).pack(anchor=tk.W, padx=10)
             if path_result["total_cost"] > 0:
@@ -714,21 +1168,75 @@ class WorldMapScreen(BaseScreen):
                     c = 0
                     r += 1
 
+        # ── Travel button (right column, matches the wild dungeon panel) ─
+        self.styled_button(
+            inner,
+            text="\u25b6 Travel Here",
+            command=self._on_travel_here,
+            width=22, bg=Theme.ACCENT, fg=Theme.TEXT_HEADER,
+        ).pack(pady=(10, 12))
+
     # ── Travel initiation ────────────────────────────────────────────────
 
     def _on_travel_here(self):
         if self._selected_city is None or self._selected_city == self.city_id:
             return
 
-        # Use cached path result if available (travel mode), else compute
-        result = self._path_result
-        if result is None:
-            result = find_shortest_path(self.player, self.city_id, self._selected_city)
+        # Always recompute — cargo load may have changed since the route was
+        # first highlighted, and the graph is tiny.
+        result = find_shortest_path(self.player, self.city_id, self._selected_city)
         if result is None or not result["segments"]:
             self.sm.log("No route found to that city.")
             return
 
         gold = self.player.get("gold", 0)
+
+        # ── Cargo load info for the embark prompt ──────────────────────
+        from resources.trade_goods import (
+            cargo_total_weight, cargo_capacity, cargo_travel_penalty,
+        )
+        load = cargo_total_weight(self.player)
+        cargo_lines = ""
+        if load > 0:
+            parts = []
+            if any(s["type"] == "land" for s in result["segments"]):
+                mcap = cargo_capacity(self.player)
+                pen = int(cargo_travel_penalty(self.player) * 100)
+                if mcap > 0:
+                    parts.append(f"Mount: {load}/{mcap} wt  (+{pen}% time)")
+                else:
+                    parts.append(f"On foot: {load} wt  (+{pen}% time)")
+            if any(s["type"] == "sea" for s in result["segments"]):
+                ship = None
+                if self.player.get("ship_id"):
+                    from resources.ships import get_ship
+                    ship = get_ship(self.player["ship_id"])
+                scap = ship["cargo_capacity"] if ship else 0
+                pen = int(cargo_travel_penalty(self.player, scap) * 100)
+                if ship:
+                    parts.append(f"{ship['name']}: {load}/{scap} wt  (+{pen}% time)")
+                else:
+                    parts.append(f"Ferry: {load} wt  (+{pen}% time)")
+            cargo_lines = "\n" + "  |  ".join(parts) + "\n"
+
+        # ── Cargo overload check (per-segment, vehicle-aware) ──────────
+        blocked = result.get("blocked_segments", [])
+        if blocked:
+            lines = []
+            for seg in blocked:
+                frm = CITIES.get(seg["from"], {}).get("name", seg["from"])
+                to = CITIES.get(seg["to"], {}).get("name", seg["to"])
+                lines.append(f"• {frm} → {to}")
+            confirm_dialog(
+                parent=self, title="Overloaded",
+                message="Your cargo exceeds 1.8× your transport's capacity on:\n\n"
+                        + "\n".join(lines)
+                        + "\n\nSell cargo at a shop market or stash it in your "
+                        "house before traveling.",
+                on_yes=lambda: None, yes_text="OK", no_text=None,
+            )
+            return
+
         if result["total_cost"] > gold:
             confirm_dialog(
                 parent=self, title="Cannot Afford",
@@ -742,6 +1250,7 @@ class WorldMapScreen(BaseScreen):
                                                             self._selected_city)
 
         def _do_embark():
+            self._travel_wild = None
             self._start_travel(result)
 
         confirm_dialog(
@@ -749,10 +1258,11 @@ class WorldMapScreen(BaseScreen):
             message=(
                 f"Travel to {dest_name}?\n\n"
                 f"Route: {' → '.join(result['path'])}\n"
-                f"Total: {result['total_time']} min  |  "
+                f"Total: ≈{self._journey_blocks(result)} blocks  |  "
                 f"Segments: {len(result['segments'])}\n"
                 + (f"Ferry cost: {result['total_cost']}g\n"
                    if result['total_cost'] > 0 else "")
+                + cargo_lines
                 + "\nKeep your wits about you."
             ),
             on_yes=_do_embark,
@@ -760,8 +1270,102 @@ class WorldMapScreen(BaseScreen):
             no_text="Cancel",
         )
 
+    def _on_travel_to_dungeon(self, dungeon_id):
+        """Travel to a wild dungeon: city route + off-road leg into the ruin."""
+        dungeon = get_wild_dungeon(self.player, dungeon_id)
+        if dungeon is None:
+            self.sm.log("That ruin is no longer on the map.")
+            return
+
+        day = self.player.get("day", 1)
+        if int(dungeon.get("expire_day", day) or day) < day:
+            self.sm.log(f"{dungeon.get('name', 'That ruin')} has already "
+                        "crumbled to dust.")
+            self._deselect_wild()
+            self._draw_wild_dungeons()
+            return
+
+        journey = build_journey_to_dungeon(self.player, dungeon)
+        if journey is None:
+            self.sm.log(f"No route found to {dungeon.get('name', 'the ruin')}.")
+            return
+
+        gold = self.player.get("gold", 0)
+
+        # ── Cargo overload check (mirrors _on_travel_here) ──────────────
+        blocked = journey.get("blocked_segments", [])
+        if blocked:
+            lines = []
+            for seg in blocked:
+                frm = CITIES.get(seg["from"], {}).get("name", seg["from"])
+                if str(seg["to"]).startswith("wild:"):
+                    to = dungeon.get("name", seg["to"])
+                else:
+                    to = CITIES.get(seg["to"], {}).get("name", seg["to"])
+                lines.append(f"\u2022 {frm} \u2192 {to}")
+            confirm_dialog(
+                parent=self, title="Overloaded",
+                message="Your cargo exceeds 1.8\u00d7 your transport's capacity on:\n\n"
+                        + "\n".join(lines)
+                        + "\n\nSell cargo at a shop market or stash it in your "
+                        "house before traveling.",
+                on_yes=lambda: None, yes_text="OK", no_text=None,
+            )
+            return
+
+        if journey["total_cost"] > gold:
+            confirm_dialog(
+                parent=self, title="Cannot Afford",
+                message=(f"You need {journey['total_cost']}g for ferry tickets, "
+                         f"but only have {gold}g."),
+                on_yes=lambda: None, yes_text="OK", no_text=None,
+            )
+            return
+
+        # ── Route summary ────────────────────────────────────────────────
+        route_parts = []
+        for node in journey["path"]:
+            if str(node).startswith("wild:"):
+                icon = _WILD_BIOME_ICONS.get(dungeon.get("biome"),
+                                             _WILD_FALLBACK_ICON)
+                route_parts.append(f"{icon} {dungeon.get('name', node)}")
+            else:
+                route_parts.append(CITIES.get(node, {}).get("name", node))
+        route_line = " \u2192 ".join(route_parts)
+
+        def _do_embark():
+            self._travel_wild = dungeon
+            self._start_travel(journey)
+
+        confirm_dialog(
+            parent=self, title="Embark on Journey",
+            message=(
+                f"Travel to {dungeon.get('name', 'the ruin')} "
+                f"(Lv {dungeon.get('level', '?')})?\n\n"
+                f"Route: {route_line}\n"
+                f"Total: ≈{self._journey_blocks(journey)} blocks  |  "
+                f"Segments: {len(journey['segments'])}\n"
+                + (f"Ferry cost: {journey['total_cost']}g\n"
+                   if journey["total_cost"] > 0 else "")
+                + "\nThe ruin will not wait forever. Keep your wits about you."
+            ),
+            on_yes=_do_embark,
+            yes_text="Begin Journey",
+            no_text="Cancel",
+        )
+
+    def _journey_blocks(self, journey):
+        """Total block cost of a journey (per-hop rounding; docs §8/§16)."""
+        import time_blocks
+        total = 0
+        for seg in (journey or {}).get("segments", []) or []:
+            total += time_blocks.travel_blocks(self.player,
+                                               seg.get("effective_time", 0))
+        return total
+
     def _start_travel(self, result):
-        """Enter travel mode."""
+        """Enter travel mode. Night sailings are allowed (playtest 2026-10-13) —
+        the phase's danger is the price, not a closed harbour."""
         self._mode = self.MODE_TRAVEL
         self._travel_segments = result["segments"]
         self._travel_path = result["path"]
@@ -769,7 +1373,6 @@ class WorldMapScreen(BaseScreen):
         self._travel_paused = False
         self._travel_player_dead = False
 
-        self._btn_travel.pack_forget()
         self._btn_back.config(state=tk.DISABLED, text="\u23f3 Traveling...")
         self._canvas.config(cursor="")
         self._update_top_bar()  # show departure city
@@ -790,6 +1393,8 @@ class WorldMapScreen(BaseScreen):
 
         self._log(f"Departing {CITIES.get(start_city, {}).get('name', start_city)}...",
                   "text")
+        total_blocks = self._journey_blocks(result)
+        self._log(f"The road ahead: ≈{total_blocks} blocks of travel.", "dim")
         self._log("\u2500" * 28, "dim")
 
         if result["total_cost"] > 0:
@@ -854,45 +1459,289 @@ class WorldMapScreen(BaseScreen):
         from_id = seg["from"]
         to_id = seg["to"]
 
-        if from_id not in _CITY_POSITIONS or to_id not in _CITY_POSITIONS:
+        start = self._canvas_node_pos(from_id)
+        end = self._canvas_node_pos(to_id)
+        if start is None or end is None:
             self._travel_seg_idx += 1
             self._animate_next_segment()
             return
-
-        fx, fy = _CITY_POSITIONS[from_id]
-        tx, ty = _CITY_POSITIONS[to_id]
-        self._travel_seg_start = (fx + _NODE_W // 2, fy + _NODE_H // 2)
-        self._travel_seg_end = (tx + _NODE_W // 2, ty + _NODE_H // 2)
+        self._travel_seg_start = start
+        self._travel_seg_end = end
 
         from_name = CITIES.get(from_id, {}).get("name", from_id)
-        to_name = CITIES.get(to_id, {}).get("name", to_id)
+        to_name = self._node_display_name(to_id)
         seg_type = seg["type"]
         icon = "\u26f5" if seg_type == "sea" else "\U0001f9b6"
+        import time_blocks as _tb_hop
+        _hop_blocks = _tb_hop.travel_blocks(self.player, seg["effective_time"])
         self._log(f"{icon} {from_name} → {to_name}  "
-                  f"({seg['effective_time']} min, {seg_type})", "text")
+                  f"(≈{_hop_blocks} blocks, {seg_type})", "text")
 
         self._travel_event_queue = self._roll_events(seg)
         self._travel_event_idx = 0
         self._travel_step = 0
-        self._travel_time_acc = 0.0   # reset per-segment accumulator
         self._travel_paused = False
         self._do_anim_step()
+
+    # ── Event Horizon travel + result routing ───────────────────────────
+
+    def _on_travel_to_horizon(self):
+        """Travel to the distortion: city route + off-road leg into the tear."""
+        import event_horizon as eh
+        site = eh.event_horizon_site(self.player)
+        if site is None:
+            self.sm.log("The distortion is not visible to you yet.")
+            return
+        journey = eh.build_journey_to_site(self.player)
+        if journey is None:
+            self.sm.log("No route found to the Event Horizon.")
+            return
+        gold = self.player.get("gold", 0)
+        blocked = journey.get("blocked_segments", [])
+        if blocked:
+            lines = []
+            for seg in blocked:
+                frm = CITIES.get(seg["from"], {}).get("name", seg["from"])
+                to = ("the Event Horizon" if str(seg["to"]) == "horizon"
+                      else CITIES.get(seg["to"], {}).get("name", seg["to"]))
+                lines.append(f"\u2022 {frm} \u2192 {to}")
+            confirm_dialog(
+                parent=self, title="Overloaded",
+                message=("Your cargo exceeds 1.8\u00d7 your transport's capacity on:\n\n"
+                         + "\n".join(lines)
+                         + "\n\nSell cargo at a shop market or stash it in your "
+                           "house before traveling."),
+                on_yes=lambda: None, yes_text="OK", no_text=None,
+            )
+            return
+        if journey["total_cost"] > gold:
+            confirm_dialog(
+                parent=self, title="Cannot Afford",
+                message=(f"You need {journey['total_cost']}g for ferry tickets, "
+                         f"but only have {gold}g."),
+                on_yes=lambda: None, yes_text="OK", no_text=None,
+            )
+            return
+
+        route_parts = []
+        for node in journey["path"]:
+            if node == "horizon":
+                route_parts.append("\U0001F300 The Event Horizon")
+            else:
+                route_parts.append(CITIES.get(node, {}).get("name", node))
+        route_line = " \u2192 ".join(route_parts)
+
+        def _do_embark():
+            self._travel_horizon = site
+            self._start_travel(journey)
+
+        confirm_dialog(
+            parent=self, title="Embark on Journey",
+            message=(f"Travel to THE EVENT HORIZON?\n\n{route_line}\n\n"
+                     f"Est. journey: ≈{self._journey_blocks(journey)} blocks"
+                     + (f"  |  Ferry cost: {journey['total_cost']}g"
+                        if journey["total_cost"] else "")
+                     + "\n\nVesper waits at the site."),
+            on_yes=_do_embark, on_no=lambda: None,
+            yes_text="Embark", no_text="Cancel",
+        )
+
+    def _arrive_at_horizon(self):
+        """End the journey, then play Vesper's arrival scene (docs §6.1)."""
+        player = self.player
+        site = self._travel_horizon or {}
+        nearest = site.get("nearest_city", player.get("location", "solmere"))
+        player["origin_city"] = nearest
+        self._stop_travel_visuals()
+        self._travel_horizon = None
+        self._log("\u2500" * 28, "dim")
+        self._log("\U0001F300 The air tears open ahead \u2014 "
+                  "THE EVENT HORIZON.", "cyan")
+        self._log("Vesper is waiting at the seam.", "dim")
+
+        from gui.screens.facility_screen import FacilityScreen
+        from facilities.event_horizon_intro import event_horizon_arrival_service
+        self.sm.switch_to(
+            FacilityScreen,
+            title="The Event Horizon",
+            func=event_horizon_arrival_service,
+            func_args=(player, nearest),
+            on_close=self._after_eh_scene,
+            push_history=False,
+        )
+
+    def _after_eh_scene(self, result):
+        """Route the arrival scene's choice: enter / resume / fresh / boss_rush / leave."""
+        import event_horizon as eh
+        player = self.player
+        nearest = player.get("origin_city", "solmere")
+
+        if result in ("enter", "resume", "fresh", "boss_rush", "boss_rush_fresh"):
+            def _launch_eh_run():
+                # Never show another dungeon's log under the EH branding.
+                player.pop("_dungeon_log", None)
+                # Region hygiene: stops stale Wonderland quirks / biome checks
+                # from bleeding into rift combat displays.
+                player["dungeon_region"] = "event_horizon"
+                # Re-attach suspended run effects (flasks/cards/Entropy) —
+                # idempotent; fresh runs restore nothing.
+                eh.restore_event_horizon_effects(player)
+                room = int(eh.ensure_eh_state(player).get("room", 0))
+                player["_eh_in_run"] = True
+                player["location"] = "dungeon"
+                if result == "resume":
+                    self.sm.log(
+                        f"\U0001F300 The Horizon resumes you at room {room + 1}.")
+                else:
+                    self.sm.log("\U0001F300 Space folds open. Vesper's mark "
+                                "burns \u2014 and the world inverts.")
+                from gui.screens.dungeon_screen import DungeonScreen
+                self.sm.switch_to(DungeonScreen, on_result=self._on_eh_result,
+                                  push_history=False)
+
+            if result in ("fresh", "boss_rush_fresh"):
+                amount, _ = eh.grant_payout(player, death=False)
+                summary = eh.build_run_summary(player, payout=amount)
+                best = eh.clear_run(player)
+                if result == "fresh":
+                    eh.begin_run(player, nearest)
+                    self.sm.log(
+                        f"The old run collapses \u2014 +{amount} gold recovered "
+                        f"(deepest room {best}).")
+                else:
+                    ok, reasons = eh.begin_rush(player, nearest)
+                    if not ok:
+                        # Gates changed underneath us — fall back to a run.
+                        eh.begin_run(player, nearest)
+                        self.sm.log("The echoes do not answer: "
+                                    + "; ".join(reasons) + ".")
+                    else:
+                        self.sm.log(
+                            f"\u2694 The sitting run collapses \u2014 +{amount} gold "
+                            f"recovered (deepest room {best}). The gathered "
+                            f"echoes rise.")
+                player["_eh_last_summary"] = summary
+                self._show_eh_summary_then(_launch_eh_run)
+                return
+            if result == "enter":
+                eh.begin_run(player, nearest)
+            if result == "boss_rush":
+                ok, reasons = eh.begin_rush(player, nearest)
+                if not ok:
+                    self.sm.log("The echoes do not answer: "
+                                + "; ".join(reasons) + ".")
+                    player["location"] = nearest
+                    from gui.screens.city_screen import CityScreen
+                    self.sm.switch_to(CityScreen, push_history=False)
+                    return
+                self.sm.log("\u2694 The gathered echoes rise \u2014 the Boss Rush begins.")
+            _launch_eh_run()
+            return
+
+        # "leave" (or scene aborted) \u2014 back to the nearest city.
+        player["location"] = nearest
+        self.sm.log("You leave the seam to its turning.")
+        from gui.screens.city_screen import CityScreen
+        self.sm.switch_to(CityScreen, push_history=False)
+
+    def _show_eh_summary_then(self, on_close):
+        """Show the stashed EH run aftermath (if any), then run `on_close`."""
+        summary = self.player.pop("_eh_last_summary", None)
+        if not summary:
+            on_close()
+            return
+        from gui.widgets.run_summary_dialog import run_summary_dialog
+        # This screen may already be destroyed (switch_to destroys the old
+        # screen before on_result/on_close fire) — parent to the app root.
+        parent = getattr(getattr(self, "sm", None), "root", None) or self
+        run_summary_dialog(
+            parent,
+            title="Event Horizon \u2014 Run Summary",
+            heading="THE EVENT HORIZON \u2014 RUN SUMMARY",
+            subtitle=summary.get("subtitle", ""),
+            body="\n".join(summary.get("lines", [])),
+            on_close=on_close,
+        )
+
+    def _on_eh_result(self, result):
+        """DungeonScreen on_result for Event Horizon runs."""
+        if result == "dead":
+            summary = self.player.get("_eh_last_summary") or {}
+            room = summary.get("data", {}).get("room", "?")
+
+            def _to_death():
+                self._handle_death(death_type="event_horizon", floor=room)
+
+            self._show_eh_summary_then(_to_death)
+            return
+        if result == "save_exit":
+            self.sm.log("Game saved. Exiting to menu.")
+            self.sm.player = None
+            from gui.screens.main_menu_screen import MainMenuScreen
+            self.sm.switch_to(MainMenuScreen)
+            return
+
+        # "eh_quit" / "timeout" / None — defensive scrub (button-flees kill the
+        # dungeon thread before its in-dungeon cleanup can run; idempotent
+        # otherwise). Suspended-run state stays untouched here.
+        p = self.player
+        p.pop("_eh_in_run", None)
+        prev_floor = p.pop("_eh_prev_floor", None)
+        if prev_floor is not None:
+            p["floor"] = prev_floor
+        p["cutlass_high_tide_stacks"] = 0
+        p.pop("cutlass_high_tide_floor", None)
+        if p.get("location") == "dungeon":
+            p["location"] = p.get("origin_city", "solmere")
+        # Button-flee leaves the run suspended rather than ended — detach its
+        # effects so no ENT/flask tags leak into cities (idempotent; the
+        # eh_quit path already stripped via the wipe).
+        import event_horizon as eh
+        eh.strip_event_horizon_effects(p, legacy=True)
+        if result == "eh_rush_complete":
+            self.sm.log("⚔ The last echo falls — the Boss Rush is complete.")
+        elif result == "eh_quit":
+            self.sm.log("The Horizon releases you. The run is over.")
+        elif result == "fled":
+            self.sm.log("You step out of the rift — the run is suspended. "
+                        "Resume at the Event Horizon site.")
+        from gui.screens.city_screen import CityScreen
+
+        def _to_city():
+            self.sm.switch_to(CityScreen, push_history=False)
+
+        self._show_eh_summary_then(_to_city)
+
+    def _canvas_node_pos(self, node_id):
+        """Canvas center (x, y) for a city / wild / horizon travel target."""
+        if node_id in _CITY_POSITIONS:
+            x, y = _CITY_POSITIONS[node_id]
+            return (x + _NODE_W // 2, y + _NODE_H // 2)
+        if str(node_id).startswith("wild:") and self._travel_wild:
+            px, py = self._travel_wild.get("position", (0, 0))
+            return (px, py)
+        if node_id == "horizon" and self._travel_horizon:
+            px, py = self._travel_horizon.get("position", (0, 0))
+            return (px, py)
+        return None
+
+    def _node_display_name(self, node_id):
+        """Display name for a city / wild / horizon travel target."""
+        name = CITIES.get(node_id, {}).get("name")
+        if name:
+            return name
+        if str(node_id).startswith("wild:") and self._travel_wild:
+            return self._travel_wild.get("name", node_id)
+        if node_id == "horizon" and self._travel_horizon:
+            return self._travel_horizon.get("name", "The Event Horizon")
+        return node_id
 
     def _do_anim_step(self):
         if self._travel_paused or self._travel_player_dead:
             return
 
-        seg = self._travel_segments[self._travel_seg_idx]
         total = _ANIM_STEPS
         self._travel_step += 1
-
-        # ── Advance time smoothly per frame ─────────────────────────────
-        minutes_per_step = seg["effective_time"] / total
-        self._travel_time_acc += minutes_per_step
-        while self._travel_time_acc >= 1.0:
-            advance_time(self.player, 1)
-            self._travel_time_acc -= 1.0
-        self._update_top_bar()
 
         t = self._travel_step / total
         t_smooth = t * t * (3 - 2 * t)  # ease in-out
@@ -926,21 +1775,81 @@ class WorldMapScreen(BaseScreen):
         seg = self._travel_segments[self._travel_seg_idx]
         to_id = seg["to"]
 
-        # Advance any remaining fractional time from this segment
-        if self._travel_time_acc >= 0.5:
-            advance_time(self.player, 1)
+        to_name = self._node_display_name(to_id)
+        if str(to_id).startswith("wild:") or to_id == "horizon":
+            # Off-road leg done — entry handled by _on_arrival
+            self._log(f"You reach the {to_name}.", "green")
+        else:
+            self.player["location"] = to_id
+            self._log(f"Arrived at {to_name}.", "green")
+        self._update_top_bar()  # update city in top bar
 
-        self.player["location"] = to_id
+        # ── Segment cost in blocks; the day boundary offers camp (§8) ────
+        import time_blocks
+        seg_blocks = time_blocks.travel_blocks(self.player, seg["effective_time"])
+        if (seg_blocks >= time_blocks.blocks_remaining(self.player)
+                and time_blocks.can_camp(self.player)):
+            self._travel_paused = True
+            next_idx = self._travel_seg_idx + 1
+            next_target = (self._travel_segments[next_idx]["to"]
+                           if next_idx < len(self._travel_segments) else None)
+            ahead = (self._node_display_name(next_target)
+                     if next_target else "your destination")
+            confirm_dialog(
+                parent=self, title="Nightfall on the Road",
+                message=(f"The day runs out before you reach {ahead}.\n\n"
+                         "Set camp for the night? You resume at morning, "
+                         "without exhaustion."),
+                on_yes=lambda: self._start_camp(seg_blocks),
+                on_no=lambda: self._resolve_segment_spend(seg_blocks, camp=False),
+                yes_text="Set Camp", no_text="March On",
+            )
+            return
+        self._resolve_segment_spend(seg_blocks, camp=False)
 
-        to_name = CITIES.get(to_id, {}).get("name", to_id)
-        self._log(f"Arrived at {to_name}.", "green")
-        self._update_top_bar()  # update city + time in top bar
+    def _start_camp(self, seg_blocks):
+        """Open the camp FacilityScreen as an overlay; travel resumes after."""
+        try:
+            from facilities.camp import camp_event
+            from gui.screens.facility_screen import FacilityScreen
 
+            def _after_camp(_result=None):
+                try:
+                    self.sm.dismiss_overlay()
+                except Exception:
+                    pass
+                self._resolve_segment_spend(seg_blocks, camp=True)
+
+            self.sm.push_overlay(
+                FacilityScreen,
+                title="Set Camp",
+                func=camp_event,
+                func_args=(self.player,),
+                on_close=_after_camp,
+            )
+        except Exception:
+            # Fallback: log-only camp (no overlay) — still restful.
+            self._resolve_segment_spend(seg_blocks, camp=True)
+
+    def _resolve_segment_spend(self, seg_blocks, camp):
+        """Apply the segment's block cost, then continue the journey."""
+        import time_blocks
+        days = time_blocks.spend_travel_segment(self.player, seg_blocks, camp=camp)
+        if camp:
+            self._log("You sleep under canvas; the road continues at dawn.", "green")
+        elif days:
+            self._log("You marched through the night — exhaustion sets in.", "red")
+        self._travel_paused = False
+        self._update_top_bar()
+        self._continue_after_segment()
+
+    def _continue_after_segment(self):
         self._travel_seg_idx += 1
         if self._travel_seg_idx >= len(self._travel_segments):
             self._on_arrival()
             return
 
+        to_id = self._travel_segments[self._travel_seg_idx - 1]["to"]
         next_seg = self._travel_segments[self._travel_seg_idx]
         if next_seg["type"] == "sea" and self._has_port(to_id):
             self._travel_paused = True
@@ -955,19 +1864,25 @@ class WorldMapScreen(BaseScreen):
     def _show_sea_prompt(self, port_city_id, next_seg):
         port_name = CITIES.get(port_city_id, {}).get("name", port_city_id)
         dest_name = CITIES.get(next_seg["to"], {}).get("name", next_seg["to"])
-        has_ship = self.player.get("has_ship", False)
+        ship = None
+        ship_id = self.player.get("ship_id")
+        if ship_id:
+            from resources.ships import get_ship
+            ship = get_ship(ship_id)
         cost = next_seg.get("cost", 0)
         eff_time = next_seg["effective_time"]
+        import time_blocks as _tb_sea
+        sea_blocks = _tb_sea.travel_blocks(self.player, eff_time)
 
-        if has_ship:
+        if ship:
             msg = (f"You've arrived at {port_name}.\n\n"
                    f"Next: \u26f5 Sea voyage to {dest_name}\n"
-                   f"({eff_time} min, your ship is ready)\n\n"
+                   f"(≈{sea_blocks} blocks, your {ship['name']} is ready)\n\n"
                    f"Continue your journey?")
         else:
             msg = (f"You've arrived at {port_name}.\n\n"
                    f"Next: \u26f5 Ferry to {dest_name}\n"
-                   f"({eff_time} min, ticket: {cost}g)\n\n"
+                   f"(≈{sea_blocks} blocks, ticket: {cost}g)\n\n"
                    f"Continue your journey?")
 
         def _yes():
@@ -1040,6 +1955,12 @@ class WorldMapScreen(BaseScreen):
         # Build stock using same logic as travel_events._handle_merchant
         stock = []
         for _ in range(random.randint(2, 3)):
+            if random.random() < 0.30:
+                good_id = roll_cargo_good()
+                item = build_cargo(good_id)
+                your_price, road_price = cargo_merchant_stock_price(good_id, player)
+                stock.append((item, your_price, road_price))
+                continue
             item_id = _random_item_id()
             rarity = _merchant_stock_rarity(player)
             item = build_item(item_id, rarity)
@@ -1245,6 +2166,24 @@ class WorldMapScreen(BaseScreen):
                     pass
             return
 
+        # Cargo sells at road cargo rates; everything else at the normal rate
+        sellable = []
+        for i in inv:
+            if i.get("type") == "cargo":
+                sellable.append((i, cargo_merchant_sell_price(i)))
+            else:
+                sellable.append((i, _sell_price(i, player)))
+        if not sellable:
+            self._log('"Nothing I want off you — yet."', "dim")
+            if on_done:
+                on_done()
+            if merchant_dialog:
+                try:
+                    merchant_dialog.grab_set()
+                except tk.TclError:
+                    pass
+            return
+
         try:
             parent = self.winfo_toplevel()
         except tk.TclError:
@@ -1256,7 +2195,7 @@ class WorldMapScreen(BaseScreen):
         sd.configure(bg=Theme.BG_DARK)
 
         # Dynamic height based on inventory size
-        dw2, dh2 = 460, min(140 + len(inv) * 44, 520)
+        dw2, dh2 = 460, min(140 + len(sellable) * 44, 520)
 
         tk.Label(
             sd, text="The merchant eyes your pack with practiced interest.\n"
@@ -1273,20 +2212,18 @@ class WorldMapScreen(BaseScreen):
             """Sell one item and close the dialog (one sale per open)."""
             try:
                 from combat.weapon.wedding_specials import is_wedding_item_soulbound
-                cur_inv = player.get("inventory", [])
-                if idx < 0 or idx >= len(cur_inv):
+                if idx < 0 or idx >= len(sellable):
                     _close_sell()
                     return
-                item = cur_inv[idx]
+                item, unit_price = sellable[idx]
                 if is_wedding_item_soulbound(item):
                     self._log(f"[{item['name']}] is soulbound — cannot be sold.", "red")
                     _close_sell()
                     return
-                if item.get("unique"):
+                if is_unique_item(item):
                     self._log(f"[{item['name']}] is unique — cannot be sold.", "red")
                     _close_sell()
                     return
-                unit_price = _sell_price(item, player)
                 count = item.get("count", 1)
                 gold = unit_price * count
                 remove_item_by_reference(player, item, count)
@@ -1313,7 +2250,7 @@ class WorldMapScreen(BaseScreen):
 
         # ── Build sell rows (scrollable if many items) ──────────────────
         # Canvas + scrollbar for long inventories
-        needs_scroll = len(inv) > 6
+        needs_scroll = len(sellable) > 6
         if needs_scroll:
             sell_canvas = tk.Canvas(sd, bg=Theme.BG_DARK, highlightthickness=0, height=280)
             sell_scroll = tk.Scrollbar(sd, orient=tk.VERTICAL, command=sell_canvas.yview,
@@ -1338,8 +2275,7 @@ class WorldMapScreen(BaseScreen):
             sell_frame = tk.Frame(sd, bg=Theme.BG_DARK)
             sell_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
 
-        for i, item in enumerate(inv):
-            unit_price = _sell_price(item, player)
+        for i, (item, unit_price) in enumerate(sellable):
             count = item.get("count", 1)
             total_price = unit_price * count
             count_str = f" (x{count})" if count > 1 else ""
@@ -1486,27 +2422,25 @@ class WorldMapScreen(BaseScreen):
                                 f"HP: {self.player['current_hp']}/{max_hp}")
 
     def _handle_storm_gui(self, event):
-        """Show storm popup with flavor text and effects."""
+        """Show storm popup with flavor text and effects (delays are flavor only, §8)."""
         difficulty_mult = get_difficulty_multiplier_from_time(self.player)
         max_hp = player_max_hp(self.player)
 
-        if random.random() < 0.45 * difficulty_mult:
-            damage = max(6, int(max_hp * 0.12 * difficulty_mult))
+        if random.random() < 0.58 * difficulty_mult:
+            damage = max(6, int(max_hp * 0.15 * difficulty_mult))
             self.player["current_hp"] = max(1, self.player.get("current_hp", 1) - damage)
-            advance_time(self.player, 90)
             msg = (f"A black wall of clouds swallows the horizon — "
                    f"the storm hits fast.\n\n"
-                   f"Mountainous waves batter the hull for an hour and a half.\n"
-                   f"You take {damage} damage and arrive late.\n"
+                   f"Mountainous waves batter the hull for what feels like hours.\n"
+                   f"You take {damage} damage.\n"
                    f"HP: {self.player['current_hp']}/{max_hp}")
             self._log("\U0001f32a Storm! Mountainous waves batter the hull.", "red")
-            self._log(f"  -{damage} HP, delayed 90 min", "red")
+            self._log(f"  -{damage} HP", "red")
         else:
-            advance_time(self.player, 30)
             msg = (f"A black wall of clouds swallows the horizon.\n\n"
                    f"You reef the sails and ride out the squall.\n"
-                   f"Unharmed — but delayed 30 minutes.")
-            self._log("\U0001f32a Storm — delayed 30 min, unharmed.", "cyan")
+                   f"Unharmed.")
+            self._log("\U0001f32a Storm — unharmed.", "cyan")
 
         self._show_event_popup("Storm!", msg)
 
@@ -1716,13 +2650,51 @@ class WorldMapScreen(BaseScreen):
 
     def _on_arrival(self):
         dest_id = self._travel_path[-1] if self._travel_path else self.city_id
+        if self._travel_wild is not None and str(dest_id).startswith("wild:"):
+            self._arrive_at_wild_dungeon()
+            return
+        if self._travel_horizon is not None and dest_id == "horizon":
+            self._arrive_at_horizon()
+            return
         dest_name = CITIES.get(dest_id, {}).get("name", dest_id)
         self._log("\u2500" * 28, "dim")
         self._log(f"\u2714 Arrived at {dest_name}!", Theme.ACCENT)
         self.player["location"] = dest_id
         self._finish_travel()
 
-    def _finish_travel(self, dead=False):
+    def _arrive_at_wild_dungeon(self):
+        """Set up wild dungeon entry and launch the dungeon screen."""
+        dungeon = self._travel_wild
+        player = self.player
+        day = player.get("day", 1)
+
+        # Expiry grace: if it crumbled mid-journey, deliver to the nearest city
+        if int(dungeon.get("expire_day", day) or day) < day:
+            nearest = dungeon.get("nearest_city", "solmere")
+            nearest_name = CITIES.get(nearest, {}).get("name", nearest)
+            self._log("\u2500" * 28, "dim")
+            self._log("The ruin has crumbled to dust during your journey...", "red")
+            self._log(f"You make instead for {nearest_name}.", Theme.ACCENT)
+            player["location"] = nearest
+            self._finish_travel()
+            return
+
+        player["wild_dungeon_id"] = dungeon["id"]
+        # Flee / death / timeout exits all route to origin_city — point it at
+        # the nearest city so wild dungeon failures send the player there.
+        player["origin_city"] = dungeon.get("nearest_city", "solmere")
+        player["dungeon_region"] = dungeon.get("biome", "temperate")
+        player["location"] = "dungeon"
+
+        self._log("\u2500" * 28, "dim")
+        arrive_icon = _WILD_BIOME_ICONS.get(dungeon.get("biome"),
+                                            _WILD_FALLBACK_ICON)
+        self._log(f"{arrive_icon} You arrive at {dungeon.get('name', 'the ruin')} "
+                  f"(Lv {dungeon.get('level', '?')}).", Theme.ACCENT)
+        self._finish_travel(wild_arrival=True)
+
+    def _stop_travel_visuals(self):
+        """Cancel travel animation jobs/reset travel mode (no navigation)."""
         if self._travel_anim_job:
             self.after_cancel(self._travel_anim_job)
             self._travel_anim_job = None
@@ -1736,11 +2708,80 @@ class WorldMapScreen(BaseScreen):
         self._travel_segments = []
         self._travel_paused = False
 
+    def _finish_travel(self, dead=False, wild_arrival=False):
+        self._stop_travel_visuals()
+        self._travel_wild = None
+        self._travel_horizon = None
+
         if dead:
             self._handle_death()
+        elif wild_arrival:
+            from gui.screens.dungeon_screen import DungeonScreen
+            self.sm.switch_to(DungeonScreen, on_result=self._on_wild_result,
+                              push_history=False)
         else:
             from gui.screens.city_screen import CityScreen
             self.sm.switch_to(CityScreen, push_history=False)
+
+    def _on_wild_result(self, result):
+        """Called when a wild dungeon run ends (DungeonScreen on_result)."""
+        if result == "dead":
+            # Same death flow as dungeon deaths; the penalty sends the
+            # player to origin_city (the ruin's nearest city).
+            self._handle_death(death_type="dungeon",
+                               floor=self.player.get("floor", "?"))
+            return
+        if result == "wild_complete":
+            self._show_wild_completion()
+            return
+        if result == "save_exit":
+            self.sm.log("Game saved. Exiting to menu.")
+            self.sm.player = None
+            from gui.screens.main_menu_screen import MainMenuScreen
+            self.sm.switch_to(MainMenuScreen)
+            return
+
+        # "fled" / "timeout" / None — button-flees kill the dungeon thread
+        # before its in-dungeon cleanup can run, so scrub run state here
+        # too (idempotent when the in-dungeon exit already cleaned up).
+        self.player.pop("wild_dungeon_id", None)
+        prev_floor = self.player.pop("_wild_prev_floor", None)
+        if prev_floor is not None:
+            self.player["floor"] = prev_floor
+        for key in ("saved_wild_floor", "saved_wild_rooms", "saved_wild_room_index"):
+            self.player.pop(key, None)
+        self.player.pop("pandemonium_mode", None)
+        self.player["cutlass_high_tide_stacks"] = 0
+        self.player.pop("cutlass_high_tide_floor", None)
+        if self.player.get("location") == "dungeon":
+            self.player["location"] = self.player.get("origin_city", "solmere")
+        from gui.screens.city_screen import CityScreen
+        self.sm.switch_to(CityScreen, push_history=False)
+
+    def _show_wild_completion(self):
+        """Reward summary for a conquered ruin, then return to the city."""
+        info = self.player.pop("_wild_completion", None) or {}
+        name = info.get("name", "Wild Dungeon")
+        lines = [
+            f"You have conquered {name}!",
+            "",
+            f"Floors cleared: {info.get('floors', '?')}  |  "
+            f"Level: {info.get('level', '?')}",
+            f"Spoils: +{info.get('gold', 0)} gold  |  +{info.get('exp', 0)} XP",
+        ]
+        items = info.get("items", [])
+        if items:
+            lines.append("")
+            lines.append("Recovered from the hoard:")
+            for it in items:
+                lines.append(f"  \u2022 {it.get('name', '?')} "
+                             f"[{str(it.get('rarity', '')).upper()}]")
+
+        from gui.widgets.confirm_dialog import ok_dialog
+        ok_dialog(self, f"\u2605 {name} Conquered", "\n".join(lines))
+
+        from gui.screens.city_screen import CityScreen
+        self.sm.switch_to(CityScreen, push_history=False)
 
     # ── Navigation ──────────────────────────────────────────────────────
 
@@ -1750,7 +2791,7 @@ class WorldMapScreen(BaseScreen):
         from gui.screens.city_screen import CityScreen
         self.sm.switch_to(CityScreen, push_history=False)
 
-    def _handle_death(self):
+    def _handle_death(self, death_type="travel", floor=None):
         from gui.screens.death_screen import DeathScreen
 
         def _cont():
@@ -1765,10 +2806,12 @@ class WorldMapScreen(BaseScreen):
             self.sm.switch_to(MainMenuScreen)
 
         city_id = self.city_id
+        if floor is None:
+            floor = self.player.get("city_floors", {}).get(city_id, {}).get("floor", "?")
         self.sm.switch_to(
             DeathScreen,
-            floor=self.player.get("city_floors", {}).get(city_id, {}).get("floor", "?"),
-            city_id=city_id, death_type="travel", on_continue=_cont, on_quit=_quit,
+            floor=floor,
+            city_id=city_id, death_type=death_type, on_continue=_cont, on_quit=_quit,
         )
 
     def _show_legend(self):
@@ -1777,10 +2820,12 @@ class WorldMapScreen(BaseScreen):
             "Colored nodes = Cities (by biome)\n"
             "\u2605  = Your current location\n"
             "\u2693  = Port city (sea travel)\n"
+            "\u2620  = Wild dungeon (glyph shows its biome)\n"
             "\u2014\u2014 Solid line = Land route\n"
             "- - Dashed line = Sea route\n\n"
-            "Click a city to view details.\n"
+            "Click a city or wild dungeon to view details.\n"
             "Click 'Travel Here' to journey there.\n"
+            "Drag the map to pan around.\n"
             "Press Esc to deselect / go back."
         )
         from gui.widgets.confirm_dialog import ok_dialog

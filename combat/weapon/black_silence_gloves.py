@@ -2,6 +2,17 @@
 """Certain Someone Black Gloves — item logic for the Black Silence superboss drop.
 
 Replaces ALL class skills with 9 one-use-per-cycle workshop attacks + Furioso.
+Workshop and Furioso hits roll criticals, apply the wearer's Dark elemental
+profile against the target's Dark resistance, and consume the same attack
+buffs as basic attacks/skills (damage_boost buffs + one power_buff per action).
+
+Scaling ("mastery" replacement): the kit replaces every class skill, so its
+power scales with the GLOVES' enhance level instead of skill mastery —
++12% power per +1, capped at ×1.60 at +5 (ally-skill mastery ✦✦ parity).
+The multiplier applies to the base power BEFORE the target's CON is
+subtracted (mirrors ``_calc_dmg`` in ally_skills), and every hit floors at
+1 damage (ally-skill parity) so a high-CON target can no longer blank the
+kit into 0s.
 
 State keys on player dict:
     gloves_workshop_used: set[int]     — indices 1-9 used this cycle
@@ -10,9 +21,15 @@ State keys on player dict:
 """
 
 import random
+import threading
 from combat.combat_io import c_print, c_input
-from combat.helpers import format_damage_msg, ELEMENT_TAGS
+from combat.helpers import format_damage_msg, ELEMENT_TAGS, ACTION_CANCELLED_MSG
 from combat.status_effects import apply_bleed
+
+# Per-thread combat context: lets the shared hit helper reach the full enemy
+# list (for wedding on-hit spreads) without threading a param through every
+# call site. Set by the two actor functions below; one fight per thread.
+_combat_ctx = threading.local()
 
 # ═══════════════════════════════════════════════════════════════════
 # WORKSHOP DEFINITIONS
@@ -104,8 +121,76 @@ def set_first_strike(actor, is_first):
 
 
 # ═══════════════════════════════════════════════════════════════════
+# ENHANCE SCALING (the kit's "mastery")
+# ═══════════════════════════════════════════════════════════════════
+
+# +12% workshop/Furioso power per enhance level on the gloves themselves.
+# +5 caps at ×1.60 — the same top-end as ally skill mastery (✦✦), since the
+# gloves replace all class skills and get no mastery track of their own.
+GLOVES_ENHANCE_POWER_PER_LEVEL = 0.12
+GLOVES_MAX_ENHANCE = 5
+
+
+def get_gloves_enhance_level(actor):
+    """Return the equipped gloves' enhance level (+0..+5), else 0."""
+    equipped = actor.get("equipped", {})
+    if isinstance(equipped, dict):
+        weapon = equipped.get("weapon")
+        if weapon and weapon.get("id") == "certain_someone_black_gloves":
+            try:
+                return max(0, int(weapon.get("enhance", 0) or 0))
+            except (TypeError, ValueError):
+                return 0
+    return 0
+
+
+def get_gloves_power_mult(actor):
+    """Enhance-driven power multiplier for the gloves kit (its "mastery" curve)."""
+    level = min(GLOVES_MAX_ENHANCE, get_gloves_enhance_level(actor))
+    return 1.0 + GLOVES_ENHANCE_POWER_PER_LEVEL * level
+
+
+# ═══════════════════════════════════════════════════════════════════
 # DAMAGE CALCULATION
 # ═══════════════════════════════════════════════════════════════════
+
+
+def _collect_attack_buff_mult(actor, messages):
+    """Gather action-wide attack buffs, mirroring the basic-attack pipeline.
+
+    - ``power_buff`` (Overclock / Tinker Enhancement): consumed once per
+      action, exactly like basic attacks and ally skills.
+    - ``damage_boost`` buffs (Frabjous Day, rift DMG flasks): multiplicative
+      and non-consuming.
+
+    Historically the workshop path ignored both while every other attack
+    path applied them — a wiring gap, not a design choice.
+    """
+    mult = 1.0
+    for buff in actor.get("active_buffs", [])[:]:
+        if buff.get("type") == "power_buff":
+            val = buff.get("value", 0)
+            mult *= 1.0 + val
+            actor["active_buffs"].remove(buff)
+            messages.append(f"  ⚡ Empowered! Damage increased by {int(val * 100)}%!")
+            break
+    for buff in actor.get("active_buffs", []):
+        if buff.get("type") == "damage_boost":
+            mult *= 1.0 + buff.get("value", 0)
+    return mult
+
+
+def _workshop_net_damage(power, target, mult, ignore_con_pct=0.0, extra_mult=1.0):
+    """Physical net damage for one workshop/Furioso hit: (power − CON) × mult.
+
+    ``power`` already includes the enhance/"mastery" and attack-buff
+    multipliers. The result floors at 1 (ally-skill ``_calc_dmg`` parity) so
+    a high-CON target can't blank the kit into exact 0s.
+    """
+    con = target.get("con_mod", 0)
+    if ignore_con_pct:
+        con = int(con * (1.0 - ignore_con_pct))
+    return max(1, int((power - con) * mult * extra_mult))
 
 def _compute_scaling_stat(player, workshop_id):
     """Get the player's effective attribute value for a workshop."""
@@ -124,21 +209,56 @@ def _roll_base_damage(scaling_val):
     return random.randint(4, 10) + scaling_val
 
 
-def _apply_workshop_damage(attacker_name, target, base_dmg, mult, element="dark",
-                           ignore_con_pct=0.0, is_crit=False):
-    """Apply damage to target with the workshop multiplier and CON reduction.
-    CON is scaled by the multiplier so low-mult attacks aren't double-penalized."""
-    if ignore_con_pct > 0:
-        effective_con = int(target.get("con_mod", 0) * (1.0 - ignore_con_pct))
-    else:
-        effective_con = target.get("con_mod", 0)
-    final_dmg = max(0, int((base_dmg - effective_con) * mult))
+def _deal_workshop_hit(actor, target, dmg, skill_name, p_dex, p_ler, element="dark"):
+    """Roll crit, apply crit + elemental mods to a workshop/Furioso hit, deal it.
 
-    # Apply first strike bonus
-    # (handled by caller)
+    Mirrors the basic-attack pipeline: critical roll → crit multiplier →
+    calculate_elemental_damage() (wearer's elemental profile × target
+    resistance, including Momentum / Arcane Blessing modifiers).
 
-    target["hp"] = max(0, target["hp"] - final_dmg)
-    return final_dmg
+    Returns (final_dmg, combat-log message).
+    """
+    from combat.stats import roll_critical_hit, apply_critical_damage, CRIT_MULTIPLIER
+    from combat.elemental import calculate_elemental_damage
+
+    role = "ally" if actor.get("is_ally") else "player"
+    is_crit, _, overflow_crit = roll_critical_hit(actor, role, dex=p_dex, lrn=p_ler)
+    dmg = apply_critical_damage(dmg, is_crit, multiplier=CRIT_MULTIPLIER + overflow_crit)
+
+    # Wedding accessory attack bonuses — workshop hits are attacks, so the
+    # same hooks as the basic-attack path apply (2026-10-04: previously only
+    # basic attacks could ever proc wedding effects; glove users never saw
+    # their wedding item do anything).
+    if not actor.get("is_ally"):
+        from combat.weapon.wedding_specials import apply_wedding_attack_bonus_procs
+        is_first_attack = not actor.get("wedding_first_attack_done")
+        dmg += apply_wedding_attack_bonus_procs(actor, target, dmg, is_first_attack)
+        dmg = max(0, dmg)
+
+    # Prescript Ledger — clash empowerment vs the Prescript's Target
+    from combat.weapon.prescript_ledger import get_clash_bonus as get_prescript_clash_bonus
+    prescript_clash = get_prescript_clash_bonus(actor, target)
+    if prescript_clash:
+        dmg = int(dmg * (1 + prescript_clash))
+
+    dmg = calculate_elemental_damage(dmg, actor, target, element)
+    dmg = max(0, dmg)
+
+    was_alive = target.get("hp", 0) > 0
+    target["hp"] = max(0, target["hp"] - dmg)
+    msg = format_damage_msg(actor["name"], target["name"], dmg,
+                            element=element, crit=is_crit, skill_name=skill_name)
+
+    # Wedding on-hit / on-kill — same hooks the basic-attack path uses.
+    if not actor.get("is_ally"):
+        from combat.weapon.wedding_specials import apply_wedding_on_hit, apply_wedding_on_kill
+        enemies_ref = getattr(_combat_ctx, "enemies", None) or [target]
+        apply_wedding_on_hit(actor, target, enemies_ref, dmg)
+        actor["wedding_first_attack_done"] = True
+        if was_alive and target["hp"] <= 0:
+            apply_wedding_on_kill(actor, target, enemies_ref)
+
+    return dmg, msg
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -160,6 +280,7 @@ def execute_workshop(player, enemies, workshop_id,
 def _execute_workshop_actor(actor, enemies, workshop_id,
                             p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                             allies=None, defending=False, is_player=True):
+    _combat_ctx.enemies = enemies  # wedding on-hit spreads need the full list
     ws = WORKSHOPS[workshop_id]
     stat_map = {
         "Strength": p_str, "Dexterity": p_dex, "Constitution": p_con,
@@ -174,8 +295,10 @@ def _execute_workshop_actor(actor, enemies, workshop_id,
     total_heal = 0
     victory = False
 
-    # First strike bonus
+    # Attack bonuses: First Strike (+15% when acting first, legacy post-armour
+    # multiplier) and enhance scaling (applied to base power pre-armour)
     first_strike_mult = 1.0 + get_gloves_first_strike_damage_bonus(actor)
+    enhance_mult = get_gloves_power_mult(actor)
 
     if ws["target"] == "single":
         # Single target selection
@@ -183,65 +306,64 @@ def _execute_workshop_actor(actor, enemies, workshop_id,
             try:
                 choice = int(c_input(f"Select target for {ws['name']}: ")) - 1
                 if choice < 0 or choice >= len(enemies):
-                    c_print("Invalid target selection.")
-                    return "Invalid target.", False
+                    return ACTION_CANCELLED_MSG, False
                 target = enemies[choice]
             except ValueError:
-                c_print("Please enter a valid number.")
-                return "Invalid input.", False
+                return ACTION_CANCELLED_MSG, False
         else:
             target = enemies[0]
 
+        # Action-wide bonuses are gathered AFTER target selection so a
+        # cancelled pick never consumes a power_buff.
+        action_mult = enhance_mult * _collect_attack_buff_mult(actor, messages)
         base_dmg = _roll_base_damage(scaling_val + str_bonus)
+        power = int(base_dmg * action_mult)
 
         # Special handling per workshop
         if workshop_id == 1:  # Allas — 20% CON ignore
-            ignore_pct = 0.20
-            effective_con = int(target.get("con_mod", 0) * (1.0 - ignore_pct))
-            dmg = max(0, int((base_dmg - effective_con) * ws["mult"]))
+            dmg = _workshop_net_damage(power, target, ws["mult"], ignore_con_pct=0.20)
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Allas (DEF pierce)"))
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Allas (DEF pierce)", p_dex, p_ler)
+            messages.append(hit_msg)
 
         elif workshop_id == 3:  # Zelkova — double hit
             for hit_num in range(2):
                 roll = _roll_base_damage(scaling_val)
-                dmg = max(0, int((roll - target.get("con_mod", 0)) * ws["mult"]))
+                dmg = _workshop_net_damage(int(roll * action_mult), target, ws["mult"])
                 dmg = int(dmg * first_strike_mult)
-                dmg = max(0, dmg)
-                target["hp"] = max(0, target["hp"] - dmg)
                 hit_label = f"Zelkova ({hit_num + 1}/2)"
-                messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name=hit_label))
+                dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, hit_label, p_dex, p_ler)
+                messages.append(hit_msg)
                 if target["hp"] <= 0:
                     break
 
         elif workshop_id == 4:  # Old Boys — 65% stun
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"]))
+            dmg = _workshop_net_damage(power, target, ws["mult"])
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Old Boys"))
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Old Boys", p_dex, p_ler)
+            messages.append(hit_msg)
             if random.random() < 0.65:
-                target["stunned"] = True
-                messages.append(f"  💥 {target['name']} is STUNNED!")
+                from combat.status_effects import check_status_resisted
+                if check_status_resisted(target):
+                    messages.append(f"  🛡 {target['name']} shrugs off the stun!")
+                else:
+                    target["stunned"] = True
+                    messages.append(f"  💥 {target['name']} is STUNNED!")
 
         elif workshop_id == 6:  # Ranga — 70% bleed
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"]))
+            dmg = _workshop_net_damage(power, target, ws["mult"])
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Ranga"))
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Ranga", p_dex, p_ler)
+            messages.append(hit_msg)
             if random.random() < 0.70:
                 apply_bleed(target, 6, 3)
                 messages.append(f"  🩸 {target['name']} is BLEEDING! (6 dmg x 3 turns)")
 
         elif workshop_id == 7:  # Crystal Atelier — +20% dodge
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"]))
+            dmg = _workshop_net_damage(power, target, ws["mult"])
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Crystal Atelier"))
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Crystal Atelier", p_dex, p_ler)
+            messages.append(hit_msg)
             # Add dodge buff to actor
             actor.setdefault("active_buffs", []).append({
                 "type": "evasion",
@@ -252,19 +374,17 @@ def _execute_workshop_actor(actor, enemies, workshop_id,
             messages.append("  💎 Crystal Atelier: +20% Dodge for 2 turns!")
 
         elif workshop_id == 8:  # Atelier Logic — 2.0x once per cycle
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"]))
+            dmg = _workshop_net_damage(power, target, ws["mult"])
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Atelier Logic"))
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Atelier Logic", p_dex, p_ler)
+            messages.append(hit_msg)
 
         else:
             # Generic single-target
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"]))
+            dmg = _workshop_net_damage(power, target, ws["mult"])
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name=ws["name"]))
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, ws["name"], p_dex, p_ler)
+            messages.append(hit_msg)
 
         if target["hp"] <= 0:
             messages.append(f"{actor['name']} defeated {target['name']}!")
@@ -275,20 +395,24 @@ def _execute_workshop_actor(actor, enemies, workshop_id,
     elif ws["target"] == "aoe":
         # AoE — Wheels Industry (2) or Mook Workshop (5)
         total_aoe_dmg = 0
+        action_mult = enhance_mult * _collect_attack_buff_mult(actor, messages)
         for target in list(enemies):
             base_dmg = _roll_base_damage(scaling_val + str_bonus)
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"]))
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target, ws["mult"])
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, ws["name"], p_dex, p_ler)
             total_aoe_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name=ws["name"]))
+            messages.append(hit_msg)
 
             # Wheels Industry (2): 30% stun per target
             if workshop_id == 2 and target["hp"] > 0:
                 if random.random() < 0.30:
-                    target["stunned"] = True
-                    messages.append(f"  ⚡ {target['name']} is STUNNED!")
+                    from combat.status_effects import check_status_resisted
+                    if check_status_resisted(target):
+                        messages.append(f"  🛡 {target['name']} shrugs off the stun!")
+                    else:
+                        target["stunned"] = True
+                        messages.append(f"  ⚡ {target['name']} is STUNNED!")
 
         # Mook Workshop (5): 50% lifesteal
         if workshop_id == 5:
@@ -311,17 +435,17 @@ def _execute_workshop_actor(actor, enemies, workshop_id,
         if not alive:
             return "No enemies to target.", False
 
+        action_mult = enhance_mult * _collect_attack_buff_mult(actor, messages)
         for hit_num in range(DURANDAL_HITS):
             if not alive:
                 break
             target = random.choice(alive)
             base_dmg = _roll_base_damage(scaling_val)
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"]))
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target, ws["mult"])
             dmg = int(dmg * first_strike_mult)
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
             hit_label = f"Durandal ({hit_num + 1}/{DURANDAL_HITS})"
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name=hit_label))
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, hit_label, p_dex, p_ler)
+            messages.append(hit_msg)
             if target["hp"] <= 0:
                 messages.append(f"  {target['name']} falls!")
                 alive = [e for e in enemies if e["hp"] > 0]
@@ -348,6 +472,7 @@ def execute_furioso(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
 
 def _execute_furioso_actor(actor, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                             allies=None, is_player=True):
+    _combat_ctx.enemies = enemies  # wedding on-hit spreads need the full list
     stat_map = {
         "Strength": p_str, "Dexterity": p_dex, "Constitution": p_con,
         "Wisdom": p_wis, "Learning": p_ler, "Charisma": p_cha,
@@ -367,6 +492,9 @@ def _execute_furioso_actor(actor, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_
     total_dmg = 0  # Accumulate total damage dealt
     furioso_mult = 1.45  # Damage multiplier during Furioso
     effect_potency = 0.50  # Effect potency halved
+
+    # Enhance ("mastery") scaling + action buffs apply to every Furioso hit
+    action_mult = get_gloves_power_mult(actor) * _collect_attack_buff_mult(actor, messages)
 
     # Build randomized Furioso order: shuffle 1-8, Durandal (9) always last
     furioso_order = list(range(1, 9))
@@ -389,52 +517,59 @@ def _execute_furioso_actor(actor, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_
         base_dmg = random.randint(4, 10) + scaling_val + str_bonus
 
         if workshop_id == 1:  # Allas — 10% CON ignore (halved from 20%)
-            ignore_pct = 0.10
-            eff_con = int(target.get("con_mod", 0) * (1.0 - ignore_pct))
-            dmg = max(0, int((base_dmg - eff_con) * ws["mult"] * furioso_mult))
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target,
+                                       ws["mult"], ignore_con_pct=0.10,
+                                       extra_mult=furioso_mult)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Furioso: Allas", p_dex, p_ler)
             total_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Furioso: Allas"))
+            messages.append(hit_msg)
 
         elif workshop_id == 2:  # Wheels Industry — AoE (but in Furioso, single-target round-robin) 15% stun
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target,
+                                       ws["mult"], extra_mult=furioso_mult)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Furioso: Wheels", p_dex, p_ler)
             total_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Furioso: Wheels"))
+            messages.append(hit_msg)
             if target["hp"] > 0 and random.random() < 0.15:
-                target["stunned"] = True
-                messages.append(f"  ⚡ {target['name']} is STUNNED!")
+                from combat.status_effects import check_status_resisted
+                if check_status_resisted(target):
+                    messages.append(f"  🛡 {target['name']} shrugs off the stun!")
+                else:
+                    target["stunned"] = True
+                    messages.append(f"  ⚡ {target['name']} is STUNNED!")
 
-        elif workshop_id == 3:  # Zelkova — double hit (each at 0.70 * 0.75)
+        elif workshop_id == 3:  # Zelkova — double hit
             for hit_num in range(2):
                 roll = random.randint(4, 10) + scaling_val
-                dmg = max(0, int((roll - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-                dmg = max(0, dmg)
-                target["hp"] = max(0, target["hp"] - dmg)
-                total_dmg += dmg
+                dmg = _workshop_net_damage(int(roll * action_mult), target,
+                                           ws["mult"], extra_mult=furioso_mult)
                 hit_label = f"Furioso: Zelkova ({hit_num + 1}/2)"
-                messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name=hit_label))
+                dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, hit_label, p_dex, p_ler)
+                total_dmg += dmg
+                messages.append(hit_msg)
                 if target["hp"] <= 0:
                     break
 
         elif workshop_id == 4:  # Old Boys — 32.5% stun
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target,
+                                       ws["mult"], extra_mult=furioso_mult)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Furioso: Old Boys", p_dex, p_ler)
             total_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Furioso: Old Boys"))
+            messages.append(hit_msg)
             if target["hp"] > 0 and random.random() < 0.325:
-                target["stunned"] = True
-                messages.append(f"  💥 {target['name']} is STUNNED!")
+                from combat.status_effects import check_status_resisted
+                if check_status_resisted(target):
+                    messages.append(f"  🛡 {target['name']} shrugs off the stun!")
+                else:
+                    target["stunned"] = True
+                    messages.append(f"  💥 {target['name']} is STUNNED!")
 
         elif workshop_id == 5:  # Mook — AoE lifesteal 25% (halved)
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target,
+                                       ws["mult"], extra_mult=furioso_mult)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Furioso: Mook", p_dex, p_ler)
             total_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Furioso: Mook"))
+            messages.append(hit_msg)
             heal = int(dmg * 0.25)
             if heal > 0:
                 from character import player_max_hp
@@ -446,21 +581,21 @@ def _execute_furioso_actor(actor, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_
                     messages.append(f"  🩸 Mook lifesteal: recovered {actual} HP!")
 
         elif workshop_id == 6:  # Ranga — 35% bleed
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target,
+                                       ws["mult"], extra_mult=furioso_mult)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Furioso: Ranga", p_dex, p_ler)
             total_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Furioso: Ranga"))
+            messages.append(hit_msg)
             if target["hp"] > 0 and random.random() < 0.35:
                 apply_bleed(target, 6, 3)
                 messages.append(f"  🩸 {target['name']} is BLEEDING!")
 
         elif workshop_id == 7:  # Crystal Atelier — +10% dodge
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target,
+                                       ws["mult"], extra_mult=furioso_mult)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Furioso: Crystal", p_dex, p_ler)
             total_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Furioso: Crystal"))
+            messages.append(hit_msg)
             actor.setdefault("active_buffs", []).append({
                 "type": "evasion",
                 "source": "crystal_atelier",
@@ -470,11 +605,11 @@ def _execute_furioso_actor(actor, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_
             messages.append("  💎 Crystal Atelier: +10% Dodge for 2 turns!")
 
         elif workshop_id == 8:  # Atelier Logic — 1.50x (2.00 * 0.75)
-            dmg = max(0, int((base_dmg - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-            dmg = max(0, dmg)
-            target["hp"] = max(0, target["hp"] - dmg)
+            dmg = _workshop_net_damage(int(base_dmg * action_mult), target,
+                                       ws["mult"], extra_mult=furioso_mult)
+            dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, "Furioso: Logic", p_dex, p_ler)
             total_dmg += dmg
-            messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name="Furioso: Logic"))
+            messages.append(hit_msg)
 
         elif workshop_id == 9:  # Durandal — 3 hits at 0.45x (0.60 * 0.75)
             for hit_num in range(DURANDAL_HITS):
@@ -485,12 +620,12 @@ def _execute_furioso_actor(actor, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_
                 if target["hp"] <= 0:
                     target = random.choice(alive)
                 roll = random.randint(4, 10) + scaling_val
-                dmg = max(0, int((roll - target.get("con_mod", 0)) * ws["mult"] * furioso_mult))
-                dmg = max(0, dmg)
-                target["hp"] = max(0, target["hp"] - dmg)
-                total_dmg += dmg
+                dmg = _workshop_net_damage(int(roll * action_mult), target,
+                                           ws["mult"], extra_mult=furioso_mult)
                 hit_label = f"Furioso: Durandal ({hit_num + 1}/{DURANDAL_HITS})"
-                messages.append(format_damage_msg(actor["name"], target["name"], dmg, element="dark", skill_name=hit_label))
+                dmg, hit_msg = _deal_workshop_hit(actor, target, dmg, hit_label, p_dex, p_ler)
+                total_dmg += dmg
+                messages.append(hit_msg)
 
         # Refresh alive list
         alive = [e for e in enemies if e["hp"] > 0]

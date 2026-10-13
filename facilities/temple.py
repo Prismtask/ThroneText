@@ -1,5 +1,5 @@
 # facilities/temple.py
-from utils import advance_time, _int_to_roman, _get_wonderland_max_floor
+from utils import advance_time, _int_to_roman, _get_wonderland_max_floor, display_name
 from city_dialogue import service_dialogue
 from facilities.shop import get_discounted_price
 from resources.items import build_item
@@ -123,9 +123,9 @@ def recover_allies(player, city_id):
         from resources.enemies import ENEMIES
         template = ENEMIES.get(ally.get("key", ""), {})
         dialogue = template.get("dialogue", {})
-        recovered_line = dialogue.get("is_recovered", f"{ally['name']} is back on their feet!")
+        recovered_line = dialogue.get("is_recovered", f"{display_name(ally)} is back on their feet!")
         if "{name}" in recovered_line:
-            recovered_line = recovered_line.format(name=ally['name'])
+            recovered_line = recovered_line.format(name=display_name(ally))
         term.print(f"  {recovered_line}")
     term.print("\nThe priestess finishes her prayers. Your party is whole once more.")
     term.pause()
@@ -263,6 +263,45 @@ def _godmother_interaction(player, city_id):
     term.pause()
 
 
+def _stressed_companions(player):
+    """All owned girls (house + party) currently carrying stress."""
+    girls = []
+    for h in (player.get("houses") or {}).values():
+        girls.extend(h.get("monster_girls", []))
+    girls.extend(player.get("allies", []))
+    seen, out = set(), []
+    for g in girls:
+        if id(g) in seen:
+            continue
+        seen.add(id(g))
+        if g.get("dispatch_mission"):
+            continue  # away on a dispatch — not here for the rites
+        if int(g.get("stress", 0)) > 0:
+            out.append(g)
+    return out
+
+
+def _day_of_respite(player, city_id):
+    """Temple service: −30 stress to every stressed companion; 50g per girl."""
+    from facilities.dispatch import adjust_stress
+    stressed = _stressed_companions(player)
+    if not stressed:
+        term.print("No one is carrying tension.")
+        term.pause()
+        return
+    cost = 50 * len(stressed)
+    if player.get("gold", 0) < cost:
+        term.print(f"You cannot afford the offering ({cost} gold for {len(stressed)} companions).")
+        term.pause()
+        return
+    player["gold"] -= cost
+    for g in stressed:
+        adjust_stress(g, -30)
+    term.print("\nIncense is lit, and the priestesses lead your companions through quiet rites.")
+    term.print(f"  {len(stressed)} companion(s) relieved — Stress −30 each. You paid {cost} gold.")
+    term.pause()
+
+
 def temple_menu(player, city_id="solmere"):
     while True:
         term.clear()
@@ -302,6 +341,12 @@ def temple_menu(player, city_id="solmere"):
             options.append(f"Recover Incapacitated Allies ({cost} gold)")
         else:
             options.append("Recover Allies — all healthy")
+        stressed_girls = _stressed_companions(player)
+        if stressed_girls:
+            resp_cost = 50 * len(stressed_girls)
+            options.append(f"Day of Respite — ease {len(stressed_girls)} companion(s) ({resp_cost} gold)")
+        else:
+            options.append("Day of Respite — no one is carrying tension")
         if stones_available:
             options.append("Buy Ascension Stone")
         if godmother_available:
@@ -315,6 +360,7 @@ def temple_menu(player, city_id="solmere"):
         curse_opt = opt_idx; opt_idx += 1      # 0
         bless_opt = opt_idx; opt_idx += 1       # 1
         ally_opt = opt_idx; opt_idx += 1        # 2
+        resp_opt = opt_idx; opt_idx += 1        # 3
         stone_opt = opt_idx if stones_available else -1
         if stones_available: opt_idx += 1       # 3 (if available)
         godmother_opt = opt_idx if godmother_available else -1
@@ -330,6 +376,9 @@ def temple_menu(player, city_id="solmere"):
         elif choice == ally_opt:
             recover_allies(player, city_id)
             advance_time(player, 30)
+        elif choice == resp_opt:
+            _day_of_respite(player, city_id)
+            advance_time(player, 120)
         elif choice == stone_opt:
             _buy_ascension_stone(player, city_id)
             advance_time(player, 15)
@@ -338,7 +387,6 @@ def temple_menu(player, city_id="solmere"):
             advance_time(player, 30)
         elif choice == leave_opt or choice == -1:
             service_dialogue(city_id, "temple", "leave")
-            advance_time(player, 30)
             break
         else:
             term.print("Invalid choice.")

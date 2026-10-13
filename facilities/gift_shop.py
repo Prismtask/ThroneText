@@ -66,7 +66,6 @@ def gift_shop_service(player, city_id):
     
     if choice == len(options) - 1 or choice == -1:  # Leave
         service_dialogue(city_id, "gift_shop", "leave")
-        advance_time(player, 20)
         return
     if choice == len(options) - 2:  # Engagement Rings
         _show_engagement_rings(player, city_id)

@@ -16,6 +16,7 @@ from combat.combat_ui import print_combat_hud
 from combat.superboss_common import superboss_combat_loop
 from combat.combat_io import c_print, c_input
 from combat.helpers import format_damage_msg
+from utils import display_name
 from combat.elemental import calculate_elemental_damage
 from combat.elemental_debuffs import (
     get_elemental_debuff_params,
@@ -188,8 +189,10 @@ def _apply_color_debuff(target, debuff_type, level, empowered=False):
         for key in list(strength.keys()):
             if key == "tier":
                 strength[key] = min(4, strength[key] + 1)
-            elif key in ("damage", "str_penalty"):
+            elif key == "damage":
                 strength[key] = max(1, int(strength[key] * 1.5))
+            elif key == "penalty_pct":
+                strength[key] = round(strength[key] * 1.5, 3)
 
     apply_func = DEBUFF_APPLY_MAP.get(debuff_type)
     if apply_func is None:
@@ -834,7 +837,7 @@ def combat_palette(player, floor=None, enemies=None):
                 stacks = _paint_stacks(member)
                 if stacks > 0:
                     fixed = " [FIXED]" if _get_paint(member).get("fixed") else ""
-                    c_print(f"  🎨 {member['name']}: {stacks} paint stacks{fixed}")
+                    c_print(f"  🎨 {display_name(member)}: {stacks} paint stacks{fixed}")
 
         print_combat_hud(player, elist, header="Superboss: Palette, the Chromatic Artisan")
 
@@ -938,7 +941,7 @@ def combat_palette(player, floor=None, enemies=None):
                         set_heroine_state(player, "palette", "permanent")
                         player["allies"].append(ally)
                         player["palette_recruited"] = True
-                        c_print(f"\n  🎨 {ally['name']} joins your party! She clutches her brush")
+                        c_print(f"\n  🎨 {display_name(ally)} joins your party! She clutches her brush")
                         c_print("    like a lifeline, and smiles — shy, and very real.")
             else:
                 c_print("\n  Palette nods, a little crestfallen, and begins packing")

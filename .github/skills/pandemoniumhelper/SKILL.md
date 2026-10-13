@@ -42,10 +42,12 @@ description: 'Iterative development helper for the Pandemonium Python text-based
 - HP calc: Player uses `player_max_hp(player)`, allies use `ally["max_hp"]`. Mixed lists must branch.
 - Ally defending: Reset `defending_this_turn = False` at start of every ally turn.
 - Ally cooldowns: `superboss_common.py` must tick ally cooldowns too.
+- Reinforcement: fallen front allies (HP 0) are replaced by the earliest living bench ally at round start — both loops call `reinforce_fallen_allies(player)`; any new combat loop must too.
 - Superboss hooks: Signature `enemy_turn_hook(enemy, ctx, pl, p_con, defending)` must match across all modules.
 
 ### Elemental System
-- 8 elements: Fire, Water, Ice, Lightning, Wind, Earth, Light, Dark.
+- 7 elements: Fire, Water, Thunder, Wind, Earth, Light, Dark + physical/magical damage axes (`combat/elemental.py` `ELEMENTS`).
+- Frost/ice keywords map to Water; "frozen" is a status effect, not an element.
 - `./combat/elemental.py` — damage/resist calculation.
 - `./combat/elemental_debuffs.py` — `try_apply_elemental_debuff()` procs on hit; chance scales with attack stat.
 - `./combat/elemental_traits.py` — weapon primary element, trait application, on-kill procs.
@@ -70,7 +72,7 @@ Every unique item effect must work for the player AND allies unless it's a weddi
 - **Mounts:** `player["mount_id"]` — travel speed + combat passives.
 - **Potion sickness:** `player["potion_sickness"]` — turns of consumable cooldown.
 - **Daily limits:** `girl_talk_today`, `girl_gift_today`, `girl_daily_last_day`.
-- **Time-of-day:** `get_time_period()` + `get_difficulty_multiplier_from_time()` (1.0×–1.8×, night harder).
+- **Phase difficulty:** `time_blocks.get_day_phase()` + `get_difficulty_multiplier_from_time()` (Morning 1.0 / Noon 1.1 / Night 1.25; Pande/EH frozen at 1.25). Block time: `time_blocks.py` — day = 24 blocks (3 phases × 8, 60-min blocks), actions cost 0/1/2, sleep Night-only, travel priced per started 30 min +2 supply per hop (§16 of docs/time_system_design.md). Fatigue at stack II+ during Night triggers solo **hallucination** fights (`combat/hallucination.py`); road camp via Portable Camp item / Caravan mount (`facilities/camp.py`).
 - **Elemental profiles:** `player["elemental_res"]` / `player["elemental_dmg"]` — per-element dicts.
 - **Party order:** `player["party_order"]` — front/back row positioning.
 

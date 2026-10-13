@@ -505,13 +505,12 @@ race_passives:
   Beast:
     id: beast_passive
     name: Feral Instinct
-    description: +2 Dexterity and Strength.
+    description: +2 Strength and +3 Dexterity.
     effect:
-      stat: all
-      value: 1
+      stat: multi
       stats:
-      - Dexterity
-      - Strength
+        Strength: 2
+        Dexterity: 3
   Fey:
     id: fey_passive
     name: Nature's Blessing
@@ -524,81 +523,123 @@ race_passives:
     name: Quick Reflexes
     description: +2 Dexterity and +20% dodge chance.
     effect:
-      stat: Dexterity
-      value: 2
+      type: multi
+      effects:
+      - stat: Dexterity
+        value: 2
+      - type: evasion
+        value: 0.2
   Dragonkin:
     id: dragonkin_passive
     name: Dragon's Might
-    description: +2 Strength and +15% elemental damage.
+    description: +2 Strength and +8% elemental damage.
     effect:
-      stat: Strength
-      value: 2
+      type: multi
+      effects:
+      - stat: Strength
+        value: 2
+      - type: elemental
+        dmg_value: 0.08
+        elements: all
   Demon:
     id: demon_passive
     name: Infernal Blood
-    description: +2 Charisma and +10% fire damage.
+    description: +15% fire and dark damage.
     effect:
-      stat: Charisma
-      value: 2
+      type: elemental
+      dmg_value: 0.15
+      elements:
+      - fire
+      - dark
   Giant:
     id: giant_passive
     name: Colossal Might
-    description: +3 Strength.
+    description: +3 Strength and takes 10% less damage.
     effect:
-      stat: Strength
-      value: 3
+      type: multi
+      effects:
+      - stat: Strength
+        value: 3
+      - type: damage_reduction
+        value: 0.1
   Shadow:
     id: shadow_passive
     name: Shadow Step
     description: +2 Dexterity and 15% chance to evade attacks.
     effect:
-      stat: Dexterity
-      value: 2
+      type: multi
+      effects:
+      - stat: Dexterity
+        value: 2
+      - type: evasion
+        value: 0.15
   Elemental:
     id: elemental_passive
     name: Elemental Resilience
-    description: +2 Constitution and +20% resistance to all elements.
+    description: +10% elemental damage and +10% resistance to all elements.
     effect:
-      stat: Constitution
-      value: 2
+      type: elemental
+      dmg_value: 0.1
+      res_value: 0.1
+      elements: all
   Lizardfolk:
     id: lizardfolk_passive
     name: Reptilian Strength
     description: +2 Strength and +1 Constitution.
     effect:
-      stat: all
-      value: 1
+      stat: multi
       stats:
-      - Strength
-      - Constitution
+        Strength: 2
+        Constitution: 1
   Abomination:
     id: abomination_passive
     name: Aberrant Form
-    description: +3 Strength and take 10% less damage.
+    description: +1 Strength, Dexterity and Wisdom; takes 10% less damage.
     effect:
-      type: damage_reduction
-      value: 0.1
+      type: multi
+      effects:
+      - stat: all
+        value: 1
+        stats:
+        - Strength
+        - Dexterity
+        - Wisdom
+      - type: damage_reduction
+        value: 0.1
   Construct:
     id: construct_passive
     name: Mechanical Durability
-    description: +3 Constitution and immunity to poison/bleed.
+    description: +3 Constitution and immunity to poison and bleed.
     effect:
-      stat: Constitution
-      value: 3
+      type: multi
+      effects:
+      - stat: Constitution
+        value: 3
+      - type: status_immunity
+        statuses:
+        - poison
+        - bleed
   Vampire:
     id: vampire_passive
     name: Vampiric Bloodlust
-    description: Heal 25% of damage dealt and +1 Charisma.
+    description: Heal 25% of damage dealt (doubled vs bleeding foes) and +1 Charisma.
     effect:
-      type: life_steal
-      value: 0.25
+      type: multi
+      effects:
+      - type: life_steal
+        value: 0.25
+      - stat: Charisma
+        value: 1
   Undead:
     id: undead_passive
     name: Unholy Resilience
-    description: +2 Wisdom and immunity to healing effects (self-healing only).
+    description: Regenerate 5% max HP each turn; allied heals are rejected (self-healing still works).
     effect:
-      stat: Wisdom
-      value: 2
+      type: multi
+      effects:
+      - type: regen
+        value: 0.05
+      - type: heal_block
   Human:
     id: human_passive
     name: Adaptability
@@ -613,6 +654,58 @@ race_passives:
       - Wisdom
       - Learning
       - Charisma
+  Gnome:
+    id: gnome_passive
+    name: Tinker's Genius
+    description: +2 Learning and +15% thunder damage.
+    effect:
+      type: multi
+      effects:
+      - stat: Learning
+        value: 2
+      - type: elemental
+        dmg_value: 0.15
+        elements:
+        - thunder
+  Orc:
+    id: orc_passive
+    name: Battle Lust
+    description: +2 Strength and 10% chance to stun on basic attacks.
+    effect:
+      type: multi
+      effects:
+      - stat: Strength
+        value: 2
+      - type: stun_on_basic
+        chance: 0.1
+  Angel:
+    id: angel_passive
+    name: Divine Grace
+    description: +1 Wisdom, +1 Charisma and +5% damage vs Demons.
+    effect:
+      type: multi
+      effects:
+      - stat: all
+        value: 1
+        stats:
+        - Wisdom
+        - Charisma
+      - type: damage_bonus_vs_race
+        races:
+        - Demon
+        value: 0.05
+  Clockwork:
+    id: clockwork_passive
+    name: Clockwork Precision
+    description: +2 Constitution and +10% damage vs shocked enemies.
+    effect:
+      type: multi
+      effects:
+      - stat: Constitution
+        value: 2
+      - type: damage_bonus_vs_status
+        status: shock
+        value: 0.1
 
 # ── Wonderland Heroine Passives (Phase 17) ──────────────────────────────────
 
@@ -734,8 +827,8 @@ learnable_skills:
       name: Power Strike
       description: A strong downward strike.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: offensive
       cooldown: 3
       target: enemy
@@ -750,8 +843,8 @@ learnable_skills:
       name: Fireball
       description: Hurl a ball of flame at a single enemy.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: offensive
       cooldown: 3
       target: enemy
@@ -766,8 +859,8 @@ learnable_skills:
       name: Poison Strike
       description: Strike with poison. Target takes damage over time.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: offensive
       cooldown: 3
       target: enemy
@@ -784,8 +877,9 @@ learnable_skills:
       name: Ice Shards
       description: Launch sharp ice projectiles at all enemies.
       tier: 3
-      exp_cost: 1200
-      required_level: 10
+      exp_cost: 2000
+      required_level: 16
+      required_cap: 20
       category: offensive
       cooldown: 4
       target: enemies
@@ -800,8 +894,9 @@ learnable_skills:
       name: Multi Hit
       description: Strike 3 times in quick succession.
       tier: 3
-      exp_cost: 1200
-      required_level: 10
+      exp_cost: 2000
+      required_level: 16
+      required_cap: 20
       category: offensive
       cooldown: 4
       target: enemy
@@ -817,8 +912,9 @@ learnable_skills:
       name: Whirlwind
       description: Spin and hit all enemies.
       tier: 3
-      exp_cost: 1200
-      required_level: 10
+      exp_cost: 2000
+      required_level: 16
+      required_cap: 20
       category: offensive
       cooldown: 4
       target: enemies
@@ -833,8 +929,9 @@ learnable_skills:
       name: Annihilate
       description: A devastating blow that shatters the target's defenses.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: offensive
       cooldown: 5
       target: enemy
@@ -849,8 +946,9 @@ learnable_skills:
       name: Inferno
       description: Unleash a torrent of flame that scorches all enemies.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: offensive
       cooldown: 5
       target: enemies
@@ -867,8 +965,9 @@ learnable_skills:
       name: Shadow Dance
       description: Strike from the shadows twice, ignoring armor.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: offensive
       cooldown: 5
       target: enemy
@@ -881,6 +980,103 @@ learnable_skills:
       - 25
       - 50
       - 100
+    thunderfall:
+      name: Thunderfall
+      description: Call down a storm of lightning that shocks all enemies.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: offensive
+      cooldown: 6
+      target: enemies
+      power_type: ler
+      base_power: 20
+      shock_damage: 12
+      shock_duration: 3
+      elemental: thunder
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    rend:
+      name: Rend
+      description: Tear into an enemy three times, leaving a bleeding wound.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: offensive
+      cooldown: 6
+      target: enemy
+      power_type: dex
+      base_power: 10
+      hits: 3
+      bleed_damage: 12
+      bleed_duration: 4
+      elemental: physical
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    glacial_requiem:
+      name: Glacial Requiem
+      description: A requiem of ice that slows all enemies for 3 turns.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: offensive
+      cooldown: 6
+      target: enemies
+      power_type: ler
+      base_power: 18
+      apply_slow: true
+      elemental: water
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    worldbreaker:
+      name: Worldbreaker
+      description: Smash an enemy twice with earth-shattering force, piercing half its armor.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: offensive
+      cooldown: 7
+      target: enemy
+      power_type: str
+      base_power: 24
+      hits: 2
+      ignore_armor_pct: 0.5
+      elemental: earth
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120
+    judgment:
+      name: Judgment
+      description: Call down radiant light on all enemies. Deals bonus damage to Undead and Abominations.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: offensive
+      cooldown: 7
+      target: enemies
+      power_type: ler
+      base_power: 22
+      bonus_vs_races:
+      - Undead
+      - Abomination
+      bonus_value: 0.30
+      elemental: light
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120
   defensive:
     protect:
       name: Protect
@@ -912,6 +1108,7 @@ learnable_skills:
       effect:
         type: evasion
         value: 0.5
+        dex_bonus: 2
         duration: 2
       elemental: wind
       mastery_thresholds:
@@ -920,10 +1117,10 @@ learnable_skills:
       - 60
     shield_wall:
       name: Shield Wall
-      description: Take reduced damage and protect an ally for 2 turns.
+      description: Grant yourself or an ally 40% damage reduction for 2 turns.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: defensive
       cooldown: 4
       target: ally_or_self
@@ -940,8 +1137,8 @@ learnable_skills:
       name: Hardened Skin
       description: Strengthen your body, taking 25% less damage for 3 turns.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: defensive
       cooldown: 4
       target: self
@@ -958,8 +1155,9 @@ learnable_skills:
       name: Counter
       description: Parry and riposte. Reflect 40% of damage taken back to attacker.
       tier: 3
-      exp_cost: 1200
-      required_level: 10
+      exp_cost: 2000
+      required_level: 16
+      required_cap: 20
       category: defensive
       cooldown: 3
       target: self
@@ -976,8 +1174,9 @@ learnable_skills:
       name: Perfect Guard
       description: Fortify your stance. Take 60% less damage and reflect 30% for 2 turns.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: defensive
       cooldown: 4
       target: self
@@ -995,8 +1194,9 @@ learnable_skills:
       name: Phantom Dodge
       description: Become a phantom. Evade 75% of attacks and gain +3 Dexterity for 2 turns.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: defensive
       cooldown: 4
       target: self
@@ -1010,6 +1210,100 @@ learnable_skills:
       - 25
       - 50
       - 100
+    aegis_shell:
+      name: Aegis Shell
+      description: Wrap yourself or an ally in a barrier that absorbs damage equal to 30% of your max HP.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: defensive
+      cooldown: 6
+      target: ally_or_self
+      effect:
+        type: barrier
+        value_from_caster_hp: 0.30
+        duration: 3
+      elemental: magical
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    bulwark:
+      name: Bulwark
+      description: Brace the whole party, reducing damage taken by 30% for 2 turns.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: defensive
+      cooldown: 6
+      target: all_allies
+      effect:
+        type: damage_reduction
+        value: 0.3
+        duration: 2
+      elemental: earth
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    indomitable:
+      name: Indomitable
+      description: Refuse to fall. Take 80% less damage for 2 turns.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: defensive
+      cooldown: 7
+      target: self
+      effect:
+        type: damage_reduction
+        value: 0.8
+        duration: 2
+      elemental: light
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120
+    guardians_vow:
+      name: Guardian's Vow
+      description: A vow that shields the whole party, reducing damage taken by 40% for 3 turns.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: defensive
+      cooldown: 8
+      target: all_allies
+      effect:
+        type: damage_reduction
+        value: 0.4
+        duration: 3
+      elemental: earth
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120
+    undying_vow:
+      name: Undying Vow
+      description: Vow that no ally shall fall — the first lethal blow each ally takes leaves them at 1 HP instead.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: defensive
+      cooldown: 9
+      target: all_allies
+      effect:
+        type: death_ward
+        duration: 3
+      elemental: light
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120
   support:
     heal:
       name: Heal
@@ -1029,7 +1323,7 @@ learnable_skills:
       - 60
     strength_buff:
       name: Strength Buff
-      description: Increase an ally's Strength by 2 for 3 turns.
+      description: Increase an ally's Strength for 3 turns. The bonus starts at +2 and grows with the caster's level.
       tier: 1
       exp_cost: 300
       required_level: 1
@@ -1040,6 +1334,7 @@ learnable_skills:
         type: stat_buff
         stat: Strength
         value: 2
+        scale_per_level: 0.15
         duration: 3
       elemental: physical
       mastery_thresholds:
@@ -1067,8 +1362,8 @@ learnable_skills:
       name: Group Heal
       description: Restore health to all allies.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: support
       cooldown: 5
       target: all_allies
@@ -1083,8 +1378,8 @@ learnable_skills:
       name: Regenerate
       description: Grant an ally 10% HP recovery each turn for 4 turns.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: support
       cooldown: 4
       target: ally_or_self
@@ -1099,10 +1394,10 @@ learnable_skills:
       - 64
     weakening_curse:
       name: Weakening Curse
-      description: Reduce an enemy's Strength by 2 for 3 turns.
+      description: Reduce an enemy's Strength for 3 turns. The penalty starts at -2 and grows with the caster's level.
       tier: 2
-      exp_cost: 600
-      required_level: 5
+      exp_cost: 800
+      required_level: 8
       category: support
       cooldown: 3
       target: enemy
@@ -1110,6 +1405,7 @@ learnable_skills:
         type: stat_debuff
         stat: Strength
         value: 2
+        scale_per_level: 0.10
         duration: 3
       elemental: dark
       mastery_thresholds:
@@ -1118,10 +1414,11 @@ learnable_skills:
       - 60
     wisdom_buff:
       name: Wisdom Buff
-      description: Increase an ally's Wisdom by 2 for 3 turns.
+      description: Increase an ally's Wisdom for 3 turns. The bonus starts at +2 and grows with the caster's level.
       tier: 3
-      exp_cost: 1200
-      required_level: 10
+      exp_cost: 2000
+      required_level: 16
+      required_cap: 20
       category: support
       cooldown: 3
       target: ally_or_self
@@ -1129,6 +1426,7 @@ learnable_skills:
         type: stat_buff
         stat: Wisdom
         value: 2
+        scale_per_level: 0.15
         duration: 3
       elemental: magical
       mastery_thresholds:
@@ -1139,8 +1437,9 @@ learnable_skills:
       name: Haste
       description: Grant an ally -2 cooldown on next skill use for 2 turns.
       tier: 3
-      exp_cost: 1200
-      required_level: 10
+      exp_cost: 2000
+      required_level: 16
+      required_cap: 20
       category: support
       cooldown: 4
       target: ally_or_self
@@ -1157,8 +1456,9 @@ learnable_skills:
       name: Blind
       description: Reduce an enemy's accuracy. 40% chance to miss attacks for 3 turns.
       tier: 3
-      exp_cost: 1200
-      required_level: 10
+      exp_cost: 2000
+      required_level: 16
+      required_cap: 20
       category: support
       cooldown: 3
       target: enemy
@@ -1175,8 +1475,9 @@ learnable_skills:
       name: Mass Regenerate
       description: Grant all allies 8% HP recovery each turn for 3 turns.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: support
       cooldown: 5
       target: all_allies
@@ -1191,10 +1492,11 @@ learnable_skills:
       - 100
     heroic_onslaught:
       name: Heroic Onslaught
-      description: Raise the party's strength. All allies gain +3 Strength for 3 turns.
+      description: Raise the party's Strength for 3 turns. The bonus starts at +3 and grows with the caster's level.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: support
       cooldown: 5
       target: all_allies
@@ -1202,6 +1504,7 @@ learnable_skills:
         type: stat_buff
         stat: Strength
         value: 3
+        scale_per_level: 0.15
         duration: 3
       elemental: fire
       mastery_thresholds:
@@ -1210,20 +1513,128 @@ learnable_skills:
       - 100
     aura_of_despair:
       name: Aura of Despair
-      description: Drain the enemy's will. All enemies lose 3 Constitution for 3 turns.
+      description: Drain the enemy's will. All enemies take +15% damage for 3 turns.
       tier: 4
-      exp_cost: 2400
-      required_level: 15
+      exp_cost: 5000
+      required_level: 25
+      required_cap: 30
       category: support
       cooldown: 5
       target: enemies
       effect:
-        type: stat_debuff
-        stat: Constitution
-        value: 3
+        type: damage_taken_up
+        value: 0.15
         duration: 3
       elemental: dark
       mastery_thresholds:
       - 25
       - 50
       - 100
+    phoenix_call:
+      name: Phoenix Call
+      description: Call a fallen ally back to their feet with 20% of their HP — rising to 35% with mastery.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: support
+      cooldown: 8
+      target: dead_ally
+      revive_percent: 0.30
+      elemental: light
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    cleansing_chorus:
+      name: Cleansing Chorus
+      description: Heal the whole party and cleanse all debuffs.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: support
+      cooldown: 6
+      target: all_allies
+      power_type: wis
+      base_power: 12
+      cleanse_all_debuffs: true
+      elemental: light
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    benediction:
+      name: Benediction
+      description: Restore a large amount of health to yourself or an ally.
+      tier: 5
+      exp_cost: 10000
+      required_level: 35
+      required_cap: 40
+      category: support
+      cooldown: 5
+      target: ally_or_self
+      power_type: wis
+      base_power: 30
+      elemental: light
+      mastery_thresholds:
+      - 25
+      - 50
+      - 100
+    radiant_rebirth:
+      name: Radiant Rebirth
+      description: Revive a fallen ally at 45% HP (70% with mastery), shielded by a barrier equal to 15% of your max HP.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: support
+      cooldown: 9
+      target: dead_ally
+      revive_percent: 0.75
+      revive_barrier_pct: 0.15
+      revive_barrier_duration: 2
+      elemental: light
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120
+    fates_favor:
+      name: Fate's Favor
+      description: The party deals +15% damage for 3 turns.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: support
+      cooldown: 7
+      target: all_allies
+      effect:
+        type: damage_boost
+        value: 0.15
+        duration: 3
+      elemental: fire
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120
+    astral_haste:
+      name: Astral Haste
+      description: The party moves like starlight — +3 initiative and next-skill cooldowns reduced by 1 for 3 turns.
+      tier: 6
+      exp_cost: 20000
+      required_level: 45
+      required_cap: 50
+      category: support
+      cooldown: 8
+      target: all_allies
+      effect:
+        type: haste
+        duration: 3
+        init_bonus: 3
+        cd_reduction: 1
+      elemental: thunder
+      mastery_thresholds:
+      - 30
+      - 60
+      - 120

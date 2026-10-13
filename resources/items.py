@@ -32,71 +32,96 @@ ITEMS = {
     "shadow_essence":   {"name": "Shadow Essence",   "type": "consumable", "base_power": 25, "dodge_next": True},
     "mana_philter":     {"name": "Mana Philter",     "type": "consumable", "base_power": 0,  "restore_random_skill": True},
 
+    # === Travel Gear (docs/time_system_design.md §8) ===
+    # Lets the party camp at a day boundary mid-journey (no fatigue stack).
+    "portable_camp": {
+        "name": "Portable Camp",
+        "type": "key_item",
+        "rarity": "common",
+        "plain_name": True,          # keep the clean name (no "Common " prefix)
+        "no_random_stock": True,     # sold explicitly by every shop, not rolled
+        "value": 250,
+        "description": ("A compact tent, bedroll and cook-kit. Set Camp when a "
+                        "day's travel runs out — you resume at morning without "
+                        "exhaustion. The Caravan mount carries its own."),
+    },
+
+    # === House / Companion Items (used at home, never in combat) ===
+    "herbal_bath_salts": {
+        "name": "Herbal Bath Salts",
+        "type": "house_item",
+        "rarity": "uncommon",
+        "stress_relief": 20,
+        "description": ("A linen pouch of calming herbs. Spend one at the House Lounge "
+                        "to soak away a companion's stress (−20)."),
+    },
+
     # === Weapons === (Added "scaling_stat" + "primary_element" properties)
     # Elemental prefix naming: [ElementPrefix] + [WeaponType] — tells element at a glance.
 
     # --- Physical Weapons (STR / CON) ---
-    "iron_sword":       {"name": "Iron Sword",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2},                     "scaling_stat": "Strength",    "primary_element": "physical", "elemental_dmg": {"physical": 1.2}},
-    "steel_sword":      {"name": "Steel Sword",      "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3},                     "scaling_stat": "Strength",    "primary_element": "physical", "elemental_dmg": {"physical": 1.2}},
+    "iron_sword":       {"name": "Iron Sword", "weapon_type": "sword",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2},                     "scaling_stat": "Strength",    "primary_element": "physical", "elemental_dmg": {"physical": 1.2}},
+    "steel_sword":      {"name": "Steel Sword", "weapon_type": "sword",      "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3},                     "scaling_stat": "Strength",    "primary_element": "physical", "elemental_dmg": {"physical": 1.2}},
 
     # --- Fire Weapons (STR / DEX / LRN / CHA / CON) ---
-    "ember_flail":      {"name": "Ember Flail",      "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3, "Constitution": 1},  "scaling_stat": "Strength",    "primary_element": "fire",      "elemental_dmg": {"physical": 1.2, "fire": 1.3}},
-    "blaze_axe":        {"name": "Blaze Axe",        "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4},                     "scaling_stat": "Strength",    "primary_element": "fire",      "elemental_dmg": {"physical": 1.3, "fire": 1.3}},
-    "inferno_greatsword":{"name": "Inferno Greatsword","type": "equipment","slot": "weapon", "base_mods": {"Strength": 5},                     "scaling_stat": "Strength",    "primary_element": "fire",      "elemental_dmg": {"physical": 1.3, "fire": 1.3}},
-    "spark_hand_crossbow":{"name": "Spark Hand Crossbow","type": "equipment","slot": "weapon","base_mods": {"Dexterity": 2},                   "scaling_stat": "Dexterity",   "primary_element": "fire",      "elemental_dmg": {"physical": 1.1, "fire": 1.2}},
-    "blaze_lute":       {"name": "Blaze Lute",       "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 4, "Learning": 1},      "scaling_stat": "Charisma",    "primary_element": "fire",      "elemental_dmg": {"magical": 1.1, "fire": 1.3, "wind": 1.1}},
-    "magma_gauntlets":  {"name": "Magma Gauntlets",  "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 2, "Strength": 1},  "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "fire",      "elemental_dmg": {"physical": 1.2, "fire": 1.3}},
+    "ember_flail":      {"name": "Ember Flail", "weapon_type": "flail",      "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3, "Constitution": 1},  "scaling_stat": "Strength",    "primary_element": "fire",      "elemental_dmg": {"physical": 1.2, "fire": 1.3}},
+    "blaze_axe":        {"name": "Blaze Axe", "weapon_type": "axe",        "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4},                     "scaling_stat": "Strength",    "primary_element": "fire",      "elemental_dmg": {"physical": 1.3, "fire": 1.3}},
+    "inferno_greatsword":{"name": "Inferno Greatsword", "weapon_type": "greatsword","type": "equipment","slot": "weapon", "base_mods": {"Strength": 5},                     "scaling_stat": "Strength",    "primary_element": "fire",      "elemental_dmg": {"physical": 1.3, "fire": 1.3}},
+    "spark_hand_crossbow":{"name": "Spark Hand Crossbow", "weapon_type": "crossbow","type": "equipment","slot": "weapon","base_mods": {"Dexterity": 2},                   "scaling_stat": "Dexterity",   "primary_element": "fire",      "elemental_dmg": {"physical": 1.1, "fire": 1.2}},
+    "blaze_lute":       {"name": "Blaze Lute", "weapon_type": "lute",       "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 4, "Learning": 1},      "scaling_stat": "Charisma",    "primary_element": "fire",      "elemental_dmg": {"magical": 1.1, "fire": 1.3, "wind": 1.1}},
+    "magma_gauntlets":  {"name": "Magma Gauntlets", "weapon_type": "gauntlets",  "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 2, "Strength": 1},  "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "fire",      "elemental_dmg": {"physical": 1.2, "fire": 1.3}},
 
     # --- Water Weapons (STR / DEX / LRN / WIS) ---
-    "frost_blade":      {"name": "Frost Blade",      "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4, "Dexterity": 2},     "scaling_stat": "Strength",    "primary_element": "water",     "elemental_dmg": {"physical": 1.2, "water": 1.3}},
-    "rime_bow":         {"name": "Rime Bow",         "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4},                     "scaling_stat": "Dexterity",   "primary_element": "water",     "elemental_dmg": {"physical": 1.2, "water": 1.2}},
-    "torrent_orb":      {"name": "Torrent Orb",      "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 3, "Charisma": 1},       "scaling_stat": "Learning",    "primary_element": "water",     "elemental_dmg": {"magical": 1.3, "water": 1.3}},
-    "glacier_scepter":  {"name": "Glacier Scepter",  "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 3, "Charisma": 2},         "scaling_stat": "Wisdom",      "primary_element": "water",     "elemental_dmg": {"magical": 1.2, "water": 1.3}},
+    "frost_blade":      {"name": "Frost Blade", "weapon_type": "blade",      "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4, "Dexterity": 2},     "scaling_stat": "Strength",    "primary_element": "water",     "elemental_dmg": {"physical": 1.2, "water": 1.3}},
+    "rime_bow":         {"name": "Rime Bow", "weapon_type": "bow",         "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4},                     "scaling_stat": "Dexterity",   "primary_element": "water",     "elemental_dmg": {"physical": 1.2, "water": 1.2}},
+    "torrent_orb":      {"name": "Torrent Orb", "weapon_type": "orb",      "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 3, "Charisma": 1},       "scaling_stat": "Learning",    "primary_element": "water",     "elemental_dmg": {"magical": 1.3, "water": 1.3}},
+    "glacier_scepter":  {"name": "Glacier Scepter", "weapon_type": "scepter",  "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 3, "Charisma": 2},         "scaling_stat": "Wisdom",      "primary_element": "water",     "elemental_dmg": {"magical": 1.2, "water": 1.3}},
 
     # --- Thunder Weapons (STR / DEX / LRN) ---
-    "storm_hammer":     {"name": "Storm Hammer",     "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 5},                     "scaling_stat": "Strength",    "primary_element": "thunder",   "elemental_dmg": {"physical": 1.3, "thunder": 1.3}},
-    "volt_chakram":     {"name": "Volt Chakram",     "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3, "Strength": 1},      "scaling_stat": "Dexterity",   "primary_element": "thunder",   "elemental_dmg": {"physical": 1.2, "thunder": 1.2}},
-    "thunder_wand":     {"name": "Thunder Wand",     "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 2, "Wisdom": 1},         "scaling_stat": "Learning",    "primary_element": "thunder",   "elemental_dmg": {"magical": 1.2, "thunder": 1.2}},
+    "storm_hammer":     {"name": "Storm Hammer", "weapon_type": "hammer",     "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 5},                     "scaling_stat": "Strength",    "primary_element": "thunder",   "elemental_dmg": {"physical": 1.3, "thunder": 1.3}},
+    "volt_chakram":     {"name": "Volt Chakram", "weapon_type": "chakram",     "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3, "Strength": 1},      "scaling_stat": "Dexterity",   "primary_element": "thunder",   "elemental_dmg": {"physical": 1.2, "thunder": 1.2}},
+    "thunder_wand":     {"name": "Thunder Wand", "weapon_type": "wand",     "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 2, "Wisdom": 1},         "scaling_stat": "Learning",    "primary_element": "thunder",   "elemental_dmg": {"magical": 1.2, "thunder": 1.2}},
 
     # --- Wind Weapons (STR / DEX / CHA) ---
-    "gale_spear":       {"name": "Gale Spear",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3, "Dexterity": 1},     "scaling_stat": "Strength",    "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.2, "earth": 1.1}},
-    "zephyr_halberd":   {"name": "Zephyr Halberd",   "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4, "Dexterity": 2},     "scaling_stat": "Strength",    "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.2, "earth": 1.2}},
-    "gale_bow":         {"name": "Gale Bow",         "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4},                     "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.2}},
-    "zephyr_rapier":    {"name": "Zephyr Rapier",    "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4, "Charisma": 1},      "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.3}},
-    "zephyr_bow":       {"name": "Zephyr Bow",       "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 5, "Learning": 1},      "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.3, "light": 1.1}},
-    "cyclone_crossbow": {"name": "Cyclone Crossbow", "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3, "Learning": 1},      "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.3}},
-    "zephyr_harp":      {"name": "Zephyr Harp",      "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 3, "Dexterity": 2},      "scaling_stat": "Charisma",    "primary_element": "wind",      "elemental_dmg": {"magical": 1.1, "wind": 1.3, "light": 1.1}},
+    "gale_spear":       {"name": "Gale Spear", "weapon_type": "spear",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3, "Dexterity": 1},     "scaling_stat": "Strength",    "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.2, "earth": 1.1}},
+    "zephyr_halberd":   {"name": "Zephyr Halberd", "weapon_type": "halberd",   "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4, "Dexterity": 2},     "scaling_stat": "Strength",    "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.2, "earth": 1.2}},
+    "gale_bow":         {"name": "Gale Bow", "weapon_type": "bow",         "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4},                     "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.2}},
+    "zephyr_rapier":    {"name": "Zephyr Rapier", "weapon_type": "rapier",    "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 4, "Charisma": 1},      "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.3}},
+    "zephyr_bow":       {"name": "Zephyr Bow", "weapon_type": "bow",       "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 5, "Learning": 1},      "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.3, "light": 1.1}},
+    "cyclone_crossbow": {"name": "Cyclone Crossbow", "weapon_type": "crossbow", "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3, "Learning": 1},      "scaling_stat": "Dexterity",   "primary_element": "wind",      "elemental_dmg": {"physical": 1.2, "wind": 1.3}},
+    "zephyr_harp":      {"name": "Zephyr Harp", "weapon_type": "harp",      "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 3, "Dexterity": 2},      "scaling_stat": "Charisma",    "primary_element": "wind",      "elemental_dmg": {"magical": 1.1, "wind": 1.3, "light": 1.1}},
 
     # --- Earth Weapons (STR / CON) ---
-    "stone_mace":       {"name": "Stone Mace",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2, "Wisdom": 1},         "scaling_stat": "Strength",    "primary_element": "earth",     "elemental_dmg": {"physical": 1.2, "earth": 1.2}},
-    "grave_maul":       {"name": "Grave Maul",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4, "Constitution": 1},   "scaling_stat": "Strength",    "primary_element": "earth",     "elemental_dmg": {"physical": 1.3, "earth": 1.3}},
-    "titan_shield":     {"name": "Titan Shield",     "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 3},                   "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "physical",  "elemental_dmg": {"physical": 1.1, "earth": 1.1}},
-    "bedrock_mace":     {"name": "Bedrock Mace",     "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 3, "Strength": 1},     "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "earth",     "elemental_dmg": {"physical": 1.2, "earth": 1.2}},
-    "stone_plate":      {"name": "Stone Plate",      "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 4},                   "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "earth",     "elemental_dmg": {"physical": 1.1, "earth": 1.1, "fire": 1.1}},
+    "stone_mace":       {"name": "Stone Mace", "weapon_type": "mace",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 2, "Wisdom": 1},         "scaling_stat": "Strength",    "primary_element": "earth",     "elemental_dmg": {"physical": 1.2, "earth": 1.2}},
+    "grave_maul":       {"name": "Grave Maul", "weapon_type": "maul",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 4, "Constitution": 1},   "scaling_stat": "Strength",    "primary_element": "earth",     "elemental_dmg": {"physical": 1.3, "earth": 1.3}},
+    "titan_shield":     {"name": "Titan Shield", "weapon_type": "shield",     "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 3},                   "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "physical",  "elemental_dmg": {"physical": 1.1, "earth": 1.1}},
+    "bedrock_mace":     {"name": "Bedrock Mace", "weapon_type": "mace",     "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 3, "Strength": 1},     "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "earth",     "elemental_dmg": {"physical": 1.2, "earth": 1.2}},
+    "stone_plate":      {"name": "Stone Plate", "weapon_type": "shield",      "type": "equipment", "slot": "weapon", "base_mods": {"Constitution": 4},                   "scaling_stat": "Constitution","scaling_mult": 0.5, "con_defense": True, "primary_element": "earth",     "elemental_dmg": {"physical": 1.1, "earth": 1.1, "fire": 1.1}},
 
     # --- Light Weapons (STR / WIS / CHA) ---
-    "radiant_sword":    {"name": "Radiant Sword",    "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3, "Wisdom": 2},          "scaling_stat": "Strength",    "primary_element": "light",     "elemental_dmg": {"physical": 1.2, "light": 1.3}},
-    "divine_staff":     {"name": "Divine Staff",     "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 4, "Constitution": 1},       "scaling_stat": "Wisdom",      "primary_element": "light",     "elemental_dmg": {"magical": 1.2, "light": 1.3}},
-    "radiant_mace":     {"name": "Radiant Mace",     "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 4, "Strength": 1},           "scaling_stat": "Wisdom",      "primary_element": "light",     "elemental_dmg": {"physical": 1.1, "magical": 1.1, "light": 1.2, "earth": 1.1}},
-    "radiant_lute":     {"name": "Radiant Lute",     "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 4, "Learning": 1},         "scaling_stat": "Charisma",    "primary_element": "light",     "elemental_dmg": {"magical": 1.1, "light": 1.3, "wind": 1.1}},
+    "radiant_sword":    {"name": "Radiant Sword", "weapon_type": "sword",    "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 3, "Wisdom": 2},          "scaling_stat": "Strength",    "primary_element": "light",     "elemental_dmg": {"physical": 1.2, "light": 1.3}},
+    "divine_staff":     {"name": "Divine Staff", "weapon_type": "staff",     "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 4, "Constitution": 1},       "scaling_stat": "Wisdom",      "primary_element": "light",     "elemental_dmg": {"magical": 1.2, "light": 1.3}},
+    "radiant_mace":     {"name": "Radiant Mace", "weapon_type": "mace",     "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 4, "Strength": 1},           "scaling_stat": "Wisdom",      "primary_element": "light",     "elemental_dmg": {"physical": 1.1, "magical": 1.1, "light": 1.2, "earth": 1.1}},
+    "radiant_lute":     {"name": "Radiant Lute", "weapon_type": "lute",     "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 4, "Learning": 1},         "scaling_stat": "Charisma",    "primary_element": "light",     "elemental_dmg": {"magical": 1.1, "light": 1.3, "wind": 1.1}},
 
     # --- Dark Weapons (STR / DEX / LRN / CHA) ---
-    "void_blade":       {"name": "Void Blade",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 5, "Dexterity": 3},      "scaling_stat": "Strength",    "primary_element": "dark",      "elemental_dmg": {"physical": 1.3, "dark": 1.3, "water": 1.2}},
-    "shadow_dagger":    {"name": "Shadow Dagger",    "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3},                     "scaling_stat": "Dexterity",   "primary_element": "dark",      "elemental_dmg": {"physical": 1.1, "dark": 1.2}},
-    "nether_blade":     {"name": "Nether Blade",     "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 3, "Wisdom": 2},           "scaling_stat": "Learning",    "primary_element": "dark",      "elemental_dmg": {"magical": 1.2, "dark": 1.3}},
-    "nether_grimoire":  {"name": "Nether Grimoire",  "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 5},                       "scaling_stat": "Learning",    "primary_element": "dark",      "elemental_dmg": {"magical": 1.3, "dark": 1.3, "fire": 1.1}},
-    "shadow_tongue_dagger":{"name": "Shadow Tongue Dagger","type": "equipment","slot": "weapon","base_mods": {"Charisma": 3, "Dexterity": 2},   "scaling_stat": "Charisma",    "primary_element": "dark",      "elemental_dmg": {"physical": 1.1, "dark": 1.2, "wind": 1.1}},
+    "void_blade":       {"name": "Void Blade", "weapon_type": "blade",       "type": "equipment", "slot": "weapon", "base_mods": {"Strength": 5, "Dexterity": 3},      "scaling_stat": "Strength",    "primary_element": "dark",      "elemental_dmg": {"physical": 1.3, "dark": 1.3, "water": 1.2}},
+    "shadow_dagger":    {"name": "Shadow Dagger", "weapon_type": "dagger",    "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 3},                     "scaling_stat": "Dexterity",   "primary_element": "dark",      "elemental_dmg": {"physical": 1.1, "dark": 1.2}},
+    "nether_blade":     {"name": "Nether Blade", "weapon_type": "blade",     "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 3, "Wisdom": 2},           "scaling_stat": "Learning",    "primary_element": "dark",      "elemental_dmg": {"magical": 1.2, "dark": 1.3}},
+    "nether_grimoire":  {"name": "Nether Grimoire", "weapon_type": "grimoire",  "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 5},                       "scaling_stat": "Learning",    "primary_element": "dark",      "elemental_dmg": {"magical": 1.3, "dark": 1.3, "fire": 1.1}},
+    "shadow_tongue_dagger":{"name": "Shadow Tongue Dagger", "weapon_type": "dagger","type": "equipment","slot": "weapon","base_mods": {"Charisma": 3, "Dexterity": 2},   "scaling_stat": "Charisma",    "primary_element": "dark",      "elemental_dmg": {"physical": 1.1, "dark": 1.2, "wind": 1.1}},
 
     # --- Magical Weapons (LRN / WIS / CHA) ---
-    "arcane_staff":     {"name": "Arcane Staff",     "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 4},                       "scaling_stat": "Learning",    "primary_element": "magical",   "elemental_dmg": {"magical": 1.2, "thunder": 1.2}},
-    "mystic_dagger":    {"name": "Mystic Dagger",    "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 2, "Learning": 2},        "scaling_stat": "Dexterity",   "primary_element": "magical",   "elemental_dmg": {"physical": 1.1, "magical": 1.2, "thunder": 1.2, "dark": 1.1}},
-    "astral_orb":       {"name": "Astral Orb",       "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 3, "Learning": 1},           "scaling_stat": "Wisdom",      "primary_element": "magical",   "elemental_dmg": {"magical": 1.3, "light": 1.3}},
-    "mystic_bell":      {"name": "Mystic Bell",      "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 3, "Learning": 2},          "scaling_stat": "Charisma",    "primary_element": "magical",   "elemental_dmg": {"magical": 1.2, "thunder": 1.2}},
+    "arcane_staff":     {"name": "Arcane Staff", "weapon_type": "staff",     "type": "equipment", "slot": "weapon", "base_mods": {"Learning": 4},                       "scaling_stat": "Learning",    "primary_element": "magical",   "elemental_dmg": {"magical": 1.2, "thunder": 1.2}},
+    "mystic_dagger":    {"name": "Mystic Dagger", "weapon_type": "dagger",    "type": "equipment", "slot": "weapon", "base_mods": {"Dexterity": 2, "Learning": 2},        "scaling_stat": "Dexterity",   "primary_element": "magical",   "elemental_dmg": {"physical": 1.1, "magical": 1.2, "thunder": 1.2, "dark": 1.1}},
+    "astral_orb":       {"name": "Astral Orb", "weapon_type": "orb",       "type": "equipment", "slot": "weapon", "base_mods": {"Wisdom": 3, "Learning": 1},           "scaling_stat": "Wisdom",      "primary_element": "magical",   "elemental_dmg": {"magical": 1.3, "light": 1.3}},
+    "mystic_bell":      {"name": "Mystic Bell", "weapon_type": "bell",      "type": "equipment", "slot": "weapon", "base_mods": {"Charisma": 3, "Learning": 2},          "scaling_stat": "Charisma",    "primary_element": "magical",   "elemental_dmg": {"magical": 1.2, "thunder": 1.2}},
 
     # === Unique Weapons (keep existing IDs and names) ===
 
     "abyss_fang": {
         "name": "Abyss Fang",
+        "weapon_type": "fang",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -130,8 +155,18 @@ ITEMS = {
         "special": "sky_piercer",
     },
 
+    "prescript_ledger": {
+        "name": "Prescript Ledger",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Learning": 6, "Charisma": 6},
+        "special": "prescript_ledger",
+    },
+
     "cutlass_of_the_captain": {
         "name": "Cutlass of the Captain",
+        "weapon_type": "cutlass",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -140,6 +175,20 @@ ITEMS = {
         "elemental_dmg": {"physical": 1.3, "water": 1.3, "dark": 1.2},
         "special": "captain_cutlass",
         "drop_source": "captain_everlong_ship",
+        "drop_rarity": "unique",
+    },
+
+    "last_oath": {
+        "name": "Last Oath",
+        "weapon_type": "rapier",
+        "type": "equipment",
+        "slot": "weapon",
+        "unique": True,
+        "base_mods": {"Dexterity": 15, "Wisdom": 5, "Learning": 3},
+        "scaling_stat": ["Dexterity"],
+        "elemental_dmg": {"physical": 1.3, "light": 1.2},
+        "special": "last_oath",
+        "drop_source": "white_knight",
         "drop_rarity": "unique",
     },
 
@@ -406,6 +455,7 @@ ITEMS = {
     # === Unique — Superboss Drop ===
     "certain_someone_black_gloves": {
         "name": "Certain Someone Black Gloves",
+        "weapon_type": "gauntlets",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -418,6 +468,7 @@ ITEMS = {
     },
     "palette_brush": {
         "name": "Palette's Brush",
+        "weapon_type": "brush",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -466,9 +517,77 @@ ITEMS = {
     "fractured_hourglass": {
         "name": "Fractured Hourglass",
         "type": "consumable",
+        "unique": True,
         "base_power": 0,
         "special": "cooldown_reset",
         "drop_source": "entangled_chrysalis",
+        "drop_rarity": "unique",
+    },
+
+    # === Event Horizon Trophies (docs/event_horizon_design.md §10.5) ===
+    "chance_and_choice": {
+        "name": "Chance and Choice",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "special": "chance_and_choice",
+        "base_mods": {"Dexterity": 5, "Charisma": 3},
+        "description": (
+            "A coin, simple in one's eye. Flip it, and disaster strikes; "
+            "flip it again, and you are blessed by the universe itself. "
+            "Every strike is a wager — one that averages out to exactly "
+            "nothing, and feels like everything."
+        ),
+        "drop_source": "event_horizon",
+        "drop_rarity": "unique",
+    },
+    "old_dopo_robe": {
+        "name": "Old Dopo Robe",
+        "type": "equipment",
+        "slot": "armor",
+        "unique": True,
+        "special": "dopo_robe",
+        "base_mods": {"Constitution": 8, "Dexterity": 4},
+        "elemental_res": {"physical": 1.1, "wind": 1.1},
+        "description": (
+            "A robe worn by a commoner from a far-away land. Despite the "
+            "look, it is quite formidable — and very easy to move in. Its "
+            "threads remember a schoolyard where everyone held a wooden "
+            "sword, and everyone won."
+        ),
+        "drop_source": "event_horizon",
+        "drop_rarity": "unique",
+    },
+    "piece_of_relationship": {
+        "name": "Piece of Relationship",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "player_only": True,
+        "special": "piece_of_relationship",
+        "base_mods": {"Charisma": 6, "Wisdom": 4},
+        "description": (
+            "Broken pieces of a mirror... curious, you peer into it — it "
+            "was you, but his journey was undoubtly different yet the same "
+            "as yours. '...' One of you stares back. You can feel his grief "
+            "as if you w-[REDACTED]"
+        ),
+        "drop_source": "event_horizon",
+        "drop_rarity": "unique",
+    },
+
+    "beating_root": {
+        "name": "Beating Root",
+        "type": "key_item",
+        "rarity": "unique",
+        "description": (
+            "A knot of pale root that beats like a second heart. Held to a "
+            "chest, it sinks in and takes root — opening a place that was "
+            "not there before. (Consumed by one actor to unlock their third "
+            "accessory slot.)"
+        ),
+        "special": "beating_root",
+        "drop_source": "event_horizon",
     },
 
     # === Wonderland Items ===
@@ -477,9 +596,15 @@ ITEMS = {
         "type": "key_item",
         "rarity": "rare",
         "wonderland_only": True,
+        "description": (
+            "A splinter of glass that reflects nothing from this world — only "
+            "things that aren't yet. Held to the sealed book in the Veilholt "
+            "Arcane Tower, it opens the road to Wonderland."
+        ),
     },
     "vorpal_blade_rusted": {
         "name": "??? Blade",
+        "weapon_type": "blade",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -492,6 +617,7 @@ ITEMS = {
     },
     "vorpal_blade": {
         "name": "Vorpal Blade",
+        "weapon_type": "blade",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -505,6 +631,7 @@ ITEMS = {
     },
     "woodcutters_broken_axe": {
         "name": "Woodcutter's Broken Axe",
+        "weapon_type": "axe",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -517,6 +644,7 @@ ITEMS = {
     },
     "grandmothers_axe": {
         "name": "Grandmother's Axe",
+        "weapon_type": "axe",
         "type": "equipment",
         "slot": "weapon",
         "unique": True,
@@ -579,6 +707,7 @@ ITEMS = {
     },
     "hook_hand": {
         "name": "Captain's Hook",
+        "weapon_type": "hook",
         "type": "equipment",
         "slot": "weapon",
         "wonderland_only": True,
@@ -625,6 +754,7 @@ ITEMS = {
     },
     "broomstick": {
         "name": "Broomstick",
+        "weapon_type": "broom",
         "type": "equipment",
         "slot": "weapon",
         "wonderland_only": True,
@@ -641,6 +771,10 @@ ITEMS = {
         "rarity": "legendary",
         "wonderland_only": True,
         "drop_source": "wicked_witch",
+        "description": (
+            "A shard of green fire from the Wicked Witch's last spell. The "
+            "Fairy Godmother works it into Dorothy's Ruby Slippers."
+        ),
     },
     "monkey_wing": {
         "name": "Monkey Wing",
@@ -648,6 +782,10 @@ ITEMS = {
         "rarity": "rare",
         "wonderland_only": True,
         "drop_source": "wicked_witch",
+        "description": (
+            "A pinion shed by one of the Wicked Witch's winged monkeys. It "
+            "still twitches when it thinks no one is looking."
+        ),
     },
     "wolfs_tooth": {
         "name": "Wolf's Tooth",
@@ -655,6 +793,10 @@ ITEMS = {
         "rarity": "legendary",
         "wonderland_only": True,
         "drop_source": "big_bad_wolf",
+        "description": (
+            "A fang from the Big Bad Wolf himself. It fits, disconcertingly, "
+            "exactly between your fingers."
+        ),
     },
     "crimson_hood_scrap": {
         "name": "Crimson Hood Scrap",
@@ -662,6 +804,10 @@ ITEMS = {
         "rarity": "epic",
         "wonderland_only": True,
         "drop_source": "big_bad_wolf",
+        "description": (
+            "A scrap of crimson cloak left caught in the Big Bad Wolf's teeth. "
+            "The Fairy Godmother mends Red Hood's axe with it."
+        ),
     },
     "vorpal_blade_fragment": {
         "name": "Vorpal Blade Fragment",
@@ -669,18 +815,31 @@ ITEMS = {
         "rarity": "legendary",
         "wonderland_only": True,
         "drop_source": "jabberwock",
+        "description": (
+            "A shard of the Vorpal Blade recovered from the Jabberwock's hoard. "
+            "The Fairy Godmother re-forges Alice's weapon from it."
+        ),
     },
     "frabjous_page": {
         "name": "Frabjous Page",
         "type": "key_item",
         "rarity": "legendary",
         "wonderland_only": True,
+        "description": (
+            "A page torn from the chronicle of the Frabjous Day, surrendered "
+            "by the Jabberwock on Floor 40. Paired with the Witch's Broom, it "
+            "keys the seal on Floor 50."
+        ),
     },
     "witchs_broom": {
         "name": "Witch's Broom (Key)",
         "type": "key_item",
         "rarity": "legendary",
         "wonderland_only": True,
+        "description": (
+            "The broomstick the Wicked Witch rode until Floor 30. Paired with "
+            "the Frabjous Page, it keys the seal on Floor 50."
+        ),
     },
     "authors_pen": {
         "name": "The Author's Pen",
@@ -700,6 +859,10 @@ ITEMS = {
         "rarity": "legendary",
         "wonderland_only": True,
         "drop_source": "mary_sue",
+        "description": (
+            "A crystalline drop that fell from the author's manuscript when "
+            "the story finally broke. It tastes faintly of plot holes."
+        ),
     },
     "plot_hole_scrap": {
         "name": "Plot Hole Scrap",
@@ -716,6 +879,11 @@ ITEMS = {
         "wonderland_only": True,
         "special": "wonderland_access",
         "rarity": "legendary",
+        "description": (
+            "A key of impossible angles, won from the far side of the "
+            "looking-glass. It fits the gate home — when the story lets "
+            "you leave."
+        ),
     },
 
     # === Key Items ===
@@ -730,6 +898,19 @@ ITEMS = {
         ),
         "special": "glass_anchor",
         "drop_source": "isle_of_glass_floor_10",
+    },
+
+    "resonance_orb": {
+        "name": "Shattered Orb",
+        "type": "key_item",
+        "rarity": "common",
+        "description": (
+            "A resonance blank from Archivist Voss — a sphere of clouded glass, "
+            "fallen apart. It records your ledger as you grow, and comes together "
+            "as your household does."
+        ),
+        "special": "resonance_orb",
+        "drop_source": "archivist_voss",
     },
 
     "no_place_charm": {
@@ -780,12 +961,16 @@ def _build_unique_item(item_id, base, enhance=0):
         for key in ["special", "unique", "drop_source", "drop_rarity",
                      "scaling_stat", "scaling_mult", "con_defense",
                      "primary_element", "elemental_dmg", "elemental_res",
-                     "wonderland_only"]:
+                     "wonderland_only", "weapon_type", "description",
+                     "player_only"]:
             if key in base:
                 item[key] = base[key]
     elif base["type"] in ("consumable", "utility", "key_item", "crafting_material"):
         item["count"] = 1
-        for key in ["power", "base_power", "special", "drop_source",
+        # Mirror the normal build path so consumers that read item["power"]
+        # (stat lines, use logic) work for unique consumables too.
+        item["power"] = base.get("base_power", 0)
+        for key in ["power", "base_power", "special", "unique", "drop_source",
                      "temp_stat", "duration", "heal_over_time",
                      "defense_buff", "cure_curse", "escape_bonus",
                      "status", "bonus_vs", "stun_chance", "blind_enemy",
@@ -817,6 +1002,8 @@ def build_item(item_id, rarity="common", enhance=0):
         "rarity": rarity,
         "enhance": enhance,
     }
+    if base.get("plain_name"):
+        item["name"] = base["name"]
 
     if base["type"] == "equipment":
         item["slot"] = base["slot"]
@@ -829,7 +1016,8 @@ def build_item(item_id, rarity="common", enhance=0):
         # Carry over custom properties (Added elemental support)
         for custom_key in ["special", "unique", "drop_source", "drop_rarity",
                            "scaling_stat", "scaling_mult", "con_defense",
-                           "primary_element", "elemental_dmg", "elemental_res"]:
+                           "primary_element", "elemental_dmg", "elemental_res",
+                           "weapon_type"]:
             if custom_key in base:
                 item[custom_key] = base[custom_key]
         
@@ -880,13 +1068,29 @@ def build_item(item_id, rarity="common", enhance=0):
         elif base["type"] == "scroll":
             item["target_rarity"] = rarity
 
-    elif base["type"] in ("key_item", "crafting_material"):
+    elif base["type"] in ("key_item", "crafting_material", "house_item"):
         item["count"] = 1
-        for k in ["special", "drop_source"]:
+        # Keepsakes never wear a rarity prefix in their name — rarity shows
+        # through the colour and the "(Rarity)" tag in examine popups.
+        item["name"] = base["name"]
+        for k in ["special", "drop_source", "description", "stress_relief"]:
             if k in base:
                 item[k] = base[k]
         
     return item
+
+def is_unique_item(item):
+    """True if this item instance is a unique item.
+
+    Checks the instance flag first, then falls back to the item template —
+    old save instances built before an item gained "unique": True don't
+    carry the flag themselves.
+    """
+    if not isinstance(item, dict):
+        return False
+    if item.get("unique"):
+        return True
+    return bool(ITEMS.get(item.get("id"), {}).get("unique"))
 
 def random_equipment(rarity=None):
     if rarity is None:

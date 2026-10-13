@@ -141,6 +141,37 @@ innate_skills:
   cosmic_slime_empress:
     - cosmic_blast
     - gravity_well
+  # ── Newly added monster girl kits ────────────────────────────────────
+  gnome_gear_maiden:
+    - cog_storm
+    - overclock
+  orc_war_sister:
+    - bone_crusher
+    - bloodrage
+  shadow_dusk_weaver:
+    - twilight_lash
+    - veil_of_dusk
+  clockwork_automata_doll:
+    - clockwork_blade
+    - emergency_repair
+  giant_maiden_of_stone:
+    - mountain_slam
+    - earthen_bulwark
+  dragonkin_flame_heart:
+    - fireheart_eruption
+    - warmth_of_the_heart
+  angel_seraph_ascendant:
+    - holy_judgement
+    - celestial_hymn
+  fey_star_court_dancer:
+    - stardust_waltz
+    - star_court_ball
+  demon_infernal_bride:
+    - hellfire_kiss
+    - dark_vows
+  undead_grave_queen:
+    - grave_requiem
+    - soul_harvest
   wonderland_alice:
     - curious_inquiry
     - try_me
@@ -163,6 +194,50 @@ innate_skills:
     - palette_brushstroke
     - palette_spectrum
     - palette_signature
+
+# ============================================================================
+# AWAKENING SWAPS — wave 1 (docs/awakening_design.md Part C)
+# Base innate skill → awakened skill. One Sigil awakens a girl's full kit
+# (both skills) at the House Lounge (gates: Lv40 + cap 40 + affection 150).
+# ============================================================================
+
+awakenings:
+  goblin_girl:
+    goblin_dart: lucky_volley
+    goblin_evasion: fortunes_veil
+  harpy_scout:
+    harpy_cry: tempest_screech
+    harpy_swoop: skydive_strike
+  moth_girl_flutterer:
+    dust_cloud: moonveil_dust
+    flutter_strike: moonlit_flurry
+  slime_girl:
+    slime_absorption: adaptive_membrane
+    acidic_blob: corrosive_deluge
+  clockwork_automata_doll:
+    emergency_repair: reboot_protocol
+    clockwork_blade: overclocked_edge
+  centaur_champion:
+    stampede: rolling_thunder
+    champion_charge: lance_of_the_gale
+  gorgon_petrifier:
+    petrifying_gaze: medusas_verdict
+    serpent_fang: basilisk_fang
+  mimic_girl:
+    mimic_form: perfect_mimicry
+    surprise_strike: perfect_ambush
+  gnome_gear_maiden:
+    overclock: system_overdrive
+    cog_storm: cog_blizzard
+  shadow_dusk_weaver:
+    veil_of_dusk: duskfall_veil
+    twilight_lash: eclipse_lash
+  demon_whip_master:
+    dominating_presence: absolute_dominion
+    whip_lash: cruel_crack
+  dullahan_knight:
+    spectral_guard: deaths_vigil
+    headless_charge: headless_pursuit
 
 # ============================================================================
 # INNATE SKILL DEFINITIONS
@@ -1019,7 +1094,7 @@ innate_skill_defs:
     elemental: dark
   raise_dead:
     name: Raise Dead
-    description: Revive a fallen ally with a sliver of unholy power.
+    description: Revive a fallen ally with unholy power — 30% of their HP, rising to 50% with mastery.
     category: support
     cooldown: 6
     target: dead_ally
@@ -1153,7 +1228,7 @@ innate_skill_defs:
 
   vorpal_edge:
     name: Vorpal Edge
-    description: A swift, luminous slash. Deals physical+light damage with +30% crit chance.
+    description: A swift, luminous slash. Deals physical+light damage with +30% crit chance. Critical hits deal 2.2x damage.
     category: offensive
     cooldown: 2
     target: enemy
@@ -1161,6 +1236,7 @@ innate_skill_defs:
     base_power: 12
     elemental: light
     crit_bonus: 0.30
+    crit_mult: 2.2
 
   snicker_snack:
     name: Snicker-Snack
@@ -1342,3 +1418,627 @@ innate_skill_defs:
     power_type: wis
     base_power: 0
     palette_signature: true
+
+  # ── Newly Added Monster Girl Kits ─────────────────────────────────────
+
+  cog_storm:
+    name: Cog Storm
+    description: Hurl a vortex of razor-sharp cogs at an enemy.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: ler
+    base_power: 13
+    stun_chance: 0.25
+    elemental: thunder
+
+  overclock:
+    name: Overclock
+    description: Overclock an ally's next action for increased power.
+    category: support
+    cooldown: 4
+    target: ally_or_self
+    effect:
+      type: power_buff
+      value: 0.4
+      duration: 1
+    elemental: thunder
+
+  bone_crusher:
+    name: Bone Crusher
+    description: A bone-shattering blow that weakens the foe.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 16
+    apply_weaken: true
+    elemental: physical
+
+  bloodrage:
+    name: Bloodrage
+    description: Enter a battle frenzy, gaining increased damage.
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: damage_boost
+      value: 0.3
+      duration: 2
+    elemental: fire
+
+  twilight_lash:
+    name: Twilight Lash
+    description: Lash with threads of dusk that cut like wire.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 12
+    bleed_damage: 3
+    bleed_duration: 3
+    elemental: dark
+
+  veil_of_dusk:
+    name: Veil of Dusk
+    description: Weave dusk into a veil that hides an ally from harm.
+    category: defensive
+    cooldown: 3
+    target: ally_or_self
+    effect:
+      type: evasion
+      value: 0.35
+      duration: 2
+    elemental: dark
+
+  clockwork_blade:
+    name: Clockwork Blade
+    description: Extend an arm-blade with clockwork precision, discharging a shock.
+    category: offensive
+    cooldown: 2
+    target: enemy
+    power_type: dex
+    base_power: 12
+    shock_damage: 4
+    shock_duration: 3
+    elemental: thunder
+
+  emergency_repair:
+    name: Emergency Repair
+    description: Activate self-repair protocols to restore health.
+    category: support
+    cooldown: 4
+    target: self
+    effect:
+      type: regen
+      value: 0.2
+      duration: 2
+    elemental: magical
+
+  mountain_slam:
+    name: Mountain Slam
+    description: Crush a foe beneath the weight of a mountain.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 17
+    stun_chance: 0.25
+    elemental: earth
+
+  earthen_bulwark:
+    name: Earthen Bulwark
+    description: Raise walls of living stone to shield the party.
+    category: defensive
+    cooldown: 5
+    target: all_allies
+    effect:
+      type: damage_reduction
+      value: 0.25
+      duration: 2
+    elemental: earth
+
+  fireheart_eruption:
+    name: Fireheart Eruption
+    description: Unleash the flame of a dragon's heart upon one foe.
+    category: offensive
+    cooldown: 4
+    target: enemy
+    power_type: str
+    base_power: 17
+    burn_damage: 8
+    burn_duration: 3
+    elemental: fire
+
+  warmth_of_the_heart:
+    name: Warmth of the Heart
+    description: Share a dragon's inner fire, restoring an ally's health.
+    category: support
+    cooldown: 4
+    target: ally_or_self
+    heal_percent: 0.30
+    elemental: fire
+
+  holy_judgement:
+    name: Holy Judgement
+    description: Smite a foe with divine wrath.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: cha
+    base_power: 16
+    guaranteed_crit: true
+    elemental: light
+
+  celestial_hymn:
+    name: Celestial Hymn
+    description: Sing a hymn that heals the party and cleanses a debuff from each ally.
+    category: support
+    cooldown: 5
+    target: all_allies
+    heal_percent: 0.20
+    cleanse_one_debuff: true
+    elemental: light
+
+  stardust_waltz:
+    name: Stardust Waltz
+    description: Whirl through enemies in a storm of static stardust.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: dex
+    base_power: 13
+    shock_damage: 6
+    shock_duration: 3
+    elemental: magical
+
+  star_court_ball:
+    name: Star Court Ball
+    description: Lead the party in a dance that sharpens their grace.
+    category: support
+    cooldown: 5
+    target: all_allies
+    effect:
+      type: stat_buff
+      stat: Dexterity
+      value: 3
+      duration: 3
+    elemental: magical
+
+  hellfire_kiss:
+    name: Hellfire Kiss
+    description: A burning kiss that sears the soul and steals its fire.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: cha
+    base_power: 15
+    burn_damage: 7
+    burn_duration: 3
+    effect:
+      type: life_steal
+      value: 0.5
+    elemental: fire
+
+  dark_vows:
+    name: Dark Vows
+    description: Bind the party with infernal vows of strength and passion.
+    category: support
+    cooldown: 5
+    target: all_allies
+    effect:
+      type: multi
+      effects:
+        - type: stat_buff
+          stat: Strength
+          value: 3
+          duration: 2
+        - type: stat_buff
+          stat: Charisma
+          value: 3
+          duration: 2
+    elemental: dark
+
+  grave_requiem:
+    name: Grave Requiem
+    description: A funeral dirge that drains the strength of the living.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: cha
+    base_power: 15
+    effect:
+      type: stat_debuff
+      stat: Strength
+      value: 2
+      duration: 3
+    elemental: dark
+
+  soul_harvest:
+    name: Soul Harvest
+    description: Tear the soul from a living foe, bypassing its defenses to feed the queen.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: wis
+    base_power: 17
+    ignore_armor: true
+    effect:
+      type: life_steal
+      value: 0.5
+    elemental: dark
+
+  # ══════════════════════════════════════════════════════════════════════
+  # AWAKENED SKILLS — wave 1 (docs/awakening_design.md Part C)
+  # Granted via the House Lounge "Awaken" ceremony (1 Sigil per girl).
+  # Each base innate skill is replaced by its awakened counterpart.
+  # ══════════════════════════════════════════════════════════════════════
+
+  # ── Goblin Girl → Goblin Deadeye ──────────────────────────────────────
+  lucky_volley:
+    name: Lucky Volley
+    description: A fistful of lucky darts peppers every enemy with poison.
+    category: offensive
+    cooldown: 3
+    target: enemies
+    power_type: dex
+    base_power: 8
+    poison_damage: 2
+    poison_duration: 3
+    elemental: water
+    awakened_from: goblin_dart
+
+  fortunes_veil:
+    name: Fortune's Veil
+    description: A mantle of small fortunes — 60% dodge for herself, 15% for the party.
+    category: defensive
+    cooldown: 4
+    target: all_allies
+    effect:
+      type: multi
+      effects:
+        - type: evasion
+          value: 0.6
+          duration: 2
+          self_only: true
+        - type: evasion
+          value: 0.15
+          duration: 2
+          exclude_self: true
+    elemental: wind
+    awakened_from: goblin_evasion
+
+  # ── Harpy Scout → Harpy Stormcaller ───────────────────────────────────
+  tempest_screech:
+    name: Tempest Screech
+    description: A storm-borne scream that tears through every enemy and throws them off balance.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: dex
+    base_power: 10
+    push_initiative: true
+    elemental: wind
+    awakened_from: harpy_cry
+
+  skydive_strike:
+    name: Skydive Strike
+    description: A plummeting dive that can knock a foe senseless.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: dex
+    base_power: 12
+    stun_chance: 0.25
+    elemental: wind
+    awakened_from: harpy_swoop
+
+  # ── Moth Girl → Moth Girl Moonweaver ──────────────────────────────────
+  moonveil_dust:
+    name: Moonveil Dust
+    description: Lunar dust blinds every enemy (75% miss, 3t) and marks them for the hunt.
+    category: support
+    cooldown: 4
+    target: enemies
+    effect:
+      type: multi
+      effects:
+        - type: blind
+          value: 0.75
+          duration: 3
+        - type: marked
+          value: 0.1
+          duration: 3
+    elemental: dark
+    awakened_from: dust_cloud
+
+  moonlit_flurry:
+    name: Moonlit Flurry
+    description: Two pale wingbeats that leave the target's eyes full of moonlight.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: dex
+    base_power: 7
+    hits: 2
+    blind_value: 0.3
+    blind_duration: 2
+    elemental: dark
+    awakened_from: flutter_strike
+
+  # ── Slime Girl → Mirror Slime ─────────────────────────────────────────
+  adaptive_membrane:
+    name: Adaptive Membrane
+    description: The membrane absorbs 40% of damage taken and reflects 30% of it back.
+    category: defensive
+    cooldown: 5
+    target: self
+    effect:
+      type: multi
+      effects:
+        - type: damage_absorption
+          value: 0.4
+          duration: 2
+        - type: reflection
+          value: 0.3
+          duration: 2
+    elemental: water
+    awakened_from: slime_absorption
+
+  corrosive_deluge:
+    name: Corrosive Deluge
+    description: A torrent of acid that poisons and eats away at armour.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: con
+    base_power: 10
+    poison_damage: 3
+    poison_duration: 3
+    expose_armor: 1
+    elemental: water
+    awakened_from: acidic_blob
+
+  # ── Automata Doll → Automata Prime ────────────────────────────────────
+  reboot_protocol:
+    name: Reboot Protocol
+    description: A fatal blow triggers an emergency reboot — revive at 30% HP (once, 3t).
+    category: support
+    cooldown: 5
+    target: self
+    effect:
+      type: death_ward
+      duration: 3
+      hp_pct: 0.3
+    elemental: magical
+    awakened_from: emergency_repair
+
+  overclocked_edge:
+    name: Overclocked Edge
+    description: Two arc-blade strikes, each discharging a shock.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: dex
+    base_power: 9
+    hits: 2
+    shock_damage: 4
+    shock_duration: 3
+    elemental: thunder
+    awakened_from: clockwork_blade
+
+  # ── Centaur Champion → Centaur Warlord ────────────────────────────────
+  rolling_thunder:
+    name: Rolling Thunder
+    description: A thundering trample that shatters the armour of every foe.
+    category: offensive
+    cooldown: 5
+    target: enemies
+    power_type: str
+    base_power: 12
+    expose_armor: 2
+    elemental: earth
+    awakened_from: stampede
+
+  lance_of_the_gale:
+    name: Lance of the Gale
+    description: A gale-driven lance thrust that ignores armour and bites deep.
+    category: offensive
+    cooldown: 4
+    target: enemy
+    power_type: str
+    base_power: 15
+    ignore_armor: true
+    crit_bonus: 0.15
+    elemental: wind
+    awakened_from: champion_charge
+
+  # ── Gorgon Petrifier → Gorgon Basilisk ────────────────────────────────
+  medusas_verdict:
+    name: Medusa's Verdict
+    description: A petrifying stare — stuns, with a 35% chance to entomb the target in stone.
+    category: support
+    cooldown: 5
+    target: enemy
+    effect:
+      type: multi
+      effects:
+        - type: stun
+          duration: 2
+        - type: entomb
+          duration: 2
+          chance: 0.35
+    elemental: earth
+    awakened_from: petrifying_gaze
+
+  basilisk_fang:
+    name: Basilisk Fang
+    description: Venomous fangs that leave slowing venom in the wound.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: dex
+    base_power: 11
+    poison_damage: 6
+    poison_duration: 4
+    apply_slow: true
+    elemental: water
+    awakened_from: serpent_fang
+
+  # ── Mimic Girl → Grand Mimic ──────────────────────────────────────────
+  perfect_mimicry:
+    name: Perfect Mimicry
+    description: Mimic the last element that struck her — +25% damage and +50% resistance to it.
+    category: defensive
+    cooldown: 5
+    target: self
+    effect:
+      type: elemental_adapt
+      duration: 3
+      dmg_value: 0.25
+      res_value: 0.5
+    elemental: dark
+    awakened_from: mimic_form
+
+  perfect_ambush:
+    name: Perfect Ambush
+    description: A guaranteed critical strike that hits even harder against untouched foes.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: str
+    base_power: 12
+    guaranteed_crit: true
+    bonus_vs_high_hp: 0.3
+    elemental: dark
+    awakened_from: surprise_strike
+
+  # ── Gear Maiden → Gear Artificer ──────────────────────────────────────
+  system_overdrive:
+    name: System Overdrive
+    description: Overdrive an ally — +40% next action and −1 turn on all their cooldowns.
+    category: support
+    cooldown: 5
+    target: ally_or_self
+    effect:
+      type: multi
+      effects:
+        - type: power_buff
+          value: 0.4
+          duration: 1
+        - type: cd_refund
+          value: 1
+    elemental: thunder
+    awakened_from: overclock
+
+  cog_blizzard:
+    name: Cog Blizzard
+    description: A blizzard of razor cogs tears across every enemy.
+    category: offensive
+    cooldown: 4
+    target: enemies
+    power_type: ler
+    base_power: 10
+    stun_chance: 0.15
+    elemental: thunder
+    awakened_from: cog_storm
+
+  # ── Dusk Weaver → Nightweaver ─────────────────────────────────────────
+  duskfall_veil:
+    name: Duskfall Veil
+    description: A veil of dusk that turns aside blows — and answers each dodge with a counter.
+    category: defensive
+    cooldown: 4
+    target: ally_or_self
+    effect:
+      type: multi
+      effects:
+        - type: evasion
+          value: 0.35
+          duration: 3
+        - type: dodge_counter
+          value: 0.5
+          duration: 3
+    elemental: dark
+    awakened_from: veil_of_dusk
+
+  eclipse_lash:
+    name: Eclipse Lash
+    description: A whip of eclipse-dark that opens deep wounds, striking harder into bleeding foes.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: dex
+    base_power: 12
+    bleed_damage: 5
+    bleed_duration: 4
+    bonus_vs_bleeding: 0.25
+    elemental: dark
+    awakened_from: twilight_lash
+
+  # ── Demon Whip Master → Demon Overseer ────────────────────────────────
+  absolute_dominion:
+    name: Absolute Dominion
+    description: Crush the will of every foe — strength savaged and fear sown.
+    category: support
+    cooldown: 5
+    target: enemies
+    effect:
+      type: multi
+      effects:
+        - type: stat_debuff
+          stat: Strength
+          value: 2
+          duration: 3
+        - type: fear
+          value: 0.3
+          duration: 2
+    elemental: dark
+    awakened_from: dominating_presence
+
+  cruel_crack:
+    name: Cruel Crack
+    description: A whip crack that weakens and leaves the wound bleeding.
+    category: offensive
+    cooldown: 3
+    target: enemy
+    power_type: dex
+    base_power: 11
+    apply_weaken: true
+    bleed_damage: 4
+    bleed_duration: 3
+    elemental: fire
+    awakened_from: whip_lash
+
+  # ── Dullahan Knight → Dullahan Sentinel ───────────────────────────────
+  deaths_vigil:
+    name: Death's Vigil
+    description: A guardian's oath — heavy damage reduction and a death ward for the watch.
+    category: defensive
+    cooldown: 4
+    target: ally_or_self
+    effect:
+      type: multi
+      effects:
+        - type: damage_reduction
+          value: 0.35
+          duration: 2
+        - type: death_ward
+          duration: 3
+    elemental: dark
+    awakened_from: spectral_guard
+
+  headless_pursuit:
+    name: Headless Pursuit
+    description: An unrelenting charge that ignores armour and fills the target with fear.
+    category: offensive
+    cooldown: 4
+    target: enemy
+    power_type: str
+    base_power: 13
+    ignore_armor: true
+    apply_fear: true
+    fear_value: 0.3
+    fear_duration: 2
+    elemental: dark
+    awakened_from: headless_charge

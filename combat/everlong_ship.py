@@ -156,7 +156,7 @@ def combat_everlong_ship(player, floor=None, enemies=None):
     }
 
     # ── on_player_hit_hook: Riposte when Captain is attacked ──────────
-    def on_player_hit_hook(target, elist, ctx):
+    def on_player_hit_hook(target, elist, ctx, attacker=None):
         if target.get("key") != BOSS_KEY:
             return
         if ctx["phase"] == 1 and ctx.get("riposte_count", 0) < 2:

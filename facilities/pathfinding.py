@@ -61,17 +61,28 @@ def find_shortest_path(player, origin_id, dest_id):
         }
 
     # ── Pre-compute reductions ────────────────────────────────────────────
-    has_ship = bool(player.get("has_ship", False))
-    mount_reduction = 0.0
+    ship = None
+    ship_id = player.get("ship_id")
+    if ship_id:
+        from resources.ships import get_ship
+        ship = get_ship(ship_id)
+
+    mount = None
     mount_id = player.get("mount_id")
     if mount_id:
         from resources.mounts import get_mount
         mount = get_mount(mount_id)
-        if mount:
-            mount_reduction = mount.get("time_reduction", 0)
+
+    mount_reduction = mount.get("time_reduction", 0) if mount else 0.0
+    mount_cap = mount.get("cargo_capacity", 0) if mount else 0
+    ship_reduction = ship.get("sea_time_reduction", 0) if ship else 0.0
+    ship_cap = ship.get("cargo_capacity", 0) if ship else 0
 
     # Daily events: Heavy Rain makes travel take longer
     daily_time_mult = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
+
+    # Cargo load penalty / blocking — per segment, using that segment's vehicle
+    from resources.trade_goods import cargo_travel_penalty, cargo_overloaded_for_travel
 
     # ── BFS ───────────────────────────────────────────────────────────────
     # We store (current_node, path_list, total_time, total_cost, ferry_count,
@@ -101,6 +112,7 @@ def find_shortest_path(player, origin_id, dest_id):
                     "total_cost": total_cost,
                     "ferry_segments": ferry_count,
                     "segments": segments,
+                    "blocked_segments": [s for s in segments if s.get("blocked")],
                 }
             continue
 
@@ -114,13 +126,19 @@ def find_shortest_path(player, origin_id, dest_id):
 
             # Calculate effective time for this segment
             if seg_type == "sea":
-                effective_time = int(raw_time * 0.7) if has_ship else raw_time
-                seg_cost = 0 if has_ship else 100
+                effective_time = int(raw_time * (1 - ship_reduction)) if ship else raw_time
+                seg_cost = 0 if ship else 100
+                seg_cap = ship_cap
             else:
                 effective_time = int(raw_time * (1 - mount_reduction))
                 seg_cost = 0
+                seg_cap = mount_cap
             if daily_time_mult != 1.0:
                 effective_time = int(effective_time * daily_time_mult)
+            seg_penalty = cargo_travel_penalty(player, seg_cap)
+            if seg_penalty > 0:
+                effective_time = int(effective_time * (1 + seg_penalty))
+            seg_blocked = cargo_overloaded_for_travel(player, seg_cap)
 
             new_time = total_time + effective_time
             new_cost = total_cost + seg_cost
@@ -141,6 +159,7 @@ def find_shortest_path(player, origin_id, dest_id):
                 "effective_time": effective_time,
                 "biome": origin_biome,
                 "cost": seg_cost,
+                "blocked": seg_blocked,
             }]
 
             queue.append((neighbor, path + [neighbor], new_time, new_cost,

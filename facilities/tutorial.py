@@ -18,13 +18,7 @@ from gui.screens.facility_screen import FacilityScreen, _FacilityStopped
 
 
 class TutorialScreen(FacilityScreen):
-    """FacilityScreen whose game clock is effectively paused while reading."""
-
-    @property
-    def tick_interval_ms(self):
-        # One tick only after ~24 real hours — the clock never advances
-        # while the player reads the tutorial.
-        return 1000 * 60 * 60 * 24
+    """FacilityScreen used for the tutorial (block time is action-only)."""
 
 
 # ── Small formatting helpers ──────────────────────────────────────────────────
@@ -49,7 +43,8 @@ def _section_city():
     _header("THE CITY & ITS SERVICES")
     _page([
         "You awaken in Solmere, the starting city, at 8:00 AM with",
-        "100 gold in your pocket.",
+        "100 gold in your pocket. Finish this tour and the Guild will",
+        "add a 200-gold field allowance.",
         "",
         "Each city has its own services, reached by clicking the",
         "buildings on the city map or the service buttons:",
@@ -83,8 +78,10 @@ def _section_inventory():
         "Stats are shown as:",
         "  Attribute: base + equipment + buffs = total",
         "",
-        "Weapons carry an ELEMENT. There are 8 elements:",
-        "Fire, Water, Ice, Lightning, Wind, Earth, Light, Dark.",
+        "Weapons carry an ELEMENT. There are 7 elements: Fire,",
+        "Water, Thunder, Wind, Earth, Light, and Dark - plus two",
+        "damage axes: Physical and Magical. (Frost and ice count",
+        "as Water.)",
         "Hitting an enemy's weakness deals extra damage; hitting a",
         "resistance deals less. Your own elemental resistances matter",
         "just as much.",
@@ -110,9 +107,11 @@ def _section_combat():
         "trap, treasure, or stat-check). Progress is saved between",
         "rooms, so leaving is safe.",
         "",
-        "In combat you command a party of up to 1 player + 3 allies",
-        "against up to 5 enemies. Actions: Attack, Skills, Items,",
-        "Defend, Flee, and Capture.",
+        "In combat you command your party against up to 5 enemies.",
+        "How many allies can stand with you at once is a question for",
+        "the scholars — it starts at one, and grows as your story does.",
+        "",
+        "Actions: Attack, Skills, Items, Defend, Flee, and Capture.",
         "",
         "  Skills     - class-based, unlock as you level, cooldowns.",
         "  Defend     - cut incoming damage this turn.",
@@ -176,6 +175,13 @@ def _mods_text(item):
     return ", ".join(f"+{v} {k}" for k, v in item.get("mods", {}).items())
 
 
+def _scaling_text(item):
+    """Return '  ▸ Scales: STR' for weapons with a scaling stat, else ''."""
+    from inventory import format_scaling_stat
+    scale = format_scaling_stat(item)
+    return f"  {scale}" if scale else ""
+
+
 def _grant_starter_weapon(player, announce=True):
     """Give the player a common weapon matching their class.
 
@@ -194,7 +200,7 @@ def _grant_starter_weapon(player, announce=True):
         if announce:
             term.print("")
             term.print(f"As a {pclass}, you receive your class starter weapon:")
-            term.print(f"    {item['name']} ({_mods_text(item)})")
+            term.print(f"    {item['name']} ({_mods_text(item)}){_scaling_text(item)}")
             term.print("Your weapon slot was already filled, so it was placed")
             term.print("in your inventory instead.")
     else:
@@ -207,9 +213,30 @@ def _grant_starter_weapon(player, announce=True):
         if announce:
             term.print("")
             term.print(f"As a {pclass}, you receive your class starter weapon:")
-            term.print(f"    {item['name']} ({_mods_text(item)})")
+            term.print(f"    {item['name']} ({_mods_text(item)}){_scaling_text(item)}")
             term.print("It has been equipped to your weapon slot.")
     return item
+
+
+FIELD_ALLOWANCE_GOLD = 200
+
+
+def _grant_field_allowance(player, announce=True):
+    """Grant the one-time Field Allowance (tutorial reward).
+
+    Guarded by a player flag so re-entering the tutorial — or exiting it
+    early and returning — never double-pays. Returns the amount granted
+    (0 if already claimed).
+    """
+    if player.get("field_allowance_claimed"):
+        return 0
+    player["field_allowance_claimed"] = True
+    player["gold"] = player.get("gold", 0) + FIELD_ALLOWANCE_GOLD
+    if announce:
+        term.print("")
+        term.print("The Adventurer's Guild issues a field allowance for new")
+        term.print(f"registrants: +{FIELD_ALLOWANCE_GOLD} gold.")
+    return FIELD_ALLOWANCE_GOLD
 
 
 def _finish_tutorial(player):
@@ -226,6 +253,7 @@ def _finish_tutorial(player):
         "and remember: the deeper you go, the stranger it gets.",
     ])
     _grant_starter_weapon(player)
+    _grant_field_allowance(player)
     player["tutorial_seen"] = True
     try:
         save_game(player)
@@ -241,9 +269,10 @@ def tutorial_menu(player, city_id=None):
     try:
         _run_tutorial(player)
     except _FacilityStopped:
-        # Player backed out early — still grant the starter weapon so it
-        # isn't lost, then let the screen close normally.
+        # Player backed out early — still grant the starter weapon and the
+        # field allowance so they aren't lost, then let the screen close.
         _grant_starter_weapon(player, announce=False)
+        _grant_field_allowance(player, announce=False)
         player["tutorial_seen"] = True
         try:
             save_game(player)

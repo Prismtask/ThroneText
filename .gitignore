@@ -38,6 +38,8 @@ env/
 # ── Game Save Files ──────────────────────────────────────────
 savefile/
 savefiles/
+docs/
+tests/
 saves/
 save/
 dist/
@@ -45,6 +47,7 @@ dist/
 *.save
 *.dat
 playerdata/
+unrelated_for_coding/
 
 # ── Sensitive / Secrets / Config ─────────────────────────────
 .env

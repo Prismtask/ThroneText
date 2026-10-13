@@ -1245,7 +1245,7 @@ def _on_kill_hook(target, elist, ctx):
                 e["hp"] = 0
 
 
-def _on_player_hit_hook(target, elist, ctx):
+def _on_player_hit_hook(target, elist, ctx, attacker=None):
     """Handle player hits against Chrysalis or shards.
 
     - Past Aspect: retaliatory burn on attacker
@@ -1375,8 +1375,8 @@ def combat_entangled_chrysalis(player, floor=None, enemies=None):
     def on_kill_hook(target, elist, ctx):
         _on_kill_hook(target, elist, ctx)
 
-    def on_player_hit_hook(target, elist, ctx):
-        _on_player_hit_hook(target, elist, ctx)
+    def on_player_hit_hook(target, elist, ctx, attacker=None):
+        _on_player_hit_hook(target, elist, ctx, attacker=attacker)
 
     # ═══════════════════════════════════════════════════════════════
     # COMBAT LOOP

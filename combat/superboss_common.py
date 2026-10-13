@@ -21,11 +21,16 @@ from combat.stats import compute_player_stats
 from combat.enemy_ai import enemy_attack
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import print_combat_hud, print_superboss_header, print_player_mini_hud, format_enemy_status_line
-from combat.status_effects import tick_player_debuffs, tick_player_buffs
+from combat.status_effects import tick_player_debuffs, tick_player_buffs, try_consume_death_ward
 from combat.skills import tick_skill_cooldowns
-from combat.ally import get_alive_allies, get_active_allies, compute_ally_stats, handle_ally_turn
+from combat.fractured_hourglass import tick_hourglass_cooldown
+from combat.ally import (
+    get_alive_allies, get_active_allies, compute_ally_stats, handle_ally_turn,
+    reinforce_fallen_allies,
+)
 from combat.combat_io import c_print, c_input, c_clear
 from combat.combat_engine import prune_dead, roll_initiative
+from utils import display_name
 import random
 
 
@@ -84,7 +89,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
     
     # ADD THIS WRAPPER:
     on_hit_fn = (
-        lambda target, elist: on_player_hit_hook(target, elist, context)
+        lambda target, elist, attacker=None: on_player_hit_hook(target, elist, context, attacker=attacker)
         if on_player_hit_hook else None
     )
     from combat.weapon.tarnished_jade import _actor_has_tarnished_jade
@@ -99,6 +104,10 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
     clear_shawl_state(player)
     if _actor_has_palette_brush(player):
         init_brush_state(player)
+
+    # Prescript Ledger: clear stale state, then keep reset helper in scope
+    from combat.weapon.prescript_ledger import reset_all_state as reset_prescript_state
+    reset_prescript_state(player)
 
     # Init/clear ally unique-equipment state (mirrors combat_engine._combat_inner)
     from combat.weapon.black_silence_gloves import init_gloves_state, _actor_has_black_silence_gloves
@@ -171,6 +180,10 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if not enemies:
             return "victory"
 
+        # Prescript Ledger — issue this round's Prescripts and mark the Target
+        from combat.weapon.prescript_ledger import issue_prescripts
+        issue_prescripts(player, enemies)
+
         if custom_hud_hook:
             custom_hud_hook(context, enemies)
         else:
@@ -188,14 +201,18 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             c_print("\n  The divine sorrow subsides. The battle continues...")
 
         c_print("\nInitiative Phase\nRolling speeds...")
+        # Reinforcement rule (2026-10-12) — same as the standard engine loop:
+        # fallen front allies are replaced by the earliest living bench ally.
+        for _rmsg in reinforce_fallen_allies(player):
+            c_print(f"  {_rmsg}")
         turn_order = roll_initiative(player, enemies)
 
         # Black Silence Gloves: First Strike detection
         from combat.weapon.black_silence_gloves import set_first_strike, _actor_has_black_silence_gloves
         if _actor_has_black_silence_gloves(player):
+            # Player acts first only if they are the very first combatant (before allies too)
             player_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
-            enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
-            is_first = player_idx is not None and (not enemy_indices or player_idx < min(enemy_indices))
+            is_first = player_idx == 0
             set_first_strike(player, is_first)
             if is_first:
                 c_print("  🖤 Silence strikes first! +15% damage this round.")
@@ -204,22 +221,22 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         for ally in player.get("allies", []):
             if ally.get("current_hp", 0) > 0 and _actor_has_black_silence_gloves(ally):
                 ally_idx = next((i for i, c in enumerate(turn_order) if c.get("entity") is ally), None)
-                enemy_indices = [i for i, c in enumerate(turn_order) if c["type"] == "enemy"]
-                is_first = ally_idx is not None and (not enemy_indices or ally_idx < min(enemy_indices))
+                is_first = ally_idx == 0
                 set_first_strike(ally, is_first)
                 if is_first:
-                    c_print(f"  🖤 {ally['name']} strikes first! +15% damage this round.")
+                    c_print(f"  🖤 {display_name(ally)} strikes first! +15% damage this round.")
 
         abyss_count = get_abyssal_tempo_count(player)
         if abyss_count > 0:
             first_p_idx = next((i for i, c in enumerate(turn_order) if c["type"] == "player"), None)
             if first_p_idx is not None:
                 base_speed = turn_order[first_p_idx]["speed"]
+                pname = player.get("name") or "You"
                 for extra_num in range(1, 3):
                     turn_order.insert(first_p_idx + extra_num, {
                         "type": "player",
                         "speed": base_speed,
-                        "label": f"You (Abyss Extra {extra_num + 1}/3)",
+                        "label": f"{pname} (Abyss Extra {extra_num + 1}/3)",
                         "entity": player,
                         "extra_turn": extra_num + 1,
                     })
@@ -244,6 +261,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             if combatant["type"] == "player":
                 if player["current_hp"] <= 0:
                     c_print(f"{player['name']} has been slain.")
+                    reset_prescript_state(player)
                     return "dead"
 
                 if context.get("skip_player_turn") and not combatant.get("extra_turn"):
@@ -266,12 +284,21 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         if player_action_override
                         else c_input("Choose: ").strip().lower()
                     )
+                    hp_before_action = {id(e): e.get("hp", 0) for e in live_enemies}
                     result, new_def = handle_player_turn(
                         player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                         on_kill=on_kill_fn,
-                        on_hit=on_hit_fn,
                         _action_override=action,
                     )
+                    # Hit hook: fires for every enemy damaged by the action
+                    # (any attack type — basic, skill, glove workshop, brush)
+                    if result != "retry":
+                        from combat.weapon.prescript_ledger import report_damage as report_prescript_damage
+                        for e in live_enemies:
+                            if hp_before_action.get(id(e), e.get("hp", 0)) > e.get("hp", 0):
+                                report_prescript_damage(player, e)
+                                if on_hit_fn:
+                                    on_hit_fn(e, live_enemies, player)
                     if result != "retry":
                         break
                     c_print("[A]ttack  [D]efend  [F]lee  [U]se item")
@@ -300,16 +327,25 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                     continue
 
                 if combatant.get("extra_turn") == "advance":
-                    c_print(f"⚡ ACTION ADVANCE — {ally['name']} surges forward!")
+                    c_print(f"⚡ ACTION ADVANCE — {display_name(ally)} surges forward!")
                 elif combatant.get("extra_turn") == "clone":
-                    c_print(f"👁️  MIRROR CLONE — {ally['name']} mirrors the enemy!")
+                    c_print(f"👁️  MIRROR CLONE — {display_name(ally)} mirrors the enemy!")
 
                 pre_turn_enemy_hp = sum(e.get("hp", 0) for e in live_enemies if e.get("hp", 0) > 0)
                 while True:
+                    hp_before_action = {id(e): e.get("hp", 0) for e in live_enemies}
                     result = handle_ally_turn(
                         ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                         on_kill=on_kill_fn,
                     )
+                    # Hit hook: fires for every enemy damaged by the ally's action
+                    if result != "retry":
+                        from combat.weapon.prescript_ledger import report_damage as report_prescript_damage
+                        for e in live_enemies:
+                            if hp_before_action.get(id(e), e.get("hp", 0)) > e.get("hp", 0):
+                                report_prescript_damage(ally, e)
+                                if on_hit_fn:
+                                    on_hit_fn(e, live_enemies, ally)
                     if result != "retry":
                         break
 
@@ -331,7 +367,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
                 # Clean up clones after their turn
                 if ally.get("is_clone"):
-                    c_print(f"\n💨 {ally['name']} shatters — the mirror copy fades!")
+                    c_print(f"\n💨 {display_name(ally)} shatters — the mirror copy fades!")
                     if ally in player.get("allies", []):
                         player["allies"].remove(ally)
 
@@ -390,7 +426,13 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                             actual_player=player,
                         )
                         if outcome == "dead":
-                            if target is player:
+                            if try_consume_death_ward(target):
+                                if not target.pop("_eh_emperor_saved", False):
+                                    if target is player:
+                                        c_print(f"  {player['name']}'s Undying Vow flares — survival at 1 HP!")
+                                    else:
+                                        c_print(f"  Undying Vow holds — {target['name']} survives at 1 HP!")
+                            elif target is player:
                                 c_print(f"{player['name']} has been slain.")
                                 return "dead"
                             else:
@@ -414,15 +456,24 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         if post_round_hook:
             hook_result = post_round_hook(context, enemies)
             if hook_result == "dead":
+                reset_prescript_state(player)
                 return "dead"
             if hook_result == "spared":
+                reset_prescript_state(player)
                 return "spared"
 
         enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
         if not enemies:
             c_print("\n  All enemies have been defeated!")
             c_input("  Press Enter to continue...")
+            reset_prescript_state(player)
             return "victory"
+
+        # ── Prescript Ledger: round-end resolution (waive / punish / retribution / regen) ──
+        from combat.weapon.prescript_ledger import evaluate_round as evaluate_prescript_round
+        if evaluate_prescript_round(player, enemies) == "dead":
+            reset_prescript_state(player)
+            return "dead"
 
         tick_abyss_fang_cooldown(player, prefix="")
         tick_abyssal_tempo(player, prefix="")
@@ -441,14 +492,20 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             tick_authors_pen_cooldown(ally, prefix="")
 
         tick_skill_cooldowns(player)
+        tick_hourglass_cooldown(player, prefix="")
         for ally in get_alive_allies(player):
             tick_skill_cooldowns(ally)
+            tick_hourglass_cooldown(ally, prefix="")
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             c_print(m)
         if died:
-            c_print(f"{player['name']} has been slain.")
-            return "dead"
+            if try_consume_death_ward(player):
+                if not player.pop("_eh_emperor_saved", False):
+                    c_print(f"  {player['name']}'s Undying Vow flares — survival at 1 HP!")
+            else:
+                c_print(f"{player['name']} has been slain.")
+                return "dead"
 
         for m in tick_player_buffs(player):
             c_print(m)
@@ -457,11 +514,15 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         for ally in get_alive_allies(player):
             ally_msgs, ally_died = tick_player_debuffs(ally)
             for m in ally_msgs:
-                c_print(f"  {ally['name']}: {m}")
+                c_print(f"  {display_name(ally)}: {m}")
             if ally_died:
-                c_print(f"  {ally['name']} succumbs to their wounds!")
+                if try_consume_death_ward(ally):
+                    if not ally.pop("_eh_emperor_saved", False):
+                        c_print(f"  Undying Vow holds — {display_name(ally)} survives at 1 HP!")
+                else:
+                    c_print(f"  {display_name(ally)} succumbs to their wounds!")
             for m in tick_player_buffs(ally):
-                c_print(f"  {ally['name']}: {m}")
+                c_print(f"  {display_name(ally)}: {m}")
 
         c_print("\n" + "-" * 50)
         c_input("Press Enter to continue...")

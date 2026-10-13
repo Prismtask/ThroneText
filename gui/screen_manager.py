@@ -11,22 +11,6 @@ import tkinter as tk
 
 from gui.theme import Theme
 
-# ── Real-time game clock ──────────────────────────────────────────────────
-# Game time advances at 1 in-game minute per TICK_INTERVAL_MS real milliseconds.
-TICK_INTERVAL_MS = 2000   # 2 seconds real time = 1 game minute
-
-# Screen class names where the game clock should tick.
-# Overlays (combat, inventory, facilities) are excluded — the clock pauses
-# when an overlay is pushed.
-_GAME_SCREENS = {
-    "CityScreen",
-    "DungeonScreen",
-    "WorldMapScreen",
-    "PostFloorScreen",
-    "FacilityScreen",
-}
-
-
 class ScreenManager:
     """Manages the current screen and transitions between game states."""
 
@@ -41,9 +25,11 @@ class ScreenManager:
         self._overlay_screen = None  # Temporary overlay (not destroyed on pop)
         self._overlay_on_close = None  # Callback to call when overlay is dismissed
 
-        # Real-time game clock
-        self._clock_id = None          # tk after() ID for the game tick
-        self._clock_paused = False     # True when an overlay is active
+        # Block time (docs/time_system_design.md): no wall clock. The top bar
+        # refreshes when time is SPENT, and queued Event Notices surface at
+        # the next safe moment.
+        from time_blocks import register_time_listener
+        register_time_listener(self._on_time_advanced)
 
         # ── Main layout frames ───────────────────────────────────────────────
         # Top bar (always visible — status info)
@@ -119,6 +105,11 @@ class ScreenManager:
             push_history: If True, the current screen class is pushed to back-stack.
             **kwargs: Extra arguments forwarded to the screen constructor.
         """
+        # Game notifications must never leak into the main menu (e.g. when
+        # the player quits while a quest toast is still showing).
+        if screen_class.__name__ == "MainMenuScreen":
+            self.clear_toasts()
+
         # If there's an overlay active, dismiss it first instead of destroying
         # the underlying screen (which may still have a running facility thread).
         if self._overlay_screen is not None:
@@ -138,13 +129,6 @@ class ScreenManager:
         self.current_screen.pack(fill=tk.BOTH, expand=True)
         # Auto-focus new screen for keyboard input
         self.current_screen.focus_set()
-
-        # ── Auto-manage game clock ───────────────────────────────────────
-        screen_name = screen_class.__name__
-        if screen_name in _GAME_SCREENS and self.player is not None:
-            self.start_game_clock()
-        else:
-            self.stop_game_clock()
 
     def push_overlay(self, screen_class, on_dismiss=None, **kwargs):
         """
@@ -166,9 +150,6 @@ class ScreenManager:
 
         self._overlay_on_close = on_dismiss
 
-        # ── Pause game clock while overlay is active ────────────────────
-        self._clock_paused = True
-
         # Hide (don't destroy) the current screen
         if self.current_screen is not None:
             self.current_screen.pack_forget()
@@ -189,6 +170,16 @@ class ScreenManager:
         """
         self._dismiss_overlay()
 
+    def get_top_screen(self):
+        """Return the screen that should receive input right now.
+
+        An active overlay sits above the current screen and is the only one
+        visible, so input dispatch (Escape, global keys) must target it.
+        """
+        if self._overlay_screen is not None:
+            return self._overlay_screen
+        return self.current_screen
+
     def _dismiss_overlay(self):
         """Internal: destroy overlay and restore underlying screen."""
         if self._overlay_screen is None:
@@ -199,10 +190,6 @@ class ScreenManager:
         except (tk.TclError, AttributeError):
             pass
         self._overlay_screen = None
-
-        # ── Resume game clock after overlay is dismissed ────────────────
-        self._clock_paused = False
-        self._schedule_tick()  # Restart the clock tick (was stopped by pause)
 
         # Restore the underlying screen
         if self.current_screen is not None:
@@ -220,9 +207,21 @@ class ScreenManager:
 
     def go_back(self):
         """Pop the previous screen from history and switch to it."""
+        # An active overlay is the topmost layer — back-navigation closes it
+        # instead of rebuilding the screen underneath. Without this guard the
+        # rebuilt screen stayed stacked below the overlay (2026-10-08: Escape
+        # during a travel encounter packed CityScreen under the still-running
+        # combat overlay — its city name banner peeked out at the bottom).
+        if self._overlay_screen is not None:
+            self._dismiss_overlay()
+            return
+
         if not self._screen_history:
             return
         prev_class = self._screen_history.pop()
+        # Same guard as switch_to: no game toasts over the main menu.
+        if prev_class.__name__ == "MainMenuScreen":
+            self.clear_toasts()
         # Switch without pushing current onto history (we're going back)
         if self.current_screen is not None:
             self.current_screen.destroy()
@@ -234,84 +233,74 @@ class ScreenManager:
         self.current_screen.pack(fill=tk.BOTH, expand=True)
         self.current_screen.focus_set()
 
-        # ── Auto-manage game clock for back-navigation ──────────────────
-        screen_name = prev_class.__name__
-        if screen_name in _GAME_SCREENS and self.player is not None:
-            self.start_game_clock()
-        else:
-            self.stop_game_clock()
-
     def clear_history(self):
         """Clear the back-stack (useful on major state changes, e.g. new game)."""
         self._screen_history.clear()
 
-    # ── Real-time game clock ─────────────────────────────────────────────────
+    # ── Block time (docs/time_system_design.md) ─────────────────────────────
 
-    def start_game_clock(self):
-        """Begin ticking game time forward every TICK_INTERVAL_MS milliseconds.
+    def _on_time_advanced(self, player=None):
+        """Time was spent — schedule a top-bar refresh on the tk main loop.
 
-        Safe to call repeatedly — if the clock is already running this is a no-op.
+        Fires from whatever thread spent the time (facility workers included),
+        so never touch widgets directly here.
         """
-        if self._clock_id is not None:
-            return  # Already ticking
-        self._clock_paused = False
-        self._schedule_tick()
+        try:
+            self.root.after(0, self._refresh_after_time_advance)
+        except (tk.TclError, RuntimeError):
+            pass
 
-    def stop_game_clock(self):
-        """Stop the game clock. Safe to call even if not running."""
-        if self._clock_id is not None:
-            self.root.after_cancel(self._clock_id)
-            self._clock_id = None
-        self._clock_paused = False
-
-    def _schedule_tick(self):
-        """Schedule the next game tick via tk.after()."""
-        if self._clock_id is not None:
-            return  # Already scheduled
-        interval = TICK_INTERVAL_MS
-        screen = self.current_screen
-        if screen is not None:
-            interval = getattr(screen, 'tick_interval_ms', TICK_INTERVAL_MS)
-        self._clock_id = self.root.after(interval, self._game_tick)
-
-    def _game_tick(self):
-        """Advance game time by 1 minute and refresh the current screen's display."""
-        self._clock_id = None  # Clear the ID — tick has fired
-
-        # Don't tick if paused, no player, or root is destroyed
-        if self._clock_paused:
-            return
-        if self.player is None:
-            return
+    def _refresh_after_time_advance(self):
+        """Refresh the visible screen's top bar; surface ready Event Notices."""
         try:
             if not self.root.winfo_exists():
                 return
-        except (tk.TclError, RuntimeError):
-            return
-
-        # Advance time
-        from utils import advance_time
-        advance_time(self.player, 1)
-
-        # Refresh the current screen's time display.
-        # Prefer the screen's own _update_top_bar() so per-screen formatting
-        # (e.g. CityScreen shows Floor + date) is preserved.
-        screen = self.current_screen
-        if screen is not None and hasattr(screen, '_update_top_bar'):
-            try:
-                screen._update_top_bar()
-            except Exception:
+            screen = self.get_top_screen()
+            if screen is not None and hasattr(screen, "_update_top_bar"):
+                try:
+                    screen._update_top_bar()
+                except Exception:
+                    self.refresh_top_bar(self.player)
+            else:
                 self.refresh_top_bar(self.player)
-        else:
-            self.refresh_top_bar(self.player)
 
-        # Schedule the next tick.
-        # Screens can override tick_interval_ms for faster/slower rates
-        # (e.g. travel journeys tick faster to show time passing).
-        interval = TICK_INTERVAL_MS
-        if screen is not None:
-            interval = getattr(screen, 'tick_interval_ms', TICK_INTERVAL_MS)
-        self._clock_id = self.root.after(interval, self._game_tick)
+            # Day-rollover Event Notices surface at the next safe moment (the
+            # player is on a city screen with no overlay up).
+            self._flush_event_notices_in_city()
+        except tk.TclError:
+            pass  # Root/widgets torn down (teardown or a replaced manager)
+
+    def _flush_event_notices_in_city(self):
+        """Show queued Event Notices while the player is on a city screen.
+
+        Day-rollover events queue up and are normally surfaced on city entry
+        (gui/screens/city_screen.py). When a rollover happens while the player
+        is ALREADY in a safe city state, the notice would otherwise sit
+        unread until they left and returned. Only fires with no overlay up so
+        combat / story / facility flows are never interrupted.
+        """
+        if self._overlay_screen is not None or self.player is None:
+            return
+        screen = self.current_screen
+        from gui.screens.city_screen import CityScreen
+        if not isinstance(screen, CityScreen):
+            return
+        if not self.player.get("event_queue"):
+            return
+        try:
+            from events import get_event_queue_events, format_event_alert, format_date
+            events = get_event_queue_events(self.player)
+            if not events:
+                return
+            for evt in events:
+                self.log(format_event_alert(evt), category="event")
+            from gui.widgets.event_dialog import show_event_notice
+            # Defer the modal so this tick finishes and the next one is
+            # scheduled first (time keeps flowing while the player reads).
+            self.root.after(150, lambda: show_event_notice(
+                events, day_text=format_date(self.player), parent=self.root))
+        except Exception:
+            pass  # Notice is cosmetic — never let it break the clock
 
     # ── Top-bar updates ───────────────────────────────────────────────────────
 
@@ -335,13 +324,17 @@ class ScreenManager:
         if city == "Dungeon":
             city = p.get("origin_city", "solmere").replace("_", " ").title()
 
-        from utils import format_time
+        from time_blocks import format_block_track
         from events import format_date
-        time_str = format_time(p)
+        time_str = format_block_track(p, include_day=False)
         date_str = format_date(p)
 
         self.top_name.config(text=f"{name}  Lv.{level}")
-        self.top_info.config(text=f"{city}  |  {date_str}  |  {time_str}")
+        if time_str:
+            self.top_info.config(text=f"{city}  |  {time_str}  |  {date_str}")
+        else:
+            # Wonderland time pocket: no track — the flavor rides with the date
+            self.top_info.config(text=f"{city}  |  {date_str}")
 
     # ── Log / notifications ───────────────────────────────────────────────────
 
@@ -372,8 +365,38 @@ class ScreenManager:
         toast = NotificationToast(self._toast_container, message, category, duration_ms)
         toast.pack(anchor=tk.NE, pady=2)
 
+    def clear_toasts(self):
+        """Dismiss every active toast immediately.
+
+        Used when leaving the game for the main menu so queued game
+        notifications never bleed into menu screens.
+        """
+        container = getattr(self, "_toast_container", None)
+        if not container:
+            return
+        for child in list(container.winfo_children()):
+            dismiss = getattr(child, "dismiss", None)
+            try:
+                if callable(dismiss):
+                    dismiss()
+                else:
+                    child.destroy()
+            except tk.TclError:
+                pass  # Widget already gone — nothing to do.
+
     def _open_log_window(self):
-        """Open the persistent log history popup."""
+        """Open the log popup.
+
+        During combat the combat log is the relevant history (the session
+        log is cleared when a fight starts), so the top-bar 📜 routes to
+        the combat log popup whenever a combat screen is showing.
+        """
+        for screen in (self._overlay_screen, self.current_screen):
+            opener = getattr(screen, "open_log_popup", None)
+            if callable(opener):
+                opener()
+                return
+
         from gui.widgets.log_window import LogWindow
         if self._log_window is not None and self._log_window.winfo_exists():
             self._log_window.lift()

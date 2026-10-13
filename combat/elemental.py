@@ -358,7 +358,23 @@ def compute_ally_elemental(ally):
     kw_dmg, kw_res = _get_keyword_elemental(ally_name)
     base_res = merge_profiles(base_res, kw_res)
     base_dmg = merge_profiles(base_dmg, kw_dmg)
-    
+
+    # Race passive elemental modifiers (Dragonkin, Demon, Elemental, Gnome)
+    from combat.ally_skills import get_race_passive_effects
+    for effect in get_race_passive_effects(ally.get("race") or race_name):
+        if effect.get("type") != "elemental":
+            continue
+        elements = effect.get("elements", "all")
+        dmg_v = effect.get("dmg_value", 0)
+        res_v = effect.get("res_value", 0)
+        for el in ELEMENTS:
+            if elements != "all" and el not in elements:
+                continue
+            if dmg_v:
+                base_dmg[el] += dmg_v
+            if res_v:
+                base_res[el] += res_v
+
     # Add equipment
     equip_res = _get_equipment_elemental(ally, "elemental_res")
     equip_dmg = _get_equipment_elemental(ally, "elemental_dmg")
@@ -376,7 +392,17 @@ def compute_ally_elemental(ally):
 
 def get_attack_element(attacker, equipped_weapon=None):
     """Determine the element of a basic attack based on equipped weapon.
-    Returns an element string or None for neutral/physical.
+
+    The weapon's ``primary_element`` is the source of truth — it drives the
+    elemental trait (Ignite/Chain/...) and set the weapon's identity. Many
+    weapons tie their element with a secondary one in ``elemental_dmg``
+    (Blaze Axe: physical 1.3 / fire 1.3), and dict order used to silently
+    resolve those as [PHYSICAL] in the log while the HUD showed something
+    else entirely (2026-10-08 bug report: Dorothy's Blaze Lute). Weapons
+    without a ``primary_element`` (uniques, Palette's Brush, Captain's
+    Cutlass, ...) keep the old highest-value pick.
+
+    Returns an element string or None for neutral/physical attacks.
     """
     # Palette's Brush: committed stance overrides the weapon's default element
     from combat.weapon.palette_brush import get_brush_stance_element
@@ -385,10 +411,15 @@ def get_attack_element(attacker, equipped_weapon=None):
         return stance_el
 
     if equipped_weapon and "elemental_dmg" in equipped_weapon:
-        # Return the element with the highest damage multiplier > 1.0
+        e_dmg = equipped_weapon["elemental_dmg"]
+        # Explicit primary element wins when it actually deals elemental damage.
+        primary = equipped_weapon.get("primary_element")
+        if primary and e_dmg.get(primary, 0.0) > 1.0:
+            return primary
+        # Fallback: highest damage multiplier > 1.0
         best_el = None
         best_val = 1.0
-        for el, val in equipped_weapon["elemental_dmg"].items():
+        for el, val in e_dmg.items():
             if val > best_val:
                 best_val = val
                 best_el = el
@@ -430,8 +461,36 @@ def calculate_elemental_damage(base_dmg, attacker, target, element=None):
                 weakness = debuff.get("value", 0)
                 res_mult -= weakness
                 break
+
+        # Perfect Mimicry: adapted element → bonus damage / resistance
+        for buff in attacker.get("active_buffs", []):
+            if (buff.get("type") == "elemental_adapt_dmg"
+                    and buff.get("element") == element and buff.get("remaining", 0) > 0):
+                dmg_mult += buff.get("value", 0)
+                break
+        for buff in target.get("active_buffs", []):
+            if (buff.get("type") == "elemental_adapt_res"
+                    and buff.get("element") == element and buff.get("remaining", 0) > 0):
+                res_mult += buff.get("value", 0)
+                break
+
+        # Event Horizon: flask/boon elemental damage (+% to all elements;
+        # stacks additively, unlike the single-entry adapt buffs above)
+        for buff in attacker.get("active_buffs", []):
+            if buff.get("type") == "eh_ele_dmg":
+                dmg_mult += buff.get("value", 0)
         
         final_dmg = int(base_dmg * dmg_mult * res_mult)
+
+    # Event Horizon — The Magician's oath: attacks that do not strike the
+    # target's weakness element are maimed to 25%. Targets with no weakness
+    # element take normal damage (×1.0). Neutral hits fail the gate when
+    # the target has weaknesses.
+    if attacker.get("_eh_joker_weakness_gate"):
+        weak = [el for el in ELEMENTS
+                if target.get("elemental_res", {}).get(el, 1.0) < 1.0]
+        if weak and (element is None or element not in weak):
+            final_dmg = int(final_dmg * 0.25)
     
     # Momentum buff: +3% damage per stack (Chronoweave Mantle).
     # Integer math avoids float rounding (0.03 * N truncation issues).

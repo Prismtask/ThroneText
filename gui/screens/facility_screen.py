@@ -111,15 +111,9 @@ class FacilityScreen(BaseScreen):
         self._stopped = False  # Set when user aborts early — thread should bail out
         self._finished = False  # Set when _finish() is called — prevents double-call
         self._confirm_dialog_open = False  # Guard against stacked dialogs
+        self._thread = None  # Background worker; set by _start_facility()
 
         super().__init__(parent, screen_manager, **kwargs)
-
-    @property
-    def tick_interval_ms(self):
-        """Faster tick rate during travel journeys so time visibly counts up."""
-        if self.facility_title.startswith("Journey"):
-            return 400   # 1 game minute per 0.4 real seconds
-        return 2000      # Default: 1 game minute per 2 real seconds
 
     # ── UI construction ───────────────────────────────────────────────────────
 
@@ -178,16 +172,24 @@ class FacilityScreen(BaseScreen):
         input_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=(0, 5))
         input_frame.grid_columnconfigure(1, weight=1)
 
+        # Prompt label spans the full input row so long multi-select hints
+        # (e.g. the shop's "1 3 5 / 1-4 / all" sell syntax) stay visible.
         self.prompt_label = tk.Label(
             input_frame,
             text="",
             bg=Theme.BG_DARK,
             fg=Theme.ACCENT,
             font=Theme.FONT_BOLD,
-            width=12,
             anchor=tk.W,
+            justify=tk.LEFT,
         )
-        self.prompt_label.grid(row=0, column=0, padx=(0, 5))
+        self.prompt_label.grid(row=0, column=0, columnspan=3, sticky="ew", padx=(0, 5), pady=(0, 2))
+        self.prompt_label.grid_remove()  # Hidden until an input prompt appears
+        # Auto-wrap long prompts to the available width (fires on main thread)
+        self.prompt_label.bind(
+            "<Configure>",
+            lambda e: self.prompt_label.config(wraplength=max(280, e.width - 10)),
+        )
 
         self.input_entry = tk.Entry(
             input_frame,
@@ -200,7 +202,7 @@ class FacilityScreen(BaseScreen):
             highlightcolor=Theme.ACCENT,
             state=tk.DISABLED,
         )
-        self.input_entry.grid(row=0, column=1, sticky="ew", padx=5)
+        self.input_entry.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5)
         self.input_entry.bind("<Return>", self._on_input_submit)
 
         self.continue_btn = self.styled_button(
@@ -209,7 +211,7 @@ class FacilityScreen(BaseScreen):
             command=self._on_continue_click,
             width=10,
         )
-        self.continue_btn.grid(row=0, column=2, padx=5)
+        self.continue_btn.grid(row=1, column=2, padx=5)
         self.continue_btn.config(state=tk.DISABLED)
 
         # Button panel (for menu choices — replaces text input for simple choices)
@@ -308,11 +310,13 @@ class FacilityScreen(BaseScreen):
         _cur = _cf.get("floor", 1)
         _max = _cf.get("max_floor", 1)
         from events import format_date
-        from utils import format_time
-        text = (
-            f"{p['name']} | {city_name} | Floor {_cur}/{_max} | "
-            f"{format_date(p)} | {format_time(p)}"
-        )
+        from time_blocks import format_block_track
+        track = format_block_track(p, include_day=False)
+        segments = [p['name'], city_name, f"Floor {_cur}/{_max}"]
+        if track:
+            segments.append(track)
+        segments.append(format_date(p))
+        text = " | ".join(segments)
         self.sm.update_top_bar(text)
 
     def _setup_facility_keys(self):
@@ -458,7 +462,13 @@ class FacilityScreen(BaseScreen):
         """Enable input controls and show prompt (main thread only)."""
         self._input_mode = True
         self._input_prompt = prompt
-        self.prompt_label.config(text=(prompt[:30] + "...") if len(prompt) > 30 else prompt)
+        # Make sure the input row is visible (button mode hides it)
+        self.prompt_label.grid()
+        self.input_entry.grid()
+        self.continue_btn.grid()
+        # Show the FULL prompt — no 30-char truncation (shops rely on the
+        # "1 3 5 / 1-4 / all" sell-syntax hint being readable).
+        self.prompt_label.config(text=prompt)
         self.input_entry.config(state=tk.NORMAL)
         self.continue_btn.config(state=tk.NORMAL)
         self.input_entry.focus_set()
@@ -501,16 +511,16 @@ class FacilityScreen(BaseScreen):
 
     def _show_buttons(self, options, prompt="Choose an option:",
                       allow_cancel=True, cancel_label="Cancel",
-                      styles=None):
+                      styles=None, columns=3):
         """Show a set of choice buttons. Called from facility thread via Terminal."""
         try:
             self.after(0, lambda: self._do_show_buttons(
-                options, prompt, allow_cancel, cancel_label, styles
+                options, prompt, allow_cancel, cancel_label, styles, columns
             ))
         except (RuntimeError, tk.TclError):
             pass
 
-    def _do_show_buttons(self, options, prompt, allow_cancel, cancel_label, styles=None):
+    def _do_show_buttons(self, options, prompt, allow_cancel, cancel_label, styles=None, columns=3):
         """Create choice buttons on the main thread."""
         try:
             # Hide text input row
@@ -528,8 +538,19 @@ class FacilityScreen(BaseScreen):
             # Reset canvas scroll to top
             self._button_canvas.yview_moveto(0)
 
-            # Create option buttons — 3 columns, left-aligned, with scroll
-            max_cols = 3
+            # Create option buttons — N columns (default 3), left-aligned, with scroll.
+            # Long labels wrap inside their button instead of being clipped.
+            max_cols = max(1, int(columns or 3))
+            try:
+                panel_px = self._button_canvas.winfo_width()
+            except tk.TclError:
+                panel_px = 0
+            if not panel_px or panel_px < 50:
+                try:
+                    panel_px = self.winfo_width()
+                except tk.TclError:
+                    panel_px = 0
+            wrap_px = max(160, panel_px // max_cols - 18) if panel_px and panel_px > 50 else 0
             for i, opt in enumerate(options):
                 label = f"[{i + 1}] {opt}" if len(options) > 1 else opt
 
@@ -552,15 +573,23 @@ class FacilityScreen(BaseScreen):
                     font=Theme.FONT_BOLD,
                     relief=tk.RAISED,
                     borderwidth=2,
+                    # Uniform, invisible focus ring — the default ring made the
+                    # focused (first) option render bigger (playtest 2026-10-07).
+                    highlightthickness=1,
+                    highlightbackground=bg,
+                    highlightcolor=bg,
                     cursor="hand2",
                     anchor=tk.W,
                     justify=tk.LEFT,
                     padx=8,
+                    wraplength=wrap_px,
                     command=lambda idx=i: self._on_button_choice(idx),
                 )
                 row = i // max_cols
                 col = i % max_cols
-                btn.grid(row=row, column=col, padx=3, pady=3, sticky="ew")
+                # nsew: every button in a row stretches to the row's tallest
+                # request, so wrapped multi-line options never render "bigger".
+                btn.grid(row=row, column=col, padx=3, pady=3, sticky="nsew")
 
             # Make all columns equal weight
             for c in range(max_cols):
@@ -580,6 +609,9 @@ class FacilityScreen(BaseScreen):
                     font=Theme.FONT_BOLD,
                     relief=tk.RAISED,
                     borderwidth=2,
+                    highlightthickness=1,
+                    highlightbackground="#5a3a5a",
+                    highlightcolor="#5a3a5a",
                     cursor="hand2",
                     command=lambda: self._on_button_choice(-1),
                 )
@@ -705,7 +737,7 @@ class FacilityScreen(BaseScreen):
         """User clicked Back — confirm if facility is still running."""
         if self._confirm_dialog_open:
             return  # Prevent stacking multiple confirm dialogs
-        if self._thread.is_alive():
+        if self._thread is not None and self._thread.is_alive():
             self._confirm_dialog_open = True
             confirm_dialog(
                 parent=self,

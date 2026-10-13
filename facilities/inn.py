@@ -1,5 +1,5 @@
 # facilities/inn.py
-from utils import advance_time
+from utils import advance_time, display_name
 from character import player_max_hp
 from resources.cities import CITIES
 from city_dialogue import service_dialogue   # changed
@@ -20,7 +20,7 @@ def inn_menu(player, city_id="solmere"):
     while True:
         choice = term.menu([
             "Rest (Full Heal - 30 min)",
-            f"Sleep (Full Heal + 8 hours) - Available after {inn_config['sleep_after_hour']}:00",
+            "Sleep (Full Heal) - Night only",
             "Back"
         ], prompt="What would you like to do?")
         if choice == 0:
@@ -33,15 +33,14 @@ def inn_menu(player, city_id="solmere"):
             term.pause("You feel refreshed. Press Continue...")
             break
         elif choice == 1:
-            current_hour = player["time_minutes"] // 60
-            sleep_hour = inn_config.get("sleep_after_hour")
-            if current_hour >= sleep_hour or current_hour < 4:
+            import time_blocks
+            if time_blocks.get_day_phase(player) == "night":
                 player["current_hp"] = player_max_hp(player)
                 # Heal allies too
                 for ally in player.get("allies", []):
                     ally["current_hp"] = ally["max_hp"]
                 service_dialogue(city_id, "inn", "sleep")
-                advance_time(player, 480)
+                time_blocks.end_day(player, slept=True)
                 term.pause("You wake up refreshed the next morning...")
                 break
             else:
@@ -49,7 +48,6 @@ def inn_menu(player, city_id="solmere"):
                 term.pause()
         elif choice == 2 or choice == -1:
             service_dialogue(city_id, "inn", "leave")
-            advance_time(player, 30)
             break
         else:
             term.print("Invalid choice.")
@@ -198,7 +196,7 @@ def _wonderland_inn_menu(player, city, inn_config):
                 player.setdefault("allies", []).append(saved)
                 from combat.ally import ensure_party_order
                 ensure_party_order(player)
-                term.print(f"\n💫 {saved['name']} rematerializes beside you — your journey together resumes.")
+                term.print(f"\n💫 {display_name(saved)} rematerializes beside you — your journey together resumes.")
         if saved_temps:
             term.pause()
 
@@ -210,7 +208,7 @@ def _wonderland_inn_menu(player, city, inn_config):
         # Build menu dynamically based on heroine states
         menu_options = [
             "Rest (Full Heal - 30 min)",
-            "Sleep (Full Heal + 8 hours) - Always teatime here...",
+            "Sleep (Full Heal) - Always teatime here...",
         ]
 
         # Add heroine options
@@ -245,7 +243,6 @@ def _wonderland_inn_menu(player, city, inn_config):
 
         if choice == -1:
             service_dialogue(city_id, "inn", "leave")
-            advance_time(player, 30)
             break
 
         if choice == 0:
@@ -259,12 +256,13 @@ def _wonderland_inn_menu(player, city, inn_config):
             break
 
         elif choice == 1:
-            # Sleep
+            # Sleep (Wonderland time pocket: the outside day is untouched)
+            import time_blocks
             player["current_hp"] = player_max_hp(player)
             for ally in player.get("allies", []):
                 ally["current_hp"] = ally["max_hp"]
             service_dialogue(city_id, "inn", "sleep")
-            advance_time(player, 480)
+            time_blocks.end_day(player, slept=True)
             term.pause("You dream of riddles without answers. You wake... eventually...")
             break
 
@@ -276,7 +274,6 @@ def _wonderland_inn_menu(player, city, inn_config):
         elif choice == 2 + len(heroine_keys):
             # Back
             service_dialogue(city_id, "inn", "leave")
-            advance_time(player, 30)
             break
 
         else:
@@ -776,11 +773,24 @@ def _heroine_interaction(player, heroine_key, inn_config):
                 '"Not right now." (Step away)',
             ], prompt="")
             if sub == 0:
-                from combat.ally import ensure_party_order
+                from combat.ally import ensure_party_order, _HEROINE_TEMPLATE_KEYS
                 current_floor = player.get("saved_dungeon_floor", 1)
                 ally = create_heroine_ally(player, heroine_key, floor=current_floor)
                 if ally:
                     ally["_wonderland_temp"] = False  # already permanent
+                    # Merge any house-record progress (affection/exp/rings) so
+                    # a heroine who was returned home never rejoins as a blank copy.
+                    template_key = _HEROINE_TEMPLATE_KEYS.get(heroine_key)
+                    for house in player.get("houses", {}).values():
+                        for g in house.get("monster_girls", []):
+                            if g.get("key") == template_key:
+                                ally["affection"] = g.get("affection", ally["affection"])
+                                ally["affection_cap"] = g.get("affection_cap", ally["affection_cap"])
+                                ally["engaged"] = g.get("engaged", False)
+                                ally["married"] = g.get("married", False)
+                                ally["nickname"] = g.get("nickname", ally.get("nickname", ""))
+                                ally["exp"] = g.get("exp", 0)
+                                break
                     player.setdefault("allies", []).append(ally)
                     ensure_party_order(player)
                     term.print(dialogue.get("joined", f"{heroine_key.title()} rejoins your party!"))

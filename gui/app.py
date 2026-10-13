@@ -102,8 +102,15 @@ class PandemoniumApp:
         self.root.bind("<Control-Q>", lambda e: self._on_close())
 
     def _on_global_escape(self, event):
-        """Global Escape key handler — delegates to current screen."""
-        screen = self.screen_manager.current_screen
+        """Global Escape key handler — delegates to the topmost screen.
+
+        Must prefer an active overlay: dispatching to current_screen sent
+        Escape to the hidden screen underneath (e.g. the world map), whose
+        default handle_escape called sm.go_back() and rebuilt CityScreen
+        below the still-running combat overlay (2026-10-08 — its VEILHOLT
+        banner peeked out at the bottom of the combat screen).
+        """
+        screen = self.screen_manager.get_top_screen()
         if screen and hasattr(screen, "handle_escape"):
             screen.handle_escape()
 
@@ -111,13 +118,18 @@ class PandemoniumApp:
         """Global 'I' key — opens inventory. Uses overlay for DungeonScreen
         to avoid destroying the dungeon thread mid-run.
 
+        Dispatches to the topmost screen: while an overlay (combat, story,
+        ...) is up the key is ignored, because pushing the inventory overlay
+        would first dismiss the live overlay — pressing 'I' mid-fight used
+        to kill the combat screen (2026-10-08).
+
         NOTE: CityScreen has its own local 'I' handler in _on_city_key,
         so we skip CityScreen here to avoid double-dispatch.
         """
         from gui.screens.dungeon_screen import DungeonScreen
         from gui.screens.inventory_screen import InventoryScreen
 
-        screen = self.screen_manager.current_screen
+        screen = self.screen_manager.get_top_screen()
         if isinstance(screen, DungeonScreen):
             self.screen_manager.push_overlay(
                 InventoryScreen,

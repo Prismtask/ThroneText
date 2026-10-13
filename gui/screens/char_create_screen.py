@@ -516,15 +516,32 @@ class CharCreateScreen(BaseScreen):
         self.sm.log(f"Character '{name}' created and saved to slot {slot}.")
 
         # New characters get a short tutorial through the facility UI
-        # (the same terminal-style wrapper used by shops, inns, etc.).
+        # (the same terminal-style wrapper used by shops, inns, etc.),
+        # and the Archivist's summons plays the moment the tour ends.
         from facilities.tutorial import tutorial_menu, TutorialScreen
+        from facilities.archivist_intro import archivist_intro
+        from gui.screens.story_screen import StoryScreen
         from gui.screens.city_screen import CityScreen
         sm = self.sm
+
+        def _after_intro(_result):
+            sm.switch_to(CityScreen, push_history=False)
+
+        def _after_tutorial(_result):
+            sm.switch_to(
+                StoryScreen,
+                push_history=False,
+                title="A Message in Starlight",
+                func=archivist_intro,
+                func_args=(player,),
+                on_close=_after_intro,
+            )
+
         self.sm.switch_to(
             TutorialScreen,
             push_history=False,
             title="Tutorial",
             func=tutorial_menu,
             func_args=(player,),
-            on_close=lambda _result: sm.switch_to(CityScreen, push_history=False),
+            on_close=_after_tutorial,
         )

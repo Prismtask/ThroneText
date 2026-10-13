@@ -7,7 +7,6 @@ Sells:
   2. House Deed     (500 gold, per city)          — lets the player own a house
                                                     in ANY city they choose.
   3. Mount / Stable / Caravan — buy, upgrade, or downgrade overland transport.
-  4. Sell bulk goods (placeholder, 50 gold).
 
 House placement rules
 ─────────────────────
@@ -25,7 +24,6 @@ Mount rules
   • Mounts only affect overland travel (land routes), not sea voyages.
 """
 
-from utils import advance_time
 from city_dialogue import service_dialogue
 from resources.cities import CITIES
 from resources.mounts import (
@@ -39,11 +37,10 @@ from resources.mounts import (
 from gui.terminal import term
 
 # Cities where property ownership isn't possible / doesn't make sense.
-_DEED_EXCLUDED = {"isle_of_glass", "blackwake"}
+_DEED_EXCLUDED = {"isle_of_glass", "blackwake", "wonderland"}
 
 HOUSE_DEED_COST    = 500
 TRADE_PERMIT_COST  = 200
-BULK_SELL_REWARD   = 50
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -57,6 +54,9 @@ def _sell_house_deed(player):
     house (with all its data: level, storage, monster girls, income timing)
     to the newly chosen city instead of creating a second house.
     """
+    # Imported once at function level so the name is always bound (it used to
+    # be imported inside the first `if existing_house:` block only).
+    from facilities.house import HOUSE_LEVELS
     if player.get("gold", 0) < HOUSE_DEED_COST:
         term.print(f"A House Deed costs {HOUSE_DEED_COST} gold. You don't have enough.")
         term.pause()
@@ -75,7 +75,6 @@ def _sell_house_deed(player):
 
     if existing_house:
         old_city_name = CITIES.get(existing_city_id, {}).get("name", existing_city_id)
-        from facilities.house import HOUSE_LEVELS
         old_level_name = HOUSE_LEVELS.get(existing_house.get("level", 1), {}).get("name", "Hovel")
         term.print(f"\nYou already own a {old_level_name} in {old_city_name}.")
         term.print(f"Buying a new deed will MOVE your house to the new city")
@@ -140,6 +139,11 @@ def _sell_house_deed(player):
             "last_income_day": player.get("day", 1),
         }
         term.print(f"\nCongratulations! You now own a Hovel in {chosen_data['name']}.")
+
+    # Quest hook: owning a home (Field Study One)
+    from quests import update_quests
+    for msg in update_quests(player, "own_house", "any"):
+        term.print(msg)
 
     term.print("Visit that city and choose 'Your House' from the city menu.")
     term.print(f"  Remaining gold: {player['gold']}")
@@ -282,12 +286,16 @@ def _sell_mount(player):
 
 def _mount_menu(player):
     """Sub-menu for stable / mount transactions."""
+    from resources.trade_goods import cargo_total_weight
     while True:
         current_id = player.get("mount_id")
+        load = cargo_total_weight(player)
 
         if current_id:
             current = get_mount(current_id)
             term.print(f"Current mount: {_mount_info_line(current_id)}")
+            if load > 0:
+                term.print(f"Cargo load: {load}/{current.get('cargo_capacity', 0)} wt")
             choice = term.menu([
                 "Upgrade mount",
                 "Downgrade mount",
@@ -309,6 +317,8 @@ def _mount_menu(player):
         else:
             opts = []
             options = []
+            if load > 0:
+                term.print(f"You are hauling {load} wt of cargo on foot.")
             for mid, data in sorted(MOUNTS.items(), key=lambda x: x[1]["tier"]):
                 opts.append(mid)
                 options.append(f"Buy {_mount_info_line(mid)}")
@@ -335,7 +345,7 @@ def trade_hall_service(player, city_id):
         permit_label = (
             "Trade permit — already owned"
             if player.get("trade_permit")
-            else f"Buy trade permit ({TRADE_PERMIT_COST} gold) — WIP"
+            else f"Buy trade permit ({TRADE_PERMIT_COST} gold) — unlocks cargo markets"
         )
 
         # Option 2: House Deed
@@ -357,7 +367,6 @@ def trade_hall_service(player, city_id):
             permit_label,
             deed_label,
             mount_label,
-            f"Sell bulk goods — {BULK_SELL_REWARD} gold",
             "Leave"
         ]
         
@@ -370,7 +379,7 @@ def trade_hall_service(player, city_id):
                 player["gold"] -= TRADE_PERMIT_COST
                 player["trade_permit"] = True
                 term.print("You obtain a trade permit. New opportunities await.")
-                service_dialogue(city_id, "trade_hall", "success")
+                term.print("Cargo markets across the world are now open to you.")
             else:
                 term.print("Insufficient gold.")
             term.pause()
@@ -381,14 +390,6 @@ def trade_hall_service(player, city_id):
         elif choice == 2:
             _mount_menu(player)
 
-        elif choice == 3:
-            player["gold"] = player.get("gold", 0) + BULK_SELL_REWARD
-            term.print(f"The merchants offer {BULK_SELL_REWARD} gold for your spare goods.")
-            term.print(f"  Gold: {player['gold']}")
-            term.pause()
-
-        elif choice == 4 or choice == -1:
+        elif choice == 3 or choice == -1:
             service_dialogue(city_id, "trade_hall", "leave")
             break
-
-    advance_time(player, 30)

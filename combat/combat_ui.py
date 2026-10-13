@@ -1,5 +1,5 @@
 # combat_ui.py – HUD and status formatting
-from utils import clear_screen, format_time
+from utils import clear_screen, format_time, display_name
 from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
 from combat.weapon.abyss_fang import is_abyssal_tempo_active, get_abyss_fang_cooldown_display
@@ -66,6 +66,16 @@ def _center_text(text, width):
     return " " * left + text + " " * right
 
 
+# Event Horizon run-bonus buffs that STACK into one summed HUD tag (playtest
+# 2026-10-06). They are permanent + source-tagged (flasks, positive cards,
+# shop tune-ups). Ally-skill buffs can share types (Frabjous Day / Fate's
+# Favor are damage_boost) but are temporary and untagged → stay individual.
+_EH_STACK_TYPES = frozenset({
+    "damage_boost", "eh_ele_dmg", "defense_pct", "crit_chance", "regen",
+    "regen_pct", "stat",
+})
+
+
 def _get_entity_buff_tags(entity):
     """Return a short buff/debuff tag string for any entity (player, ally, enemy)."""
     statuses = []
@@ -91,6 +101,11 @@ def _get_entity_buff_tags(entity):
     if entity.get("parrot_target"):
         statuses.append("🦜TGT")
 
+    # Potion sickness — healing consumable cooldown (player + allies)
+    potion_sickness = entity.get("potion_sickness", 0)
+    if potion_sickness > 0:
+        statuses.append(f"SICK×{potion_sickness}")
+
     # Debuff types from active_debuffs
     debuff_map = {
         "poison": "PSN",
@@ -111,6 +126,16 @@ def _get_entity_buff_tags(entity):
             # Burn uses tier-specific tags
             from combat.status_effects import get_burn_tier_tag
             tag = get_burn_tier_tag(d.get("tier", 2))
+        elif d["type"] == "damage_taken_up":
+            tag = f"DT+{int(d.get('value', 0) * 100)}%"
+        elif d["type"] == "eh_entropy":
+            # Event Horizon pressure gauge (docs §2.3) — state the attribute
+            # penalty like the inventory tab does, not just the stack count
+            # (e.g. "ENT×98 (\u221245% attrs)").
+            stacks = int(d.get("stacks", 0))
+            pct = int(round(float(d.get("value", 0) or 0) * 100))
+            tag = (f"ENT\u00d7{stacks} (\u2212{pct}% attrs)" if pct > 0
+                   else f"ENT\u00d7{stacks}")
         else:
             tag = debuff_map.get(d["type"])
         if tag and tag not in statuses:
@@ -122,14 +147,89 @@ def _get_entity_buff_tags(entity):
         from combat.weapon.tarnished_jade import _actor_has_tarnished_jade
         if _actor_has_tarnished_jade(entity):
             statuses.append(f"PIN×{tj_pins}")
-
+    # Wedge Backlash curse — the Jade flag halves ALL stats for the battle.
+    # It has no debuff entry, so without this tag the player watches their
+    # damage collapse with no visible cause (playtest 2026-10-07).
+    if entity.get("tarnished_jade_weakened"):
+        statuses.append("WEDGE \u221250%")
+    # Fatigue (§5): the exhaustion that feeds the illusions is visible here —
+    # the eye marks the stack range where hallucinations can appear.
+    fatigue = entity.get("fatigue_stacks", 0) or 0
+    if fatigue > 0:
+        roman = {1: "I", 2: "II", 3: "III"}.get(int(fatigue), str(fatigue))
+        statuses.append(("\U0001F441 " if fatigue >= 2 else "") + f"FATIGUE {roman}")
     # Expose stacks (enemy only)
     expose = entity.get("expose_stacks", 0)
     if expose > 0:
         statuses.append(f"EXP×{expose}")
 
-    # Buffs from active_buffs
+    # Prescript Ledger (GRC/KRM on wearers; Target mark on the enemy)
+    grace = entity.get("prescript_grace_stacks", 0)
+    if grace > 0:
+        statuses.append(f"GRC×{grace}")
+    karma = entity.get("prescript_karma_stacks", 0)
+    if karma > 0:
+        statuses.append(f"KRM×{karma}")
+    if entity.get("prescript_mark"):
+        statuses.append("📜TGT")
+
+    # Event Horizon trial burdens — active negative cards empower every rift
+    # enemy; the stamp is set by event_horizon.apply_enemy_scaling (docs §2.1).
+    # The stamped effect tags spell out WHAT the burdens do — playtest
+    # 2026-10-06: "TRL×5" alone told the player nothing.
+    trial = entity.get("_eh_trial_count", 0)
+    if trial > 0:
+        burden = entity.get("_eh_trial_tags") or []
+        tag = f"TRL×{trial}"
+        if burden:
+            tag += ": " + " ".join(burden)
+        statuses.append(tag)
+
+    # ── Event Horizon run bonuses — stacked (playtest 2026-10-06) ──────────
+    # Flasks, positive cards and shop tune-ups pile up as separate permanent
+    # buffs; one tag each floods the HUD deep into a run. Sum them per effect
+    # type into a single tag. Ally-skill buffs (Frabjous Day, Fate's Favor)
+    # are temporary and NOT source-tagged — they keep individual tags so
+    # their remaining turns stay visible beside the run total.
+    stacked = {}
+    stacked_order = []
     for b in entity.get("active_buffs", []):
+        if (b.get("source") != "event_horizon" or not b.get("permanent")
+                or b.get("type") not in _EH_STACK_TYPES):
+            continue
+        if b.get("type") == "stat" and not b.get("stat"):
+            continue
+        key = (b.get("type"), b.get("stat"))
+        if key not in stacked:
+            stacked[key] = 0.0
+            stacked_order.append(key)
+        stacked[key] += float(b.get("value", 0) or 0)
+    for key in stacked_order:
+        btype, stat = key
+        total = stacked[key]
+        if btype == "damage_boost":
+            tag = f"DMG+{round(total * 100)}%"
+        elif btype == "eh_ele_dmg":
+            tag = f"ELM+{round(total * 100)}%"
+        elif btype == "defense_pct":
+            tag = f"DEF{round(total * 100)}%"
+        elif btype == "crit_chance":
+            tag = f"CRT+{round(total * 100)}%"
+        elif btype == "regen":
+            tag = f"REG+{round(total)}"
+        elif btype == "regen_pct":
+            tag = f"REG+{total * 100:g}%"
+        else:  # stat — show the summed total (Might/Tune-Up stacking)
+            label = "ALL" if stat == "all" else stat[:3].upper()
+            tag = f"{label}+{int(total)}"
+        if tag not in statuses:
+            statuses.append(tag)
+
+    # Other buffs (skills, items, blessings…) — one tag each
+    for b in entity.get("active_buffs", []):
+        if (b.get("source") == "event_horizon" and b.get("permanent")
+                and b.get("type") in _EH_STACK_TYPES):
+            continue  # already shown as a stacked total
         btype = b.get("type")
         if btype == "hot":
             tag = "REG"
@@ -143,6 +243,8 @@ def _get_entity_buff_tags(entity):
             tag = f"DGE{int(b.get('value', 0) * 100)}%"
         elif btype == "damage_boost":
             tag = f"DMG+{int(b.get('value', 0) * 100)}%"
+        elif btype == "power_buff":
+            tag = f"PWR+{int(b.get('value', 0) * 100)}%"
         elif btype == "well_rested":
             tag = "RST"
         elif btype == "arcane_ward":
@@ -151,8 +253,17 @@ def _get_entity_buff_tags(entity):
             tag = "ARC"
         elif btype == "crit_chance":
             tag = f"CRT+{int(b.get('value', 0) * 100)}%"
+        elif btype == "eh_ele_dmg":
+            # Prism flasks — Event Horizon elemental damage (docs §3.2)
+            tag = f"ELM+{round(b.get('value', 0) * 100)}%"
         elif btype == "fear_immunity":
             tag = "FER-IMN"
+        elif btype == "barrier":
+            tag = f"BAR{b.get('value', 0)}"
+        elif btype == "death_ward":
+            tag = "WARD"
+        elif btype == "haste":
+            tag = "HST"
         elif b.get("stat"):
             stat = b["stat"]
             if stat == "all":
@@ -179,7 +290,12 @@ def _get_entity_buff_tags(entity):
 def _get_entity_elem_tags(entity, is_enemy=False):
     """Return compact elemental tags for display beside the entity name.
 
-    ⚔  = best attack element    (highest elemental_dmg > 1.1)
+    ⚔  = attack element — for the party: the equipped weapon's element via
+         ``get_attack_element()`` (the SAME function the damage path uses, so
+         the tag can never disagree with the combat log; 2026-10-08 report:
+         the old profile-max scan showed ⚔MAG for Dorothy's fire Blaze Lute
+         because accessories inflated her magical profile). Enemies and
+         weaponless actors fall back to the strongest profile element.
     🛡↑ = strongest resistance   (highest elemental_res > 1.2)
     🛡↓ = biggest weakness       (lowest elemental_res < 0.85)
 
@@ -188,16 +304,24 @@ def _get_entity_elem_tags(entity, is_enemy=False):
     """
     parts = []
 
-    # Attack: best damage element
-    e_dmg = entity.get("elemental_dmg", {})
-    best_dmg_el = None
-    best_dmg_val = 1.1
-    for el, val in e_dmg.items():
-        if val > best_dmg_val:
-            best_dmg_val = val
-            best_dmg_el = el
-    if best_dmg_el:
-        parts.append(f"⚔{best_dmg_el[:3].upper()}")
+    # Attack: the element the actor's basic attacks actually use.
+    attack_el = None
+    weapon = None
+    if not is_enemy:
+        weapon = (entity.get("equipped") or {}).get("weapon")
+    if weapon:
+        from combat.elemental import get_attack_element
+        attack_el = get_attack_element(entity, weapon)
+    else:
+        best_dmg_el = None
+        best_dmg_val = 1.1
+        for el, val in entity.get("elemental_dmg", {}).items():
+            if val > best_dmg_val:
+                best_dmg_val = val
+                best_dmg_el = el
+        attack_el = best_dmg_el
+    if attack_el:
+        parts.append(f"⚔{attack_el[:3].upper()}")
 
     # Defence: both strongest resistance AND biggest weakness
     e_res = entity.get("elemental_res", {})
@@ -285,7 +409,8 @@ def format_combat_hud_data(player, enemies, active_ally=None, header=""):
     from combat.ally import (get_active_allies, get_reserve_allies,
                              get_all_active_allies_including_defeated,
                              get_all_reserve_allies_including_defeated,
-                             ensure_party_order)
+                             ensure_party_order, compute_ally_stats)
+    from combat.stats import format_crit_summary
     ensure_party_order(player)
     active_allies = get_all_active_allies_including_defeated(player)
     reserve_allies = get_all_reserve_allies_including_defeated(player)
@@ -306,20 +431,23 @@ def format_combat_hud_data(player, enemies, active_ally=None, header=""):
         "is_active": active_ally is None,
         "buff_tags": _get_entity_buff_tags(player),
         "elem_tags": _get_entity_elem_tags(player, is_enemy=False),
+        "crit_text": format_crit_summary(player, "player", compact=True),
         "is_player": True,
         "is_front": True,
         "is_back": False,
     })
 
-    # Front-row allies (only active combatants — capped at 3, so max 4 rows including player)
+    # Front-row allies (governed by Command Resonance — see combat.ally.get_active_limit)
     for ally in active_allies:
+        _a_str, _a_con, a_dex, a_ler, _a_wis, _a_cha = compute_ally_stats(ally)
         party_data.append({
-            "name": ally["name"],
+            "name": display_name(ally),
             "hp": ally.get("current_hp", 0),
             "max_hp": ally.get("max_hp", 1),
             "is_active": ally is active_ally,
             "buff_tags": _get_entity_buff_tags(ally),
             "elem_tags": _get_entity_elem_tags(ally, is_enemy=False),
+            "crit_text": format_crit_summary(ally, "ally", dex=a_dex, lrn=a_ler, compact=True),
             "is_player": False,
             "is_front": True,
             "is_back": False,
@@ -337,13 +465,15 @@ def format_combat_hud_data(player, enemies, active_ally=None, header=""):
         # In ally switch mode: show backup party instead of enemies
         reserve_living = get_reserve_allies(player)
         for idx, ally in enumerate(reserve_living):
+            _a_str, _a_con, a_dex, a_ler, _a_wis, _a_cha = compute_ally_stats(ally)
             reserve_party.append({
-                "name": ally["name"],
+                "name": display_name(ally),
                 "hp": ally.get("current_hp", 0),
                 "max_hp": ally.get("max_hp", 1),
                 "index": idx,
                 "buff_tags": _get_entity_buff_tags(ally),
                 "elem_tags": _get_entity_elem_tags(ally, is_enemy=False),
+                "crit_text": format_crit_summary(ally, "ally", dex=a_dex, lrn=a_ler, compact=True),
             })
     else:
         for idx, e in enumerate(enemies):
@@ -547,8 +677,9 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
                     cd_msg = f"({sdef['name']} recharging: {cd} turn(s))"
                     c_print(f"|  {cd_msg:<66}|")
 
-    # Pandemonium: Display active floor curse
-    curse = player.get("pandemonium_curse")
+    # Pandemonium: Display active floor curse (only while a run is active)
+    from pandemonium_curses import get_curse
+    curse = get_curse(player)
     if curse:
         c_print("|" + " " * 68 + "|")
         curse_line = f"  {curse['icon']}  PANDEMONIUM CURSE: {curse['name']} — {curse['desc_full']}"

@@ -26,6 +26,7 @@ DEFAULT_SETTINGS = {
     "keyboard_mode": True,            # Enable keyboard shortcuts globally
     "show_splash": True,
     "log_max_lines": 1000,             # Combat/dungeon log scrollback
+    "combat_pacing": "normal",         # instant | fast | normal | slow (combat beat pacing, doc §7)
 }
 
 

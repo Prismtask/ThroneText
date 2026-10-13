@@ -3,10 +3,16 @@ import random
 from resources.items import ITEM_RARITY
 from resources.dialogues import BLACKSMITH_DIALOGUES
 from inventory import apply_scroll_to_item, remove_item_by_reference
-from utils import advance_time
+from utils import advance_time, display_name
 from gui.terminal import term
 from gui.theme import Theme
 from facilities.shop import get_discounted_price
+
+# Unique gear enhancement price multiplier — premium over legendary (8.0)
+# because uniques bypass the rarity stat_mult system entirely (see
+# resources/items.py _build_unique_item).
+UNIQUE_ENHANCE_PRICE_MULT = 12.0
+
 
 def blacksmith_greeting(dialogues):
     term.print(random.choice(dialogues["greeting"]))
@@ -34,8 +40,9 @@ def enhance_item(player, dialogues, city_id):
     # 1. Build a unified pool of items tracking where they live
     enhanceable_pool = []
     
-    # Add player's equipped items first (Weapon, Armor, Accessory)
-    equipped_slots = ["weapon", "armor", "accessory1", "accessory2"]
+    # Add player's equipped items first (Weapon, Armor, Accessories)
+    equipped_slots = ["weapon", "armor", "accessory1", "accessory2",
+                      "accessory3"]
     for slot in equipped_slots:
         equipped_item = player.get("equipped", {}).get(slot)
         if equipped_item:
@@ -46,7 +53,7 @@ def enhance_item(player, dialogues, city_id):
         for slot in equipped_slots:
             equipped_item = ally.get("equipped", {}).get(slot)
             if equipped_item:
-                enhanceable_pool.append((True, ally["name"], equipped_item))
+                enhanceable_pool.append((True, display_name(ally), equipped_item))
             
     # Add unequipped equipment from inventory
     inv = player.get("inventory", [])
@@ -88,6 +95,14 @@ def enhance_item(player, dialogues, city_id):
         
     new_enhance = current_enhance + 1
     rarity_mult = ITEM_RARITY[item["rarity"]]["price_mult"]
+
+    # Unique gear is prestige smithing. Historically it fell through to the
+    # common price_mult (1.0) and could be pushed to its +5 cap at bargain
+    # prices — nonsense for the best items in the game and, since the Black
+    # Silence Gloves now scale with their enhance level, an exploit too.
+    # Charge a premium above legendary (8.0) instead.
+    if item.get("unique"):
+        rarity_mult = max(rarity_mult, UNIQUE_ENHANCE_PRICE_MULT)
     
     # Exponential cost scaling by enchant level: each +1 costs ~1.5× more than the last.
     # This closes the exploit where players could degrade rarity, enchant cheaply,
@@ -139,7 +154,8 @@ def fuse_scroll_with_item(player, dialogues, city_id):
     
     # Build combined pool of weapon slots for fusion targets
     enhanceable_pool = []
-    equipped_slots = ["weapon", "armor", "accessory1", "accessory2"]
+    equipped_slots = ["weapon", "armor", "accessory1", "accessory2",
+                      "accessory3"]
     for slot in equipped_slots:
         equipped_item = player.get("equipped", {}).get(slot)
         if equipped_item:
@@ -148,7 +164,7 @@ def fuse_scroll_with_item(player, dialogues, city_id):
         for slot in equipped_slots:
             equipped_item = ally.get("equipped", {}).get(slot)
             if equipped_item:
-                enhanceable_pool.append((True, ally["name"], equipped_item))
+                enhanceable_pool.append((True, display_name(ally), equipped_item))
     for idx, item in enumerate(inv):
         if item.get("type") == "equipment":
             enhanceable_pool.append((False, None, item))

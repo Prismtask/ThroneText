@@ -1,10 +1,17 @@
 """Shared helper functions for combat modules."""
 
 
+# Sentinel message returned by skill/exhibit/workshop executors when the acting
+# actor canceled target selection (Esc/0 or invalid input). Callers must treat
+# it as a cancel: reopen the action menu without consuming the turn or setting
+# cooldowns / consuming resources.
+ACTION_CANCELLED_MSG = "Action canceled."
+
+
 # ── Element / Crit tag maps ─────────────────────────────────────────────────
 
 ELEMENT_TAGS = {
-    "fire": "[FIRE]", "water": "[ICE]", "thunder": "[THUNDER]",
+    "fire": "[FIRE]", "water": "[WATER]", "thunder": "[THUNDER]",
     "wind": "[WIND]", "earth": "[EARTH]", "light": "[LIGHT]", "dark": "[DARK]",
     "physical": "[PHYSICAL]", "magical": "[MAGICAL]",
 }

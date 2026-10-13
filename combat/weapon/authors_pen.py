@@ -15,7 +15,7 @@ def _actor_has_authors_pen(actor):
     """Return the Author's Pen item dict if equipped in any accessory slot, else None."""
     equipment = actor.get("equipped", {})
     if isinstance(equipment, dict):
-        for slot in ("accessory1", "accessory2", "accessory"):
+        for slot in ("accessory1", "accessory2", "accessory3", "accessory"):
             acc = equipment.get(slot)
             if acc and acc.get("special") == "authors_pen":
                 return acc

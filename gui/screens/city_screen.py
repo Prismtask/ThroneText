@@ -15,7 +15,7 @@ from gui.widgets.hp_bar import HPBar
 from resources.cities import CITIES
 from character import player_max_hp
 from save_load import save_game
-from utils import format_time, advance_time
+from utils import display_name
 from events import format_date, get_event_queue_events
 from combat.combat_ui import _get_entity_buff_tags
 
@@ -28,6 +28,11 @@ class CityScreen(BaseScreen):
         self.sm.clear_history()
         self._update_top_bar()
         self.sm.clear_log()
+
+        # Vesper Erebus first contact (docs/event_horizon_design.md §6.1) —
+        # deferred so the city screen finishes building first.
+        if self.player:
+            self.after(700, self._maybe_event_horizon_intro)
 
         # Show any queued dungeon events — a level-up style popup displays
         # them (name, day, duration, description), while the session log
@@ -98,6 +103,12 @@ class CityScreen(BaseScreen):
         from gui.widgets.city_map import CityMapWidget
 
         positions = CITY_SERVICE_POSITIONS.get(self.city_id, {})
+        from time_blocks import is_service_open
+        closed_services = [
+            svc for svc in positions
+            if svc != "dungeon"
+            and not is_service_open(self.player, svc, self.city_id)
+        ]
 
         self._map_frame = tk.Frame(self.content, bg=Theme.BG_DARK,
                                    highlightthickness=1, highlightbackground=Theme.BORDER)
@@ -108,6 +119,7 @@ class CityScreen(BaseScreen):
             city_id=self.city_id,
             city=self.city,
             positions=positions,
+            closed_services=closed_services,
             on_service_click=self._open_service,
             on_dungeon_click=self._enter_dungeon,
         )
@@ -142,6 +154,7 @@ class CityScreen(BaseScreen):
             ("[I] Inventory", self._open_inventory),
             ("[K] Skill Book", self._open_skill_book),
             ("[M] World Map", self._open_world_map),
+            ("[W] Wait", self._do_wait),
             ("[S] Settings", self._open_settings),
             ("[Q] Save & Quit", self._save_and_quit),
             ("[?] Help", self._show_help),
@@ -153,6 +166,11 @@ class CityScreen(BaseScreen):
 
         # ── Keyboard shortcuts ─────────────────────────────────────────────
         self._setup_city_keys()
+
+        # ── Story beats ────────────────────────────────────────────────────
+        # Scheduled after build so navigation callbacks stay clean; fires on
+        # every city entry (travel, dungeon exits, post-floor, menu loads).
+        self.after(200, self._check_story_beats)
 
     def _setup_city_keys(self):
         """Bind keyboard shortcuts for city services and actions."""
@@ -176,6 +194,7 @@ class CityScreen(BaseScreen):
             "i": self._open_inventory,
             "k": self._open_skill_book,
             "m": self._open_world_map,
+            "w": self._do_wait,
             "d": self._enter_dungeon,
             "s": self._open_settings,
             "q": self._save_and_quit,
@@ -204,7 +223,11 @@ class CityScreen(BaseScreen):
 
     def _build_hero_card(self):
         """Show party status card — all members in one horizontal row: 
-        player + front allies + back allies. Front/back separated by a subtle divider."""
+        player + front allies + back allies. Front/back separated by a subtle divider.
+
+        Click-to-swap: clicking two ally cards swaps their positions in
+        player['party_order'] (front row ↔ bench). The player card is fixed.
+        """
         from combat.ally import (ensure_party_order, get_all_active_allies_including_defeated,
                                  get_all_reserve_allies_including_defeated)
         p = self.player
@@ -212,9 +235,27 @@ class CityScreen(BaseScreen):
         front_allies = get_all_active_allies_including_defeated(p)
         back_allies = get_all_reserve_allies_including_defeated(p)
 
+        # Click-to-swap state: absolute ally index awaiting a swap partner
+        self._swap_selected = None
+        self._member_blocks = {}  # absolute ally index -> card frame (highlight)
+
+        allies_list = p.get("allies", [])
+
+        def _abs_index(ally):
+            """Absolute index of an ally in player['allies'] (identity match)."""
+            for i, a in enumerate(allies_list):
+                if a is ally:
+                    return i
+            return None
+
         self._hero_card = tk.Frame(self.content, bg=Theme.BG_CARD, highlightthickness=1,
                                    highlightbackground=Theme.BORDER)
-        self._hero_card.pack(fill=tk.X, pady=(0, 10), padx=20)
+        # On refresh the map frame already exists, so keep the card above it.
+        map_frame = getattr(self, "_map_frame", None)
+        if map_frame is not None and map_frame.winfo_exists():
+            self._hero_card.pack(fill=tk.X, pady=(0, 10), padx=20, before=map_frame)
+        else:
+            self._hero_card.pack(fill=tk.X, pady=(0, 10), padx=20)
         card = self._hero_card  # alias for local use below
 
         # ── Collect all party members in order ─────────────────────────────
@@ -229,13 +270,14 @@ class CityScreen(BaseScreen):
             "color": Theme.ACCENT,
             "section": "player",
             "defeated": False,
+            "party_idx": None,  # player is fixed
         })
 
         # Front-row allies
         for ally in front_allies:
             defeated = ally.get("defeated") or ally.get("current_hp", 0) <= 0
             members.append({
-                "name": ally["name"],
+                "name": display_name(ally),
                 "level": ally.get("level", 1),
                 "hp": 0 if defeated else ally.get("current_hp", 0),
                 "max_hp": ally.get("max_hp", 1),
@@ -243,13 +285,14 @@ class CityScreen(BaseScreen):
                 "color": Theme.TEXT_DIM if defeated else Theme.TEXT,
                 "section": "front",
                 "defeated": defeated,
+                "party_idx": _abs_index(ally),
             })
 
         # Back-row allies (go beside front, after a divider)
         for ally in back_allies:
             defeated = ally.get("defeated") or ally.get("current_hp", 0) <= 0
             members.append({
-                "name": ally["name"],
+                "name": display_name(ally),
                 "level": ally.get("level", 1),
                 "hp": 0 if defeated else ally.get("current_hp", 0),
                 "max_hp": ally.get("max_hp", 1),
@@ -257,6 +300,7 @@ class CityScreen(BaseScreen):
                 "color": "#8b7355" if not defeated else "#555555",
                 "section": "back",
                 "defeated": defeated,
+                "party_idx": _abs_index(ally),
             })
 
         # ── Single horizontal party row ─────────────────────────────────────
@@ -285,7 +329,10 @@ class CityScreen(BaseScreen):
                     sep_frame.pack(side=tk.LEFT)
             last_section = m["section"]
 
-            block = tk.Frame(party_row, bg=Theme.BG_CARD)
+            # highlightthickness=2 reserved from the start so selecting a card
+            # only recolors the border without shifting the layout
+            block = tk.Frame(party_row, bg=Theme.BG_CARD,
+                             highlightthickness=2, highlightbackground=Theme.BG_CARD)
             block.pack(side=tk.LEFT, padx=(0 if i == 0 else 8, 0))
 
             name_color = m["color"]
@@ -328,12 +375,116 @@ class CityScreen(BaseScreen):
                      font=(Theme.FONT_FAMILY, 7),
                      anchor=tk.W).pack(anchor=tk.W)
 
+            # Click-to-swap registration (player card stays fixed)
+            if m.get("party_idx") is not None:
+                self._member_blocks[m["party_idx"]] = block
+                self._bind_party_card_clicks(block, m)
+
         # ── Gold row ──────────────────────────────────────────────────────
         gold = p.get("gold", 0)
         gold_frame = tk.Frame(card, bg=Theme.BG_CARD)
         gold_frame.pack(fill=tk.X, padx=10, pady=(4, 8))
         tk.Label(gold_frame, text=f"💰 {gold}g", bg=Theme.BG_CARD,
                  fg=Theme.TEXT, font=Theme.FONT_SMALL).pack(side=tk.LEFT)
+        if len(members) > 2:
+            tk.Label(gold_frame,
+                     text="Click two allies to swap positions",
+                     bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
+                     font=Theme.FONT_SMALL).pack(side=tk.RIGHT)
+
+    # ── Party position swap (click-to-swap) ──────────────────────────────
+
+    def _bind_party_card_clicks(self, widget, member):
+        """Recursively bind click handlers on a party member card.
+
+        Tk delivers mouse events to the deepest widget under the cursor, so
+        every child (labels, HP bar canvas) needs its own binding.
+        """
+        try:
+            widget.config(cursor="hand2")
+        except tk.TclError:
+            pass
+        widget.bind("<Button-1>", lambda e, m=member: self._on_party_member_click(m))
+        for child in widget.winfo_children():
+            self._bind_party_card_clicks(child, member)
+
+    def _on_party_member_click(self, member):
+        """Handle a click on a party member card.
+
+        First click selects the member (highlighted border); clicking a
+        second member swaps their positions in player['party_order'].
+        Clicking the selected member again deselects. The player is fixed.
+        """
+        idx = member.get("party_idx")
+        if idx is None:
+            return
+
+        if self._swap_selected is None:
+            self._swap_selected = idx
+            self._update_swap_highlights()
+            self.sm.log(f"Selected {member['name']} — click another ally to swap positions.")
+        elif self._swap_selected == idx:
+            self._swap_selected = None
+            self._update_swap_highlights()
+        else:
+            self._swap_party_positions(self._swap_selected, idx)
+
+    def _swap_party_positions(self, idx_a, idx_b):
+        """Swap two allies' slots in player['party_order'].
+
+        A pure position swap never changes the front/bench head-counts, so
+        no capacity validation is needed — the first get_active_limit()
+        positions are the front row, the next bench entries are the reserve.
+        """
+        from combat.ally import ensure_party_order, get_active_limit
+
+        p = self.player
+        ensure_party_order(p)
+        allies = p.get("allies", [])
+        order = p.get("party_order", [])
+
+        self._swap_selected = None
+
+        valid = (idx_a != idx_b and idx_a in order and idx_b in order
+                 and idx_a < len(allies) and idx_b < len(allies))
+        if not valid:
+            self._refresh_hero_card()
+            return
+
+        pos_a, pos_b = order.index(idx_a), order.index(idx_b)
+        order[pos_a], order[pos_b] = order[pos_b], order[pos_a]
+
+        name_a = display_name(allies[idx_a])
+        name_b = display_name(allies[idx_b])
+        limit = get_active_limit(p)
+        a_was_front = pos_a < limit
+        b_was_front = pos_b < limit
+
+        if a_was_front == b_was_front:
+            msg = f"{name_a} and {name_b} swap places."
+        else:
+            fwd, back = (name_a, name_b) if not a_was_front else (name_b, name_a)
+            msg = f"{fwd} steps forward! {back} moves to the back row."
+
+        self.sm.log(msg)
+        self._refresh_hero_card()
+
+    def _update_swap_highlights(self):
+        """Apply or clear the selection highlight on member cards."""
+        for idx, block in getattr(self, "_member_blocks", {}).items():
+            try:
+                if not block.winfo_exists():
+                    continue
+                color = Theme.ACCENT if idx == self._swap_selected else Theme.BG_CARD
+                block.config(highlightbackground=color)
+            except tk.TclError:
+                pass
+
+    def _refresh_hero_card(self):
+        """Rebuild the hero card in place (used after a position swap)."""
+        if hasattr(self, "_hero_card") and self._hero_card.winfo_exists():
+            self._hero_card.destroy()
+        self._build_hero_card()
 
     def _update_top_bar(self):
         if not self.player:
@@ -343,16 +494,25 @@ class CityScreen(BaseScreen):
         _cf = p.get("city_floors", {}).get(self.city_id, {})
         _cur = _cf.get("floor", 1)
         _max = _cf.get("max_floor", 1)
-        text = (
-            f"{p['name']} | {self.city['name']} | Floor {_cur}/{_max} | "
-            f"{format_date(p)} | {format_time(p)}"
-        )
+        from time_blocks import format_block_track
+        track = format_block_track(p, include_day=False)
+        segments = [p['name'], self.city['name'], f"Floor {_cur}/{_max}"]
+        if track:
+            segments.append(track)
+        segments.append(format_date(p))
+        text = " | ".join(segments)
         self.sm.update_top_bar(text)
 
     # ── Service handlers ──────────────────────────────────────────────────────
 
     def _open_service(self, service):
         """Open a facility in the GUI FacilityScreen wrapper."""
+        from time_blocks import is_service_open, service_closed_message
+        if not is_service_open(self.player, service, self.city_id):
+            msg = (service_closed_message(self.player, service, self.city_id)
+                   or "Closed right now.")
+            ok_dialog(self, service.replace("_", " ").title(), msg)
+            return
         # Port opens the World Map instead of the old terminal UI
         if service == "port":
             self._open_world_map()
@@ -369,6 +529,67 @@ class CityScreen(BaseScreen):
                 func_args=(self.player, self.city_id),
                 on_close=lambda _: self._after_facility(),
             )
+
+    def _do_wait(self):
+        """Wait: a brief moment (1 block) or a while (until the next phase)."""
+        confirm_dialog(
+            parent=self, title="Wait",
+            message=("How long would you like to wait?\n\n"
+                     "· A brief moment — pass a little time.\n"
+                     "· A while — pass until the next phase"
+                     " (from Night you simply greet the morning, exhausted)."),
+            on_yes=self._wait_brief,
+            on_no=self._wait_a_while,
+            yes_text="A Brief", no_text="A While",
+            on_close=lambda: None,      # X = cancel, do nothing
+        )
+
+    def _wait_brief(self):
+        """Pass one block; day rollover handles fatigue normally."""
+        import time_blocks
+        time_blocks.wait_blocks(self.player, 1)
+        self.sm.log("You wait a brief moment.")
+        self.sm.switch_to(CityScreen, push_history=False)
+
+    def _wait_a_while(self):
+        """Pass to the next phase (from Night: greet the morning, +1 fatigue)."""
+        import time_blocks
+        result = time_blocks.wait_to_next_phase(self.player)
+        if result is None:
+            # Wonderland time pocket — nothing passes here
+            self.sm.log("Time politely declines to pass in Wonderland.")
+        elif result == "morning":
+            self.sm.log("A while passes — you greet the morning, exhausted.")
+        else:
+            self.sm.log(f"A while passes — it is now {result}.")
+        self.sm.switch_to(CityScreen, push_history=False)
+
+    def _maybe_event_horizon_intro(self):
+        """Play Vesper's first-contact scene once the EH gate is met."""
+        if getattr(self, "_eh_intro_launched", False):
+            return
+        p = self.player
+        if not p or p.get("eh_intro_seen"):
+            return
+        if int(p.get("max_floor", 1) or 1) < 20:
+            return
+        if p.get("location") == "dungeon":
+            return
+        try:
+            if not self.winfo_exists():
+                return
+        except Exception:
+            return
+        self._eh_intro_launched = True
+        from gui.screens.facility_screen import FacilityScreen
+        from facilities.event_horizon_intro import event_horizon_intro_service
+        self.sm.switch_to(
+            FacilityScreen,
+            title="A Tear in the Sky",
+            func=event_horizon_intro_service,
+            func_args=(p, self.city_id),
+            on_close=lambda _: self.sm.switch_to(CityScreen, push_history=False),
+        )
 
     def _open_house(self):
         """Open the player's house in this city."""
@@ -392,6 +613,53 @@ class CityScreen(BaseScreen):
             self._launch_dummy_combat()
         else:
             self.sm.switch_to(CityScreen, push_history=False)
+
+    # ── Story beats ───────────────────────────────────────────────────────────
+
+    def _check_story_beats(self):
+        """Resolve quest state and deliver story beats on city entry.
+
+        Runs on every CityScreen entry — which covers travel arrivals, dungeon
+        exits, post-floor returns and menu loads, because every path funnels
+        back through CityScreen. Story never interrupts combat or dungeons.
+        """
+        if not self.winfo_exists() or not self.player:
+            return
+
+        import quests
+
+        # Resolve any state-based objectives (own a house, capture a girl...).
+        # Results are recorded in the session log + Journal — no popups.
+        messages = quests.update_quests(self.player)
+        for msg in messages:
+            self.sm.log(msg)
+
+        # Deliver the next story beat: the Archivist intro first, then queue.
+        flags = quests.ensure_quest_state(self.player)["flags"]
+        if not flags.get("intro_seen"):
+            self._open_story_beat("archivist_intro")
+            return
+        if quests.has_pending_story(self.player):
+            beat_id = quests.pop_pending_story(self.player)
+            if beat_id:
+                self._open_story_beat(beat_id)
+
+    def _open_story_beat(self, beat_id):
+        """Open a story conversation as an overlay over the city."""
+        from facilities.story_beats import get_story_beat
+        from gui.screens.story_screen import StoryScreen
+
+        func = get_story_beat(beat_id)
+        if func is None:
+            return
+        titles = {"archivist_intro": "A Message in Starlight"}
+        self.sm.push_overlay(
+            StoryScreen,
+            title=titles.get(beat_id, "Story"),
+            func=func,
+            func_args=(self.player,),
+            on_close=lambda _result: self.sm.dismiss_overlay(),
+        )
 
     def _launch_dummy_combat(self):
         """Launch a sparring match against the training dummy in CombatScreen."""
@@ -437,7 +705,6 @@ class CityScreen(BaseScreen):
 
     def _open_inventory(self):
         self.sm.log("Opening Inventory...")
-        advance_time(self.player, 30)
         from gui.screens.inventory_screen import InventoryScreen
         self.sm.switch_to(InventoryScreen)
 
@@ -519,6 +786,13 @@ class CityScreen(BaseScreen):
         for key in ("saved_dungeon_floor", "saved_dungeon_rooms", "saved_dungeon_room_index"):
             self.player.pop(key, None)
         self.player.pop("_dungeon_log", None)
+        # A stale wild-dungeon id must never hijack a city-floor run
+        self.player.pop("wild_dungeon_id", None)
+        for key in ("saved_wild_floor", "saved_wild_rooms", "saved_wild_room_index"):
+            self.player.pop(key, None)
+        # A stale Event Horizon gate must never hijack a city-floor run
+        # (the suspended run state itself is preserved).
+        self.player.pop("_eh_in_run", None)
 
         # ── Receptionist "leave" dialogue ─────────────────────────────────
         from city_dialogue import get_city_dialogues
@@ -713,9 +987,8 @@ class CityScreen(BaseScreen):
         (handled in dungeon.py) or on floors 46/50 (by design).
         """
         p = self.player
-        p.pop("pandemonium_mode", None)
-        from pandemonium_curses import clear_curse
-        clear_curse(p)
+        from pandemonium_curses import end_pandemonium_run
+        end_pandemonium_run(p)
         # Reset High Tide stacks
         p["cutlass_high_tide_stacks"] = 0
         p.pop("cutlass_high_tide_floor", None)
@@ -738,14 +1011,22 @@ class CityScreen(BaseScreen):
             self.sm.player = None
             from gui.screens.main_menu_screen import MainMenuScreen
             self.sm.switch_to(MainMenuScreen)
-        else:
-            # Floor cleared — show post-floor menu
+        elif result is True:
+            # explore_dungeon() returns True when a floor was actually cleared.
             self._show_post_floor_menu()
+        else:
+            # "timeout" / "error" / None — the run was interrupted (e.g. a
+            # combat overlay crashed). Do NOT treat this as a floor clear:
+            # that used to pop the "Floor Cleared!" dialog on a failed fight.
+            self._cleanup_dungeon_exit()
+            self.sm.log(f"Dungeon run interrupted ({result}). Returning to city.",
+                        category="warning")
+            self.sm.switch_to(CityScreen, push_history=False)
 
     def _show_post_floor_menu(self):
         """Show the 3-option menu after clearing a floor."""
         import tkinter as tk
-        from utils import format_time
+        from time_blocks import format_block_track
         from character import player_max_hp
 
         p = self.player
@@ -756,7 +1037,7 @@ class CityScreen(BaseScreen):
         dialog = tk.Toplevel(root)
         dialog.title("Floor Cleared!")
         dialog.transient(root)
-        dialog.grab_set()
+        dialog.withdraw()   # build offscreen to avoid a blank flash
         dialog.resizable(False, False)
         dialog.configure(bg=Theme.BG_DARK)
 
@@ -789,9 +1070,11 @@ class CityScreen(BaseScreen):
         # Stats
         stats_text = (
             f"HP: {p.get('current_hp', 0)}/{player_max_hp(p)}\n"
-            f"Gold: {p.get('gold', 0)}\n"
-            f"Time: {format_time(p)}"
+            f"Gold: {p.get('gold', 0)}"
         )
+        _track = format_block_track(p)
+        if _track:
+            stats_text += f"\nTime: {_track}"
         tk.Label(
             dialog,
             text=stats_text,
@@ -831,6 +1114,11 @@ class CityScreen(BaseScreen):
         ).pack(pady=3)
 
         dialog.protocol("WM_DELETE_WINDOW", lambda: _choose("city"))
+
+        # Show only once the content is built (prevents a blank window flash)
+        dialog.deiconify()
+        dialog.lift()
+        dialog.grab_set()
         dialog.wait_window()
 
         opt = choice[0]
@@ -873,6 +1161,11 @@ class CityScreen(BaseScreen):
 
     def _handle_death(self):
         from gui.screens.death_screen import DeathScreen
+
+        # Safety net: death always ends the run — scrub Pandemonium run state
+        # so no stale curse can survive into other dungeons or the next save.
+        from pandemonium_curses import end_pandemonium_run
+        end_pandemonium_run(self.player)
 
         def _continue_game():
             from utils import apply_death_penalty
