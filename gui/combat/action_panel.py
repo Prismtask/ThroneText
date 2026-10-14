@@ -48,7 +48,9 @@ class ActionPanel(tk.Frame):
         self.btn_container = tk.Frame(self, bg=Theme.BG_DARK)
         self.btn_container.pack(fill=tk.X)
 
-        # Target-mode instruction label (hidden by default)
+        # Target-mode instruction label — PACKED ALWAYS (its one-line slot is
+        # reserved even when idle) so entering/leaving target selection never
+        # changes the panel height. Its text is cleared when not targeting.
         self.target_instruction = tk.Label(
             self,
             text="",
@@ -56,7 +58,9 @@ class ActionPanel(tk.Frame):
             fg=Theme.ACCENT,
             font=Theme.FONT_BOLD,
             anchor=tk.W,
+            height=1,
         )
+        self.target_instruction.pack(fill=tk.X, pady=(4, 4), before=self.btn_container)
 
         # Cooldown messages — ALWAYS two lines tall, even when empty, so the
         # panel height never jumps between 1-line and 2-line cooldown lists
@@ -78,6 +82,28 @@ class ActionPanel(tk.Frame):
         # 700px cap — uses the space freed by the HUD rework.
         self._cooldown_wrap = 700
         self.bind("<Configure>", self._on_panel_configure)
+
+        # ── Reserve the panel's final height from the very first frame ────
+        # The combat screen sizes the Continue/Leave Battle slot from
+        # `reserved_height`, and the first prompt of a fight ('Press Enter to
+        # begin...') arrives before set_actions() ever runs — so the two
+        # button rows must be reserved here too, using a probe button to
+        # measure the real row height.
+        probe = tk.Button(
+            self.btn_container, text="X",
+            font=Theme.FONT_BOLD, relief=tk.RAISED, borderwidth=2,
+        )
+        self.update_idletasks()
+        row_h = probe.winfo_reqheight() + 4  # + button pady (2 top/bottom)
+        probe.destroy()
+        for _ in range(self.MIN_ROWS):
+            spacer = tk.Frame(self.btn_container, bg=self.btn_container["bg"], height=row_h)
+            spacer.pack(fill=tk.X, pady=1)
+
+        # Canonical height — constant for the panel's whole lifetime;
+        # set_actions() rebuilds its rows at exactly this size.
+        self.update_idletasks()
+        self.reserved_height = self.winfo_reqheight()
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -182,7 +208,7 @@ class ActionPanel(tk.Frame):
         )
         self.config(bg=Theme.BG_DARK)
         self.btn_container.config(bg=Theme.BG_DARK)
-        self.target_instruction.pack_forget()
+        self.target_instruction.config(text="")
         self.cooldown_label.config(text="")
 
         choices = [
@@ -219,19 +245,18 @@ class ActionPanel(tk.Frame):
         """Enable/disable target selection mode."""
         if enabled:
             self.section_label.config(text=prompt, fg=Theme.ACCENT)
-            # Show instruction label with keyboard + click hints
+            # Instruction label is always packed (slot reserved) — set text only
             target_type = "ally" if is_ally_target else "enemy"
             self.target_instruction.config(
                 text=f"▶ Press 1–9 or click a {target_type} to select target  (Esc to cancel)",
             )
-            self.target_instruction.pack(fill=tk.X, pady=(4, 4), before=self.btn_container)
             # Disable non-target actions, keep Cancel implicit
             for key, btn in self._buttons.items():
                 if key not in ("0", "cancel"):
                     btn.config(state=tk.DISABLED)
         else:
             self.section_label.config(text="ACTIONS", fg=Theme.TEXT_DIM)
-            self.target_instruction.pack_forget()
+            self.target_instruction.config(text="")
             self.config(bg=Theme.BG_DARK)
             self.btn_container.config(bg=Theme.BG_DARK)
             for btn in self._buttons.values():

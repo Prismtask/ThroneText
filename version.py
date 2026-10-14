@@ -15,7 +15,7 @@ Bump procedure:
   3. Run tests/_diag_version_consistency.py — expect "version consistency OK".
 """
 
-GAME_VERSION = "0.1.8.0"
+GAME_VERSION = "0.1.8.1"
 VERSION_NAME = "The Distant Journey"
 
 # Pre-1.0 beta: features, balance, and save formats may change between builds.

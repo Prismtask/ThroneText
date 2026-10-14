@@ -99,6 +99,32 @@ class ChangelogScreen(BaseScreen):
         # _add_version() block ABOVE this one and update version.py. The
         # newest header here must always match version.py's VERSION_DISPLAY.
         # Checked by tests/_diag_version_consistency.py.
+        self._add_version("v0.1.8.1 — The Distant Journey")
+
+        self._add_section("Combat UI")
+        self._add_bullet("The combat screen finally holds still: the action panel keeps one fixed "
+                         "height whether your turn fills one row of skills or two, whether cooldowns "
+                         "are recharging or quiet, and whether you or an ally is acting. Cooldown "
+                         "lists also wrap at the panel's real width now instead of a fixed 700px "
+                         "cap, using the space the HUD rework freed instead of stacking into extra "
+                         "rows.")
+        self._add_bullet("The action header just says ACTIONS — for you and for every ally — instead "
+                         "of swapping to a name banner on their turns. Whose turn it is still reads "
+                         "clearly from the turn-order bar and the acting-card glow.")
+        self._add_bullet("Target selection sits in the same-sized panel: the \"press 1–9 or click a "
+                         "target\" hint line keeps its own reserved row, so the screen no longer "
+                         "shifts when you pick a skill and go hunting for a target.")
+        self._add_bullet("Every prompt button matches the panel's footprint too: encounter intros "
+                         "(\"Press Enter to face…\"), reading a skill description (\"Press Enter to "
+                         "use it…\"), round breaks, and the final Leave Battle button all fill the "
+                         "exact height the action panel reserves. The bottom of the screen is the "
+                         "same shape from the first prompt to the victory banner.")
+        self._add_bullet("Use item now reads in two columns — consumables and capture nets run "
+                         "left-to-right (1, 2 across the first row, 3, 4 on the next) inside the "
+                         "same reserved slot, with both columns scrolling together. The numbers "
+                         "still map one-to-one to what the engine expects, and the capture-net "
+                         "picker shares the layout.")
+
         self._add_version("v0.1.8.0 — The Distant Journey")
 
         self._add_section("Combat & Equipment")

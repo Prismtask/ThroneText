@@ -274,8 +274,13 @@ class CombatScreen(BaseScreen):
         self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         # ── Continue button (hidden by default) ──────────────────────────────
+        # Wrapped in a fixed-height container: 'Continue' / 'Leave Battle'
+        # keep the exact height of the action panel, so switching between
+        # prompts and the action menu never shifts the HUD (2026-10-14).
+        self.continue_wrap = tk.Frame(self, bg=Theme.BG_DARK)
+        self.continue_wrap.pack_propagate(False)  # height is set explicitly
         self.continue_btn = tk.Button(
-            self,
+            self.continue_wrap,
             text="▶ Continue",
             bg=Theme.ACCENT,
             fg=Theme.TEXT_HEADER,
@@ -285,40 +290,62 @@ class CombatScreen(BaseScreen):
             cursor="hand2",
             command=self._on_continue_click,
         )
-        # Don't pack yet — shown only when needed
+        self.continue_btn.pack(expand=True)
+        # Don't pack the wrapper yet — shown only when needed
 
         # ── Item selection list (hidden by default) ──────────────────────────
+        # TWO columns, read left→right like the action buttons, shown in a
+        # slot the same height as the action panel (see _show_item_panel).
+        # Frame height is set explicitly per show — hence propagation off.
         self.item_frame = tk.Frame(self, bg=Theme.BG_DARK)
-        self.item_listbox = tk.Listbox(
-            self.item_frame,
-            bg=Theme.BG_MID,
-            fg=Theme.TEXT,
-            font=Theme.FONT,
-            selectmode=tk.SINGLE,
-            height=6,
-        )
-        self.item_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        item_scroll = tk.Scrollbar(self.item_frame, command=self.item_listbox.yview)
-        item_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.item_listbox.config(yscrollcommand=item_scroll.set)
+        self.item_frame.pack_propagate(False)
+        self.item_frame.grid_propagate(False)
+        self.item_frame.rowconfigure(0, weight=1)  # lists fill the slot height
+        self.item_frame.columnconfigure(0, weight=1, uniform="itemcols")
+        self.item_frame.columnconfigure(1, weight=1, uniform="itemcols")
 
+        def _item_listbox(parent):
+            box = tk.Listbox(
+                parent,
+                bg=Theme.BG_MID,
+                fg=Theme.TEXT,
+                font=Theme.FONT,
+                selectmode=tk.SINGLE,
+                height=6,
+            )
+            box.bind("<<ListboxSelect>>", self._on_item_select)
+            box.bind("<MouseWheel>", self._on_item_wheel)
+            return box
+
+        self.item_listbox = _item_listbox(self.item_frame)
+        self.item_listbox.grid(row=0, column=0, sticky="nsew", padx=(0, 2))
+        self.item_listbox2 = _item_listbox(self.item_frame)
+        self.item_listbox2.grid(row=0, column=1, sticky="nsew", padx=(0, 2))
+
+        item_scroll = tk.Scrollbar(self.item_frame, command=self._on_item_scroll)
+        item_scroll.grid(row=0, column=3, sticky="ns")
+        self.item_listbox.config(yscrollcommand=item_scroll.set)
+        self.item_listbox2.config(yscrollcommand=item_scroll.set)
+
+        item_btns = tk.Frame(self.item_frame, bg=Theme.BG_DARK)
+        item_btns.grid(row=0, column=2, sticky="ns", padx=(4, 0))
         self.item_confirm_btn = tk.Button(
-            self.item_frame,
+            item_btns,
             text="Use Item",
             bg=Theme.ACCENT,
             fg=Theme.TEXT_HEADER,
             font=Theme.FONT_BOLD,
             command=self._on_item_confirmed,
         )
+        self.item_confirm_btn.pack(side=tk.LEFT, padx=4)
         self.item_cancel_btn = tk.Button(
-            self.item_frame,
+            item_btns,
             text="Cancel",
             bg=Theme.BUTTON_BG,
             fg=Theme.BUTTON_FG,
             font=Theme.FONT_BOLD,
             command=self._on_item_cancelled,
         )
-        self.item_confirm_btn.pack(side=tk.LEFT, padx=4)
         self.item_cancel_btn.pack(side=tk.LEFT, padx=4)
 
         # ── Keyboard bindings ────────────────────────────────────────────────
@@ -394,13 +421,13 @@ class CombatScreen(BaseScreen):
         key = event.char.lower()
 
         # If we're in continue mode, Enter triggers continue
-        if self.continue_btn.winfo_ismapped():
+        if self.continue_wrap.winfo_ismapped():
             if event.keysym == "Return" or event.keysym == "KP_Enter":
                 if hasattr(self, '_handle_result_pending'):
                     self._finish_combat()
                 else:
                     self.io.send_input("")
-                    self.continue_btn.pack_forget()
+                    self.continue_wrap.pack_forget()
                     self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
             return
 
@@ -647,14 +674,16 @@ class CombatScreen(BaseScreen):
         self._active_ally = self._resolve_active_ally(context)
 
         if self._pending_input_mode == "continue":
-            # Show Continue button, hide actions
+            # Continue button lives in a slot the same height as the action
+            # panel — battle intros, skill descriptions ('Press Enter to use
+            # it...') and round pauses no longer resize the HUD.
             self._active_ally = None  # Continue prompts are never per-ally
             self.action_panel.pack_forget()
-            self.continue_btn.pack(fill=tk.X, padx=10, pady=(0, 10))
+            self._show_continue("▶ Continue", self._on_continue_click)
 
         elif self._pending_input_mode == "action":
             # Show action buttons for the current combatant (player or ally)
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.item_frame.pack_forget()
             self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
             self.renderer.clear_target_highlight()
@@ -667,7 +696,7 @@ class CombatScreen(BaseScreen):
 
         elif self._pending_input_mode == "enemy_target":
             # Refresh HUD first to ensure frames match the current (pruned) enemy list
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.item_frame.pack_forget()
             self._refresh_hud()
             # Build list of alive enemy indices for target badges and a mapping
@@ -684,7 +713,7 @@ class CombatScreen(BaseScreen):
 
         elif self._pending_input_mode == "capture_target":
             # Refresh HUD first to ensure frames match the current enemy list
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.item_frame.pack_forget()
             self._refresh_hud()
             # Build list of alive monster-girl enemy indices for target badges.
@@ -700,7 +729,7 @@ class CombatScreen(BaseScreen):
 
         elif self._pending_input_mode == "ally_target":
             # Refresh HUD to ensure party frames are up-to-date
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.item_frame.pack_forget()
             self._refresh_hud()
             # The engine numbers its prompt list over [player] + ALL allies
@@ -735,7 +764,7 @@ class CombatScreen(BaseScreen):
         elif self._pending_input_mode == "ally_switch":
             # Ally is switching with a reserve party member.
             # The renderer shows reserve allies in the enemy column (switch_mode=True).
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.item_frame.pack_forget()
             self._refresh_hud()
             # Build target mapping for reserve allies shown in enemy column
@@ -748,19 +777,19 @@ class CombatScreen(BaseScreen):
 
         elif self._pending_input_mode == "item":
             # Show item selection UI (uses player inventory; ally turns use same items)
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.action_panel.pack_forget()
             self._show_item_selection()
 
         elif self._pending_input_mode == "capture_net_select":
             # Show capture-net-only selection UI
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.action_panel.pack_forget()
             self._show_capture_net_selection()
 
         elif self._pending_input_mode == "capture_choice":
             # Capture duplicate menu: show Sell / Release / Bond as action buttons
-            self.continue_btn.pack_forget()
+            self.continue_wrap.pack_forget()
             self.item_frame.pack_forget()
             self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
             self.action_panel.set_capture_choice_actions(self._on_action_click)
@@ -1071,15 +1100,11 @@ class CombatScreen(BaseScreen):
 
         self.action_panel.pack_forget()
         self.item_frame.pack_forget()
-        self.continue_btn.config(
-            text="▶ Leave Battle",
-            command=lambda: self._finish_combat(),
-        )
-        self.continue_btn.pack(fill=tk.X, padx=10, pady=(0, 10))
+        self._show_continue("▶ Leave Battle", self._finish_combat)
 
     def _finish_combat(self):
         """Proceed after combat ends — dismiss overlay (result already delivered)."""
-        self.continue_btn.pack_forget()
+        self.continue_wrap.pack_forget()
         # Result was already delivered to the dungeon thread in _handle_result.
         # Just clean up the UI.
         if self.is_overlay:
@@ -1162,10 +1187,21 @@ class CombatScreen(BaseScreen):
         self.io.send_input(key)
         self.action_panel.disable_all()
 
+    def _show_continue(self, text: str, command):
+        """Show the Continue/Leave button in an action-panel-height slot.
+
+        The slot is sized from the action panel's canonical reserved height,
+        so encounter intros, skill descriptions ('Press Enter to use it...'),
+        target selection and the end-of-combat button never move the HUD.
+        """
+        self.continue_wrap.config(height=self.action_panel.reserved_height)
+        self.continue_btn.config(text=text, command=command)
+        self.continue_wrap.pack(fill=tk.X, padx=10, pady=(0, 10))
+
     def _on_continue_click(self):
         """Handle Continue button click — same as pressing Enter."""
         self.io.send_input("")
-        self.continue_btn.pack_forget()
+        self.continue_wrap.pack_forget()
         self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
 
     def _on_enemy_click(self, index: int):
@@ -1207,11 +1243,28 @@ class CombatScreen(BaseScreen):
             party.append(ally)
         return party
 
-    def _show_item_selection(self):
-        """Populate and show the item selection listbox."""
-        self.item_listbox.delete(0, tk.END)
-        self._item_refs = []
+    def _populate_item_columns(self, entries):
+        """Fill the two item columns row-major (1,2 across / 3,4 / ...).
 
+        `entries` is a list of (inventory_index, item, label). An entry's
+        display index = row*2 + column — the engine numbers its menu in the
+        same order, so input = display index + 1.
+        """
+        self.item_listbox.delete(0, tk.END)
+        self.item_listbox2.delete(0, tk.END)
+        self._item_refs = []
+        for display_idx, (true_idx, item, label) in enumerate(entries):
+            box = self.item_listbox if display_idx % 2 == 0 else self.item_listbox2
+            box.insert(tk.END, f"{display_idx + 1}. {label}")
+            self._item_refs.append((true_idx, item))
+
+    def _show_item_panel(self):
+        """Pack the item slot at the action panel's reserved height."""
+        self.item_frame.config(height=self.action_panel.reserved_height)
+        self.item_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+    def _show_item_selection(self):
+        """Populate and show the item selection columns."""
         combat_items = [
             (idx, item) for idx, item in enumerate(self.player.get("inventory", []))
             if item.get("type") in ["consumable", "utility"]
@@ -1222,19 +1275,16 @@ class CombatScreen(BaseScreen):
             self.io.send_input("0")
             return
 
-        for display_idx, (true_idx, item) in enumerate(combat_items):
+        entries = []
+        for true_idx, item in combat_items:
             qty = item.get("count", 1)
             qty_str = f" x{qty}" if qty > 1 else ""
-            self.item_listbox.insert(tk.END, f"{display_idx + 1}. {item['name']}{qty_str}")
-            self._item_refs.append((true_idx, item))
-
-        self.item_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+            entries.append((true_idx, item, f"{item['name']}{qty_str}"))
+        self._populate_item_columns(entries)
+        self._show_item_panel()
 
     def _show_capture_net_selection(self):
-        """Populate and show the item selection listbox with only capture nets."""
-        self.item_listbox.delete(0, tk.END)
-        self._item_refs = []
-
+        """Populate and show the item selection columns with only capture nets."""
         nets = [
             (idx, item) for idx, item in enumerate(self.player.get("inventory", []))
             if item.get("capture_net")
@@ -1245,21 +1295,44 @@ class CombatScreen(BaseScreen):
             self.io.send_input("0")
             return
 
-        for display_idx, (true_idx, net) in enumerate(nets):
+        entries = []
+        for true_idx, net in nets:
             bonus = net.get("rarity_mult_bonus", 25)
             qty = net.get("count", 1)
             qty_str = f" x{qty}" if qty > 1 else ""
-            self.item_listbox.insert(tk.END, f"{display_idx + 1}. {net['name']} (+{bonus} catch){qty_str}")
-            self._item_refs.append((true_idx, net))
+            entries.append((true_idx, net, f"{net['name']} (+{bonus} catch){qty_str}"))
+        self._populate_item_columns(entries)
+        self._show_item_panel()
 
-        self.item_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+    def _on_item_select(self, event):
+        """Keep the two item columns mutually exclusive."""
+        source = event.widget
+        other = self.item_listbox2 if source is self.item_listbox else self.item_listbox
+        if source.curselection():
+            other.selection_clear(0, tk.END)
+
+    def _on_item_scroll(self, *args):
+        """Scroll both item columns together so their rows stay aligned."""
+        self.item_listbox.yview(*args)
+        self.item_listbox2.yview(*args)
+
+    def _on_item_wheel(self, event):
+        """Mouse wheel: scroll both item columns together."""
+        delta = -1 * (event.delta // 120)
+        self.item_listbox.yview_scroll(delta, "units")
+        self.item_listbox2.yview_scroll(delta, "units")
+        return "break"
 
     def _on_item_confirmed(self):
-        """Player confirmed item selection."""
-        selection = self.item_listbox.curselection()
-        if not selection:
+        """Player confirmed item selection (from either column)."""
+        idx = None
+        for col, box in enumerate((self.item_listbox, self.item_listbox2)):
+            sel = box.curselection()
+            if sel:
+                idx = sel[0] * 2 + col  # row-major display index
+                break
+        if idx is None:
             return
-        idx = selection[0]
         self.io.send_input(str(idx + 1))
         self.item_frame.pack_forget()
 
