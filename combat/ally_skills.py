@@ -716,10 +716,10 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         from combat.stats import roll_skill_dodge, roll_accuracy_penalty
         if roll_skill_dodge(target):
             msg_parts.append(f"  💨 {target['name']} reads the strike and slips aside!")
-            return 0
+            return 0, False
         if roll_accuracy_penalty(target):
             msg_parts.append(f"  💨 {target['name']} deflects {display_name(ally)}'s attack!")
-            return 0
+            return 0, False
         armor = 0 if ignore_armor else target.get("con_mod", 0)
         for debuff in target.get("active_debuffs", []):
             if debuff.get("type") == "sunder":

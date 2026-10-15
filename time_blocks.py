@@ -14,7 +14,8 @@ Key rules (rev 3 design):
     next day's blocks (the day rolls at the boundary).
   - A day ends by Sleep (Night only, clears fatigue) or by exhaustion
     (24 blocks spent → +1 fatigue stack, cap 3).
-  - Fatigue stacks are suppressed in Pandemonium / Event Horizon runs.
+  - Fatigue stacks accrue everywhere — including Pandemonium (rev 3.5) —
+    except inside Event Horizon runs.
   - Wonderland is a **time pocket**: block costs are nullified and the
     outside day is untouched (exit shows the same day/blocks as entry).
   - Wait ("a brief moment") passes **one block** at any phase; waiting
@@ -326,9 +327,11 @@ def migrate_legacy_time_to_blocks(player):
 # ── Day rollover ────────────────────────────────────────────────────────────
 
 def _fatigue_suppressed(player):
-    """Fatigue stacks don't accumulate inside Pandemonium / EH runs (§10)."""
-    if player.get("pandemonium_mode"):
-        return True
+    """Fatigue stacks don't accumulate inside Event Horizon runs (§10).
+
+    Pandemonium accrues fatigue as of rev 3.5 (player call) — only EH's
+    frozen clock keeps stacks out.
+    """
     try:
         from event_horizon import in_run
         return bool(in_run(player))
@@ -407,8 +410,8 @@ def end_day(player, slept):
     """End the current day now.
 
     slept=True (inn/home Sleep) clears all fatigue stacks; exhaustion
-    (slept=False) adds one, unless suppressed (Pandemonium/EH). Wonderland
-    is a time pocket — the outside day is untouched.
+    (slept=False) adds one, unless suppressed (Event Horizon only).
+    Wonderland is a time pocket — the outside day is untouched.
     """
     if player.get("wonderland_active"):
         return

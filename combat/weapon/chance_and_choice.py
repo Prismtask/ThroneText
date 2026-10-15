@@ -12,7 +12,13 @@ Per-action state lives in the caller's damage closure::
 Basic attacks (one damage instance per action) may pass ``state=None`` —
 the roll then happens per call, which is still once per action.
 
-Applies to direct damaging actions only (not DoTs, heals, or traps).
+Coverage (rev 3.5): every direct damaging action by the wearer — basic
+attacks, skills, workshop/Furioso volleys, weapon-kit bursts (Cutlass
+riposte, Jade discharges, Palette exhibits/Signature/Spectrum), and
+wedding counters / retributions. Multi-hit volleys and exhibits share one
+roll via the state dict. Exempt: DoTs and burn ticks, heals, and riders
+that piggyback on a host attack which already rolled (brush strokes /
+Pigment Explosion).
 """
 
 import random
@@ -46,10 +52,12 @@ def apply_chance_and_choice(actor, damage, state=None):
 
     if random.random() < LOW_CHANCE:
         mult = LOW_MULT
-        c_print("  🪙 The coin lands on its edge — disaster! (damage ×0.25)")
+        c_print("  🪙 Chance and Choice — DISASTER! The coin fails you — "
+                "damage reduced (×0.25).")
     else:
         mult = HIGH_MULT
-        c_print("  🪙 The coin lands true — fortune! (damage ×1.75)")
+        c_print("  🪙 Chance and Choice — FORTUNE! The coin favors you — "
+                "damage boosted (×1.75).")
     if state is not None:
         state["rolled"] = True
         state["mult"] = mult

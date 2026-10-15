@@ -142,9 +142,10 @@ def get_effective_attribute(player, attr_name):
             total = int(total * (1.0 - min(0.95, debuff.get("value", 0))))
             break
 
-    # --- Fatigue (§5): −1 all stats per stack (suppressed in Pande/EH) ---
+    # --- Fatigue (§5): −1 all stats per stack (EH runs only — Pande
+    # penalizes as of rev 3.5) ---
     fatigue = int(player.get("fatigue_stacks", 0) or 0)
-    if fatigue and not player.get("pandemonium_mode") and not player.get("_eh_in_run"):
+    if fatigue and not player.get("_eh_in_run"):
         total -= fatigue
 
     return total

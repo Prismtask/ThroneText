@@ -71,6 +71,8 @@ def trigger_divine_lament(actor, enemies, source, is_player=True):
         return
 
     dmg = _compute_divine_lament_damage(actor, pins)
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    dmg = apply_chance_and_choice(actor, dmg)   # one flip for the burst
 
     c_print("\n" + "✦" * 55)
     c_print("  ☁ DIVINE LAMENT ☁")
@@ -105,6 +107,8 @@ def trigger_wedge_backlash(actor, enemies, attacker=None, source="", is_player=T
         return
 
     dmg = _compute_wedge_backlash_damage(actor, pins)
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    dmg = apply_chance_and_choice(actor, dmg)   # one flip for the burst
 
     # Determine target
     target = attacker

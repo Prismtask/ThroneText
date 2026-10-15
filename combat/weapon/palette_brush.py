@@ -482,8 +482,11 @@ def execute_impasto_exhibit(actor, enemies, stats, is_player=True):
     element = stance_el or "magical"
     color = ELEMENT_TO_COLOR.get(stance_el)
     msgs = ["🖌️  EXHIBIT: IMPASTO — the canvas floods in one thick stroke!"]
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    _cac_state = {"rolled": False, "mult": 1.0}   # one flip for the exhibit
     for target in [e for e in enemies if e.get("hp", 0) > 0]:
         dmg = _exhibit_roll(actor, target, 1.0, element, False, stats)
+        dmg = apply_chance_and_choice(actor, dmg, _cac_state)
         if dmg > 0:
             target["hp"] = max(0, target["hp"] - dmg)
         msgs.append(format_damage_msg(actor["name"], target["name"], dmg, element=element, skill_name="Impasto"))
@@ -516,8 +519,11 @@ def execute_chiaroscuro_exhibit(actor, enemies, stats, is_player=True):
 
     msgs = ["🌗  EXHIBIT: CHIAROSCURO — light and shadow strike as one!"]
     total = 0
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    _cac_state = {"rolled": False, "mult": 1.0}   # one flip for both hues
     for element in ("light", "dark"):
         dmg = _exhibit_roll(actor, target, 1.1, element, True, stats)
+        dmg = apply_chance_and_choice(actor, dmg, _cac_state)
         total += max(0, dmg)
         if dmg > 0:
             target["hp"] = max(0, target["hp"] - dmg)
@@ -555,7 +561,9 @@ def execute_signature_exhibit(actor, enemies, stats, is_player=True):
     msgs.append("🖋️  EXHIBIT: SIGNATURE — your name in seven colors.")
     msgs.append("=" * 50)
 
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
     dmg = _exhibit_roll(actor, target, 3.0, element, False, stats)
+    dmg = apply_chance_and_choice(actor, dmg)   # one flip for the exhibit
     if dmg > 0:
         target["hp"] = max(0, target["hp"] - dmg)
     msgs.append(format_damage_msg(actor["name"], target["name"], dmg, element=element, skill_name="Signature"))

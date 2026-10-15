@@ -104,6 +104,8 @@ def fire_palette_signature(ally, player, enemies, on_kill=None):
     dmg = int(base * SIGNATURE_MULT)  # ignores defense entirely
     element = get_palette_ally_color_element(ally)
     dmg = calculate_elemental_damage(dmg, ally, target, element)
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    dmg = apply_chance_and_choice(ally, dmg)   # one flip for the Signature
     target["hp"] = max(0, target["hp"] - dmg)
 
     msgs = [format_damage_msg(display_name(ally), target["name"], dmg,
@@ -132,6 +134,8 @@ def palette_spectrum_attack(ally, player, enemies):
     elements = ["fire", "water", "thunder", "wind", "earth", "light", "dark"]
 
     msgs = [f"  🌈 {display_name(ally)} scatters a Spectrum of three colors!"]
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    _cac_state = {"rolled": False, "mult": 1.0}   # one flip for all 3 hits
     for _ in range(SPECTRUM_HITS):
         if target["hp"] <= 0:
             break
@@ -139,6 +143,7 @@ def palette_spectrum_attack(ally, player, enemies):
         base = random.randint(4, 10) + scaling
         dmg = max(0, int(base * SPECTRUM_MULT) - target.get("con_mod", 0))
         dmg = calculate_elemental_damage(dmg, ally, target, element)
+        dmg = apply_chance_and_choice(ally, dmg, _cac_state)
         if dmg > 0:
             target["hp"] = max(0, target["hp"] - dmg)
         msgs.append(format_damage_msg(display_name(ally), target["name"], max(0, dmg),

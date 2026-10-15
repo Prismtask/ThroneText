@@ -124,6 +124,53 @@ class ChangelogScreen(BaseScreen):
                          "same reserved slot, with both columns scrolling together. The numbers "
                          "still map one-to-one to what the engine expects, and the capture-net "
                          "picker shares the layout.")
+        self._add_bullet("The turn-order bar finally keeps its promise in every superboss fight: "
+                         "it was quietly falling back to a speed preview that parked you, then "
+                         "your allies, then the boss, while the real initiative rolled underneath. "
+                         "Each round now feeds the bar its actual rolled order — the acting "
+                         "combatant lights up in the slot where they really act — and the "
+                         "numbered speed list stops leaking into the combat log.")
+
+        self._add_section("Combat & Equipment")
+        self._add_bullet("Chance and Choice now rides every kit, not just basic attacks: a "
+                         "workshop volley or Furioso flips the coin once for all its hits, and "
+                         "Cutlass ripostes, Tarnished Jade discharges, Palette's exhibits and "
+                         "Spectrum, and wedding counters and retributions all call heads or "
+                         "tails too — one flip per action, every time.")
+        self._add_bullet("Hallucination fights no longer scramble your party: the solo illusion "
+                         "parks your allies to face you alone, and your front/bench arrangement "
+                         "now comes back exactly as you set it — it used to quietly reset the "
+                         "party order the moment the next real fight rebuilt it.")
+        self._add_bullet("The illusion hands you back to the log when it ends: \"The room "
+                         "still awaits...\" appears and waits for your word — read the "
+                         "aftermath and your companions' lines in the dungeon log, then walk "
+                         "into the real room instead of crashing straight from one fight into "
+                         "the next.")
+
+        self._add_section("Time Rework")
+        self._add_bullet("Pandemonium finally feels the day: fatigue stacks accrue, Night rolls "
+                         "the same hallucinations, and every stack dulls your stats there too — "
+                         "the old suppression was hiding the whole system inside the one dungeon "
+                         "built for long pushes. The Event Horizon alone stays frozen.")
+
+        self._add_section("Lounge & Marriage")
+        self._add_bullet("Proposing now shows you which rings you own and lets you choose: the "
+                         "chosen ring's stats become your companion's permanent engagement bonus. "
+                         "(The old flow looked for the wrong data key, so rings could be consumed "
+                         "without their stats ever reaching her.) The gift shop's ring list also "
+                         "shows each ring's real numbers now.")
+        self._add_bullet("The ring's power finally shows up: it's folded into her stat sheet the "
+                         "moment you propose, survives being sent home and re-recruited, and "
+                         "continues to display as her Ring Blessing in the lounge.")
+        self._add_bullet("Weddings are honest again: the wedding gift now requires the full 200 "
+                         "affection — a stale affection cap can no longer marry a companion at "
+                         "100 — and any engaged or married girl still sitting under the old cap "
+                         "is quietly restored to 200 when you visit her.")
+        self._add_bullet("Dorothy, Alice, and Red Hood finally have wedding accessories of their "
+                         "own: Homeward Locket (a hearth-light that lifts you once per fight "
+                         "below 35% HP), Rabbit's Pocket Watch (+2 initiative to the whole party "
+                         "every round, +3 when bonded), and Huntsman's Oath (+30% damage on the "
+                         "first strike of each fight, +45% when bonded).")
 
         self._add_version("v0.1.8.0 — The Distant Journey")
 

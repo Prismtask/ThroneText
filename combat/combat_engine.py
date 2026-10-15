@@ -50,12 +50,13 @@ def roll_initiative(player, enemies):
     from combat.stat_milestones import get_wisdom_bonus
     from combat.weapon.black_silence_gloves import get_gloves_initiative_bonus
     from combat.weapon.palette_brush import get_brush_initiative_bonus
+    from combat.weapon.wedding_specials import apply_wedding_initiative_bonus
     from combat.status_effects import get_haste_initiative_bonus, apply_slow_penalty
     from event_horizon import joker_initiative_bonus
     from wonderland_curses import roll_d20_with_looking_glass
     d20_roll, _ = roll_d20_with_looking_glass(player, verbose=False)
     p_dex = apply_slow_penalty(player, p_dex)
-    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_brush_initiative_bonus(player) + get_haste_initiative_bonus(player) + joker_initiative_bonus(player)
+    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_brush_initiative_bonus(player) + get_haste_initiative_bonus(player) + joker_initiative_bonus(player) + apply_wedding_initiative_bonus(player)
     combatants.append({
         "type": "player",
         "speed": player_speed,
@@ -73,7 +74,7 @@ def roll_initiative(player, enemies):
     for idx, ally in enumerate(allies):
         a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
         eff_dex = apply_slow_penalty(ally, a_dex)
-        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_brush_initiative_bonus(ally) + get_haste_initiative_bonus(ally) + joker_initiative_bonus(ally)
+        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_brush_initiative_bonus(ally) + get_haste_initiative_bonus(ally) + joker_initiative_bonus(ally) + apply_wedding_initiative_bonus(player)
         combatants.append({
             "type": "ally",
             "speed": speed,
@@ -322,16 +323,23 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None, enem
     begin_wedding_combat(player, floor, room_num)
     # Solo fights (§5 hallucinations): allies never join — park them for the
     # duration of the encounter so every party/initiative/reinforcement path
-    # sees a party of one.
+    # sees a party of one. party_order is parked too: ensure_party_order()
+    # prunes indices against the parked (empty) roster and would otherwise
+    # wipe the player's front/bench arrangement for the next real fight.
     solo_saved = None
+    solo_order_saved = None
     if player.get("_combat_solo"):
         solo_saved = player.get("allies", [])
+        order_now = player.get("party_order")
+        solo_order_saved = list(order_now) if order_now is not None else None
         player["allies"] = []
     try:
         return _combat_inner(player, enemy_keys, floor, room_num, total_rooms, enemies=enemies)
     finally:
         if solo_saved is not None:
             player["allies"] = solo_saved
+            if solo_order_saved is not None:
+                player["party_order"] = solo_order_saved
         end_wedding_combat(player)
 
 

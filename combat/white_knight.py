@@ -132,8 +132,14 @@ def _add_expose_stack(unit):
 
 
 def combat_white_knight(player, floor=None, enemies=None):
-    """Entry point — runs the White Knight encounter."""
-    enemies = list(enemies) if enemies else []
+    """Entry point — runs the White Knight encounter.
+
+    ``enemies`` is mutated in place when provided (the GUI passes its shared
+    list for live HUD rendering — wrapping the boss and HP changes must land
+    on that same list).
+    """
+    if enemies is None:
+        enemies = []
     boss = _get_boss(enemies)
     if boss is None:
         from combat.stats import enemy_stats

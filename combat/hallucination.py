@@ -2,9 +2,10 @@
 """Stack II+ / Night illusions: a solo fight with yourself.
 
 Trigger: fatigue stacks >= 2, Night phase, normal dungeon content (city
-floors + wild ruins). Suppressed in Pandemonium / Event Horizon runs, the
-Wonderland pocket, boss rooms, and while critically wounded (<25% HP).
-At most one roll per room.
+floors + wild ruins). Suppressed in Event Horizon runs, the Wonderland
+pocket, boss rooms, and while critically wounded (<25% HP). Pandemonium
+accrues and hallucinates as of rev 3.5 (player call). At most one roll
+per room.
 
 The enemy is a generated illusion (NOT a race): party-average stats with a
 stack-scaled boost, 100% status immunity (`status_res = 1.0` rides the
@@ -54,8 +55,9 @@ def should_trigger(player, room=None):
     """Gate + roll. True → run the encounter (call once per room)."""
     if not player:
         return False
-    # Suppression: Pandemonium / Event Horizon runs, Wonderland pocket
-    if player.get("pandemonium_mode") or player.get("wonderland_active"):
+    # Suppression: Event Horizon runs, Wonderland pocket. Pandemonium
+    # accrues + hallucinates as of rev 3.5 (player call).
+    if player.get("wonderland_active"):
         return False
     if player.get("_eh_in_run"):
         return False

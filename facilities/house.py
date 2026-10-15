@@ -157,18 +157,34 @@ ENGAGEMENT_RING_IDS = {
 
 def _has_engagement_ring(player):
     """Return True if the player has any engagement ring in their inventory."""
-    for item in player.get("inventory", []):
-        if item.get("id") in ENGAGEMENT_RING_IDS:
-            return True
-    return False
+    return bool(_get_engagement_rings(player))
 
 
-def _get_engagement_ring_item(player):
-    """Return the first engagement ring found in inventory, or None."""
-    for item in player.get("inventory", []):
-        if item.get("id") in ENGAGEMENT_RING_IDS:
-            return item
-    return None
+def _get_engagement_rings(player):
+    """Return every engagement ring in the player's inventory (bag order)."""
+    return [item for item in player.get("inventory", [])
+            if item.get("id") in ENGAGEMENT_RING_IDS]
+
+
+def _apply_ring_bonus_to_girl(girl, ring):
+    """Transfer an engagement ring's stat bonus onto a girl, permanently.
+
+    Stored as ``girl["ring_stat_bonus"]`` (lounge display + save), and — when
+    the girl already has stored attributes — added directly to them so the
+    bonus applies immediately everywhere (combat, level-ups, dispatch).
+    Girls without stored attributes receive the bonus dynamically via
+    ``compute_girl_attributes()`` once their stats are first computed.
+    """
+    ring_bonus = dict(ring.get("mods") or ring.get("base_mods") or {})
+    if not ring_bonus:
+        return {}
+    girl["ring_stat_bonus"] = ring_bonus
+    stored = girl.get("attributes")
+    if stored:
+        for stat, val in ring_bonus.items():
+            if stat in stored:
+                stored[stat] = stored[stat] + val
+    return ring_bonus
 
 
 def _girl_unique_id(girl):
@@ -820,9 +836,14 @@ def _house_lounge(player, city_id, house):
         while True:
             term.clear()
             disp = display_name(girl)
-            aff_cap = girl.get("affection_cap", 100)
             engaged = girl.get("engaged", False)
             married = girl.get("married", False)
+            # Stale-cap heal: engaged/married girls belong at cap 200. An old
+            # bug could reset the cap to 100, letting a single talk trigger
+            # the wedding at 100 affection instead of the intended 200.
+            if (engaged or married) and girl.get("affection_cap", 100) < 200:
+                girl["affection_cap"] = 200
+            aff_cap = girl.get("affection_cap", 100)
             term.print(f"=== {disp} ===")
             if girl.get("nickname"):
                 term.print(f"  Species: {girl['name']}")
@@ -949,8 +970,8 @@ def _house_lounge(player, city_id, house):
                     term.pause()
                     continue
 
-                # Wedding gift check (affection at cap and engaged but not married)
-                if engaged and not married and aff >= aff_cap:
+                # Wedding gift check (200 affection, earned after engagement)
+                if engaged and not married and aff >= 200:
                     special_line = dialogue.get("house_special_gift",
                         f"{disp} pulls out a beautifully wrapped box. 'This is for you, my love.'")
                     term.print("\n" + (special_line.format(name=disp) if "{name}" in special_line else special_line))
@@ -1072,7 +1093,6 @@ def _house_lounge(player, city_id, house):
                 term.pause()
 
             elif action == "bath":
-                from inventory import remove_item_by_reference
                 remove_item_by_reference(player, bath_item)
                 stress_now = adjust_stress(girl, -20)
                 term.print(f"\nYou draw a warm bath for {disp}. She sinks in with a long sigh and comes out loose-limbed and calm.")
@@ -1109,21 +1129,36 @@ def _house_lounge(player, city_id, house):
 
             elif action == "propose":
                 # ── PROPOSE ──
-                ring = _get_engagement_ring_item(player)
-                if not ring:
+                # Let the player choose which ring to offer — its stats become
+                # her permanent engagement bonus, so the choice matters.
+                rings = _get_engagement_rings(player)
+                if not rings:
                     term.print("You don't have an engagement ring.")
                     term.pause()
                     continue
+                if len(rings) == 1:
+                    ring = rings[0]
+                else:
+                    ring_labels = []
+                    for r in rings:
+                        mods = r.get("mods") or r.get("base_mods") or {}
+                        mod_txt = ", ".join(f"+{v} {stat}" for stat, v in mods.items())
+                        ring_labels.append(f"{r['name']} ({mod_txt})" if mod_txt else r["name"])
+                    ridx = term.menu(ring_labels + ["Back"],
+                                     prompt=f"Which ring will you offer to {disp}?")
+                    if ridx < 0 or ridx >= len(rings):
+                        continue
+                    ring = rings[ridx]
 
                 engaged_line = dialogue.get("house_engaged", f"{disp} gasps, her eyes sparkling with tears of joy. 'Yes! Yes, I will marry you!' She throws her arms around you.")
                 term.print("\n" + (engaged_line.format(name=disp) if "{name}" in engaged_line else engaged_line))
-                # Consume the ring
+                # Consume the chosen ring
                 remove_item_by_reference(player, ring)
 
-                # Store the ring's stat bonus on the girl (persisted in house save)
-                ring_bonus = ring.get("base_mods", {})
+                # The ring's power becomes her permanent engagement bonus
+                # (folded into her stored stats so it shows up everywhere).
+                ring_bonus = _apply_ring_bonus_to_girl(girl, ring)
                 if ring_bonus:
-                    girl["ring_stat_bonus"] = ring_bonus.copy()
                     bonus_lines = [f"{stat} +{val}" for stat, val in ring_bonus.items()]
                     term.print(f"  The ring's power flows into {disp}: {', '.join(bonus_lines)}.")
 

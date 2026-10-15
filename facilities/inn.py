@@ -788,6 +788,8 @@ def _heroine_interaction(player, heroine_key, inn_config):
                                 ally["affection_cap"] = g.get("affection_cap", ally["affection_cap"])
                                 ally["engaged"] = g.get("engaged", False)
                                 ally["married"] = g.get("married", False)
+                                if g.get("ring_stat_bonus"):
+                                    ally["ring_stat_bonus"] = dict(g["ring_stat_bonus"])
                                 ally["nickname"] = g.get("nickname", ally.get("nickname", ""))
                                 ally["exp"] = g.get("exp", 0)
                                 break

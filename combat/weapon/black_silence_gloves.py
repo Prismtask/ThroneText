@@ -91,6 +91,7 @@ def clear_gloves_state(actor):
     actor.pop("gloves_workshop_used", None)
     actor.pop("gloves_furioso_available", None)
     actor.pop("gloves_first_strike_active", None)
+    actor.pop("_gloves_cac_state", None)
 
 
 def get_gloves_initiative_bonus(actor):
@@ -244,6 +245,12 @@ def _deal_workshop_hit(actor, target, dmg, skill_name, p_dex, p_ler, element="da
     dmg = calculate_elemental_damage(dmg, actor, target, element)
     dmg = max(0, dmg)
 
+    # Chance & Choice trophy — one flip per action. The volley wrappers set
+    # actor["_gloves_cac_state"]; standalone calls roll per hit.
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    if dmg > 0:
+        dmg = apply_chance_and_choice(actor, dmg, actor.get("_gloves_cac_state"))
+
     was_alive = target.get("hp", 0) > 0
     target["hp"] = max(0, target["hp"] - dmg)
     msg = format_damage_msg(actor["name"], target["name"], dmg,
@@ -281,6 +288,8 @@ def _execute_workshop_actor(actor, enemies, workshop_id,
                             p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                             allies=None, defending=False, is_player=True):
     _combat_ctx.enemies = enemies  # wedding on-hit spreads need the full list
+    # Chance & Choice: one coin flip per workshop action (shared by all hits)
+    actor["_gloves_cac_state"] = {"rolled": False, "mult": 1.0}
     ws = WORKSHOPS[workshop_id]
     stat_map = {
         "Strength": p_str, "Dexterity": p_dex, "Constitution": p_con,
@@ -473,6 +482,8 @@ def execute_furioso(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
 def _execute_furioso_actor(actor, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
                             allies=None, is_player=True):
     _combat_ctx.enemies = enemies  # wedding on-hit spreads need the full list
+    # Chance & Choice: one coin flip per Furioso action (shared by all hits)
+    actor["_gloves_cac_state"] = {"rolled": False, "mult": 1.0}
     stat_map = {
         "Strength": p_str, "Dexterity": p_dex, "Constitution": p_con,
         "Wisdom": p_wis, "Learning": p_ler, "Charisma": p_cha,

@@ -14,6 +14,7 @@ State used during combat (stored on player dict):
   wedding_bark_shield_room_count int – rooms since last bark_shield refresh (bonded)
   wedding_keening_wail_used bool   – keening wail triggered this combat
   wedding_shadow_cloak_used bool   – shadow_cloak bonded used this combat
+  wedding_homeward_used     bool   – homeward_locket low-HP heal used this combat
   wedding_cosmic_gravity_used bool – cosmic_gravity buff steal used this combat
   wedding_crimson_feast_cha_buff bool – whether +2 CHA buff is active
 """
@@ -57,6 +58,7 @@ def begin_wedding_combat(player, floor=None, room_num=None):
     player["wedding_first_attack_done"] = False
     player["wedding_keening_wail_used"] = False
     player["wedding_shadow_cloak_used"] = False
+    player["wedding_homeward_used"] = False
     player["wedding_cosmic_gravity_used"] = False
 
 
@@ -66,6 +68,7 @@ def end_wedding_combat(player):
     player.pop("wedding_first_attack_done", None)
     player.pop("wedding_keening_wail_used", None)
     player.pop("wedding_shadow_cloak_used", None)
+    player.pop("wedding_homeward_used", None)
     player.pop("wedding_cosmic_gravity_used", None)
     player.pop("wedding_overclock_proc", None)
     player.pop("wedding_grave_reign_stacks", None)
@@ -107,6 +110,11 @@ def apply_wedding_combat_start(player, enemies):
         })
         _msg("Windweaver Pinion — your party's reflexes sharpen! (+1 initiative)")
 
+    # rabbit_time (base or bonded): party gains +2/+3 initiative on every roll
+    # (read by combat_engine.roll_initiative via apply_wedding_initiative_bonus)
+    if special == "rabbit_time":
+        _msg(f"Rabbit's Pocket Watch — your party moves a beat ahead! (+{3 if bonded else 2} initiative)")
+
     # shadow_cloak (bonded): 2-turn invisible (enemies target allies first)
     if special == "shadow_cloak" and bonded:
         player.setdefault("active_buffs", []).append({
@@ -117,15 +125,21 @@ def apply_wedding_combat_start(player, enemies):
 
     # blizzard_song (bonded): enemies take 5 water damage at start
     if special == "blizzard_song" and bonded:
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        _cac_state = {"rolled": False, "mult": 1.0}   # one flip per invocation
         for e in enemies:
-            e["hp"] = max(0, e["hp"] - 5)
-            _msg(f"Blizzard Veil — {e['name']} is lashed by freezing winds! (-5 HP)")
+            _bliz = apply_chance_and_choice(player, 5, _cac_state)
+            e["hp"] = max(0, e["hp"] - _bliz)
+            _msg(f"Blizzard Veil — {e['name']} is lashed by freezing winds! (-{_bliz} HP)")
 
     # tidal_blessing (bonded): enemies take 5 water damage at start
     if special == "tidal_blessing" and bonded:
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        _cac_state = {"rolled": False, "mult": 1.0}   # one flip per invocation
         for e in enemies:
-            e["hp"] = max(0, e["hp"] - 5)
-            _msg(f"Tidecaller Ring — a tidal wave crashes into {e['name']}! (-5 HP)")
+            _tid = apply_chance_and_choice(player, 5, _cac_state)
+            e["hp"] = max(0, e["hp"] - _tid)
+            _msg(f"Tidecaller Ring — a tidal wave crashes into {e['name']}! (-{_tid} HP)")
 
     # matriarchs_embrace (bonded): allies regenerate 2 HP per turn
     if special == "matriarchs_embrace" and bonded:
@@ -177,6 +191,9 @@ def apply_wedding_combat_start(player, enemies):
     # grave_reign: enemies take 3 dark damage at combat start; bonded 5
     if special == "grave_reign":
         dmg = 5 if bonded else 3
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        _cac_state = {"rolled": False, "mult": 1.0}   # one flip per invocation
+        dmg = apply_chance_and_choice(player, dmg, _cac_state)
         for e in enemies:
             e["hp"] = max(0, e["hp"] - dmg)
         _msg(f"Deathward Crown — the chill of the grave sweeps the battlefield! (-{dmg} HP all enemies)")
@@ -260,6 +277,11 @@ def apply_wedding_attack_bonus(player, target, base_dmg, is_first_attack):
         if bonded and random.random() < 0.25 and not check_status_resisted(target):
             target["stunned"] = True
             _msg("Thunderhoof Brooch — the stampede stuns the target!")
+
+    # huntsman_oath: first attack +30% damage; bonded +45%
+    if special == "huntsman_oath" and is_first_attack:
+        pct = 0.45 if bonded else 0.30
+        bonus += max(1, int(base_dmg * pct))
 
     # champion_charge: first attack +8, +15% accuracy; bonded +12 and ignore 50% armor
     if special == "champion_charge" and is_first_attack:
@@ -791,6 +813,8 @@ def apply_wedding_on_dodge(player, enemy):
         from combat.stats import get_effective_attribute
         p_str = get_effective_attribute(player, "Strength")
         counter_dmg = max(1, int((random.randint(4, 10) + p_str) * 0.5))
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        counter_dmg = apply_chance_and_choice(player, counter_dmg)
         enemy["hp"] = max(0, enemy["hp"] - counter_dmg)
         from combat.helpers import format_damage_msg
         _msg(format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Nekomata Bell"))
@@ -801,6 +825,8 @@ def apply_wedding_on_dodge(player, enemy):
         p_str = get_effective_attribute(player, "Strength")
         pct = 0.60 if bonded else 0.50
         counter_dmg = max(1, int((random.randint(4, 10) + p_str) * pct))
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        counter_dmg = apply_chance_and_choice(player, counter_dmg)
         enemy["hp"] = max(0, enemy["hp"] - counter_dmg)
         from combat.helpers import format_damage_msg
         _msg(format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Constellation Waltz Ring"))
@@ -875,6 +901,8 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
     # pharaohs_curse: enemies that attack you take 4 damage; bonded 8 and -10% accuracy
     if special == "pharaohs_curse" and damage > 0:
         ret = 8 if bonded else 4
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        ret = apply_chance_and_choice(player, ret)
         enemy["hp"] = max(0, enemy["hp"] - ret)
         _msg(f"Pharaoh's Band — {enemy['name']} suffers {ret} retribution damage!")
         if bonded:
@@ -896,6 +924,8 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
     # infernal_vow: attackers take 5 fire retribution; bonded 10
     if special == "infernal_vow" and damage > 0:
         ret = 10 if bonded else 5
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        ret = apply_chance_and_choice(player, ret)
         enemy["hp"] = max(0, enemy["hp"] - ret)
         _msg(f"Infernal Vow Band — {enemy['name']} is scorched by retribution! (-{ret} HP)")
 
@@ -907,6 +937,8 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
             player["wedding_keening_wail_used"] = True
             dmg_range = (15, 30) if bonded else (10, 20)
             wail_dmg = random.randint(*dmg_range)
+            from combat.weapon.chance_and_choice import apply_chance_and_choice
+            wail_dmg = apply_chance_and_choice(player, wail_dmg)
             # Apply to all enemies
             from combat.combat_engine import prune_dead
             # We can't easily access the enemies list here, so we'll apply to the attacker
@@ -918,6 +950,24 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
                     "type": "fear", "value": 0.30, "remaining": 1
                 })
                 _msg(f"Wailing Spirit Locket — {enemy['name']} is stricken with fear!")
+
+    # homeward_locket: once per combat, below 35% HP — hearth-light heal
+    if special == "homeward_locket" and not player.get("wedding_homeward_used"):
+        from character import player_max_hp
+        max_hp = player_max_hp(player)
+        hp_ratio = player.get("current_hp", 1) / max(1, max_hp)
+        if hp_ratio < 0.35:
+            player["wedding_homeward_used"] = True
+            healed = max(1, int(max_hp * (0.30 if bonded else 0.20)))
+            old_hp = player.get("current_hp", 0)
+            player["current_hp"] = min(old_hp + healed, max_hp)
+            _msg(f"Homeward Locket — a hearth-light steadies you. (+{player['current_hp'] - old_hp} HP)")
+            if bonded:
+                for a in player.get("allies", []):
+                    if a.get("current_hp", 0) > 0:
+                        a_heal = max(1, int(a.get("max_hp", 1) * 0.05))
+                        a["current_hp"] = min(a["current_hp"] + a_heal, a.get("max_hp", a["current_hp"]))
+                _msg("Homeward Locket — the warmth spreads to your whole party! (+5% HP each)")
 
     # foxfire_trick: 20% when attacked to miss + 5 fire; bonded 35% and blind 1 turn
     if special == "foxfire_trick" and damage > 0:
@@ -1096,8 +1146,10 @@ def apply_wedding_enemy_attack_pre_damage(player, enemy):
     if special == "foxfire_trick":
         chance = 0.35 if bonded else 0.20
         if random.random() < chance:
-            enemy["hp"] = max(0, enemy["hp"] - 5)
-            _msg(f"Foxfire Band — a foxfire clone takes the blow! {enemy['name']} burns for 5 damage!")
+            from combat.weapon.chance_and_choice import apply_chance_and_choice
+            fox_dmg = apply_chance_and_choice(player, 5)
+            enemy["hp"] = max(0, enemy["hp"] - fox_dmg)
+            _msg(f"Foxfire Band — a foxfire clone takes the blow! {enemy['name']} burns for {fox_dmg} damage!")
             if bonded:
                 from combat.status_effects import check_status_resisted
                 if not check_status_resisted(enemy):
@@ -1113,10 +1165,14 @@ def apply_wedding_enemy_attack_pre_damage(player, enemy):
 # ── Inititiative Bonus (applied to roll) ───────────────────────────────────
 
 def apply_wedding_initiative_bonus(player):
-    """Return flat bonus to player initiative roll."""
+    """Return the party's flat initiative bonus from the active wedding item."""
     special, bonded = _active(player)
     if not special:
         return 0
+    # rabbit_time — the whole party rolls a beat sooner (read by
+    # combat_engine.roll_initiative on every round's roll)
+    if special == "rabbit_time":
+        return 3 if bonded else 2
     # tailwind bonded is handled as a combat-start buff, not here
     return 0
 
@@ -1271,6 +1327,14 @@ _WEDDING_BLURBS = {
                     "all enemies take 5 dark damage"),
     "palettes_palette": ("no effect unless Palette is in the active party",
                          "exhibit strokes unlock early and hit harder"),
+
+    # ── Wonderland heroines (2026-10-14) ──
+    "homeward_locket": ("below 35% HP: a hearth-light restores 20% max HP (once per combat)",
+                        "restores 30% max HP and shares 5% with every living ally"),
+    "rabbit_time": ("your party gains +2 initiative on every round's roll",
+                    "your party gains +3 initiative on every round's roll"),
+    "huntsman_oath": ("first attack each combat deals +30% damage",
+                      "first attack deals +45% damage"),
 }
 
 

@@ -851,6 +851,13 @@ def _explore_wild_dungeon(player, combat_override=None, superboss_override=None)
                 elif _hall_result in ("timeout", "error"):
                     return _wild_exit_interrupted(player, dungeon_id, "timeout")
 
+                # The illusion is gone — the room it interrupted is not.
+                # Hand the log back (this is where ally lines land) before
+                # the real room resumes.
+                _tprint("")
+                _tprint("  The room still awaits...")
+                _tpause("Press Enter...")
+
             while True:
                 if room_type == "combat":
                     if combat_override:
@@ -2049,6 +2056,13 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                 clear_wonderland_quirk(player)
                 clear_all_shadows(player)
                 return "timeout"
+
+            # The illusion is gone — the room it interrupted is not. Hand
+            # the log back (this is where ally lines land) before the real
+            # room resumes.
+            _tprint("")
+            _tprint("  The room still awaits...")
+            _tpause("Press Enter...")
 
         while True:
 

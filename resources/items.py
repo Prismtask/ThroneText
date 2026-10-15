@@ -437,6 +437,9 @@ ITEMS = {
     "wedding_demon_infernal_bride":{"name": "Infernal Vow Band",     "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Charisma": 18, "Strength": 9, "Constitution": 9}, "special": "infernal_vow", "elemental_dmg": {"fire": 1.4, "dark": 1.3}},
     "wedding_undead_grave_queen": {"name": "Deathward Crown",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Wisdom": 18, "Charisma": 12, "Learning": 9}, "special": "grave_reign", "elemental_dmg": {"dark": 1.4, "earth": 1.2}},
     "wedding_wonderland_palette": {"name": "Palette's Palette",       "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Wisdom": 12, "Learning": 9, "Charisma": 6}, "special": "palettes_palette", "elemental_dmg": {"magical": 1.1}},
+    "wedding_wonderland_dorothy": {"name": "Homeward Locket",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 12, "Charisma": 12, "Wisdom": 6}, "special": "homeward_locket", "elemental_dmg": {"fire": 1.15, "light": 1.2}, "elemental_res": {"physical": 1.1, "light": 1.15}},
+    "wedding_wonderland_alice":   {"name": "Rabbit's Pocket Watch",  "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Learning": 15, "Wisdom": 9, "Dexterity": 6}, "special": "rabbit_time", "elemental_dmg": {"magical": 1.15, "thunder": 1.3, "light": 1.1}},
+    "wedding_wonderland_red_hood":{"name": "Huntsman's Oath",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 15, "Dexterity": 9, "Constitution": 6}, "special": "huntsman_oath", "elemental_dmg": {"physical": 1.3, "light": 1.15}},
 
     # === Broodmother Superboss Drop ===
     "vileheart_pendant": {

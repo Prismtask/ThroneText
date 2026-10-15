@@ -19,9 +19,14 @@ ENGAGEMENT_RINGS = [
 def _show_engagement_rings(player, city_id):
     term.print("\n=== Engagement Rings ===")
     term.print("A token of commitment. Propose to a girl at 100 affection.")
-    term.print("Each ring grants a permanent flat stat bonus while equipped.")
-    
-    options = [f"{name} (+3 {stat}) — {cost} gold" for (item_id, name, stat, cost) in ENGAGEMENT_RINGS]
+    term.print("The ring is consumed at the proposal — its stats become her permanent bonus.")
+
+    from resources.items import build_item as _build_item
+    options = []
+    for (item_id, name, stat, cost) in ENGAGEMENT_RINGS:
+        preview_mods = _build_item(item_id).get("mods") or {}
+        mod_txt = ", ".join(f"+{v} {k}" for k, v in preview_mods.items())
+        options.append(f"{name} ({mod_txt}) — {cost} gold" if mod_txt else f"{name} — {cost} gold")
     choice = term.menu(options, prompt="Choose a ring:", allow_cancel=True)
     
     if choice < 0:

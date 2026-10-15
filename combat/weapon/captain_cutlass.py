@@ -221,6 +221,8 @@ def trigger_captain_riposte(actor, enemy, is_player=True):
     from combat.stats import get_effective_attribute
     p_str = get_effective_attribute(actor, "Strength")
     riposte_dmg = max(1, p_str // 2 + 3 + random.randint(1, 4))
+    from combat.weapon.chance_and_choice import apply_chance_and_choice
+    riposte_dmg = apply_chance_and_choice(actor, riposte_dmg)
     enemy["hp"] -= riposte_dmg
     from combat.helpers import format_damage_msg
     prefix = "[CAPTAIN'S AUTHORITY] "

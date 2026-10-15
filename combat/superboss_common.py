@@ -20,7 +20,7 @@ from combat.weapon.authors_pen import (
 from combat.stats import compute_player_stats
 from combat.enemy_ai import enemy_attack
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import print_combat_hud, print_superboss_header, print_player_mini_hud, format_enemy_status_line
+from combat.combat_ui import print_combat_hud, print_superboss_header, print_player_mini_hud, format_enemy_status_line, print_turn_order
 from combat.status_effects import tick_player_debuffs, tick_player_buffs, try_consume_death_ward
 from combat.skills import tick_skill_cooldowns
 from combat.fractured_hourglass import tick_hourglass_cooldown
@@ -246,6 +246,11 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         for i, c in enumerate(turn_order):
             suffix = " [STUNNED — will skip]" if stunned_this_round and c["type"] == "player" and not c.get("extra_turn") else ""
             c_print(f"  {i + 1:>2}. {c['label']} (Speed: {c['speed']}){suffix}")
+        # Compact line in the standard engine's format — the GUI's CombatScreen
+        # parses "Turn Order: A -> B -> ..." into the live turn-order bar. The
+        # numbered list above never matched the parser, so the card used to
+        # keep showing a stale speed preview all fight (2026-10-14 bug report).
+        print_turn_order(turn_order)
         c_input("\nPress Enter to start the round...")
 
         c_print(f"\n⚔️  Round {round_num}: Action Phase")

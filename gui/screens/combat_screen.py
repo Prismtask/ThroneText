@@ -958,7 +958,8 @@ class CombatScreen(BaseScreen):
 
         # Initiative / turn order / phase headers / ally action prompts
         skip_starts = [
-            "ENEMIES:", "Rolling initiative", "Turn Order:",
+            "ENEMIES:", "Rolling initiative", "Rolling speeds", "Initiative Phase",
+            "Turn Order:", "Turn Order for this Round:",
             "Press Enter", "Choose", "Choice:", "Select target",
             "Available:", "Invalid", "Please enter",
             "Select fallen",
@@ -967,6 +968,10 @@ class CombatScreen(BaseScreen):
         for s in skip_starts:
             if t_lower.startswith(s.lower()):
                 return False
+
+        # Superboss initiative list entries: "   2. [1] White Knight (Speed: 23)"
+        if re.match(r'^\s*\d+\.\s+.+\(Speed:\s*[\d.]+\)', t):
+            return False
 
         # Ally action prompt: "  (AllyName) Choose action: "
         if re.match(r'^\s*\(.+\)\s*[Cc]hoose', t):
@@ -1366,26 +1371,32 @@ class CombatScreen(BaseScreen):
         """Build a turn-order preview list sorted by speed (fastest first).
         Only includes active (front-row) allies, matching the engine's roll_initiative.
 
-        Labels mirror the engine's exactly (MC name, full ally display names)
-        so the bar doesn't visibly change when the engine's first Turn Order
-        line replaces this preview (2026-10-08: the MC label used to flip
+        This is only a PRE-PARSE estimate: the engine's real rolled order
+        replaces it as soon as a "Turn Order:" line arrives. (The superboss
+        loop used to print a different format, so the preview stuck around a
+        whole fight — 2026-10-14 bug report.) Speeds are dex-mod estimates
+        (the d20 roll and bonuses aren't known before the engine rolls);
+        labels mirror the engine's exactly (MC name, full ally display names,
+        "[n] Enemy Name") so the bar doesn't visibly change when the engine's
+        line replaces it (2026-10-08: the MC label used to flip
         from the chosen name to \"You\").
         """
-        from combat.ally import get_active_allies
+        from combat.ally import get_active_allies, compute_ally_stats
+        from combat.stats import compute_player_stats
         entries = []
         # Player — full name, exactly like the engine's turn-order label
-        p_spd = self.player.get("attributes", {}).get("Speed", 10)
-        entries.append({"label": self.player.get("name") or "You", "speed": p_spd})
+        _p_str, _p_con, p_dex, _p_ler, _p_wis, _p_cha = compute_player_stats(self.player)
+        entries.append({"label": self.player.get("name") or "You", "speed": p_dex})
         # Active (front-row) allies only
         for ally in get_active_allies(self.player):
             if ally.get("current_hp", 0) > 0:
-                a_spd = ally.get("attributes", {}).get("Speed", 10)
-                entries.append({"label": display_name(ally) or "Ally", "speed": a_spd})
+                _a_str, _a_con, a_dex, _a_ler, _a_wis, _a_cha = compute_ally_stats(ally)
+                entries.append({"label": display_name(ally) or "Ally", "speed": a_dex})
         # Enemies — use snapshot to avoid racing the combat thread's prune
-        for enemy in self._enemies_snapshot():
+        for idx, enemy in enumerate(self._enemies_snapshot()):
             if enemy.get("hp", 0) > 0:
-                e_spd = enemy.get("spd", 10)
-                entries.append({"label": enemy.get("name", "?")[:8], "speed": e_spd})
+                entries.append({"label": f"[{idx + 1}] {enemy.get('name', '?')}",
+                                "speed": enemy.get("dex_mod", 10)})
         # Sort fastest first
         entries.sort(key=lambda x: x["speed"], reverse=True)
         return entries
