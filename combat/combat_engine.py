@@ -15,15 +15,22 @@ from combat.weapon.authors_pen import (
     tick_authors_pen_cooldown,
     clear_authors_pen_state,
 )
+from combat.weapon.moonlight_greatsword import (
+    apply_moonlight_round_start,
+    tick_moonlight,
+    clear_moonlight_state,
+)
 # combat_engine.py – main combat orchestrators
 import random
 from combat.stats import compute_player_stats, enemy_stats
-from combat.enemy_ai import enemy_attack, get_race_extra_logic
+from combat.enemy_ai import get_race_extra_logic
+from combat.enemy_skills import enemy_take_turn
 from combat.player_actions import handle_player_turn
 from combat.combat_ui import (
-    print_combat_hud, print_turn_order, print_round_header, print_pre_initiative_enemies
+    print_combat_hud, print_turn_order, print_round_header, print_pre_initiative_enemies,
+    current_time_label,
 )
-from combat.status_effects import tick_player_debuffs, tick_player_buffs, try_consume_death_ward
+from combat.status_effects import tick_player_debuffs, tick_player_buffs, try_consume_death_ward, clear_stun
 from combat.ally import (
     get_alive_allies, get_active_allies, compute_ally_stats, handle_ally_turn,
     auto_fill_active_slots, can_switch, swap_party_member,
@@ -33,11 +40,23 @@ from combat.weapon.wedding_specials import (
     begin_wedding_combat, end_wedding_combat,
     apply_wedding_combat_start, apply_wedding_end_of_round
 )
-from utils import format_time, display_name
+from utils import display_name
 from combat.combat_io import c_print, c_input, c_clear
 
 
-def prune_dead(enemies):
+def prune_dead(enemies, player=None):
+    """Drop dead/captured enemies, recording defeats in the bestiary.
+
+    ``player`` is optional so callers that only need filtering keep working;
+    every real combat path passes it so kills from DoTs, status ticks and
+    weapon effects are logged exactly once per enemy instance.
+    """
+    if player is not None:
+        from bestiary import record_defeat
+        for enemy in enemies:
+            if (enemy.get("hp", 0) <= 0 and not enemy.get("captured")
+                    and not enemy.get("no_bestiary")):
+                record_defeat(player, enemy)
     return [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
 
 
@@ -54,9 +73,10 @@ def roll_initiative(player, enemies):
     from combat.status_effects import get_haste_initiative_bonus, apply_slow_penalty
     from event_horizon import joker_initiative_bonus
     from wonderland_curses import roll_d20_with_looking_glass
+    from combat.form_perks import get_form_initiative
     d20_roll, _ = roll_d20_with_looking_glass(player, verbose=False)
     p_dex = apply_slow_penalty(player, p_dex)
-    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_brush_initiative_bonus(player) + get_haste_initiative_bonus(player) + joker_initiative_bonus(player) + apply_wedding_initiative_bonus(player)
+    player_speed = d20_roll + p_dex + get_wisdom_bonus(player) + get_gloves_initiative_bonus(player) + get_brush_initiative_bonus(player) + get_haste_initiative_bonus(player) + joker_initiative_bonus(player) + apply_wedding_initiative_bonus(player) + get_form_initiative(player)
     combatants.append({
         "type": "player",
         "speed": player_speed,
@@ -74,7 +94,7 @@ def roll_initiative(player, enemies):
     for idx, ally in enumerate(allies):
         a_str, a_con, a_dex, a_ler, a_wis, a_cha = compute_ally_stats(ally)
         eff_dex = apply_slow_penalty(ally, a_dex)
-        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_brush_initiative_bonus(ally) + get_haste_initiative_bonus(ally) + joker_initiative_bonus(ally) + apply_wedding_initiative_bonus(player)
+        speed = random.randint(1, 20) + eff_dex + get_wisdom_bonus(ally) + get_gloves_initiative_bonus(ally) + get_brush_initiative_bonus(ally) + get_haste_initiative_bonus(ally) + joker_initiative_bonus(ally) + apply_wedding_initiative_bonus(player) + get_form_initiative(ally)
         combatants.append({
             "type": "ally",
             "speed": speed,
@@ -121,6 +141,7 @@ def _tick_all_state(player):
     tick_abyssal_tempo(player)
     tick_captain_cutlass(player)
     tick_authors_pen_cooldown(player)
+    tick_moonlight(player)
 
     # Tick ally specials
     from combat.weapon.captain_cutlass import _tick_captain_cutlass_actor
@@ -130,6 +151,7 @@ def _tick_all_state(player):
             tick_abyssal_tempo(ally)
             _tick_captain_cutlass_actor(ally, player_ref=player)
             tick_authors_pen_cooldown(ally)
+            tick_moonlight(ally)
 
     from combat.skills import tick_skill_cooldowns
     from combat.fractured_hourglass import tick_hourglass_cooldown
@@ -257,6 +279,9 @@ def clear_battle_scoped_state(player):
     """
     clear_abyss_fang_state(player)
     clear_authors_pen_state(player)
+    clear_moonlight_state(player)
+    # Free-action skill state is battle-scoped (Time Warp).
+    player.pop("_skill_free_action", None)
     # Tarnished Jade combat state (pins/backlash are battle-scoped)
     player["tarnished_jade_pins"] = 0
     player["tarnished_jade_weakened"] = False
@@ -279,11 +304,19 @@ def clear_battle_scoped_state(player):
         clear_abyss_fang_state(ally)
         clear_gloves_state(ally)
         clear_authors_pen_state(ally)
+        clear_moonlight_state(ally)
         clear_brush_state(ally)
         clear_shawl_state(ally)
         clear_palette_ally_state(ally)
         ally["tarnished_jade_pins"] = 0
         ally["tarnished_jade_weakened"] = False
+    # Sylvana's Queen's Grace + Decaying Aegis are battle-scoped
+    from combat.sylvana_heroine import clear_sylvana_combat_state
+    from combat.weapon.decaying_aegis import clear_decaying_aegis_state
+    clear_sylvana_combat_state(player)
+    clear_decaying_aegis_state(player)
+    for ally in player.get("allies", []):
+        clear_decaying_aegis_state(ally)
     # Crystal Atelier's 2-turn dodge is granted by a battle action — never
     # let the last fight's dodge linger into the next room / a suspend save.
     for actor in [player] + list(player.get("allies", [])):
@@ -291,12 +324,19 @@ def clear_battle_scoped_state(player):
         if buffs:
             actor["active_buffs"] = [b for b in buffs
                                      if b.get("source") != "crystal_atelier"]
+    # Stun only costs an action inside the fight — a fight that ends while
+    # an actor is stunned must not make them skip their first action next time.
+    for actor in [player] + list(player.get("allies", [])):
+        clear_stun(actor)
     # Reset potion sickness between combats
     player["potion_sickness"] = 0
 
 
 def _end_combat_with_result(player, result):
     """Tick all combat state and return the requested result, unless DoT kills the player."""
+    from combat.party_stress import settle_pending_falls
+    for _stress_msg in settle_pending_falls(player):
+        c_print(_stress_msg)
     clear_battle_scoped_state(player)
     tick_result = _tick_all_state(player)
     return tick_result if tick_result == "dead" else result
@@ -316,6 +356,12 @@ def combat(player, enemy_keys, floor=None, room_num=None, total_rooms=None, enem
     from character import _reconcile_heroine_vorpal_skills
     for ally in player.get("allies", []):
         _reconcile_heroine_vorpal_skills(ally, player)
+
+    # Party stress: settle the previous fight's falls, then let Burned Out
+    # companions refuse this one (docs/stress_system_design.md).
+    from combat.party_stress import begin_encounter
+    for _stress_msg in begin_encounter(player):
+        c_print(_stress_msg)
 
     from combat.weapon.prescript_ledger import reset_all_state as reset_prescript_state
     reset_prescript_state(player)
@@ -348,6 +394,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
     clear_abyss_fang_state(player)
     clear_captain_cutlass_state(player)
     clear_authors_pen_state(player)
+    clear_moonlight_state(player)
+    from combat.sylvana_heroine import clear_sylvana_combat_state
+    from combat.weapon.decaying_aegis import begin_decaying_aegis_combat
+    clear_sylvana_combat_state(player)
+    begin_decaying_aegis_combat(player)
     # Wonderland Shadow: Down the Rabbit Hole — imported at function level so
     # the name is always bound. It used to be imported inside the player's
     # turn branch only, which crashed with UnboundLocalError in the ally
@@ -368,8 +419,12 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
     if _actor_has_palette_brush(player):
         init_brush_state(player)
 
+    # Stun never crosses an encounter boundary — a stale flag from a save
+    # taken mid-fight (or an old fight that ended while stunned) is dropped.
+    clear_stun(player)
     # Init/clear ally specials
     for ally in player.get("allies", []):
+        clear_stun(ally)
         if ally.get("current_hp", 0) > 0:
             clear_abyss_fang_state(ally)
             # Clear cutlass state on ally (actor version)
@@ -378,6 +433,9 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             ally["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(ally) else 0
             ally["tarnished_jade_weakened"] = False
             clear_authors_pen_state(ally)
+            clear_moonlight_state(ally)
+            from combat.weapon.decaying_aegis import begin_decaying_aegis_combat
+            begin_decaying_aegis_combat(ally)
             # Mirror player context onto allies (Wonderland checks, floor-tracking uniques)
             ally["floor"] = player.get("floor")
             ally["dungeon_region"] = player.get("dungeon_region")
@@ -391,6 +449,12 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
     else:
         # Use provided enemies directly (GUI mode shares state)
         pass
+
+    def _bestiary_kill(target, _enemies):
+        if target.get("no_bestiary"):
+            return
+        from bestiary import record_defeat
+        record_defeat(player, target)
 
 
     # --- Reset High Tide if floor changed ---
@@ -429,9 +493,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         snapshot_party_hp(player)
 
         apply_abyss_tempo_round_start(player)
-        # Apply Abyss Tempo round start for active allies too
+        apply_moonlight_round_start(player)
+        # Apply Abyss Tempo / Moonlight round start for active allies too
         for ally in get_active_allies(player):
             apply_abyss_tempo_round_start(ally)
+            apply_moonlight_round_start(ally)
 
         # Chronoweave Mantle: turn-start Momentum gain (player + allies)
         from combat.weapon.chronoweave import apply_chronoweave_turn_start
@@ -439,7 +505,15 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         for ally in get_active_allies(player):
             apply_chronoweave_turn_start(ally)
 
-        enemies[:] = prune_dead(enemies)
+        # Sylvana's Queen's Grace + Decaying Aegis upkeep
+        from combat.sylvana_heroine import apply_sylvana_party_grace
+        apply_sylvana_party_grace(player)
+        from combat.weapon.decaying_aegis import apply_decaying_aegis_turn_start
+        apply_decaying_aegis_turn_start(player)
+        for ally in get_active_allies(player):
+            apply_decaying_aegis_turn_start(ally)
+
+        enemies[:] = prune_dead(enemies, player)
         if not enemies:
             c_print("All enemies have been defeated!")
             return _end_combat_with_result(player, "victory")
@@ -457,17 +531,27 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         p_str, p_con, p_dex, p_ler, p_wis, p_cha = compute_player_stats(player)
 
         c_clear()
-        time_str = format_time(player)
+        time_str = current_time_label(player)
 
-        print_round_header(round_num, floor=floor, room_num=room_num,
+        # Wild ruins set player["_combat_floor_label"] ("5/6"): the `floor`
+        # argument carries the ruin's level for scaling, so printing it raw
+        # would present the level as a floor number. Display-only override —
+        # every mechanical use of `floor` above stays on the level.
+        display_floor = player.get("_combat_floor_label") or floor
+        print_round_header(round_num, floor=display_floor, room_num=room_num,
                            total_rooms=total_rooms, time_str=time_str)
 
         print_pre_initiative_enemies(enemies)
 
+        # --- Profession passives: battle start (Round 1 only) ---
+        if round_num == 1:
+            from combat.skills import apply_profession_battle_start
+            apply_profession_battle_start(player)
+
         # --- Wedding Accessory: combat start (Round 1 only) ---
         if round_num == 1:
             apply_wedding_combat_start(player, enemies)
-            enemies[:] = prune_dead(enemies)
+            enemies[:] = prune_dead(enemies, player)
             if not enemies:
                 c_print("\n  All enemies have been defeated!")
                 return _end_combat_with_result(player, "victory")
@@ -488,7 +572,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         if _jdg_msgs:
             for _m in _jdg_msgs:
                 c_print(_m)
-            enemies[:] = prune_dead(enemies)
+            enemies[:] = prune_dead(enemies, player)
             if not enemies:
                 c_print("\n  All enemies have been defeated!")
                 return _end_combat_with_result(player, "victory")
@@ -497,7 +581,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         from combat.weapon.tarnished_jade import apply_tarnished_jade_turn_start
         tj_triggered = apply_tarnished_jade_turn_start(player, enemies)
         if tj_triggered:
-            enemies[:] = prune_dead(enemies)
+            enemies[:] = prune_dead(enemies, player)
             if not enemies:
                 c_print("\n  All enemies have been defeated!")
                 return _end_combat_with_result(player, "victory")
@@ -508,7 +592,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
             if ally.get("current_hp", 0) > 0 and ally.get("tarnished_jade_pins", 0) > 0:
                 tj_triggered = apply_tarnished_jade_turn_start(ally, enemies, is_player=False)
                 if tj_triggered:
-                    enemies[:] = prune_dead(enemies)
+                    enemies[:] = prune_dead(enemies, player)
                     if not enemies:
                         c_print("\n  All enemies have been defeated!")
                         return _end_combat_with_result(player, "victory")
@@ -617,7 +701,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
         defending = False
 
         for step_idx, combatant in enumerate(turn_order):
-            live_enemies = prune_dead(enemies)
+            live_enemies = prune_dead(enemies, player)
             if not live_enemies:
                 break
 
@@ -666,7 +750,8 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                     from event_horizon import debuff_signature, joker_mirror_debuffs
                     _eh_debuffs_before = debuff_signature(live_enemies)
                     result, new_def = handle_player_turn(
-                        player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
+                        player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
+                        on_kill=_bestiary_kill,
                     )
                     # Prescript Ledger: report enemies damaged by the action (HP-delta)
                     if result != "retry":
@@ -685,12 +770,12 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 if result == "continue":
                     if new_def:
                         defending = True
-                    enemies[:] = prune_dead(enemies)
+                    enemies[:] = prune_dead(enemies, player)
                     if not enemies:
                         c_print("\n  All enemies have been defeated!")
                         return _end_combat_with_result(player, "victory")
                 elif result == "victory":
-                    enemies[:] = prune_dead(enemies)
+                    enemies[:] = prune_dead(enemies, player)
                     return _end_combat_with_result(player, "victory")
                 elif result in ("fled", "dead"):
                     return _end_combat_with_result(player, result)
@@ -720,7 +805,8 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                     from event_horizon import debuff_signature, joker_mirror_debuffs
                     _eh_debuffs_before = debuff_signature(live_enemies)
                     result = handle_ally_turn(
-                        ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
+                        ally, player, live_enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
+                        on_kill=_bestiary_kill,
                     )
                     # Prescript Ledger: report enemies damaged by the action (HP-delta)
                     if result != "retry":
@@ -750,12 +836,12 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                         if future_enemies:
                             turn_order[step_idx + 1:] = future_others + future_enemies
                             c_print(f"\n  🌪️ {display_name(ally)} pushes enemies to the bottom of initiative!")
-                    enemies[:] = prune_dead(enemies)
+                    enemies[:] = prune_dead(enemies, player)
                     if not enemies:
                         c_print("\n  All enemies have been defeated!")
                         return _end_combat_with_result(player, "victory")
                 elif result == "victory":
-                    enemies[:] = prune_dead(enemies)
+                    enemies[:] = prune_dead(enemies, player)
                     return _end_combat_with_result(player, "victory")
                 elif result == "dead":
                     # Ally death doesn't end combat
@@ -780,12 +866,11 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 if len(alive_party) == 1:
                     target = alive_party[0]
                 else:
+                    from combat.status_effects import get_aggro_multiplier
                     weights = []
                     for member in alive_party:
-                        if member is player:
-                            weights.append(2.0)
-                        else:
-                            weights.append(1.0)
+                        base_w = 2.0 if member is player else 1.0
+                        weights.append(base_w * get_aggro_multiplier(member))
                     target = random.choices(alive_party, weights=weights)[0]
 
                 # Determine if the target was defending
@@ -804,27 +889,37 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                 from event_horizon import debuff_signature, joker_mirror_debuffs
                 _eh_debuffs_before = debuff_signature(alive_party)
                 enemy["_combat_round"] = round_num
-                outcome = enemy_attack(enemy, target, target_con, is_defending, extra_logic=extra, all_enemies=enemies, actual_player=player)
+                # Regular enemies choose between basic attacks, skills,
+                # AoE skills, heals and AoE heals. Superboss modules keep
+                # calling enemy_attack directly from their own loops.
+                outcome = enemy_take_turn(
+                    enemy, target, target_con, is_defending,
+                    extra_logic=extra, all_enemies=enemies,
+                    actual_player=player, party_members=alive_party,
+                )
                 if outcome == "dead":
-                    if try_consume_death_ward(target):
-                        if not target.pop("_eh_emperor_saved", False):
-                            if target is player:
+                    # AoE skills can kill someone other than the engine's
+                    # primary target — resolve the player's death first.
+                    death_target = player if player["current_hp"] <= 0 else target
+                    if try_consume_death_ward(death_target):
+                        if not death_target.pop("_eh_emperor_saved", False):
+                            if death_target is player:
                                 c_print("  Your Undying Vow flares — you survive at 1 HP!")
                             else:
-                                c_print(f"  Undying Vow holds — {target['name']} survives at 1 HP!")
-                    elif target is player:
+                                c_print(f"  Undying Vow holds — {death_target['name']} survives at 1 HP!")
+                    elif death_target is player:
                         c_print("  You have been slain.")
                         return _end_combat_with_result(player, "dead")
                     else:
-                        target["defeated"] = True
-                        target["current_hp"] = 0
+                        death_target["defeated"] = True
+                        death_target["current_hp"] = 0
                         # Print is_defeated dialogue if available
                         from resources.enemies import ENEMIES
-                        template = ENEMIES.get(target.get("key", ""), {})
+                        template = ENEMIES.get(death_target.get("key", ""), {})
                         dialogue = template.get("dialogue", {})
-                        defeated_line = dialogue.get("is_defeated", f"{target['name']} has fallen!")
+                        defeated_line = dialogue.get("is_defeated", f"{death_target['name']} has fallen!")
                         if "{name}" in defeated_line:
-                            defeated_line = defeated_line.format(name=target['name'])
+                            defeated_line = defeated_line.format(name=death_target['name'])
                         c_print(f"  {defeated_line}")
 
                 # Event Horizon — Justice: the enemy's debuffs mirror back
@@ -832,7 +927,7 @@ def _combat_inner(player, enemy_keys, floor=None, room_num=None, total_rooms=Non
                                                _eh_debuffs_before):
                     c_print(_m)
 
-        enemies[:] = prune_dead(enemies)
+        enemies[:] = prune_dead(enemies, player)
         if not enemies:
             c_print("\n  All enemies have been defeated!")
             return _end_combat_with_result(player, "victory")

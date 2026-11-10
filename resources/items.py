@@ -3,12 +3,247 @@ import random
 
 ITEM_RARITY = {
     "common":    {"stat_mult": 1.00, "price_mult": 1.0},
-    "uncommon":  {"stat_mult": 1.15, "price_mult": 1.4},
-    "rare":      {"stat_mult": 1.35, "price_mult": 2.2},
-    "epic":      {"stat_mult": 1.60, "price_mult": 4.0},
-    "legendary": {"stat_mult": 1.90, "price_mult": 8.0},
+    "uncommon":  {"stat_mult": 1.10, "price_mult": 1.4},
+    "rare":      {"stat_mult": 1.20, "price_mult": 2.2},
+    "epic":      {"stat_mult": 1.30, "price_mult": 4.0},
+    "legendary": {"stat_mult": 1.40, "price_mult": 8.0},
     "unique":    {"stat_mult": 1.00, "price_mult": 1.0},  # unused — uniques don't go through stat_mult scaling
 }
+
+# ── Item valuation (economy tuning — docs/item_economy_tuning_design.md) ──────
+
+RARITY_LADDER = ["common", "uncommon", "rare", "epic", "legendary"]
+
+# Enhancement cap by rarity (2026-10-20): a flat +10 dominated the compressed
+# stat curve on common gear, so the ceiling now follows the rarity ladder.
+# Uniques keep their own +5 cap. Grandfathered over-cap items are left alone.
+ENHANCE_CAP_BY_RARITY = {
+    "common": 5, "uncommon": 6, "rare": 7, "epic": 8, "legendary": 10,
+}
+UNIQUE_ENHANCE_CAP = 5
+
+
+def enhance_cap_for(item):
+    """Maximum enhancement steps for an item instance/definition."""
+    if isinstance(item, dict) and item.get("unique"):
+        return UNIQUE_ENHANCE_CAP
+    rarity = item.get("rarity", "common") if isinstance(item, dict) else "common"
+    return ENHANCE_CAP_BY_RARITY.get(rarity, 5)
+
+
+def _lookup_item_def(item_id):
+    """Registry lookup with the retired/legacy table as fallback."""
+    base = ITEMS.get(item_id)
+    if base:
+        return base
+    from resources.item_generation import LEGACY_ITEMS
+    return LEGACY_ITEMS.get(item_id, {})
+
+
+def _resolve_item_def(item_or_def):
+    """Return the registry definition for an item instance/definition/id."""
+    if isinstance(item_or_def, str):
+        return _lookup_item_def(item_or_def)
+    if not isinstance(item_or_def, dict):
+        return {}
+    item_id = item_or_def.get("id")
+    if item_id:
+        base = _lookup_item_def(item_id)
+        if base:
+            return base
+    return item_or_def
+
+
+def intrinsic_value(item_or_def):
+    """Value of an item's base identity before the rarity factor.
+
+    value = Σ mods + max(0, element_count − 1) + special premium + trait tier
+    An explicit ``base_value`` on the definition overrides the derived formula.
+    Infused instances are valued from their own mods/element profiles.
+    """
+    base = _resolve_item_def(item_or_def)
+    if "base_value" in base:
+        return max(0, int(base["base_value"]))
+    instance = item_or_def if isinstance(item_or_def, dict) and "mods" in item_or_def else None
+    mods = base.get("base_mods")
+    if mods is None and base.get("mods"):
+        # Legacy instance whose definition is no longer in the live registry
+        mods = base["mods"]
+    stat_sum = sum(int(v) for v in (mods or {}).values())
+    element_count = (len((instance.get("elemental_dmg") if instance else None)
+                          or base.get("elemental_dmg") or {})
+                     + len((instance.get("elemental_res") if instance else None)
+                           or base.get("elemental_res") or {}))
+    special = 1 if base.get("con_defense") else 0
+    special += 1 if base.get("scaling_mult") else 0
+    grade = base.get("grade")
+    if grade in (1, 2, 3):
+        from resources.item_generation import GRADE_VALUE_PREMIUM
+        special += base.get("grade_premium", GRADE_VALUE_PREMIUM.get(grade, 0))
+    if instance is not None:
+        trait_tier = instance.get("trait_tier")
+        if trait_tier:
+            special += int(trait_tier)
+    return max(0, stat_sum + max(0, element_count - 1) + special)
+
+
+def item_value(item_or_def, rarity=None):
+    """Computed item value: (intrinsic + enhance) × rarity value factor."""
+    base = _resolve_item_def(item_or_def)
+    if rarity is None:
+        rarity = item_or_def.get("rarity", "common") if isinstance(item_or_def, dict) else "common"
+    mult = ITEM_RARITY.get(rarity, ITEM_RARITY["common"])["price_mult"]
+    enhance = int(item_or_def.get("enhance", 0)) if isinstance(item_or_def, dict) else 0
+    value_source = item_or_def if isinstance(item_or_def, dict) else base
+    return int(round((intrinsic_value(value_source) + enhance) * mult))
+
+
+def item_value_at_rarity(item_or_def, rarity):
+    """Value the item would have at a different rarity (fusion fee delta)."""
+    return item_value(item_or_def, rarity=rarity)
+
+
+# ── Market index (docs/gold_economy_pacing_design.md §3.1) ────────────────────
+# Sale prices scale with the player's progression. item_value() stays the
+# intrinsic worth; market_value() is the pricing-layer multiplier. Services
+# (fusion, reforge, scroll, enhance) intentionally stay on item_value().
+
+MARKET_INDEX_BANDS = (
+    (5, 1.0),
+    (10, 2.5),
+    (20, 4.5),
+    (30, 6.0),
+    (42, 8.4),
+    (50, 8.5),
+)
+MARKET_INDEX_CAP = 8.5
+
+KILL_GOLD_OFFSET_BANDS = (
+    (5, 0),
+    (10, 10),
+    (20, 26),
+    (30, 46),
+    (42, 73),
+)
+
+
+def _interpolate_bands(value, bands):
+    """Piecewise-linear interpolation, clamped at both ends."""
+    if value <= bands[0][0]:
+        return float(bands[0][1])
+    for (x0, y0), (x1, y1) in zip(bands, bands[1:]):
+        if value <= x1:
+            return y0 + (y1 - y0) * (value - x0) / (x1 - x0)
+    return float(bands[-1][1])
+
+
+def market_anchor_level(player):
+    """Progression anchor for the market index (D9).
+
+    Uses the higher of the player's level and their highest cleared floor.
+    Enemy level is deliberately excluded so random high-level spawns never
+    move prices.
+    """
+    highest_floor = int(player.get("max_floor", 1) or 1)
+    for cf in (player.get("city_floors") or {}).values():
+        highest_floor = max(highest_floor, int(cf.get("max_floor", 1) or 1))
+    return max(int(player.get("level", 1) or 1), highest_floor)
+
+
+def market_index(anchor_level):
+    """Level-scaled item market multiplier (D9/D12)."""
+    return min(MARKET_INDEX_CAP,
+               _interpolate_bands(float(anchor_level), MARKET_INDEX_BANDS))
+
+
+def market_value(item_or_def, anchor_level):
+    """Intrinsic item value × market index (sale/purchase pricing only)."""
+    return int(round(item_value(item_or_def) * market_index(anchor_level)))
+
+
+def kill_gold_offset(anchor_level):
+    """Expected extra loot per kill, subtracted from the base gold roll."""
+    return int(round(_interpolate_bands(float(anchor_level),
+                                        KILL_GOLD_OFFSET_BANDS)))
+
+
+def clamp_rarity(rarity, cap):
+    """Clamp a rarity to a maximum from RARITY_LADDER."""
+    if rarity in RARITY_LADDER and cap in RARITY_LADDER:
+        if RARITY_LADDER.index(rarity) > RARITY_LADDER.index(cap):
+            return cap
+    return rarity
+
+
+def cap_rarity_for_item(item_or_def, rarity):
+    """Clamp a rarity to an absolute maximum (legacy helper).
+
+    Graded items no longer have a hard grade cap — rolled rarity is softened
+    by ``soften_rarity`` instead (audit D-N). Ungraded gear keeps the
+    base-value caps (≤3 rare · 4–5 epic · ≥6 any).
+    """
+    base = _resolve_item_def(item_or_def)
+    grade = base.get("grade")
+    if grade in (1, 2, 3):
+        from resources.item_generation import GRADE_RARITY_CAP
+        return clamp_rarity(rarity, GRADE_RARITY_CAP[grade])
+    value = intrinsic_value(base)
+    cap = "rare" if value <= 3 else ("epic" if value <= 5 else "legendary")
+    return clamp_rarity(rarity, cap)
+
+
+def soften_rarity(item_or_def, rarity, rng=random):
+    """Apply the grade's soft rarity ceiling (audit P1 / D-N).
+
+    A rolled rarity above the grade's soft ceiling survives only with the
+    ``GRADE_RARITY_PASS`` probability; otherwise it demotes one step and is
+    re-checked. Grade 3 is unrestricted; ungraded (legacy) items pass through.
+    """
+    base = _resolve_item_def(item_or_def)
+    grade = base.get("grade")
+    if grade not in (1, 2, 3) or rarity not in RARITY_LADDER:
+        return rarity
+    from resources.item_generation import GRADE_RARITY_PASS
+    table = GRADE_RARITY_PASS.get(grade, {})
+    idx = RARITY_LADDER.index(rarity)
+    while idx > 0 and rng.random() >= table.get(RARITY_LADDER[idx], 1.0):
+        idx -= 1
+    return RARITY_LADDER[idx]
+
+
+def fusion_fee(old_item, new_rarity, minimum=150, per_value=50):
+    """Gold fee for applying a fusion scroll: pays for the value being added."""
+    old_value = item_value(old_item)
+    new_value = item_value_at_rarity(old_item, new_rarity)
+    return max(minimum, int(round(per_value * max(0, new_value - old_value))))
+
+
+def reforge_cost(item):
+    """Gold cost to re-roll one infusion slot (gold economy D2)."""
+    return int(round(40 * item_value(item)))
+
+
+# ── Shared equipment math (enhance/element/rarity consistency) ──────────────
+# Element power comes from flower infusions only (docs/rarity_grade_flower_audit.md §12);
+# rarity and enhancement no longer scale elemental damage or resistance.
+
+def compute_equipment_mods(base_def, rarity, enhance=0):
+    """Stat mods under the multiplicative formula: (base + enhance) × rarity."""
+    r = ITEM_RARITY[rarity]
+    return {
+        stat: int((val + enhance) * r["stat_mult"])
+        for stat, val in base_def["base_mods"].items()
+    }
+
+
+def compute_elemental_dmg(base_def, rarity="common", enhance=0):
+    """Elemental damage profile — infusion-owned, not rarity/enhance scaled."""
+    return {el: round(val, 2) for el, val in (base_def.get("elemental_dmg") or {}).items()}
+
+
+def compute_elemental_res(base_def, rarity="common", enhance=0):
+    """Elemental resistance profile — infusion-owned, not rarity/enhance scaled."""
+    return {el: round(val, 2) for el, val in (base_def.get("elemental_res") or {}).items()}
 
 ITEMS = {
     # === Consumables ===
@@ -192,6 +427,26 @@ ITEMS = {
         "drop_rarity": "unique",
     },
 
+    "moonlight_greatsword": {
+        "name": "Moonlight Greatsword",
+        "weapon_type": "greatsword",
+        "type": "equipment",
+        "slot": "weapon",
+        "unique": True,
+        "base_mods": {"Strength": 16, "Learning": 8},
+        "scaling_stat": ["Strength", "Learning"],
+        "elemental_dmg": {"physical": 1.4},
+        "special": "moonlight_greatsword",
+        "drop_source": "guild_legacy",
+        "drop_rarity": "unique",
+        "description": (
+            "A greatsword of pale, glassy steel that holds moonlight the way "
+            "a cistern holds rain. Its edge cuts like any other blade — until "
+            "the wielder asks it to remember the moon, and the steel answers "
+            "in waves of cold, silver fire."
+        ),
+    },
+
     # === Armor === (Added "primary_element" for elemental trait support)
     # Physical armor
     "iron_padded_armor": {"name": "Iron Padded Armor","type": "equipment","slot": "armor","base_mods": {"Constitution": 2},                       "primary_element": "physical", "elemental_res": {"physical": 1.1, "earth": 1.1}},
@@ -278,7 +533,9 @@ ITEMS = {
     "battle_drink":      {"name": "Battle Drink",      "type": "consumable", "temp_stat": "Strength", "base_power": 5, "duration": 3},
     "iron_skin_potion":  {"name": "Iron Skin Potion",  "type": "consumable", "defense_buff": 4, "duration": 3},
     "poison_flask":      {"name": "Poison Flask",      "type": "utility",    "base_power": 12, "poison_damage": 8, "duration": 3},
-    "stun_bomb":         {"name": "Stun Bomb",         "type": "utility",    "stun_chance": 0.6, "base_power": 8},
+    # Stun Bomb is a pure control tool: no damage, so it can never
+    # accidentally KO a low-HP monster girl the player is trying to net.
+    "stun_bomb":         {"name": "Stun Bomb",         "type": "utility",    "stun_chance": 0.6},
     "flash_powder":      {"name": "Flash Powder",      "type": "utility",    "escape_bonus": 12, "blind_enemy": True},
     "throwing_knife":    {"name": "Throwing Knife",    "type": "utility",    "base_power": 14, "armor_pierce": 2},
     "curse_cleansing_scroll": {"name": "Scroll of Cleansing", "type": "consumable", "cure_curse": True},
@@ -310,6 +567,29 @@ ITEMS = {
         "capture_net": True,
         "rarity_mult_bonus": 55,
         "black_market_only": True,
+    },
+    # ── Voss's Stellar Field Kit (MQ1 research loan) ──────────────────────
+    # Unique so it can never be sold, dropped or discarded. Guaranteed
+    # capture for monster girls BELOW level 8 (`capture_level_cap` is
+    # exclusive). Spent on the throw even when the player has no house to
+    # keep her in — the Star Tower reissues another on request.
+    "stellar_field_kit": {
+        "name": "Stellar Field Kit",
+        "type": "utility",
+        "unique": True,
+        "base_power": 0,
+        "capture_net": True,
+        "guaranteed_capture": True,
+        "capture_level_cap": 8,
+        "rarity_mult_bonus": 0,
+        "no_random_stock": True,
+        "description": (
+            "Archivist Voss's research loan — a capture net woven with star "
+            "silk. It never misses, but it only holds a monster girl below "
+            "level 8, and it is spent on the throw. Ask Voss for another "
+            "once it's used."
+        ),
+        "drop_source": "archivist_voss",
     },
 
     # Ascension Stones (sold at temples when dungeon floors are cleared)
@@ -440,6 +720,19 @@ ITEMS = {
     "wedding_wonderland_dorothy": {"name": "Homeward Locket",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Constitution": 12, "Charisma": 12, "Wisdom": 6}, "special": "homeward_locket", "elemental_dmg": {"fire": 1.15, "light": 1.2}, "elemental_res": {"physical": 1.1, "light": 1.15}},
     "wedding_wonderland_alice":   {"name": "Rabbit's Pocket Watch",  "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Learning": 15, "Wisdom": 9, "Dexterity": 6}, "special": "rabbit_time", "elemental_dmg": {"magical": 1.15, "thunder": 1.3, "light": 1.1}},
     "wedding_wonderland_red_hood":{"name": "Huntsman's Oath",        "type": "equipment", "slot": "accessory", "unique": True, "base_mods": {"Strength": 15, "Dexterity": 9, "Constitution": 6}, "special": "huntsman_oath", "elemental_dmg": {"physical": 1.3, "light": 1.15}},
+    "wedding_sylvana": {
+        "name": "Looking-Glass Locket",
+        "type": "equipment",
+        "slot": "accessory",
+        "unique": True,
+        "base_mods": {"Dexterity": 12, "Charisma": 9, "Wisdom": 6},
+        "elemental_res": {"physical": 1.1, "magical": 1.1},
+        "special": "mirror_locket",
+        "description": (
+            "A silver locket holding two portraits: the Queen of Mirrors and "
+            "you. In every reflection, she is looking at you."
+        ),
+    },
 
     # === Broodmother Superboss Drop ===
     "vileheart_pendant": {
@@ -493,6 +786,22 @@ ITEMS = {
         "drop_source": "chromatic_artisan",
         "drop_rarity": "unique",
     },
+    "decaying_aegis": {
+        "name": "Decaying Aegis",
+        "type": "equipment",
+        "slot": "armor",
+        "unique": True,
+        "base_mods": {"Constitution": 10, "Dexterity": 4},
+        "elemental_res": {"physical": 1.15, "magical": 1.1},
+        "special": "decaying_aegis",
+        "drop_source": "queen_of_mirrors_sylvana",
+        "drop_rarity": "unique",
+        "description": (
+            "A shield of mirrored glass that regrows around its bearer and "
+            "slowly cracks away. When it shatters, it takes five turns to "
+            "find her reflection again."
+        ),
+    },
     "perception_blocking_mask": {
         "name": "Perception-Blocking Mask",
         "type": "equipment",
@@ -523,6 +832,11 @@ ITEMS = {
         "unique": True,
         "base_power": 0,
         "special": "cooldown_reset",
+        "description": (
+            "Three cracked chambers holding one turn of sand. It does not "
+            "restore time — it borrows it, and the debt comes due as three "
+            "turns of silence. The Chrysalis's heart, still ticking."
+        ),
         "drop_source": "entangled_chrysalis",
         "drop_rarity": "unique",
     },
@@ -768,6 +1082,82 @@ ITEMS = {
         "drop_source": "wicked_witch",
         "drop_rarity": "epic",
     },
+    # === Tempering flowers (one per element — blacksmith grade promotion) ===
+    # Farmed from dungeon drops/treasure; never sold in shops, so tempering is
+    # the gold-free alternative to chasing a grade-3 legendary drop.
+    "ironbriar": {
+        "name": "Ironbriar",
+        "type": "crafting_material",
+        "flower_element": "physical",
+        "no_random_stock": True,
+        "description": ("A stubborn briar with iron-hard thorns. Smiths fold it "
+                        "into physical gear to push it to the next grade."),
+    },
+    "emberbloom": {
+        "name": "Emberbloom",
+        "type": "crafting_material",
+        "flower_element": "fire",
+        "no_random_stock": True,
+        "description": ("A flower that smoulders without ash. Its petals keep "
+                        "a forge-hot glow for days after picking."),
+    },
+    "frostlotus": {
+        "name": "Frostlotus",
+        "type": "crafting_material",
+        "flower_element": "water",
+        "no_random_stock": True,
+        "description": ("A lotus that blooms on black ice. Its chill never melts, "
+                        "even beside an open forge."),
+    },
+    "stormlily": {
+        "name": "Stormlily",
+        "type": "crafting_material",
+        "flower_element": "thunder",
+        "no_random_stock": True,
+        "description": ("A lily that hums before a storm. Sparks gather on its "
+                        "stamens like dew."),
+    },
+    "galeorchid": {
+        "name": "Galeorchid",
+        "type": "crafting_material",
+        "flower_element": "wind",
+        "no_random_stock": True,
+        "description": ("An orchid that leans into a wind no one else can feel. "
+                        "Its petals whistle softly."),
+    },
+    "stonebloom": {
+        "name": "Stonebloom",
+        "type": "crafting_material",
+        "flower_element": "earth",
+        "no_random_stock": True,
+        "description": ("A flower with petals of layered slate. It grows in "
+                        "cracks where nothing else will."),
+    },
+    "sunpetal": {
+        "name": "Sunpetal",
+        "type": "crafting_material",
+        "flower_element": "light",
+        "no_random_stock": True,
+        "description": ("A golden petal that stores daylight. It stays warm long "
+                        "after sunset."),
+    },
+    "nightbloom": {
+        "name": "Nightbloom",
+        "type": "crafting_material",
+        "flower_element": "dark",
+        "no_random_stock": True,
+        "description": ("A flower that only opens in darkness. Looking at it too "
+                        "long makes the room feel smaller."),
+    },
+    "manabloom": {
+        "name": "Manabloom",
+        "type": "crafting_material",
+        "flower_element": "magical",
+        "no_random_stock": True,
+        "description": ("A flower whose petals rearrange themselves into faint "
+                        "runes when no one is watching."),
+    },
+
     "emerald_flame_crystal": {
         "name": "Emerald Flame Crystal",
         "type": "crafting_material",
@@ -890,6 +1280,20 @@ ITEMS = {
     },
 
     # === Key Items ===
+    "cracked_mirror": {
+        "name": "Cracked Mirror",
+        "type": "key_item",
+        "unique": True,
+        "rarity": "unique",
+        "description": (
+            "A palm-sized shard of the Queen of Mirrors' glass. A woman's "
+            "silhouette moves behind the cracks, watching you. The edges are "
+            "warm. Perhaps it can be mended somewhere safe — at home, perhaps."
+        ),
+        "special": "sylvana_mirror",
+        "drop_source": "queen_of_mirrors_sylvana",
+    },
+
     "glass_anchor": {
         "name": "Glass Anchor",
         "type": "key_item",
@@ -903,6 +1307,19 @@ ITEMS = {
         "drop_source": "isle_of_glass_floor_10",
     },
 
+    "celestial_sigil": {
+        "name": "Celestial Sigil",
+        "type": "key_item",
+        "rarity": "epic",
+        "description": (
+            "A silver sigil recovered from the thirtieth depth of a dungeon. "
+            "Its etched rings turn slowly, and its light always points north — "
+            "toward Celestia, the city beneath the aurora."
+        ),
+        "special": "celestial_access",
+        "drop_source": "floor_30_milestone",
+    },
+
     "resonance_orb": {
         "name": "Shattered Orb",
         "type": "key_item",
@@ -913,6 +1330,19 @@ ITEMS = {
             "as your household does."
         ),
         "special": "resonance_orb",
+        "drop_source": "archivist_voss",
+    },
+
+    "archive_first_page": {
+        "name": "The First Page",
+        "type": "key_item",
+        "unique": True,
+        "rarity": "unique",
+        "description": (
+            "A blank Archive page, warm from the press. Two names are written at "
+            "the top in different hands, and a third line waits beneath them. "
+            "Voss calls it a keepsake, not a record. It has no power in battle."
+        ),
         "drop_source": "archivist_voss",
     },
 
@@ -933,16 +1363,16 @@ def _build_unique_item(item_id, base, enhance=0):
     """Build a unique item with hand-tuned stats, bypassing rarity scaling.
 
     Unique items (Abyss Fang, Vorpal Blade, wedding accessories, etc.)
-    do NOT go through the stat_mult system. Their base_mods are used
-    directly, enhanced only by the enhance level. Elemental stats are
-    also used as-is without rarity scaling.
-
-    A flat +5 compensation is added to all stat mods because unique
-    items are capped at +5 enhance (vs. +10 for normal items). This
-    ensures a +5 unique has comparable raw stats to a +10 legendary.
+    do NOT go through the stat_mult system. Their base_mods are normalized to
+    a slot budget (see ``item_generation.UNIQUE_STAT_BUDGET``) so that at the
+    +5 enhance cap they land on the budget total. Elemental stats are used
+    as-is after ``item_generation.normalize_unique_elements`` collapses every
+    unique to one primary element; unique weapons are rebuilt at the infusion
+    tier-II value with trait II, and the two remaining profile slots are
+    filled by flowers at the blacksmith.
     """
-    # Unique items get +5 base stats to compensate for the +5 enhance cap
-    UNIQUE_BASE_BONUS = 5
+    # Budgets already reserve room for the +5 enhance cap — no hidden bonus.
+    UNIQUE_BASE_BONUS = 0
 
     item = {
         "id": item_id,
@@ -964,10 +1394,20 @@ def _build_unique_item(item_id, base, enhance=0):
         for key in ["special", "unique", "drop_source", "drop_rarity",
                      "scaling_stat", "scaling_mult", "con_defense",
                      "primary_element", "elemental_dmg", "elemental_res",
-                     "wonderland_only", "weapon_type", "description",
+                     "wonderland_only", "weapon_type", "form", "description",
                      "player_only"]:
             if key in base:
                 item[key] = base[key]
+        # Unique weapons: one primary element at infusion tier II (2026-10-20).
+        if base.get("slot") == "weapon" and base.get("elemental_dmg"):
+            from resources.item_generation import (
+                UNIQUE_ELEMENT_VALUE, UNIQUE_TRAIT_TIER, unique_primary_element,
+            )
+            primary = unique_primary_element(item_id, base)
+            if primary:
+                item["primary_element"] = primary
+                item["elemental_dmg"] = {primary: UNIQUE_ELEMENT_VALUE}
+                item["trait_tier"] = UNIQUE_TRAIT_TIER
     elif base["type"] in ("consumable", "utility", "key_item", "crafting_material"):
         item["count"] = 1
         # Mirror the normal build path so consumers that read item["power"]
@@ -979,7 +1419,8 @@ def _build_unique_item(item_id, base, enhance=0):
                      "status", "bonus_vs", "stun_chance", "blind_enemy",
                      "armor_pierce", "fixed_flee", "capture_net",
                      "rarity_mult_bonus", "poison_damage", "wonderland_only",
-                     "black_market_only"]:
+                     "black_market_only", "guaranteed_capture",
+                     "capture_level_cap", "description"]:
             if key in base:
                 item[key] = base[key]
 
@@ -987,7 +1428,9 @@ def _build_unique_item(item_id, base, enhance=0):
 
 
 def build_item(item_id, rarity="common", enhance=0):
-    base = ITEMS[item_id]
+    base = _lookup_item_def(item_id)
+    if not base:
+        raise KeyError(f"Unknown item id: {item_id}")
 
     # ── Unique items bypass the rarity scaling system entirely ──
     if base.get("unique") or rarity == "unique":
@@ -1010,31 +1453,23 @@ def build_item(item_id, rarity="common", enhance=0):
 
     if base["type"] == "equipment":
         item["slot"] = base["slot"]
-        base_mods = base["base_mods"]
-        item["mods"] = {
-            stat: int(val * r["stat_mult"]) + enhance
-            for stat, val in base_mods.items()
-        }
+        item["mods"] = compute_equipment_mods(base, rarity, enhance)
         
         # Carry over custom properties (Added elemental support)
         for custom_key in ["special", "unique", "drop_source", "drop_rarity",
                            "scaling_stat", "scaling_mult", "con_defense",
                            "primary_element", "elemental_dmg", "elemental_res",
-                           "weapon_type"]:
+                           "weapon_type", "grade", "form", "composed"]:
             if custom_key in base:
                 item[custom_key] = base[custom_key]
         
-        # Scale elemental stats by rarity (additive from neutral 1.0)
-        if "elemental_dmg" in item:
-            item["elemental_dmg"] = {
-                el: round(1.0 + (val - 1.0) * r["stat_mult"], 2)
-                for el, val in item["elemental_dmg"].items()
-            }
-        if "elemental_res" in item:
-            item["elemental_res"] = {
-                el: round(1.0 + (val - 1.0) * r["stat_mult"], 2)
-                for el, val in item["elemental_res"].items()
-            }
+        # Scale elemental stats by rarity (+ enhancement for damage)
+        if "elemental_dmg" in base:
+            item["elemental_dmg"] = compute_elemental_dmg(base, rarity, enhance)
+            if base.get("base_form") and base.get("slot") == "weapon":
+                item.setdefault("trait_tier", 1)  # innate form trait (uninfused)
+        if "elemental_res" in base:
+            item["elemental_res"] = compute_elemental_res(base, rarity, enhance)
     elif base["type"] in ("consumable", "utility", "scroll", "ascension"):
         item["count"] = 1
         if base["type"] == "consumable":
@@ -1076,7 +1511,8 @@ def build_item(item_id, rarity="common", enhance=0):
         # Keepsakes never wear a rarity prefix in their name — rarity shows
         # through the colour and the "(Rarity)" tag in examine popups.
         item["name"] = base["name"]
-        for k in ["special", "drop_source", "description", "stress_relief"]:
+        for k in ["special", "drop_source", "description", "stress_relief",
+                  "flower_element"]:
             if k in base:
                 item[k] = base[k]
         
@@ -1101,7 +1537,7 @@ def random_equipment(rarity=None):
             ["common", "uncommon", "rare", "epic", "legendary"],
             weights=[50, 30, 15, 4, 1]
         )[0]
-    equip_ids = [item_id for item_id, data in ITEMS.items() if data.get("slot") and not data.get("unique")]
+    equip_ids = [item_id for item_id, data in ITEMS.items() if data.get("slot") and not data.get("unique") and data.get("base_form")]
     if not equip_ids:
         return {
             "name": "Mysterious Relic",
@@ -1111,9 +1547,16 @@ def random_equipment(rarity=None):
             "slot": "accessory"
         }
     item_id = random.choice(equip_ids)
+    rarity = soften_rarity(item_id, rarity)
     return build_item(item_id, rarity)
 
 def upgrade_rarity(rarity: str) -> str:
     order = ["common", "uncommon", "rare", "epic", "legendary"]
     idx = order.index(rarity)
     return order[min(idx+1, len(order)-1)]
+
+
+# ── Compositional weapon grid (docs/compositional_equipment_design.md) ──────
+# Installs the Form × Element × Grade catalog into ITEMS at import time.
+from resources import item_generation as _item_generation  # noqa: E402
+_item_generation.install_grid(ITEMS)

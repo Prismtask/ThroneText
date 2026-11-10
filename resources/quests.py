@@ -346,5 +346,356 @@ QUESTS = {
         },
     },
 
-    # Side quests: later phases.
+    # ── Wonderland side quests ────────────────────────────────────────────
+    # The hidden realm has no quest board: the book, the tea party, and the
+    # Storybook Dungeon are the givers. quests._sync_wonderland_quests()
+    # starts these automatically as the player progresses.
+    "sq_wonderland_00": {
+        "id": "sq_wonderland_00",
+        "type": "side",
+        "name": "The Looking-Glass Road",
+        "giver": "white_rabbit",
+        "region": "veilholt",
+        "prereq": None,
+        "turn_in": None,
+        "journal_desc": (
+            "Wonderland is reached through a book in Veilholt's Arcane Tower. "
+            "Clear Floor 20 in two different biomes to unlock the Looking "
+            "Glass Shard at Veilholt's Black Market (5,000g) — then open the "
+            "book."
+        ),
+        "stages": [
+            {
+                "id": "gate",
+                "desc": "Prove you are ready for the hidden realm.",
+                "objectives": [
+                    {"type": "wonderland_gate", "target": "2",
+                     "label": "Clear Floor 20 in two different biomes"},
+                ],
+            },
+            {
+                "id": "shard",
+                "desc": "Find the key that looks through, not at.",
+                "objectives": [
+                    {"type": "wonderland_shard", "target": "looking_glass_shard",
+                     "label": "Hold a Looking Glass Shard (Veilholt Black Market)"},
+                ],
+            },
+            {
+                "id": "book",
+                "desc": "Open the book.",
+                "objectives": [
+                    {"type": "wonderland_enter", "target": "any",
+                     "label": "Open the book in Veilholt's Arcane Tower"},
+                ],
+            },
+        ],
+        "rewards": {
+            "xp": 300,
+            "gold": 250,
+            "items": [],
+            "flags": [],
+            "grade_unlock": None,
+            "next": "sq_wonderland_01",
+        },
+    },
+
+    "sq_wonderland_01": {
+        "id": "sq_wonderland_01",
+        "type": "side",
+        "name": "Down the Rabbit Hole",
+        "giver": "white_rabbit",
+        "region": "wonderland",
+        "prereq": None,
+        "turn_in": None,
+        "journal_desc": (
+            "The mysterious book in Veilholt's Arcane Tower opens onto a realm "
+            "stitched from stories. The White Rabbit is late, the Queen is "
+            "furious, and the Storybook Dungeon is waiting. After the Queen "
+            "falls, return to the Mad Hatter's tea party — guests are waiting."
+        ),
+        "stages": [
+            {
+                "id": "arrival",
+                "desc": "Step through the looking-glass.",
+                "objectives": [
+                    {"type": "wonderland_enter", "target": "any",
+                     "label": "Enter Wonderland through the mysterious book"},
+                ],
+            },
+            {
+                "id": "queen",
+                "desc": "Survive the first chapter.",
+                "objectives": [
+                    {"type": "wonderland_boss", "target": "queen_of_hearts",
+                     "label": "Defeat the Queen of Hearts (Floor 10)"},
+                ],
+            },
+            {
+                "id": "tea_party",
+                "desc": "The tea party has guests.",
+                "objectives": [
+                    {"type": "wonderland_guest_scene", "target": "any",
+                     "label": "Return to the Mad Hatter's tea party"},
+                ],
+            },
+        ],
+        "rewards": {
+            "xp": 400,
+            "gold": 300,
+            "items": [],
+            "flags": [],
+            "grade_unlock": None,
+            "next": "sq_wonderland_02",
+        },
+    },
+
+    "sq_wonderland_02": {
+        "id": "sq_wonderland_02",
+        "type": "side",
+        "name": "The Storybook Road",
+        "giver": "white_rabbit",
+        "region": "wonderland",
+        "prereq": "sq_wonderland_01",
+        "turn_in": None,
+        "journal_desc": (
+            "The road through Wonderland runs floor by floor. The deeper "
+            "chapters hold the Wolf, the Witch, the Jabberwock — and the "
+            "Author at the very end."
+        ),
+        "stages": [
+            {
+                "id": "deep",
+                "desc": "Follow the story deeper.",
+                "objectives": [
+                    {"type": "wonderland_floor", "target": "20",
+                     "label": "Reach Floor 20 of the Storybook Dungeon"},
+                    {"type": "wonderland_floor", "target": "30",
+                     "label": "Reach Floor 30 of the Storybook Dungeon"},
+                    {"type": "wonderland_floor", "target": "40",
+                     "label": "Reach Floor 40 of the Storybook Dungeon"},
+                ],
+            },
+        ],
+        "rewards": {
+            "xp": 700,
+            "gold": 600,
+            "items": [],
+            "flags": [],
+            "grade_unlock": None,
+            "next": "sq_wonderland_03",
+        },
+    },
+
+    "sq_wonderland_03": {
+        "id": "sq_wonderland_03",
+        "type": "side",
+        "name": "The Author's Last Page",
+        "giver": "white_rabbit",
+        "region": "wonderland",
+        "prereq": "sq_wonderland_02",
+        "turn_in": None,
+        "journal_desc": (
+            "Every chapter has an ending. At the bottom of the Storybook, the "
+            "Author is still writing — and she does not intend to let anyone "
+            "leave."
+        ),
+        "stages": [
+            {
+                "id": "finale",
+                "desc": "Close the book.",
+                "objectives": [
+                    {"type": "wonderland_boss", "target": "big_bad_wolf",
+                     "label": "Defeat the Big Bad Wolf (Floor 20)"},
+                    {"type": "wonderland_boss", "target": "wicked_witch",
+                     "label": "Defeat the Wicked Witch of the West (Floor 30)"},
+                    {"type": "wonderland_boss", "target": "jabberwock",
+                     "label": "Defeat the Jabberwock (Floor 40)"},
+                    {"type": "wonderland_boss", "target": "mary_sue",
+                     "label": "Defeat Mary Sue, the Author (Floor 50)"},
+                ],
+            },
+        ],
+        "rewards": {
+            "xp": 1200,
+            "gold": 1000,
+            "items": [],
+            "flags": [],
+            "grade_unlock": None,
+            "next": None,
+        },
+    },
+
+    # ── Wonderland heroine arcs ───────────────────────────────────────────
+    # Each arc starts when the heroine is first met at the Mad Hatter's tea
+    # party and resolves when her personal superboss is defeated.
+    "sq_wonderland_alice": {
+        "id": "sq_wonderland_alice",
+        "type": "side",
+        "name": "Alice's Jabberwock",
+        "giver": "alice",
+        "region": "wonderland",
+        "prereq": None,
+        "turn_in": None,
+        "journal_desc": (
+            "Alice has been counting sugar cubes at the Mad Hatter's table "
+            "while a beast writes its own ending. She would like her story "
+            "back."
+        ),
+        "stages": [
+            {
+                "id": "meet",
+                "desc": "Find Alice at the tea party.",
+                "objectives": [
+                    {"type": "heroine_met", "target": "alice",
+                     "label": "Meet Alice at the Mad Hatter's tea party"},
+                ],
+            },
+            {
+                "id": "join",
+                "desc": "Invite her to travel with you.",
+                "objectives": [
+                    {"type": "heroine_recruited", "target": "alice",
+                     "label": "Recruit Alice into your party"},
+                ],
+            },
+            {
+                "id": "jabberwock",
+                "desc": "Face the beast that rewrote her story.",
+                "objectives": [
+                    {"type": "wonderland_boss", "target": "jabberwock",
+                     "label": "Defeat the Jabberwock (Floor 40)"},
+                ],
+            },
+            {
+                "id": "free",
+                "desc": "See Alice's story to its end.",
+                "objectives": [
+                    {"type": "heroine_permanent", "target": "alice",
+                     "label": "Help Alice become a permanent ally"},
+                ],
+            },
+        ],
+        "rewards": {
+            "xp": 800,
+            "gold": 500,
+            "items": [],
+            "flags": [],
+            "grade_unlock": None,
+            "next": None,
+        },
+    },
+
+    "sq_wonderland_red_hood": {
+        "id": "sq_wonderland_red_hood",
+        "type": "side",
+        "name": "Red Hood's New Ending",
+        "giver": "red_hood",
+        "region": "wonderland",
+        "prereq": None,
+        "turn_in": None,
+        "journal_desc": (
+            "Red Hood came to Wonderland to write a new ending for her story. "
+            "The Big Bad Wolf ate the old one — and he is still hungry."
+        ),
+        "stages": [
+            {
+                "id": "meet",
+                "desc": "Find Red Hood at the tea party.",
+                "objectives": [
+                    {"type": "heroine_met", "target": "red_hood",
+                     "label": "Meet Red Hood at the Mad Hatter's tea party"},
+                ],
+            },
+            {
+                "id": "join",
+                "desc": "Prove your back is worth watching.",
+                "objectives": [
+                    {"type": "heroine_recruited", "target": "red_hood",
+                     "label": "Recruit Red Hood into your party"},
+                ],
+            },
+            {
+                "id": "wolf",
+                "desc": "Hunt the Wolf that ate her ending.",
+                "objectives": [
+                    {"type": "wonderland_boss", "target": "big_bad_wolf",
+                     "label": "Defeat the Big Bad Wolf (Floor 20)"},
+                ],
+            },
+            {
+                "id": "free",
+                "desc": "Let her write her own ending.",
+                "objectives": [
+                    {"type": "heroine_permanent", "target": "red_hood",
+                     "label": "Help Red Hood become a permanent ally"},
+                ],
+            },
+        ],
+        "rewards": {
+            "xp": 800,
+            "gold": 500,
+            "items": [],
+            "flags": [],
+            "grade_unlock": None,
+            "next": None,
+        },
+    },
+
+    "sq_wonderland_dorothy": {
+        "id": "sq_wonderland_dorothy",
+        "type": "side",
+        "name": "Dorothy's Way Home",
+        "giver": "dorothy",
+        "region": "wonderland",
+        "prereq": None,
+        "turn_in": None,
+        "journal_desc": (
+            "Dorothy has walked the yellow brick road six times, and it never "
+            "ends where she wants. To go home, she must first finish the "
+            "Witch's story."
+        ),
+        "stages": [
+            {
+                "id": "meet",
+                "desc": "Find Dorothy at the tea party.",
+                "objectives": [
+                    {"type": "heroine_met", "target": "dorothy",
+                     "label": "Meet Dorothy at the Mad Hatter's tea party"},
+                ],
+            },
+            {
+                "id": "join",
+                "desc": "Walk the road with her.",
+                "objectives": [
+                    {"type": "heroine_recruited", "target": "dorothy",
+                     "label": "Recruit Dorothy into your party"},
+                ],
+            },
+            {
+                "id": "witch",
+                "desc": "Face the Witch the story demands.",
+                "objectives": [
+                    {"type": "wonderland_boss", "target": "wicked_witch",
+                     "label": "Defeat the Wicked Witch of the West (Floor 30)"},
+                ],
+            },
+            {
+                "id": "free",
+                "desc": "Show her home can wait for the right ending.",
+                "objectives": [
+                    {"type": "heroine_permanent", "target": "dorothy",
+                     "label": "Help Dorothy become a permanent ally"},
+                ],
+            },
+        ],
+        "rewards": {
+            "xp": 800,
+            "gold": 500,
+            "items": [],
+            "flags": [],
+            "grade_unlock": None,
+            "next": None,
+        },
+    },
 }

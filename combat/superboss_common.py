@@ -14,14 +14,19 @@ from combat.weapon.authors_pen import (
     compute_last_round_damage,
     tick_authors_pen_cooldown,
 )
+from combat.weapon.moonlight_greatsword import (
+    apply_moonlight_round_start,
+    tick_moonlight,
+    clear_moonlight_state,
+)
 # combat/superboss_common.py
 """Shared functions for superboss fights, extracted to break circular imports."""
 
 from combat.stats import compute_player_stats
 from combat.enemy_ai import enemy_attack
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import print_combat_hud, print_superboss_header, print_player_mini_hud, format_enemy_status_line, print_turn_order
-from combat.status_effects import tick_player_debuffs, tick_player_buffs, try_consume_death_ward
+from combat.combat_ui import print_combat_hud, print_superboss_header, print_player_mini_hud, format_enemy_status_line, print_turn_order, print_round_header, current_time_label
+from combat.status_effects import tick_player_debuffs, tick_player_buffs, try_consume_death_ward, consume_stun, clear_stun
 from combat.skills import tick_skill_cooldowns
 from combat.fractured_hourglass import tick_hourglass_cooldown
 from combat.ally import (
@@ -40,19 +45,24 @@ def superboss_triple_action_loop(player, enemies, p_str, p_con, p_dex, p_ler, p_
         return None
 
     for extra_num in range(2):
-        enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
+        enemies[:] = prune_dead(enemies, player)
         if not enemies:
             return "victory"
 
         c_print(f"\n⚔️  ABYSS TEMPO — extra action ({extra_num + 2}/3)!")
         print_hud_func()
 
-        action = c_input("Choose: ").strip().lower()
-        result, _ = handle_player_turn(
-            player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
-            on_kill=on_kill,
-            _action_override=action,
-        )
+        while True:
+            action = c_input("Choose: ").strip().lower()
+            result, _ = handle_player_turn(
+                player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha,
+                on_kill=on_kill,
+                _action_override=action,
+            )
+            # Free actions (Time Warp) and cancellations return "retry" —
+            # keep the same extra action open instead of dropping it.
+            if result != "retry":
+                break
         if result in ("fled", "victory", "dead"):
             return result
     return None
@@ -82,10 +92,13 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
     """
     Initiative‑based superboss combat loop with hooks for special mechanics.
     """
-    on_kill_fn = (
-        lambda target, elist: on_kill_hook(target, elist, context)
-        if on_kill_hook else None
-    )
+    def _bestiary_and_boss_kill(target, elist):
+        from bestiary import record_defeat
+        record_defeat(player, target)
+        if on_kill_hook:
+            on_kill_hook(target, elist, context)
+
+    on_kill_fn = _bestiary_and_boss_kill
     
     # ADD THIS WRAPPER:
     on_hit_fn = (
@@ -96,12 +109,27 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
     # Pins only start accumulating if the Jade is actually equipped
     player["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(player) else 0
     player["tarnished_jade_weakened"] = False
+    # Wedding "once per combat" flags must not leak between superboss fights.
+    player.pop("wedding_mirror_locket_used", None)
     clear_captain_cutlass_state(player)
+    clear_moonlight_state(player)
+    # Stun never crosses an encounter boundary (stale save / previous fight).
+    clear_stun(player)
+
+    # Party stress: settle the previous fight's falls, then let Burned Out
+    # companions refuse this one (docs/stress_system_design.md).
+    from combat.party_stress import begin_encounter
+    for _stress_msg in begin_encounter(player):
+        c_print(_stress_msg)
 
     # Palette's Brush + Blank Canvas Shawl state (player)
     from combat.weapon.palette_brush import init_brush_state, _actor_has_palette_brush
     from combat.weapon.blank_canvas_shawl import clear_shawl_state
+    from combat.weapon.decaying_aegis import begin_decaying_aegis_combat
+    from combat.sylvana_heroine import clear_sylvana_combat_state
     clear_shawl_state(player)
+    clear_sylvana_combat_state(player)
+    begin_decaying_aegis_combat(player)
     if _actor_has_palette_brush(player):
         init_brush_state(player)
 
@@ -114,9 +142,11 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
     from combat.weapon.authors_pen import clear_authors_pen_state
     from combat.weapon.captain_cutlass import _clear_captain_cutlass_state_actor
     for ally in player.get("allies", []):
+        clear_stun(ally)
         if ally.get("current_hp", 0) > 0:
             clear_authors_pen_state(ally)
             _clear_captain_cutlass_state_actor(ally, player_ref=player)
+            clear_moonlight_state(ally)
             ally["tarnished_jade_pins"] = 1 if _actor_has_tarnished_jade(ally) else 0
             ally["tarnished_jade_weakened"] = False
             # Mirror player context onto allies (Wonderland checks, floor-tracking uniques)
@@ -125,6 +155,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             if _actor_has_black_silence_gloves(ally):
                 init_gloves_state(ally)
             clear_shawl_state(ally)
+            begin_decaying_aegis_combat(ally)
             from combat.palette_ally import clear_palette_ally_state
             clear_palette_ally_state(ally)
             if _actor_has_palette_brush(ally):
@@ -134,12 +165,20 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
     if floor is not None and player.get("cutlass_high_tide_floor") != floor:
         player["cutlass_high_tide_stacks"] = 0
         player["cutlass_high_tide_floor"] = floor
+
+    # Profession passives: battle start (Chronomancer start-CD, regen, …)
+    from combat.skills import apply_profession_battle_start
+    apply_profession_battle_start(player)
+
     round_num = 0
 
     while True:
         round_num += 1
 
         apply_abyss_tempo_round_start(player)
+        apply_moonlight_round_start(player)
+        for ally in get_active_allies(player):
+            apply_moonlight_round_start(ally)
 
         # ── Author's Pen: snapshot party HP for Rewrite damage tracking ──
         snapshot_party_hp(player)
@@ -150,7 +189,15 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         for ally in get_active_allies(player):
             apply_chronoweave_turn_start(ally)
 
-        enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
+        # Sylvana's Queen's Grace + Decaying Aegis upkeep
+        from combat.sylvana_heroine import apply_sylvana_party_grace
+        apply_sylvana_party_grace(player)
+        from combat.weapon.decaying_aegis import apply_decaying_aegis_turn_start
+        apply_decaying_aegis_turn_start(player)
+        for ally in get_active_allies(player):
+            apply_decaying_aegis_turn_start(ally)
+
+        enemies[:] = prune_dead(enemies, player)
         if not enemies:
             return "victory"
 
@@ -158,7 +205,11 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
         c_clear()
 
-        c_print(f"  >> ROUND {round_num}")
+        # Same header as the standard engine — the GUI's top bar reads floor /
+        # time from this line, so superbosses no longer show a bare "ROUND n".
+        _display_floor = player.get("_combat_floor_label") or floor
+        print_round_header(round_num, floor=_display_floor,
+                           time_str=current_time_label(player))
 
         if pre_player_hook:
             result = pre_player_hook(context, enemies)
@@ -193,7 +244,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         from combat.weapon.tarnished_jade import apply_tarnished_jade_turn_start
         tj_triggered = apply_tarnished_jade_turn_start(player, enemies)
         if tj_triggered:
-            enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
+            enemies[:] = prune_dead(enemies, player)
             if not enemies:
                 c_print("\n  All enemies have been defeated!")
                 c_input("  Press Enter to continue...")
@@ -253,11 +304,11 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         print_turn_order(turn_order)
         c_input("\nPress Enter to start the round...")
 
-        c_print(f"\n⚔️  Round {round_num}: Action Phase")
+        c_print(f"\n  ⚔️  ROUND {round_num}: ACTION PHASE")
         defending = False
 
         for step_idx, combatant in enumerate(turn_order):
-            live_enemies = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
+            live_enemies = prune_dead(enemies, player)
             if not live_enemies:
                 break
 
@@ -272,6 +323,13 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 if context.get("skip_player_turn") and not combatant.get("extra_turn"):
                     c_print(f"{player['name']} is stunned and cannot act!")
                     context["skip_player_turn"] = False
+                    continue
+
+                # Generic Stun (shock procs, boss modules that set the flag
+                # directly) — checked here because this loop prompts for the
+                # action before handle_player_turn runs.
+                if consume_stun(player):
+                    c_print(f"{player['name']} is stunned and cannot act!")
                     continue
 
                 if combatant.get("extra_turn"):
@@ -311,7 +369,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 if result == "continue":
                     if new_def:
                         defending = True
-                    enemies[:] = prune_dead(enemies)
+                    enemies[:] = prune_dead(enemies, player)
                     if not enemies:
                         break
                 elif result == "victory":
@@ -355,7 +413,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         break
 
                 if result == "continue":
-                    enemies[:] = prune_dead(enemies)
+                    enemies[:] = prune_dead(enemies, player)
                     if not enemies:
                         break
                 elif result == "victory":
@@ -412,7 +470,11 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                         if len(alive_party) == 1:
                             target = alive_party[0]
                         else:
-                            weights = [2.0 if m is player else 1.0 for m in alive_party]
+                            from combat.status_effects import get_aggro_multiplier
+                            weights = [
+                                (2.0 if m is player else 1.0) * get_aggro_multiplier(m)
+                                for m in alive_party
+                            ]
                             target = random.choices(alive_party, weights=weights)[0]
 
                         is_defending = (target is player and defending)
@@ -467,7 +529,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
                 reset_prescript_state(player)
                 return "spared"
 
-        enemies[:] = [e for e in enemies if e["hp"] > 0 and not e.get("captured")]
+        enemies[:] = prune_dead(enemies, player)
         if not enemies:
             c_print("\n  All enemies have been defeated!")
             c_input("  Press Enter to continue...")
@@ -483,6 +545,7 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
         tick_abyss_fang_cooldown(player, prefix="")
         tick_abyssal_tempo(player, prefix="")
         tick_captain_cutlass(player, prefix="")
+        tick_moonlight(player, prefix="")
 
         # Author's Pen: round-end damage tracking + cooldown
         compute_last_round_damage(player)
@@ -495,12 +558,24 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             tick_abyssal_tempo(ally, prefix="")
             _tick_captain_cutlass_actor(ally, player_ref=player)
             tick_authors_pen_cooldown(ally, prefix="")
+            tick_moonlight(ally, prefix="")
 
         tick_skill_cooldowns(player)
         tick_hourglass_cooldown(player, prefix="")
         for ally in get_alive_allies(player):
             tick_skill_cooldowns(ally)
             tick_hourglass_cooldown(ally, prefix="")
+
+        # Potion sickness tick (mirrors _tick_all_state in the standard
+        # engine — superboss rounds have their own loop and used to skip it,
+        # leaving SICK×2 stuck for the whole fight).
+        if player.get("potion_sickness", 0) > 0:
+            player["potion_sickness"] -= 1
+            if player["potion_sickness"] == 0:
+                c_print("  Your stomach settles. You can use another potion.")
+            else:
+                c_print(f"  Potion sickness — {player['potion_sickness']} turn(s) remaining.")
+
         msgs, died = tick_player_debuffs(player)
         for m in msgs:
             c_print(m)
@@ -517,6 +592,12 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
 
         # Tick ally debuffs/buffs
         for ally in get_alive_allies(player):
+            if ally.get("potion_sickness", 0) > 0:
+                ally["potion_sickness"] -= 1
+                if ally["potion_sickness"] == 0:
+                    c_print(f"  {display_name(ally)}'s stomach settles.")
+                else:
+                    c_print(f"  {display_name(ally)} potion sickness — {ally['potion_sickness']} turn(s) remaining.")
             ally_msgs, ally_died = tick_player_debuffs(ally)
             for m in ally_msgs:
                 c_print(f"  {display_name(ally)}: {m}")
@@ -529,5 +610,4 @@ def superboss_combat_loop(player, enemies, floor, boss_name, context,
             for m in tick_player_buffs(ally):
                 c_print(f"  {display_name(ally)}: {m}")
 
-        c_print("\n" + "-" * 50)
         c_input("Press Enter to continue...")

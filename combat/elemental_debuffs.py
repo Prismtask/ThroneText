@@ -57,24 +57,17 @@ ELEMENTAL_DEBUFF_DEFAULTS = {
 
 
 def get_elemental_debuff(enemy):
-    """Return (debuff_type, base_chance) for the enemy's strongest element,
-    or None if no element exceeds 1.0 affinity.
+    """Return (debuff_type, base_chance) for the enemy's attack element,
+    or None if the enemy is neutral.
 
-    Picks the element with the highest elemental_dmg value > 1.0.
-    This keeps the system predictable — players can learn what secondary
-    debuff to expect from each enemy type.
+    Uses the shared ``get_damage_element`` picker so the debuff channel can
+    never disagree with the AI's attack element (identical ``ELEMENTS``
+    tie-break). This keeps the system predictable — players can learn what
+    secondary debuff to expect from each enemy type.
     """
-    dmg_profile = enemy.get("elemental_dmg", {})
-    if not dmg_profile:
-        return None
+    from combat.elemental import get_damage_element
 
-    best_element = None
-    best_value = 0.0
-    for el, val in dmg_profile.items():
-        if val > 1.0 and val > best_value:
-            best_value = val
-            best_element = el
-
+    best_element = get_damage_element(enemy.get("elemental_dmg", {}))
     if best_element is None:
         return None
 

@@ -31,6 +31,10 @@ WILD_DUNGEON_THEMES = {
         "adjectives": ["Ley-Woven", "Shimmering", "Arcane", "Starless", "Runebound", "Unmade"],
         "ruins": ["Sanctum", "Nexus", "Observatory", "Reliquary", "Vault", "Manse"],
     },
+    "celestial": {
+        "adjectives": ["Gilded", "Aurora-Bound", "Star-Wrought", "Hymnal", "Seraphic", "Cloud-Veiled"],
+        "ruins": ["Stair", "Sanctum", "Choir", "Aerie", "Reliquary", "Sky-Vault"],
+    },
     "volcanic": {
         "adjectives": ["Smoldering", "Ashen", "Searing", "Cindered", "Magma-Touched", "Smoking"],
         "ruins": ["Caldera", "Forge-Ruins", "Furnace", "Foundry", "Cinder-Vault", "Pyre"],

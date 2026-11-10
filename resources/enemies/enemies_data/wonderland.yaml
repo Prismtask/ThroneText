@@ -662,7 +662,7 @@ wl_big_bad_wolf:
   race: Beast
   secondary_race: Storybook
   level: 24
-  base_hp: 480
+  base_hp: 870
   mods:
     Strength: 7
     Constitution: 5
@@ -679,7 +679,7 @@ wl_wicked_witch:
   race: Demon
   secondary_race: Storybook
   level: 33
-  base_hp: 765
+  base_hp: 1465
   mods:
     Learning: 8
     Wisdom: 7
@@ -701,7 +701,7 @@ wl_jabberwock:
   race: Storybook
   secondary_race: Dragonkin
   level: 41
-  base_hp: 1080
+  base_hp: 1880
   mods:
     Strength: 5
     Constitution: 5
@@ -725,7 +725,7 @@ wl_jabberwock_shadow:
   race: Storybook
   secondary_race: Dragonkin
   level: 48
-  base_hp: 874
+  base_hp: 2374
   mods:
     Strength: 4
     Constitution: 4
@@ -746,7 +746,7 @@ wl_mary_sue:
   name: Mary Sue
   race: Storybook
   level: 57
-  base_hp: 2030
+  base_hp: 2830
   mods:
     Charisma: 10
     Strength: 12
@@ -767,7 +767,7 @@ wl_queen_of_hearts_shadow:
   race: Demon
   secondary_race: Storybook
   level: 35
-  base_hp: 432
+  base_hp: 632
   mods:
     Strength: 3
     Charisma: 4
@@ -785,7 +785,7 @@ wl_card_soldier_shadow:
   race: Construct
   secondary_race: Storybook
   level: 10
-  base_hp: 164
+  base_hp: 264
   mods:
     Strength: 1
     Constitution: 2
@@ -802,7 +802,7 @@ wl_big_bad_wolf_shadow:
   race: Beast
   secondary_race: Storybook
   level: 45
-  base_hp: 754
+  base_hp: 1154
   mods:
     Strength: 5
     Constitution: 3
@@ -820,7 +820,7 @@ wl_wicked_witch_shadow:
   race: Demon
   secondary_race: Storybook
   level: 42
-  base_hp: 650
+  base_hp: 1650
   mods:
     Learning: 5
     Wisdom: 5
@@ -837,50 +837,6 @@ wl_wicked_witch_shadow:
   super_boss: false
   _shadow: true
   _shadow_of: wicked_witch
-
-# ═══════════════════════════════════════════════════════════════════
-# HEROINE ALLIES (Phase 17)
-# ═══════════════════════════════════════════════════════════════════
-
-wonderland_palette:
-  name: Palette
-  race: Elemental
-  level: 1
-  base_hp: 24
-  mods:
-    Wisdom: 4
-    Learning: 3
-    Charisma: 3
-    Strength: -2
-    Constitution: 1
-    Dexterity: 1
-  boss: false
-  super_boss: false
-  _heroine: palette
-  _heroine_passive: living_pigment
-  dialogue:
-    capture: Palette blinks at the net, genuinely puzzled. 'Oh — no, I don't think
-      I'd paint well in a net. Would you like to talk instead? I don't... get
-      many visitors.'
-    recruit_denied: Palette's shoulders dip, just a little. 'That's... that's
-      alright. The atelier is quiet. I'm used to quiet.' They fuss with a brush
-      and do not quite look at you.
-    recruit_accepted: Palette's face lights up like wet paint catching the sun.
-      'Truly? Oh — I'll be careful, I promise. No accidental masterpieces on
-      your walls. Unless you'd like one. Do you like one?'
-    house_talk_low: Palette fidgets with the bristles of a brush, dipping it into
-      a pigment that isn't there. 'You're... you're not scary, you know. I was
-      sure you would be.'
-    house_talk_mid: Palette examines your sleeves with professional horror. 'That
-      color doesn't suit you at all. Here —' They paint a thread-thin stripe of
-      a different color up the cuff. Somehow, it is perfect.
-    house_talk_high: Palette has started leaving tiny painted gifts on your
-      windowsill — a storm cloud, a sleeping cat, a cup of tea that is somehow
-      still warm. Each one seems to say 'I thought of you', and then it is
-      painted into being.
-    house_talk_max: Palette curls up beside you, hands stained in seven colors.
-      'The others only ever saw the Artisan. You're the first person who let me
-      just... be Palette. Thank you. For letting the paint dry.'
 
 wonderland_alice:
   name: Alice

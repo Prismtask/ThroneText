@@ -1,5 +1,5 @@
 # facilities/barracks.py
-from utils import advance_time, clear_screen, display_name
+from utils import advance_time, display_name
 from city_dialogue import service_dialogue
 from combat.ally_skills import (
     teach_ally_skill, replace_ally_learned_skill, MAX_LEARNED_SKILLS,
@@ -293,17 +293,12 @@ def select_skill_from_category(player, ally_data, category):
 # ── Training Dummy ────────────────────────────────────────────────────────────
 
 def _dummy_spar_flow(player):
-    """Show dummy configuration and launch sparring.
+    """Show dummy configuration and launch sparring in the GUI CombatScreen.
 
-    In terminal mode, runs combat directly via spar_with_dummy().
-    In GUI/FacilityScreen mode, stores config on player and returns
-    so the city screen can launch CombatScreen.
+    The facility stores the selected config on the player and redirects its
+    own on_close callback so the city screen launches CombatScreen directly.
     """
-    from combat.dummy import (
-        DEFAULT_DUMMY_CONFIG, create_dummy_enemy,
-        spar_with_dummy, prepare_dummy_for_gui,
-    )
-    from combat.elemental import ELEMENTS
+    from combat.dummy import DEFAULT_DUMMY_CONFIG
 
     dummy_state = DEFAULT_DUMMY_CONFIG.copy()
 
@@ -317,24 +312,15 @@ def _dummy_spar_flow(player):
     # Build the dummy enemy config
     config = _build_dummy_config(dummy_state)
 
-    # Check if we're running in GUI/FacilityScreen mode
-    if get_terminal() is not None:
-        # GUI mode: replace the facility's on_close callback to launch
-        # CombatScreen directly, bypassing _after_facility entirely.
-        # This avoids issues with the CityScreen having been destroyed.
-        t = get_terminal()
-        screen = t._screen
-        if screen is not None:
-            player["_pending_dummy_combat"] = config
-            # Replace on_close so when the facility closes, it opens combat
-            screen.on_close = lambda _result: _launch_dummy_combat_from_facility(
-                screen, player
-            )
-        term.print("\nEntering sparring arena...")
-        return
-    else:
-        # Terminal mode: run combat directly
-        spar_with_dummy(player, config)
+    t = get_terminal()
+    screen = t._screen if t is not None else None
+    if screen is not None:
+        player["_pending_dummy_combat"] = config
+        # Replace on_close so when the facility closes, it opens combat
+        screen.on_close = lambda _result: _launch_dummy_combat_from_facility(
+            screen, player
+        )
+    term.print("\nEntering sparring arena...")
 
 
 def _dummy_config_menu(dummy_state):
@@ -358,9 +344,9 @@ def _dummy_config_menu(dummy_state):
         # Summarise resistances
         res_parts = []
         for el in ELEMENTS:
-            val = res.get(el, 0.0)
-            if val != 0.0:
-                res_parts.append(f"{el[:4].capitalize()}:{val*100:+.0f}%")
+            val = res.get(el, 1.0)
+            if val != 1.0:
+                res_parts.append(f"{el[:4].capitalize()}:{(val - 1.0)*100:+.0f}%")
         if res_parts:
             term.print(f"  Resists:  {', '.join(res_parts)}")
         else:
@@ -418,7 +404,7 @@ def _configure_resistances_term(dummy_state):
     """Sub-menu for elemental resistances using term API."""
     from combat.elemental import ELEMENTS
 
-    res = dummy_state.setdefault("elemental_res", {el: 0.0 for el in ELEMENTS})
+    res = dummy_state.setdefault("elemental_res", {el: 1.0 for el in ELEMENTS})
     el_list = list(ELEMENTS)
 
     while True:
@@ -427,7 +413,7 @@ def _configure_resistances_term(dummy_state):
         term.print("  (Positive = resist, Negative = weakness, 0 = neutral)")
         options = []
         for el in el_list:
-            val = res.get(el, 0.0)
+            val = res.get(el, 1.0) - 1.0
             pct = f"{val*100:+.0f}%"
             options.append(f"{el.capitalize():12s} {pct}")
         options.append("Back")
@@ -435,21 +421,21 @@ def _configure_resistances_term(dummy_state):
         choice = term.menu(options, prompt="Select element to adjust:")
         if 0 <= choice < len(el_list):
             el = el_list[choice]
-            _set_float_term(res, el, f"{el.capitalize()} resistance", -1.0, 1.0)
+            _set_resistance_term(res, el)
         else:
             return
 
 
-def _set_float_term(d, key, label, min_val, max_val):
-    """Prompt for a float value using term API."""
-    current = d.get(key, 0.0)
-    val_str = term.input(f"Current {label}: {current:+.0%}\nNew value ({min_val:.1f}-{max_val:.1f}): ")
+def _set_resistance_term(res, el):
+    """Prompt for a resistance percentage (-100%..+100%) and store the rating."""
+    current = res.get(el, 1.0) - 1.0
+    val_str = term.input(f"Current {el.capitalize()} resistance: {current:+.0%}\nNew value (-1.0 to 1.0; positive = resist): ")
     try:
         val = float(val_str.strip()) if val_str else None
-        if val is not None and min_val <= val <= max_val:
-            d[key] = val
+        if val is not None and -1.0 <= val <= 1.0:
+            res[el] = 1.0 + val
         elif val is not None:
-            term.print(f"Value must be between {min_val} and {max_val}.")
+            term.print("Value must be between -1.0 and 1.0.")
             term.pause()
     except ValueError:
         term.print("Invalid number.")
@@ -465,7 +451,7 @@ def _build_dummy_config(dummy_state):
         "con_mod": dummy_state.get("con_mod", 0),
         "dex_mod": dummy_state.get("dex_mod", -100),
         "elemental_res": {
-            el: dummy_state.get("elemental_res", {}).get(el, 0.0)
+            el: dummy_state.get("elemental_res", {}).get(el, 1.0)
             for el in ELEMENTS
         },
     }

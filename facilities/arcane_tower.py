@@ -41,7 +41,8 @@ def _strip_wonderland_only_from_ally(ally):
 def _wizard_interaction(player):
     """Handle the Wizard of Oz encounter in Wonderland's Arcane Tower.
 
-    Phase 1: Give Silver Slippers (requires floor 30+)
+    Phase 1: Give Silver Slippers (requires floor 25+ — Dorothy arrives after
+             Floor 20 and her Witch chapter ends at 30)
     Phase 2: Upgrade Silver Slippers → Ruby Slippers (requires Wicked Witch defeat + materials)
     """
     from resources.dialogues.wonderland import WONDERLAND_WIZARD_DIALOGUE as WD
@@ -268,7 +269,7 @@ def _awakening_research(player, city_id):
             term.print("")
             term.print("✦ The shards fuse in a spiral of pale light...")
             term.print(f"*** AWAKENING SIGIL FORGED! (Sigils: {player['awakening_sigils']}) ***")
-            term.print("Take it to the House Lounge to Awaken a bonded companion (Lv40+, cap 40+, affection 150+).")
+            term.print("Take it to the House Lounge to Awaken a bonded companion (Lv40+, cap 40+, affection 200+).")
             term.pause()
             continue
         break
@@ -340,22 +341,21 @@ def _build_menu_options(player, city_id):
     if city_id == "wonderland":
         options.append("Return through the Looking-Glass (Veilholt)")
 
-    # ── Wonderland: Wizard of Oz (floor 30+) ───────────────────────────
+    # ── Wonderland: Wizard of Oz (floor 25+) ───────────────────────────
     wizard_available = (
         city_id == "wonderland" and
-        _get_wonderland_max_floor(player) >= 30
+        _get_wonderland_max_floor(player) >= 25
     )
     if wizard_available:
         options.append("Speak with the Wizard")
 
     # ── Wonderland: Entry book (Veilholt only) ─────────────────────────
     if city_id == "veilholt":
-        city_floors = player.get("city_floors", {})
-        cities_f20 = sum(
-            1 for cid, prog in city_floors.items()
-            if prog.get("max_floor", 1) >= 20
-        )
-        if cities_f20 >= 2 and player.get("day", 1) >= 60:
+        # Same-biome cities share one dungeon depth, so require two
+        # different biomes (not two city records).
+        from leveling import get_biomes_cleared_to_cap
+        biomes_f20 = get_biomes_cleared_to_cap(player, 20)
+        if len(biomes_f20) >= 2:
             options.append("Investigate mysterious book")
 
     return options
@@ -730,15 +730,14 @@ def _craft_scroll(player, city_id):
 
 
 def _scroll_craft_cost(rarity):
-    """Gold cost to craft a scroll of the given rarity."""
-    costs = {
-        "common":    2000,
-        "uncommon":  5000,
-        "rare":     12000,
-        "epic":     30000,
-        "legendary": 80000,
-    }
-    return costs.get(rarity, 5000)
+    """Gold cost to craft a scroll of the given rarity.
+
+    Value-derived (docs/gold_economy_pacing_design.md D3): the rarity's
+    price multiplier drives the cost, so the ladder is 2,000 / 2,800 /
+    4,400 / 8,000 / 16,000. The four-item fodder remains the real gate.
+    """
+    mult = ITEM_RARITY.get(rarity, ITEM_RARITY["common"])["price_mult"]
+    return int(2_000 * mult)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -893,8 +892,6 @@ def _investigate_mysterious_book(player, city_id):
 
     Returns True if the player entered Wonderland, False otherwise.
     """
-    from utils import format_time
-
     has_shard = any(
         item.get("id") == "looking_glass_shard"
         for item in player.get("inventory", [])
@@ -978,6 +975,17 @@ def _investigate_mysterious_book(player, city_id):
     player["location"] = "wonderland"
     player["wonderland_active"] = True
     player["wonderland_unlocked"] = True
+    player["wonderland_visited"] = True
+
+    # Deed titles: first entry unlocks the opening Wonderland title.
+    from titles import check_unlock as _check_title_unlock
+    _check_title_unlock(player)
+
+    # Quest hook: the book opens the Wonderland side-quest chain. This also
+    # marks any visit_city objective immediately, before the city screen loads.
+    from quests import update_quests
+    for msg in update_quests(player, "visit_city", "wonderland"):
+        term.print(msg)
 
     term.print(
         "\nThe pages envelop you. The archmage's tower dissolves into "
@@ -994,7 +1002,7 @@ def _leave_wonderland(player):
     Called when the player selects 'Return through the Looking-Glass'
     in the Wonderland Arcane Tower (Cheshire Cat).
     """
-    from utils import format_time
+    from time_blocks import get_day_phase
 
     # ── Separate permanent vs temporary heroines ─────────────────────────
     permanent_heroines = []
@@ -1039,8 +1047,9 @@ def _leave_wonderland(player):
         player["party_order"].append(len(player["allies"]) - 1)
 
     # ── Overflow check: prompt to send excess allies to the house ───────
-    from combat.ally import MAX_ALLIES, _return_ally_to_house, ensure_party_order
-    while len(player["allies"]) > MAX_ALLIES:
+    from combat.ally import get_ally_capacity, _return_ally_to_house, ensure_party_order
+    ally_capacity = get_ally_capacity(player)
+    while len(player["allies"]) > ally_capacity:
         houses = player.get("houses", {})
         if not houses:
             dropped = player["allies"].pop()
@@ -1053,10 +1062,10 @@ def _leave_wonderland(player):
             continue
 
         house_city, house = next(iter(houses.items()))
-        excess = len(player["allies"]) - MAX_ALLIES
+        excess = len(player["allies"]) - ally_capacity
         term.print(
-            f"\n⚠ Your party is overflowing by {excess} ally(s). "
-            f"You must send someone to the house."
+            f"\n⚠ Your party is overflowing by {excess} ally(s) for your "
+            f"Command Resonance grade. You must send someone to the house."
         )
 
         ally_names = [f"{display_name(a)} (Lv.{a['level']})" for a in player["allies"]]
@@ -1094,8 +1103,8 @@ def _leave_wonderland(player):
         "\nThe book closes with a soft thud. The archmage's tower "
         "reforms around you."
     )
+    phase = get_day_phase(player).title()
     term.print(
-        f"The clock on the wall reads: {format_time(player['time_minutes'])}. "
-        "No time has passed."
+        f"The clock on the wall reads: {phase}. No time has passed."
     )
     term.pause()

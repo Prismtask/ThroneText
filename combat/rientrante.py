@@ -209,8 +209,7 @@ def _frozen_burst(arm, player):
 
 def _trigger_phase2(ctx, elist, boss, player):
     """Transition to Phase 2."""
-    c_print("\n" + "!" * 60)
-    c_print("[PHASE 2] The 'ice' cracks like broken glass.")
+    c_print("\n[PHASE 2] The 'ice' cracks like broken glass.")
     c_print("The truth reveals itself.")
     c_print()
     c_print("'Nice try,' Rientrante says, brushing dust from his shoulder.")
@@ -220,7 +219,6 @@ def _trigger_phase2(ctx, elist, boss, player):
     c_print()
     c_print("He snaps his fingers. The Eye of Truth materializes — a debug")
     c_print("window floating in the air. Frozen Arms rise as security drones.")
-    c_print("!" * 60)
     c_input("Press Enter to confront the truth...")
 
     ctx["phase"] = 2
@@ -284,8 +282,7 @@ def combat_rientrante(player, floor=None, enemies=None):
             boss["shell_hp"] = int(boss["max_hp"] * 0.30)
             enemies.append(boss)
 
-    c_print("\n" + "=" * 60)
-    c_print("The dungeon flickers. Not with cold — with wrongness.")
+    c_print("\nThe dungeon flickers. Not with cold — with wrongness.")
     c_print("The stone walls pixelate at the edges, and for a moment you see")
     c_print("fluorescent lights behind them. An office ceiling. A different world.")
     c_print()
@@ -299,7 +296,6 @@ def combat_rientrante(player, floor=None, enemies=None):
     c_print("'I'm Rientrante. I run the server. And you?'")
     c_print("'You're just a guest who overstayed.'")
     c_print(f"\nRientrante, the Administrator — HP: {boss['hp']} (Barrier: {boss['shell_hp']})")
-    c_print("=" * 60)
     c_input("\nPress Enter to face the truth...")
 
     context = {
@@ -348,7 +344,7 @@ def combat_rientrante(player, floor=None, enemies=None):
             and not ctx["phase2_triggered"]
         ):
             if b["hp"] <= int(b["max_hp"] * 0.65):
-                c_print("\n[GIMMICK] Rientrante's barrier glitches!")
+                c_print("\n⚙ [GIMMICK] Rientrante's barrier glitches!")
                 c_print("Three corrupted data fragments manifest!")
                 ctx["shards_spawned"] = True
                 ctx["shard_timer"] = 4
@@ -426,7 +422,7 @@ def combat_rientrante(player, floor=None, enemies=None):
             if not shards_alive and ctx["shards_spawned"]:
                 ctx["shards_spawned"] = False
                 ctx["shard_timer"] = 0
-                c_print("\n[GIMMICK] All data fragments purged!")
+                c_print("\n⚙ [GIMMICK] All data fragments purged!")
                 b = next(
                     (e for e in elist if e.get("key") == BOSS_KEY), None
                 )
@@ -481,7 +477,7 @@ def combat_rientrante(player, floor=None, enemies=None):
 
         elif key == EYE_KEY:
             ctx["eye_alive"] = False
-            c_print("\n[GIMMICK] The Eye of Truth crashes! The debug window goes dark!")
+            c_print("\n⚙ [GIMMICK] The Eye of Truth crashes! The debug window goes dark!")
             b = next(
                 (e for e in elist if e.get("key") == BOSS_KEY), None
             )
@@ -704,8 +700,7 @@ def combat_rientrante(player, floor=None, enemies=None):
                                     c_print(f"{t['name']} has fallen!")
 
                 # Spare ending
-                c_print("\n" + "=" * 55)
-                c_print("Rientrante lowers his hand.")
+                c_print("\nRientrante lowers his hand.")
                 c_print("'Five turns. You're persistent... but you don't belong here.'")
                 c_print("He looks at you with something like pity.")
                 c_print()
@@ -718,7 +713,6 @@ def combat_rientrante(player, floor=None, enemies=None):
                 c_print("'Go. I'll reset the encounter. Next time, don't try so hard to win.'")
                 c_print("'You're not meant to.'")
                 c_print("The dungeon fades. The encounter ends.")
-                c_print("=" * 55)
                 c_input("Press Enter to continue...")
                 return "spared"
 
@@ -738,8 +732,7 @@ def combat_rientrante(player, floor=None, enemies=None):
     )
 
     if result == "victory":
-        c_print("\n" + "~" * 55)
-        c_print("Rientrante staggers. His uniform rips at the seams.")
+        c_print("\nRientrante staggers. His uniform rips at the seams.")
         c_print("Blood — real blood, not game blood — pools beneath him.")
         c_print()
         c_print("'You... actually did it.' He coughs, laughing.")
@@ -750,6 +743,5 @@ def combat_rientrante(player, floor=None, enemies=None):
         c_print()
         c_print("'There can only be one player now. And it can't be me...'")
         c_print("Darkness swallows everything.")
-        c_print("~" * 55)
 
     return result

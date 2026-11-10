@@ -286,38 +286,15 @@ class FacilityScreen(BaseScreen):
         self._start_facility()
 
     def _update_top_bar(self):
-        """Refresh the top bar with the same format as CityScreen.
+        """Refresh the top bar with the same priority format as CityScreen.
 
-        Uses player.location as the primary city source so that facilities
-        that change the player's location (e.g. Arcane Tower teleport)
-        immediately reflect the new city in the header.
+        `player.location` is the primary city source so that facilities that
+        move the player (e.g. Arcane Tower teleport) immediately reflect the
+        new city in the header.
         """
-        p = self.player
-        if not p:
-            self.sm.update_top_bar("Pandemonium")
-            return
-        # Use player's current location, falling back to facility_args city_id
-        city_id = p.get("location") or (
-            self.facility_args[1] if len(self.facility_args) > 1 else "solmere"
-        )
-        # Resolve dungeon-location to origin city
-        if city_id == "dungeon":
-            city_id = p.get("origin_city", "solmere")
-        from resources.cities import CITIES
-        city = CITIES.get(city_id, CITIES.get("solmere", {"name": city_id}))
-        city_name = city.get("name", city_id) if isinstance(city, dict) else str(city)
-        _cf = p.get("city_floors", {}).get(city_id, {})
-        _cur = _cf.get("floor", 1)
-        _max = _cf.get("max_floor", 1)
-        from events import format_date
-        from time_blocks import format_block_track
-        track = format_block_track(p, include_day=False)
-        segments = [p['name'], city_name, f"Floor {_cur}/{_max}"]
-        if track:
-            segments.append(track)
-        segments.append(format_date(p))
-        text = " | ".join(segments)
-        self.sm.update_top_bar(text)
+        from gui.screens.base_screen import city_header_parts
+        primary, secondary = city_header_parts(self.player)
+        self.sm.update_top_bar_parts(primary, secondary)
 
     def _setup_facility_keys(self):
         """Bind a permanent <KeyPress> handler and claim keyboard focus.
@@ -405,8 +382,26 @@ class FacilityScreen(BaseScreen):
         except (RuntimeError, tk.TclError):
             pass  # widget destroyed
 
+    def _widgets_alive(self):
+        """True while this screen's Tcl widgets still exist.
+
+        Guards deferred after() callbacks that were queued just before a
+        synchronous screen switch tore the screen down (2026-10-27 report:
+        ``TclError: invalid command name ...!text`` in ``_flush_output``).
+        """
+        try:
+            return bool(self.winfo_exists())
+        except tk.TclError:
+            return False
+
     def _flush_output(self):
         """Flush pending lines to the Text widget (main thread only)."""
+        # Drop queued lines if the screen is closing / already destroyed.
+        if self._stopped or not self._widgets_alive():
+            with self._pending_lock:
+                self._pending_lines.clear()
+            return
+
         # Hide loading indicator on first output
         if hasattr(self, 'loading_label') and self.loading_label:
             try:
@@ -422,11 +417,14 @@ class FacilityScreen(BaseScreen):
         if not lines:
             return
 
-        self.output_text.config(state=tk.NORMAL)
-        for line in lines:
-            self.output_text.insert(tk.END, strip_ansi(line) + "\n")
-        self.output_text.see(tk.END)
-        self.output_text.config(state=tk.DISABLED)
+        try:
+            self.output_text.config(state=tk.NORMAL)
+            for line in lines:
+                self.output_text.insert(tk.END, strip_ansi(line) + "\n")
+            self.output_text.see(tk.END)
+            self.output_text.config(state=tk.DISABLED)
+        except tk.TclError:
+            pass  # Widget tree torn down mid-flush — nothing left to update
 
     def _clear_output(self):
         """Thread-safe clear. Called from facility thread."""
@@ -460,6 +458,13 @@ class FacilityScreen(BaseScreen):
 
     def _show_input_prompt(self, prompt=""):
         """Enable input controls and show prompt (main thread only)."""
+        if self._stopped or not self._widgets_alive():
+            # Screen is going away — unblock the facility thread so it can exit.
+            try:
+                self._input_queue.put("")
+            except Exception:
+                pass
+            return
         self._input_mode = True
         self._input_prompt = prompt
         # Make sure the input row is visible (button mode hides it)
@@ -806,6 +811,9 @@ class FacilityScreen(BaseScreen):
         zombie threads from holding queues / mutating player state after
         the screen is gone.
         """
+        # Any after(0, …) callback already queued (output flush / input prompt)
+        # must become a no-op once the widget tree is gone.
+        self._stopped = True
         # Stop the facility thread if still running (e.g., user closed window)
         if not self._finished and self._thread is not None and self._thread.is_alive():
             self._finished = True  # Prevent _finish() from triggering navigation

@@ -194,11 +194,16 @@ innate_skills:
     - palette_brushstroke
     - palette_spectrum
     - palette_signature
+  sylvana:
+    - sylvana_null
+    - sylvana_illusory_veil
+    - sylvana_hall_of_mirrors
+    - sylvana_mirror_guard
 
 # ============================================================================
 # AWAKENING SWAPS — wave 1 (docs/awakening_design.md Part C)
 # Base innate skill → awakened skill. One Sigil awakens a girl's full kit
-# (both skills) at the House Lounge (gates: Lv40 + cap 40 + affection 150).
+# (both skills) at the House Lounge (gates: Lv40 + cap 40 + affection 200).
 # ============================================================================
 
 awakenings:
@@ -1418,6 +1423,58 @@ innate_skill_defs:
     power_type: wis
     base_power: 0
     palette_signature: true
+
+  # ── Sylvana (Mirror Heroine) ──────────────────────────────────────────
+
+  sylvana_null:
+    name: Null
+    description: Shatter one enemy buff with a touch of the mirror. If there is nothing to dispel, silence the enemy for 2 turns. (3-turn cooldown)
+    category: support
+    cooldown: 3
+    target: enemy
+    effect:
+      type: dispel_buff
+      duration: 2
+    elemental: magical
+
+  sylvana_illusory_veil:
+    name: Illusory Veil
+    description: Mirrors blur around the whole party. All allies gain +20% evasion for 3 turns.
+    category: defensive
+    cooldown: 4
+    target: all_allies
+    effect:
+      type: evasion
+      value: 0.20
+      duration: 3
+    elemental: light
+
+  sylvana_hall_of_mirrors:
+    name: Hall of Mirrors
+    description: A thousand reflections close around the party. All allies take 20% less damage and reflect 30% of damage taken for 3 turns.
+    category: defensive
+    cooldown: 5
+    target: all_allies
+    effect:
+      type: perfect_guard
+      value: 0.20
+      reflect_value: 0.30
+      duration: 3
+    elemental: light
+
+  sylvana_mirror_guard:
+    name: Mirror Guard
+    description: Sylvana draws every eye and raises a mirrored shield. While it holds, attackers take 8 fixed pure damage. (4-turn cooldown)
+    category: defensive
+    cooldown: 4
+    target: self
+    effect:
+      type: mirror_guard
+      value: 0.18
+      duration: 3
+      aggro: 6.0
+      thorns: 8
+    elemental: magical
 
   # ── Newly Added Monster Girl Kits ─────────────────────────────────────
 

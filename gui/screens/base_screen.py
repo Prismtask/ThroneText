@@ -11,6 +11,65 @@ from abc import ABC, abstractmethod
 from gui.theme import Theme
 
 
+def city_header_parts(player, city_id=None):
+    """Build the two-tier city top bar as ``(primary, secondary)`` text.
+
+    Header space is scarce, so only glanceable, non-redundant info is kept.
+    Priority order:
+      1. Phase track — time is the resource every action spends.
+      2. Day + season — daily limits, events, weather.
+      3. Floor x/y — dungeon progression.
+      4. Karma — city gate thresholds (hidden when the rule is off).
+      5. Watched marker — only while the watch is active.
+
+    Player name, city name and the M#-D# month grid are deliberately omitted:
+    the hero card and the big city title on screen already show them.
+    """
+    if not player:
+        return "Pandemonium", ""
+
+    from events import format_date
+    from time_blocks import format_block_track
+
+    if not city_id:
+        city_id = player.get("location") or "solmere"
+        if city_id == "dungeon":
+            city_id = player.get("origin_city", "solmere")
+
+    # Primary tier — the clock: phase pips first, then the date (dd/mm).
+    track = format_block_track(player, include_day=False)
+    date_text = format_date(player)
+    primary = f"{track}  ·  {date_text}" if track else date_text
+
+    # Secondary tier — context you check between actions.
+    secondary = []
+    from resources.cities import CITIES
+    city = CITIES.get(city_id) or {}
+    if not isinstance(city, dict):
+        city = {}
+    cf = player.get("city_floors", {}).get(city_id, {})
+    start = max(1, int(city.get("dungeon_start_floor", 1) or 1))
+    cur = int(cf.get("floor", start) or start)
+    deepest = int(cf.get("max_floor", start) or start)
+    secondary.append(f"Floor {cur}/{deepest}")
+
+    import karma
+    if karma.is_enabled(player):
+        tier = karma.get_karma_tier(player)
+        value = karma.get_karma(player)
+        label = f"Karma {tier['label']} {value:+d}"
+        if city_id == "blackwake":
+            label += " · respected" if value < 0 else " · saint tax"
+        secondary.append(label)
+
+    gate = player.get("karma_gate") or {}
+    watched_until = int(gate.get("watched_until", 0) or 0)
+    if watched_until and watched_until >= int(player.get("day", 1) or 1):
+        secondary.append("👁 Watched")
+
+    return primary, "  ·  ".join(secondary)
+
+
 class BaseScreen(tk.Frame, ABC):
     """
     Abstract base for all Pandemonium GUI screens.

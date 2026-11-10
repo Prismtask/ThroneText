@@ -1,7 +1,7 @@
 import os
 import random
 
-# ── GUI terminal detection (safe import for terminal mode) ──────────
+# ── GUI terminal detection (headless fallbacks for tests) ──────────
 try:
     from gui.terminal import get_terminal as _get_gui_terminal
 except ImportError:
@@ -150,6 +150,7 @@ def apply_death_penalty(player):
     # Wipe wild-dungeon run state (defensive — normal exits clean up first)
     player.pop("wild_dungeon_id", None)
     player.pop("_wild_prev_floor", None)
+    player.pop("_combat_floor_label", None)
     for key in ("saved_wild_floor", "saved_wild_rooms", "saved_wild_room_index"):
         player.pop(key, None)
 
@@ -173,42 +174,8 @@ def apply_death_penalty(player):
     return penalty_gold
 
 
-def handle_player_death(player):
-    """Handle player death: offer continue or quit, apply penalties if continuing.
-
-    Terminal-mode wrapper that prints UI and calls apply_death_penalty().
-    """
-    clear_screen()
-    _tprint("\n" + "=" * 50)
-    _tprint("         ☠  YOU HAVE BEEN DEFEATED  ☠")
-    _tprint("=" * 50)
-
-    # Penalty calculation
-    gold = player.get("gold", 0)
-    penalty_pct = 0.20  # 20% gold loss
-    penalty_gold = max(10, int(gold * penalty_pct))
-    penalty_gold = min(penalty_gold, gold)  # can't lose more than you have
-
-    _tprint(f"\n  A passing adventurer drags you from the brink.")
-    _tprint(f"  You wake hours later in a back-alley clinic, battered but alive.")
-    _tprint(f"\n  Penalty: -{penalty_gold} gold ({int(penalty_pct*100)}% of your coin, minimum 10g)")
-    _tprint(f"\n  [C]ontinue your journey")
-    _tprint(f"  [Q]uit to main menu")
-
-    while True:
-        choice = _tinput("\n  Choice: ").strip().lower()
-        if choice == "q":
-            return False
-        if choice == "c":
-            break
-        _tprint("  Invalid choice. Enter C to continue or Q to quit.")
-
-    apply_death_penalty(player)
-    return True
-
-
 def clear_screen():
-    """Clear the terminal screen (works on Windows and Unix-like systems)."""
+    """Clear the terminal screen (headless/tools only; the GUI never calls this)."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
 

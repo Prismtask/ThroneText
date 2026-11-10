@@ -1,7 +1,9 @@
 import random
 from character import player_max_hp
-from resources.items import build_item, ITEMS, ITEM_RARITY
-from utils import _tprint
+from resources.items import (
+    build_item, ITEMS, ITEM_RARITY, _lookup_item_def,
+    compute_equipment_mods, compute_elemental_dmg, compute_elemental_res,
+)
 
 RARITY_ORDER = {
     "common": 0,
@@ -115,6 +117,11 @@ def get_cargo_items(player):
     inv = player.get("inventory", [])
     return [i for i in inv if i.get("type") == "cargo"]
 
+def has_item(player, item_id):
+    """True if the player carries an item with the given id."""
+    return any(i.get("id") == item_id for i in player.get("inventory", []))
+
+
 def get_key_items(player):
     """Return key items and crafting materials from inventory."""
     inv = player.get("inventory", [])
@@ -124,6 +131,25 @@ def get_key_items(player):
         x.get("name", "")
     ))
     return key_items
+
+
+def is_sellable_item(item):
+    """Merchant sell-list rule: key items and crafting materials cannot be sold.
+
+    Tempering flowers are ``crafting_material`` too, so every merchant (city,
+    dungeon, guild, road) must use this instead of listing raw inventory.
+    """
+    return item.get("type") not in ("key_item", "crafting_material")
+
+
+def get_flower_items(player):
+    """Return flower stacks in canonical element order (pickable at a glance)."""
+    from resources.item_generation import FLOWER_ITEMS, is_flower_item
+    order = {fid: idx for idx, fid in enumerate(FLOWER_ITEMS.values())}
+    inv = player.get("inventory", [])
+    flowers = [i for i in inv if is_flower_item(i)]
+    flowers.sort(key=lambda it: order.get(it.get("id"), 99))
+    return flowers
 
 def remove_item_from_inventory(player, index):
     """Remove item from inventory by index, decrementing count if stacked."""
@@ -199,10 +225,8 @@ def equip_item(player, item, target_slot=None):
     old = player["equipped"][target_slot]
     if old:
         if not add_item_to_inventory(player, old):
-            _tprint(f"Cannot equip {item['name']} — inventory is full. Unequip something first.")
             return False
     player["equipped"][target_slot] = item
-    _tprint(f"Equipped {item['name']}.")
     # Recalculate elemental profile
     from combat.elemental import compute_player_elemental
     res, dmg = compute_player_elemental(player)
@@ -350,16 +374,23 @@ def apply_scroll_to_item(item, scroll):
     new_tier = _RARITY_TIER.index(new_rarity) if new_rarity in _RARITY_TIER else -1
     if old_tier >= 0 and new_tier >= 0 and new_tier < old_tier:
         return False  # Cannot degrade rarity via scroll fusion
-    
+
     # Rebuild the item with new rarity, same enhance
+    base = _lookup_item_def(item["id"])
+    if not base or "base_mods" not in base:
+        return False
     item["rarity"] = new_rarity
-    base = ITEMS[item["id"]]
-    r = ITEM_RARITY[new_rarity]
     enhance = item.get("enhance", 0)
-    item["mods"] = {
-        stat: int(val * r["stat_mult"]) + enhance
-        for stat, val in base["base_mods"].items()
-    }
+    if base.get("base_form"):
+        # Base-form gear keeps its flower infusions; rarity only rescales stats.
+        from resources.item_generation import refresh_infused_instance
+        refresh_infused_instance(item, base)
+        return True
+    item["mods"] = compute_equipment_mods(base, new_rarity, enhance)
+    if "elemental_dmg" in base:
+        item["elemental_dmg"] = compute_elemental_dmg(base, new_rarity, enhance)
+    if "elemental_res" in base:
+        item["elemental_res"] = compute_elemental_res(base, new_rarity, enhance)
     # Update name
     item["name"] = f"{new_rarity.title()} {base['name']}"
     if enhance > 0:

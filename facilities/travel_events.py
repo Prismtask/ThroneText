@@ -18,9 +18,11 @@
 #   • Hazard *damage*     → 8 % of max HP × difficulty multiplier.
 
 import random
+import karma
 from utils import advance_time, get_difficulty_multiplier_from_time
 from resources.enemies import ENEMIES, BIOME_RACES
-from resources.items import ITEMS, ITEM_RARITY, build_item, is_unique_item
+from resources.items import ITEMS, ITEM_RARITY, build_item, is_unique_item, market_value, market_anchor_level, soften_rarity
+from resources.item_generation import pick_equipment_id, player_biome
 from combat.combat_engine import combat
 from combat.stats import get_effective_attribute
 from leveling import gain_exp
@@ -33,8 +35,13 @@ from resources.trade_goods import (
 
 # Prefer the proper inventory helper (handles capacity / stacking if implemented)
 try:
-    from inventory import add_item_to_inventory as _add_to_inv, remove_item_by_reference
+    from inventory import (
+        add_item_to_inventory as _add_to_inv, remove_item_by_reference,
+        is_sellable_item,
+    )
 except ImportError:
+    def is_sellable_item(item):
+        return item.get("type") not in ("key_item", "crafting_material")
     def _add_to_inv(player, item):
         player.setdefault("inventory", []).append(item)
         return True
@@ -60,6 +67,7 @@ LAND_EVENTS = [
     {"type": "discovery", "weight": 20},
     {"type": "hazard",    "weight": 15},
     {"type": "merchant",  "weight": 15},
+    {"type": "moral",     "weight": 10},
 ]
 
 SEA_EVENTS = [
@@ -67,6 +75,7 @@ SEA_EVENTS = [
     {"type": "storm",     "weight": 20},
     {"type": "discovery", "weight": 20},
     {"type": "calm",      "weight": 10},
+    {"type": "moral",     "weight": 10},
 ]
 
 # Thematic enemy races for sea lanes
@@ -95,12 +104,6 @@ _BASE_PRICE = {"consumable": 15, "utility": 20, "equipment": 45}
 # ITEM HELPERS
 # ═══════════════════════════════════════════════════════════════
 
-def _random_item_id():
-    """Pick a random, non-unique, non-scroll item key."""
-    pool = [k for k in ITEMS if k not in _SKIP_IDS]
-    return random.choice(pool) if pool else "minor_healing_potion"
-
-
 def _discovery_rarity(player):
     """
     Floor-scaled rarity table for roadside finds.
@@ -117,7 +120,7 @@ def _discovery_rarity(player):
     elif floor <= 9:
         weights = [0.32, 0.38, 0.23, 0.06, 0.01]
     else:
-        weights = [0.18, 0.30, 0.32, 0.15, 0.05]
+        weights = [0.18, 0.30, 0.32, 0.17, 0.03]
     return random.choices(_RARITIES, weights=weights)[0]
 
 
@@ -129,13 +132,13 @@ def _combat_drop_rarity(enemy_level):
     Uses the new narrower rarity system (Phase 5).
     """
     if enemy_level <= 3:
-        weights = [0.56, 0.30, 0.11, 0.03, 0.00]
+        weights = [0.62, 0.30, 0.08, 0.00, 0.00]
     elif enemy_level <= 6:
-        weights = [0.42, 0.36, 0.16, 0.05, 0.01]
+        weights = [0.46, 0.36, 0.15, 0.03, 0.00]
     elif enemy_level <= 9:
-        weights = [0.28, 0.35, 0.26, 0.09, 0.02]
+        weights = [0.30, 0.36, 0.26, 0.07, 0.01]
     else:
-        weights = [0.14, 0.26, 0.34, 0.18, 0.08]
+        weights = [0.18, 0.28, 0.34, 0.16, 0.04]
     return random.choices(_RARITIES, weights=weights)[0]
 
 
@@ -157,20 +160,21 @@ def _merchant_stock_rarity(player):
     return random.choices(["common", "uncommon", "rare", "epic"], weights=weights)[0]
 
 
-def _item_base_price(item):
+def _item_base_price(item, player):
     """
-    Derive a base price using ITEM_RARITY price_mult, matching city shop logic:
-        base = _BASE_PRICE[type] * price_mult
+    Equipment is priced by its market value (economy tuning); other goods
+    keep their flat base prices.
     """
-    rarity     = item.get("rarity", "common")
-    price_mult = ITEM_RARITY.get(rarity, ITEM_RARITY["common"])["price_mult"]
-    base       = _BASE_PRICE.get(item.get("type", "equipment"), 45)
-    return int(base * price_mult)
+    if item.get("type") == "equipment":
+        anchor = market_anchor_level(player)
+        return max(1, int(round(_BASE_PRICE["equipment"]
+                               * market_value(item, anchor) / 4)))
+    return _BASE_PRICE.get(item.get("type", "equipment"), 45)
 
 
 def _charisma_discount(player):
     """
-    Discount percentage from Charisma alone (no city favor on the road).
+    Discount percentage from Charisma alone (no city modifier on the road).
     Softer ceiling than the city shop (25 % vs 40 %).
     """
     cha = get_effective_attribute(player, "Charisma")
@@ -185,7 +189,7 @@ def _merchant_price(player, item):
     Returns (your_price, road_price_before_cha) so the display can show
     both figures if a Charisma discount is active.
     """
-    base        = _item_base_price(item)
+    base        = _item_base_price(item, player)
     road_factor = random.uniform(0.75, 0.90)
     road_price  = int(base * road_factor)
     cha_disc    = _charisma_discount(player)
@@ -195,14 +199,18 @@ def _merchant_price(player, item):
 
 def _sell_price(item, player):
     """
-    Sell-to-merchant price: 75 % of city shop's sell rate, soft Charisma bonus.
-    City shop uses: int(12 * price_mult) × (1 + (cha - 8) / 100)
-    Road merchant:  int(9  * price_mult) × (1 + (cha - 8) / 150)
+    Sell-to-merchant price: ~75% of the city shop's value-based rate.
+    City shop: 2.5 × market_value (equipment) · Road merchant: 1.9 × market_value.
+    Non-equipment keeps the legacy flat rate.
     """
-    rarity_mult = ITEM_RARITY.get(item.get("rarity", "common"), ITEM_RARITY["common"])["price_mult"]
-    cha         = get_effective_attribute(player, "Charisma")
-    cha_bonus   = max(0, (cha - 8)) / 150
-    return max(1, int(9 * rarity_mult * (1 + cha_bonus)))
+    cha       = get_effective_attribute(player, "Charisma")
+    cha_bonus = max(0, (cha - 8)) / 150
+    if item.get("type") == "equipment":
+        anchor = market_anchor_level(player)
+        base = 1.9 * market_value(item, anchor)
+    else:
+        base = 9
+    return max(1, int(base * (1 + cha_bonus)))
 
 
 def _item_stat_line(item):
@@ -217,6 +225,10 @@ def _item_stat_line(item):
             for stat, v in mods.items()
         )
         line = f"[{slot}{(' | ' + mod_s) if mod_s else ''}]"
+        from combat.form_perks import describe_item_perk
+        perk = describe_item_perk(item)
+        if perk:
+            line += f" | {perk}"
         from inventory import format_scaling_stat
         scale = format_scaling_stat(item)
         return f"{line}  {scale}" if scale else line
@@ -268,6 +280,7 @@ def _pick_travel_enemy(player, travel_type="land", region=None):
         return [
             k for k, d in ENEMIES.items()
             if not d.get("minion_only", False)
+            and not d.get("city_only", False)
             and not d.get("_shadow", False)
             and not d.get("_heroine")
             and d.get("secondary_race") != "Storybook"
@@ -282,21 +295,9 @@ def _pick_travel_enemy(player, travel_type="land", region=None):
     if not pool:
         pool = _build_pool(None)
     if not pool:
-        # ── Diagnostic: log what went wrong ──────────────────────────────
-        import sys
-        print(f"\n[DEBUG _pick_travel_enemy] FALLBACK triggered!", file=sys.stderr)
-        print(f"  player floor key: {player.get('floor', 'NOT SET')!r}", file=sys.stderr)
-        print(f"  computed floor={floor}  lo={lo}  hi={hi}", file=sys.stderr)
-        print(f"  region={region!r}  travel_type={travel_type!r}", file=sys.stderr)
-        print(f"  allowed_races={allowed_races}", file=sys.stderr)
-        # Check if ENEMIES is healthy
-        total = len(ENEMIES)
-        in_range = sum(1 for d in ENEMIES.values() if lo <= d.get("level", 0) <= hi)
-        print(f"  ENEMIES total={total}  in level range [{lo},{hi}]={in_range}", file=sys.stderr)
-        print(f"  Pool sizes: primary=0  secondary=0  fallback=...", file=sys.stderr)
-        # ─────────────────────────────────────────────────────────────────
         pool = [k for k, d in ENEMIES.items()
                 if not d.get("minion_only", False)
+                and not d.get("city_only", False)
                 and not d.get("_shadow", False)
                 and not d.get("_heroine")
                 and d.get("secondary_race") != "Storybook"
@@ -335,6 +336,14 @@ def _trigger_chance(travel_time, difficulty_mult):
     return min(base * (difficulty_mult ** 1.3), 0.80)
 
 
+def _event_pool(player, travel_type="land"):
+    """Return the travel event table for this save (Karma-only entries gated)."""
+    pool = SEA_EVENTS if travel_type == "sea" else LAND_EVENTS
+    if not karma.is_enabled(player):
+        pool = [e for e in pool if e["type"] != "moral"]
+    return pool
+
+
 def _weighted_choice(pool):
     total = sum(e["weight"] for e in pool)
     roll  = random.uniform(0, total)
@@ -364,12 +373,6 @@ def _handle_combat(player, travel_type, region, combat_override=None):
     enemy_keys = [k for k in
                   (_pick_travel_enemy(player, travel_type, region) for _ in range(num))
                   if k]
-
-    # ── Diagnostic: log travel combat spawn ─────────────────────────────
-    import sys as _sys
-    names = [(ENEMIES[k]["name"], ENEMIES[k]["level"]) for k in enemy_keys] if enemy_keys else []
-    print(f"[DEBUG _handle_combat] floor={floor} num={num} region={region!r} enemies={names}", file=_sys.stderr)
-    # ─────────────────────────────────────────────────────────────────────
 
     if not enemy_keys:
         term.print("  A shadow crosses the road... and vanishes. Nothing to fight.")
@@ -401,7 +404,8 @@ def _handle_combat(player, travel_type, region, combat_override=None):
             if random.random() < 0.40:
                 enemy_level = ENEMIES[key]["level"]
                 rarity      = _combat_drop_rarity(enemy_level)
-                item_id     = _random_item_id()
+                item_id     = pick_equipment_id(enemy_level, player_biome(player))
+                rarity      = soften_rarity(item_id, rarity)
                 item        = build_item(item_id, rarity)
                 if not _add_to_inv(player, item.copy()):
                     term.print(f"  Found: {item['name']}  {_item_stat_line(item)} (but your bag is full — dropped!)")
@@ -439,7 +443,9 @@ def _handle_discovery(player, travel_type):
             term.print(f"\n  A barnacled crate bobs alongside. Inside: {gold} gold in waxed pouches!")
         elif roll < 0.75:
             rarity  = _discovery_rarity(player)
-            item    = build_item(_random_item_id(), rarity)
+            item_id = pick_equipment_id(max(1, player.get("floor", 1)), player_biome(player))
+            rarity  = soften_rarity(item_id, rarity)
+            item    = build_item(item_id, rarity)
             term.print(f"\n  A waterlogged satchel surfaces from the deep. You haul it aboard.")
             term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
             from inventory_ui import prompt_acquire_item
@@ -460,7 +466,9 @@ def _handle_discovery(player, travel_type):
             term.print(f"\n  A traveler's purse lies abandoned at the roadside. You pocket {gold} gold.")
         elif roll < 0.75:
             rarity  = _discovery_rarity(player)
-            item    = build_item(_random_item_id(), rarity)
+            item_id = pick_equipment_id(max(1, player.get("floor", 1)), player_biome(player))
+            rarity  = soften_rarity(item_id, rarity)
+            item    = build_item(item_id, rarity)
             term.print(f"\n  A hollow tree stump — something's wedged inside.")
             term.print(f"  Found: {item['name']}  {_item_stat_line(item)}")
             from inventory_ui import prompt_acquire_item
@@ -487,12 +495,13 @@ def _sell_to_merchant(player):
         term.pause("  Press Continue...")
         return
 
-    # Cargo sells at road cargo rates; everything else at the normal rate
+    # Cargo sells at road cargo rates; everything else at the normal rate.
+    # Key items and crafting materials (flowers) are never sellable.
     sellable = []
     for i in inv:
         if i.get("type") == "cargo":
             sellable.append((i, cargo_merchant_sell_price(i)))
-        else:
+        elif is_sellable_item(i):
             sellable.append((i, _sell_price(i, player)))
     if not sellable:
         term.print('  "Nothing I want off you — yet." The merchant shrugs.')
@@ -548,8 +557,9 @@ def _handle_merchant(player):
             your_price, road_price = cargo_merchant_stock_price(good_id, player)
             stock.append((item, your_price, road_price))
             continue
-        item_id     = _random_item_id()
+        item_id     = pick_equipment_id(max(1, player.get("floor", 1)), player_biome(player))
         rarity      = _merchant_stock_rarity(player)
+        rarity      = soften_rarity(item_id, rarity)
         item        = build_item(item_id, rarity)
         your_price, road_price = _merchant_price(player, item)
         stock.append((item, your_price, road_price))
@@ -604,6 +614,46 @@ def _handle_merchant(player):
             continue
         break
 
+    term.pause("  Press Continue...")
+
+
+def _handle_moral_choice(player, travel_type):
+    """A stranded traveler/castaway: help, rob, or leave. Karma-gated."""
+    if not karma.is_enabled(player):
+        return
+
+    if travel_type == "sea":
+        term.print("\n  A castaway clings to a splintered mast, waving weakly.")
+        term.print("  Their boat is gone. The current is pulling them under.")
+    else:
+        term.print("\n  A wounded traveler sits beside the road, clutching a bloodied leg.")
+        term.print("  Their pack is still strapped shut. Nobody else is in sight.")
+
+    options = [
+        "Help them (+2 Karma)",
+        "Take what you can (+gold, -3 Karma)",
+        "Leave them be",
+    ]
+    choice = term.menu(options, prompt="What do you do?", allow_cancel=True,
+                       cancel_label="Walk away")
+    if choice == 0:
+        applied = karma.change_karma(player, 2, "Helped a stranded traveler")
+        term.print("  You share water and bind the wound. They will remember this.")
+        if applied:
+            tier = karma.get_karma_tier(player)
+            term.print(f"  Karma {applied:+d} ({tier['label']} {karma.get_karma(player):+d})")
+        else:
+            term.print("  Your conscience can only grow so much in a day.")
+    elif choice == 1:
+        gold = random.randint(25, 65)
+        player["gold"] = player.get("gold", 0) + gold
+        applied = karma.change_karma(player, -3, "Robbed a stranded traveler")
+        term.print(f"  You take {gold} gold and leave them in the dust.")
+        if applied:
+            tier = karma.get_karma_tier(player)
+            term.print(f"  Karma {applied:+d} ({tier['label']} {karma.get_karma(player):+d})")
+    else:
+        term.print("  You keep walking. The sound fades behind you.")
     term.pause("  Press Continue...")
 
 
@@ -691,7 +741,7 @@ def run_travel_events(player, travel_time, travel_type="land", region=None,
     difficulty_mult = get_difficulty_multiplier_from_time(player)
     slots           = _num_slots(travel_time, difficulty_mult)
     chance          = _trigger_chance(travel_time, difficulty_mult)
-    event_pool      = SEA_EVENTS if travel_type == "sea" else LAND_EVENTS
+    event_pool      = _event_pool(player, travel_type)
 
     # Mounts reduce the chance of travel events on land routes
     if travel_type == "land" and player.get("mount_id"):
@@ -738,6 +788,9 @@ def run_travel_events(player, travel_time, travel_type="land", region=None,
 
         elif event_type == "merchant":
             _handle_merchant(player)
+
+        elif event_type == "moral":
+            _handle_moral_choice(player, travel_type)
 
         elif event_type == "storm":
             _handle_storm(player, difficulty_mult)

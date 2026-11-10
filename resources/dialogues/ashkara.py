@@ -63,7 +63,7 @@ ASHKARA_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep if you dare. I'll keep watch... for a price.",
-        "Eight hours of dreamless black. You'll wake... probably.",
+        "A night of dreamless black. You'll wake... probably.",
         "The refuge is safe. Mostly. Don't leave the circle.",
         "Rest well. The ash storms howl outside, but inside is... quieter.",
     ],
@@ -136,5 +136,18 @@ ASHKARA_GUILD_DIALOGUE = {
         "May the ash not claim your bounty before you do.",
         "Return with proof of death. We don't take your word here.",
         "Farewell. Don't become someone else's contract.",
+    ],
+}
+
+ASHKARA_BACK_ROOM_DIALOGUE = {
+    "enter": [
+        "Ash dusts the table. The dealer's smile is the only clean thing in the room.",
+        "A ruin-priest watches from the corner, counting your sins and your coin.",
+        "The back door closes behind you. The dice are already on the table.",
+    ],
+    "leave": [
+        "The dealer spits in the ash. 'Come back when the watch is still looking for you.'",
+        "The back room's lamp gutters as the door closes.",
+        "Ash settles on the table before the next hand is dealt.",
     ],
 }

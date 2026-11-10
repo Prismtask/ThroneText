@@ -1,19 +1,18 @@
 """Old Dopo Robe — Event Horizon trophy armor (docs/event_horizon_design.md §10.5).
 
-Sword-synergy aura, live-read at damage time (handles mid-combat ally swaps):
+Blade-synergy aura, live-read at damage time (handles mid-combat ally swaps):
 
-- The whole effect requires the *wearer* to wield a sword-family weapon.
-- Wearer:   ×1.40 base, +5% per sword-wielding ALLY (all recruited allies,
+- The whole effect requires the *wearer* to wield a blade.
+- Wearer:   ×1.40 base, +5% per blade-wielding ALLY (all recruited allies,
             including benched), UNCAPPED.
-- Each sword-wielding ally (excluding the wearer): ×1.15.
+- Each blade-wielding ally (excluding the wearer): ×1.15.
 
 Actor-based: the player or any ally may wear the robe (they become the wearer).
 Wired into the four party damage paths (player basic / skills, ally basic /
 skills).
 """
 
-# Sword family = formal weapon_type values (Phase 1 data pass on all weapons).
-SWORD_TYPES = frozenset({"sword", "blade", "greatsword", "rapier", "cutlass"})
+BLADE_TYPE = "blade"
 
 WEARER_BASE = 1.40
 WEARER_PER_ALLY = 0.05
@@ -54,8 +53,8 @@ def _weapon_of(actor):
     return (actor.get("equipped", {}) or {}).get("weapon")
 
 
-def weapon_is_sword(item):
-    return _weapon_type(item) in SWORD_TYPES
+def weapon_is_blade(item):
+    return _weapon_type(item) == BLADE_TYPE
 
 
 def find_wearer(player):
@@ -68,13 +67,13 @@ def find_wearer(player):
     return None
 
 
-def count_sword_allies(player, wearer):
-    """All recruited allies wielding a sword (incl. benched), excluding wearer."""
+def count_blade_allies(player, wearer):
+    """All recruited allies wielding a blade (incl. benched), excluding wearer."""
     count = 0
     for ally in player.get("allies", []):
         if ally is wearer:
             continue
-        if weapon_is_sword(_weapon_of(ally)):
+        if weapon_is_blade(_weapon_of(ally)):
             count += 1
     return count
 
@@ -84,10 +83,10 @@ def get_robe_multiplier(attacker, player):
     if not attacker or not player:
         return 1.0
     wearer = find_wearer(player)
-    if wearer is None or not weapon_is_sword(_weapon_of(wearer)):
+    if wearer is None or not weapon_is_blade(_weapon_of(wearer)):
         return 1.0
     if attacker is wearer:
-        return WEARER_BASE + WEARER_PER_ALLY * count_sword_allies(player, wearer)
-    if weapon_is_sword(_weapon_of(attacker)):
+        return WEARER_BASE + WEARER_PER_ALLY * count_blade_allies(player, wearer)
+    if weapon_is_blade(_weapon_of(attacker)):
         return ALLY_BONUS
     return 1.0

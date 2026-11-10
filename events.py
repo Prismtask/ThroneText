@@ -5,8 +5,8 @@ FIXED_EVENTS = {
     1:  {
         "id": "new_moon",
         "name": "New Moon Festival",
-        "desc": "The guild celebrates the new moon! +25% favor from bounties today.",
-        "effect": {"favor_bonus": 0.25},
+        "desc": "The guild celebrates the new moon! +25% bounty gold today.",
+        "effect": {"bounty_bonus": 0.25},
     },
     7:  {
         "id": "market_day",
@@ -46,14 +46,34 @@ RANDOM_EVENT_POOL = [
     {
         "id": "rainy_day",
         "name": "Heavy Rain",
-        "desc": "Rain lashes the city. Travel takes 30% longer.",
-        "effect": {"travel_time_mult": 1.30, "rain_level": 2},
+        "desc": "Rain lashes the city. Travel costs +2 blocks today.",
+        "effect": {"rain_level": 2, "weather": "rain"},
         "weight": 10,
+        "season_weights": {"spring": 1.6, "summer": 0.6,
+                           "autumn": 1.2, "winter": 0.3},
+    },
+    {
+        "id": "snowy_day",
+        "name": "Heavy Snow",
+        "desc": "Snow blankets the roads. Travel costs +2 blocks today.",
+        "effect": {"rain_level": 2, "weather": "snow"},
+        "weight": 10,
+        "season_weights": {"spring": 0.2, "summer": 0.0,
+                           "autumn": 0.4, "winter": 2.2},
+    },
+    {
+        "id": "foggy_day",
+        "name": "Thick Fog",
+        "desc": "Fog swallows the roads. Travel costs +1 block today.",
+        "effect": {"rain_level": 1, "weather": "fog"},
+        "weight": 8,
+        "season_weights": {"spring": 1.0, "summer": 0.2,
+                           "autumn": 2.0, "winter": 0.8},
     },
     {
         "id": "bounty_rush",
         "name": "Bounty Rush",
-        "desc": "The guild posts emergency bounties! Bounty rewards are increased by 50% today.",
+        "desc": "The guild posts emergency bounties! Bounty gold is increased by 50% today.",
         "effect": {"bounty_bonus": 0.50},
         "weight": 8,
     },
@@ -132,6 +152,36 @@ def get_month_day(global_day):
     return month, day_of_month
 
 
+# ── Seasons ─────────────────────────────────────────────────────────────
+# Months are 30 days and repeat forever; one season per month keeps the
+# world visibly changing (a full cycle is 120 days):
+#   M1 Spring · M2 Summer · M3 Autumn · M4 Winter · M5 Spring ...
+SEASONS = (
+    ("spring", "Spring"),
+    ("summer", "Summer"),
+    ("autumn", "Autumn"),
+    ("winter", "Winter"),
+)
+
+
+def get_season(day_or_player):
+    """Return ``(id, name)`` for a global day or a player dict.
+
+    Seasons only route flavor and the weather table — they never add a
+    combat/gold/XP multiplier (weather is the single numeric dial).
+    """
+    if isinstance(day_or_player, dict):
+        day = day_or_player.get("day", 1)
+    else:
+        day = day_or_player
+    try:
+        day = max(1, int(day or 1))
+    except (TypeError, ValueError):
+        day = 1
+    month, _ = get_month_day(day)
+    return SEASONS[(month - 1) % len(SEASONS)]
+
+
 # ── Wonderland date flavours ────────────────────────────────────────────
 _WL_DATE_FLAVORS = [
     ("Unbirthday", "Happy Unbirthday to you!"),
@@ -152,8 +202,23 @@ _WL_DATE_FLAVORS = [
 ]
 
 
+def format_short_date(global_day):
+    """Return a calendar stamp ``dd/mm`` for a global day.
+
+    Months are 30 days and the calendar year is four season-months (120
+    days), so the month wraps 1–4: day 13 → ``13/01``, day 121 → ``01/01``.
+    """
+    try:
+        day = max(1, int(global_day or 1))
+    except (TypeError, ValueError):
+        day = 1
+    month, dom = get_month_day(day)
+    month = (month - 1) % len(SEASONS) + 1
+    return f"{dom:02d}/{month:02d}"
+
+
 def format_date(player_or_day):
-    """Return a compact date string, e.g. 'Day 45 (M2-D15)'.
+    """Return the calendar date, e.g. '13/01 · Spring'.
 
     When the player is in Wonderland, returns a whimsical date flavour instead.
     """
@@ -164,19 +229,87 @@ def format_date(player_or_day):
         day = player_or_day.get("day", 1)
     else:
         day = player_or_day
-    month, dom = get_month_day(day)
-    return f"Day {day} (M{month}-D{dom})"
+    return f"{format_short_date(day)} · {get_season(day)[1]}"
+
+
+# ── Relative day phrasing ─────────────────────────────────────────────────
+
+def _global_day(value, default=1):
+    """Best-effort day int from a player dict, a day number, or None."""
+    if isinstance(value, dict):
+        value = value.get("day", default)
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def days_until(target_day, current_day=1):
+    """Whole days from ``current_day`` to ``target_day`` (negative = past)."""
+    return _global_day(target_day) - _global_day(current_day)
+
+
+def format_day_delta(target_day, current_day=1):
+    """Relative day phrase: ``today``, ``tomorrow``, ``in 4 days``, ``2 days ago``."""
+    delta = days_until(target_day, current_day)
+    if delta == 0:
+        return "today"
+    if delta == 1:
+        return "tomorrow"
+    if delta == -1:
+        return "yesterday"
+    if delta > 1:
+        return f"in {delta} days"
+    return f"{-delta} days ago"
+
+
+def format_days_left(target_day, current_day=1):
+    """Days remaining as ``1 day`` / ``4 days``, clamped at zero."""
+    left = max(0, days_until(target_day, current_day))
+    return "1 day" if left == 1 else f"{left} days"
+
+
+def format_return_time(target_abs_minutes, current_abs_minutes):
+    """Relative clock stamp: ``today at 14:00``, ``tomorrow at 04:00``."""
+    try:
+        target = max(0, int(target_abs_minutes))
+        current = max(0, int(current_abs_minutes))
+    except (TypeError, ValueError):
+        return "soon"
+    target_day, mins = divmod(target, 1440)
+    current_day = current // 1440
+    clock = f"{mins // 60:02d}:{mins % 60:02d}"
+    delta = target_day - current_day
+    if delta <= 0:
+        return f"today at {clock}"
+    if delta == 1:
+        return f"tomorrow at {clock}"
+    return f"in {delta} days at {clock}"
 
 
 # ── Event checking ────────────────────────────────────────────────────────
 
 def _pick_random_event(day):
-    """Pick a random event using the day as seed (reproducible per day)."""
+    """Pick a random event using the day as seed (reproducible per day).
+
+    Season only reweights the pool (weather events are seasonal); it never
+    introduces a second combat/gold/XP modifier.
+    """
     rng = random.Random(day)
     if rng.random() >= 0.20:          # 20% chance for a random event
         return None
-    pool = [e for e in RANDOM_EVENT_POOL]
-    weights = [e["weight"] for e in pool]
+    season_id, _ = get_season(day)
+    pool = []
+    weights = []
+    for evt in RANDOM_EVENT_POOL:
+        weight = evt["weight"]
+        season_weights = evt.get("season_weights")
+        if season_weights:
+            weight *= season_weights.get(season_id, 1.0)
+        if weight <= 0:
+            continue
+        pool.append(evt)
+        weights.append(weight)
     chosen = rng.choices(pool, weights=weights, k=1)[0]
     return dict(chosen)
 
@@ -297,46 +430,14 @@ def record_event(player, event):
     })
 
 
-def display_event_alert(event):
-    """Print a single event directly to the console (terminal mode only).
-
-    In GUI mode, events are stored in the journal instead.
-    """
-    # Check if we're in GUI mode (tkinter root active)
-    try:
-        import tkinter as tk
-        if tk._default_root and tk._default_root.winfo_exists():
-            # GUI mode: suppress console output, journal handles display
-            return
-    except (ImportError, AttributeError):
-        pass
-    print(format_event_alert(event))
-
-
 def queue_event_alerts(player, events):
-    """Store events so they can be shown when the player leaves the dungeon."""
+    """Store events so they can be shown when the player leaves the dungeon.
+
+    All event notices are delivered by the GUI Event Notice popup. There is
+    no console/terminal rendering path any more.
+    """
     queue = player.setdefault("event_queue", [])
     queue.extend(events)
-
-
-def get_event_queue_messages(player):
-    """Pop and return formatted event messages without displaying them.
-
-    Returns a list of formatted strings (one per event), or empty list if no events.
-    The events are cleared from the player's queue by this call.
-    """
-    queue = player.pop("event_queue", [])
-    if not queue:
-        return []
-
-    messages = []
-    messages.append("=" * 50)
-    messages.append("  [EVENT]  EVENTS WHILE YOU WERE AWAY")
-    messages.append("=" * 50)
-    for evt in queue:
-        messages.append(format_event_alert(evt))
-    messages.append("=" * 50)
-    return messages
 
 
 def get_event_queue_events(player):
@@ -348,64 +449,26 @@ def get_event_queue_events(player):
     return player.pop("event_queue", [])
 
 
-def flush_event_queue(player):
-    """Display and clear all queued events. Returns count shown.
-
-    In GUI mode, this is a no-op (events are shown via the journal/log panel).
-    In terminal mode, this prints and waits for Enter.
-    """
-    # Capture count before popping
-    event_count = len(player.get("event_queue", []))
-    if event_count == 0:
-        return 0
-
-    messages = get_event_queue_messages(player)
-    if not messages:
-        return 0
-
-    # Check if we're in GUI mode (tkinter root active)
-    try:
-        import tkinter as tk
-        if tk._default_root and tk._default_root.winfo_exists():
-            # GUI mode: events are shown via journal/log, suppress console output
-            return event_count
-    except (ImportError, AttributeError):
-        pass
-
-    # Terminal mode: print and wait for user acknowledgement
-    for msg in messages:
-        print(msg)
-    input("\nPress Enter to continue...")
-    return event_count
-
-
 # ── Wonderland Unlock ───────────────────────────────────────────────────
 
 def check_wonderland_unlock_conditions(player):
     """Return True if all Wonderland unlock conditions are met.
 
     Conditions:
-      1. Floor 20+ cleared in at least 2 different city dungeons
-      2. Day 60+ (2 in-game months)
-      3. Player possesses a Looking Glass Shard in inventory
+      1. Floor 20+ cleared in at least 2 different biomes
+      2. Player possesses a Looking Glass Shard in inventory
     """
     if player.get("wonderland_unlocked"):
         return False
 
-    # Condition 1: Floor 20+ cleared in ≥2 city dungeons
-    city_floors = player.get("city_floors", {})
-    cities_f20 = sum(
-        1 for cid, prog in city_floors.items()
-        if prog.get("max_floor", 1) >= 20
-    )
-    if cities_f20 < 2:
+    # Condition 1: Floor 20+ cleared in ≥2 biomes. Same-biome cities share
+    # one dungeon depth (2026-11-04), so counting city records would let two
+    # entrances of the same dungeon satisfy this gate.
+    from leveling import get_biomes_cleared_to_cap
+    if len(get_biomes_cleared_to_cap(player, 20)) < 2:
         return False
 
-    # Condition 2: Day 60+
-    if player.get("day", 1) < 60:
-        return False
-
-    # Condition 3: Looking Glass Shard in inventory
+    # Condition 2: Looking Glass Shard in inventory
     has_shard = any(
         item.get("id") == "looking_glass_shard"
         for item in player.get("inventory", [])

@@ -18,8 +18,9 @@ room clear; a victory clears one fatigue stack **at stack II only** — at
 stack III the weariness clings (sleep-only), so high-stack fights are a
 pure hazard; fleeing leaves stacks unchanged. "Dying" is not possible in
 an illusion: you collapse and come to at 1 HP (the party's reactions are
-part of the aftermath). Karma (future design) plugs into
-`hallucination_tier()` as an extra input.
+part of the aftermath — per-ally victory/collapse lines live in
+``combat/hallucination_dialogue.py``). Karma shifts
+`hallucination_tier()` by ±1 at ±50; Wonderland is deliberately excluded.
 """
 
 import random
@@ -36,19 +37,46 @@ TIER_EVASION = {2: 0.15, 3: 0.28}      # "your blade passes where it isn't"
 
 
 def hallucination_tier(player):
-    """Instability tier from fatigue (2 or 3); 0 below stack II.
+    """Instability tier from fatigue (0–3), shifted by Karma at ±50.
 
-    Karma hook: when karma lands, add it here as an extra input to the tier.
+    Low Karma makes the illusion worse (+1 tier); high Karma softens it
+    (−1 tier). A **rattled** mind (stress ≥ 67) adds +1 tier and cannot
+    fall below tier 2 — the nightmare follows you awake. Wonderland is
+    deliberately untouched.
     """
+    rattled = False
     try:
         import time_blocks
         stacks = time_blocks.get_fatigue_stacks(player)
+        rattled = time_blocks.is_rattled(player)
     except Exception:
         try:
             stacks = int((player or {}).get("fatigue_stacks", 0) or 0)
         except (TypeError, ValueError):
             stacks = 0
-    return min(3, max(0, stacks))
+
+    if player and (player.get("wonderland_active")
+                   or player.get("dungeon_region") == "wonderland"):
+        return min(3, max(0, stacks))
+
+    shift = 0
+    try:
+        import karma
+        if karma.is_enabled(player):
+            value = karma.get_karma(player)
+            if value >= 50:
+                shift = -1
+            elif value <= -50:
+                shift = 1
+    except Exception:
+        shift = 0
+
+    tier = stacks + shift
+    if rattled:
+        tier += 1
+        if stacks < 2:
+            tier = max(tier, 2)   # a rattled mind needs no exhaustion to slip
+    return min(3, max(0, tier))
 
 
 def should_trigger(player, room=None):
@@ -82,6 +110,16 @@ def should_trigger(player, room=None):
             return False
     except Exception:
         return False
+    # Karma changes how bad an existing hallucination is; it must never
+    # create one from a single fatigue stack. A rattled mind (stress ≥ 67)
+    # slips on its own — that is how a nightmare follows you into the dark.
+    try:
+        import time_blocks
+        if (time_blocks.get_fatigue_stacks(player) < 2
+                and not time_blocks.is_rattled(player)):
+            return False
+    except Exception:
+        pass
     tier = hallucination_tier(player)
     if tier < 2:
         return False
@@ -221,19 +259,19 @@ def run_encounter(player, floor=None, room_num=None, total_rooms=None,
 
 
 def _collapsed_flavor(player):
-    """The pseudo-death: you wake at 1 HP with the party mid-panic."""
+    """The pseudo-death: you wake at 1 HP with one ally mid-panic."""
     from utils import _tprint, display_name
+    from combat.hallucination_dialogue import get_ally_line
     _tprint("")
     _tprint("  The figure reaches for you — and the world lurches sideways.")
     _tprint("  You come to on the road, on your knees, gasping.  1 HP left.")
     living = [a for a in player.get("allies", []) if a.get("current_hp", 0) > 0]
-    if living:
-        who = display_name(random.choice(living))
-        _tprint("  " + random.choice([
-            f"{who} is shaking your shoulder: \"Hey — hey! You walked straight into that wall!\"",
-            f"{who} stares at the empty road: \"You were fighting NOTHING. Look at me.\"",
-            f"{who}: \"We couldn't wake you. What did you see out there?\"",
-        ]))
+    if not living:
+        _tprint("  There is no one to shake you awake.  You get up alone.")
+        return
+    ally = random.choice(living)
+    line = get_ally_line(ally, "collapse")
+    _tprint(f"  {display_name(ally)}: \"{line}\"")
 
 
 def resolve_outcome(player, result):
@@ -268,14 +306,21 @@ def resolve_outcome(player, result):
 
 
 def _aftermath(player, escaped=False):
-    """The party never saw it — their confusion is the real cost (§5)."""
+    """The party never saw it — their confusion is the real cost (§5).
+
+    One living ally reacts. Victory gets her personalized line; fleeing
+    keeps the generic "why are you out of breath?" beat (nobody saw the
+    fight either way). Non-roster records fall back by race, then generic.
+    """
     from utils import _tprint, display_name
+    from combat.hallucination_dialogue import get_ally_line
     living = [a for a in player.get("allies", []) if a.get("current_hp", 0) > 0]
     if not living:
         return
-    who = display_name(random.choice(living))
+    ally = random.choice(living)
+    who = display_name(ally)
     if escaped:
         _tprint(f"  {who}: \"...why are you out of breath?\"")
     else:
-        _tprint(f"  {who} stares at your weapon, then at the empty air: "
-                f"\"Who were you fighting?\"")
+        line = get_ally_line(ally, "victory")
+        _tprint(f"  {who}: \"{line}\"")

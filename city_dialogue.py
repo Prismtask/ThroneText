@@ -9,6 +9,7 @@ from resources.dialogues import (
     SOLMERE_TRADE_HALL_DIALOGUE,
     SOLMERE_TEMPLE_DIALOGUE,
     SOLMERE_GUILD_DIALOGUE,
+    SOLMERE_GAMES_DIALOGUE,
 
     # Brinewatch
     BRINEWATCH_RECEPTIONIST_DIALOGUE,
@@ -54,6 +55,7 @@ from resources.dialogues import (
     ASHKARA_BLACK_MARKET_DIALOGUE,
     ASHKARA_BLACKSMITH_DIALOGUE,
     ASHKARA_GUILD_DIALOGUE,
+    ASHKARA_BACK_ROOM_DIALOGUE,
 
     # Sunreach
     SUNREACH_RECEPTIONIST_DIALOGUE,
@@ -108,6 +110,8 @@ from resources.dialogues import (
     BLACKWAKE_INNKEEPER_DIALOGUE,
     BLACKWAKE_PORTMASTER_DIALOGUE,
     BLACKWAKE_BLACK_MARKET_DIALOGUE,
+    BLACKWAKE_GAMES_DIALOGUE,
+    BLACKWAKE_BACK_ROOM_DIALOGUE,
 
     # Isle of Glass
     ISLE_OF_GLASS_RECEPTIONIST_DIALOGUE,
@@ -150,6 +154,13 @@ from resources.dialogues import (
     WONDERLAND_BLACK_MARKET_DIALOGUE,
     WONDERLAND_TEMPLE_DIALOGUE,
     WONDERLAND_GIFT_SHOP_DIALOGUE,
+
+    # Celestia (northern celestial city)
+    CELESTIA_RECEPTIONIST_DIALOGUE,
+    CELESTIA_SHOPKEEPER_DIALOGUE,
+    CELESTIA_INNKEEPER_DIALOGUE,
+    CELESTIA_TEMPLE_DIALOGUE,
+    CELESTIA_GIFT_SHOP_DIALOGUE,
 )
 
 # Build master dialogue dictionary
@@ -162,6 +173,7 @@ CITY_DIALOGUES = {
         "trade_hall": SOLMERE_TRADE_HALL_DIALOGUE,
         "temple": SOLMERE_TEMPLE_DIALOGUE,
         "guild": SOLMERE_GUILD_DIALOGUE,
+        "games": SOLMERE_GAMES_DIALOGUE,
     },
     "brinewatch": {
         "receptionist": BRINEWATCH_RECEPTIONIST_DIALOGUE,
@@ -207,6 +219,7 @@ CITY_DIALOGUES = {
         "black_market": ASHKARA_BLACK_MARKET_DIALOGUE,
         "blacksmith": ASHKARA_BLACKSMITH_DIALOGUE,
         "guild": ASHKARA_GUILD_DIALOGUE,
+        "back_room": ASHKARA_BACK_ROOM_DIALOGUE,
     },
     "sunreach": {
         "receptionist": SUNREACH_RECEPTIONIST_DIALOGUE,
@@ -261,6 +274,8 @@ CITY_DIALOGUES = {
         "inn": BLACKWAKE_INNKEEPER_DIALOGUE,
         "port": BLACKWAKE_PORTMASTER_DIALOGUE,
         "black_market": BLACKWAKE_BLACK_MARKET_DIALOGUE,
+        "games": BLACKWAKE_GAMES_DIALOGUE,
+        "back_room": BLACKWAKE_BACK_ROOM_DIALOGUE,
     },
     "isle_of_glass": {
         "receptionist": ISLE_OF_GLASS_RECEPTIONIST_DIALOGUE,
@@ -304,19 +319,56 @@ CITY_DIALOGUES = {
         "temple": WONDERLAND_TEMPLE_DIALOGUE,
         "gift_shop": WONDERLAND_GIFT_SHOP_DIALOGUE,
     },
+    "celestia": {
+        "receptionist": CELESTIA_RECEPTIONIST_DIALOGUE,
+        "shop": CELESTIA_SHOPKEEPER_DIALOGUE,
+        "inn": CELESTIA_INNKEEPER_DIALOGUE,
+        "temple": CELESTIA_TEMPLE_DIALOGUE,
+        "gift_shop": CELESTIA_GIFT_SHOP_DIALOGUE,
+    },
 }
+
+_GENERIC_GAMES_DIALOGUE = {
+    "enter": [
+        "The innkeeper clears a table. 'Dice or cards? The house doesn't care which way you lose.'",
+        "A scarred board and a worn deck wait under a lamp. 'Sit. The night is young.'",
+    ],
+    "leave": [
+        "The innkeeper sweeps the dice back into the cup. 'Come back when your purse is heavier.'",
+        "The table goes quiet as you stand. 'Another time.'",
+    ],
+}
+
+_GENERIC_BACK_ROOM_DIALOGUE = {
+    "enter": [
+        "The dealer doesn't ask your name. 'Sit. Keep your hands visible.'",
+        "A door you didn't see closes behind you. The dice are already on the table.",
+    ],
+    "leave": [
+        "The dealer counts the house's cut before you reach the door.",
+        "The back room swallows the lamp light as you leave.",
+    ],
+}
+
 
 def get_city_dialogues(city_id, service):
     """Return dialogue dictionary for a specific city service."""
     city_dial = CITY_DIALOGUES.get(city_id, CITY_DIALOGUES.get("solmere", {}))
-    return city_dial.get(service, city_dial.get("receptionist", {}))
+    if service in city_dial:
+        return city_dial[service]
+    if service == "games":
+        return _GENERIC_GAMES_DIALOGUE
+    if service == "back_room":
+        return _GENERIC_BACK_ROOM_DIALOGUE
+    return city_dial.get("receptionist", {})
 
 def service_dialogue(city_id, service, context="enter"):
-    """Print random dialogue for a given city service."""
+    """Show random dialogue for a given city service (GUI output panel)."""
+    from utils import _tprint
     dialogues = get_city_dialogues(city_id, service)
     if context in dialogues:
-        print(random.choice(dialogues[context]))
+        _tprint(random.choice(dialogues[context]))
     else:
         fallback = dialogues.get("enter", list(dialogues.values())[0] if dialogues else [])
         if fallback:
-            print(random.choice(fallback))
+            _tprint(random.choice(fallback))

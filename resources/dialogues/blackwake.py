@@ -36,7 +36,7 @@ BLACKWAKE_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep with your boots on.",
-        "Eight hours of... well, sleep if you can.",
+        "A night of... well, sleep if you can.",
         "The rooms have locks. Use them.",
         "I'll wake you if the pirates come for you. Maybe.",
     ],
@@ -90,5 +90,31 @@ BLACKWAKE_BLACK_MARKET_DIALOGUE = {
         "The shadows hide your exit. Farewell.",
         "Come back when you need something... illegal.",
         "The black market always remembers.",
+    ],
+}
+
+BLACKWAKE_GAMES_DIALOGUE = {
+    "enter": [
+        "The innkeeper sets a cracked cup beside the dice. 'No promises. No refunds.'",
+        "A sailor with one eye deals the first hand before you sit down.",
+        "The Drowned Rat's common room smells of rum, salt, and bad decisions.",
+    ],
+    "leave": [
+        "The innkeeper laughs. 'Come back when your luck changes. Or don't.'",
+        "The dice cup rattles behind you like a warning.",
+        "The Drowned Rat keeps its own accounts. So does the house.",
+    ],
+}
+
+BLACKWAKE_BACK_ROOM_DIALOGUE = {
+    "enter": [
+        "The Drowned Rat's back room smells of salt, rum, and bad debts.",
+        "A pirate with a gold tooth deals without asking your name. 'Sit, or swim.'",
+        "The dealer taps the table twice. A knife appears, then disappears.",
+    ],
+    "leave": [
+        "The dealer rakes the house's cut into a strongbox. 'The cove remembers.'",
+        "Salt air follows you out. The dice keep rattling behind the door.",
+        "The back room's lamp swings once as the door closes.",
     ],
 }

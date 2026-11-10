@@ -132,14 +132,12 @@ def combat_everlong_ship(player, floor=None, enemies=None):
         for _ in range(4):
             enemies.append(_spawn_crew(player))
 
-    c_print("\n" + "~" * 60)
-    c_print("The air grows thick with salt and rot. Through the fog,")
+    c_print("\nThe air grows thick with salt and rot. Through the fog,")
     c_print("a ghostly vessel materializes — its sails tattered, its")
     c_print("hull gleaming with spectral light. A figure stands at the")
     c_print("prow, cutlass in hand, surrounded by a crew that should")
     c_print("have drowned centuries ago.")
     c_print(f"\nCaptain of the Everlong Ship — HP: {boss['hp']}")
-    c_print("~" * 60)
     c_input("\nPress Enter to face the Everlong Ship...")
 
     context = {
@@ -346,8 +344,7 @@ def combat_everlong_ship(player, floor=None, enemies=None):
         if ctx["phase"] == 1 and ctx["crew_defeated"] >= 10:
             ctx["phase"] = 2
             ctx["captain_actions"] = 2
-            c_print("\n" + "!" * 60)
-            c_print("[PHASE 2] The Captain's crew is shattered!")
+            c_print("\n[PHASE 2] The Captain's crew is shattered!")
             c_print("The ghostly sailors fade into mist, their wails swallowed")
             c_print("by the fog. The Captain stands alone, his eyes burning")
             c_print("with a fury that has sailed ten thousand storms.")
@@ -356,7 +353,6 @@ def combat_everlong_ship(player, floor=None, enemies=None):
             c_print(" and so his men followed him.'")
             c_print()
             c_print("The Everlong Ship begins its journey again...")
-            c_print("!" * 60)
             c_input("Press Enter to continue the final confrontation...")
 
             # Remove remaining crew
@@ -390,13 +386,11 @@ def combat_everlong_ship(player, floor=None, enemies=None):
     if result == "victory":
         # Guard: only award loot once per save
         if not player.get("boss_defeated_everlong_ship"):
-            c_print("\n" + "~" * 60)
-            c_print("The Captain's spectral form dissolves into sea-spray and mist.")
+            c_print("\nThe Captain's spectral form dissolves into sea-spray and mist.")
             c_print("The Everlong Ship groans, its haunted timbers finally at rest.")
             c_print("As the vessel fades beneath the waves, a single cutlass")
             c_print("glows with an eerie light — the Captain's authority,")
             c_print("now yours to wield.")
-            c_print("~" * 60)
 
             # Award Cutlass of the Captain
             from resources.items import build_item

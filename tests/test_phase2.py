@@ -17,6 +17,8 @@ from unittest.mock import MagicMock
 
 sys.path.insert(0, ".")
 
+from _tk_test_utils import shared_tk_root
+
 import combat.combat_io as combat_io
 from combat.combat_ui import format_combat_hud_data
 from combat.combat_engine import _combat_inner
@@ -221,26 +223,25 @@ def test_combat_renderer_instantiation():
     """CombatRenderer should create without errors in a tk root."""
     from gui.combat.combat_renderer import CombatRenderer
 
-    root = tk.Tk()
+    root = shared_tk_root()
+    renderer = CombatRenderer(root)
     try:
-        renderer = CombatRenderer(root)
         renderer.pack()
         player = dummy_player()
         enemies = dummy_enemies()
         renderer.refresh(player, enemies)
         print("PASS: test_combat_renderer_instantiation")
     finally:
-        root.destroy()
+        renderer.destroy()
 
 
 def test_action_panel_instantiation():
     """ActionPanel should create buttons from action menu."""
     from gui.combat.action_panel import ActionPanel
 
-    root = tk.Tk()
+    root = shared_tk_root()
+    panel = ActionPanel(root, on_action=lambda k: None)
     try:
-        clicks = []
-        panel = ActionPanel(root, on_action=lambda k: clicks.append(k))
         panel.pack()
         player = dummy_player()
         enemies = dummy_enemies()
@@ -250,7 +251,7 @@ def test_action_panel_instantiation():
         assert len(panel._buttons) >= 3, f"Expected >=3 buttons, got {len(panel._buttons)}"
         print("PASS: test_action_panel_instantiation")
     finally:
-        root.destroy()
+        panel.destroy()
 
 
 def test_dungeon_combat_override():

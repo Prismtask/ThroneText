@@ -12,15 +12,18 @@ Key rules (rev 3 design):
   - Cost: ≤15 min free, 16–90 min = 1 block, 91+ min = 2 blocks.
   - Overflow: a cost may exceed the remaining day — the excess eats the
     next day's blocks (the day rolls at the boundary).
-  - A day ends by Sleep (Night only, clears fatigue) or by exhaustion
-    (24 blocks spent → +1 fatigue stack, cap 3).
-  - Fatigue stacks accrue everywhere — including Pandemonium (rev 3.5) —
-    except inside Event Horizon runs.
+  - A day ends by Sleep (Night only, clears fatigue **and** stress) or by
+    exhaustion: 24 blocks spent → +50 stress. Every full 100 stress
+    converts into +1 fatigue stack (cap 3) — one skipped night is a
+    warning, two skipped nights are real exhaustion (stress design,
+    2026-10-30).
+  - Stress and fatigue stacks accrue everywhere — including Pandemonium
+    (rev 3.5) — except inside Event Horizon runs.
   - Wonderland is a **time pocket**: block costs are nullified and the
     outside day is untouched (exit shows the same day/blocks as entry).
   - Wait ("a brief moment") passes **one block** at any phase; waiting
     "a while" passes to the next phase — from Night it greets the
-    morning unslept (+1 fatigue; §6).
+    morning unslept (+50 stress; §6).
 
 Compatibility: `time_minutes` is kept as a derived value for legacy
 readers (day starts 06:00, block = 60 min — the legacy clock stays coherent).
@@ -35,10 +38,22 @@ FREE_MINUTES = 15                # ≤ this costs nothing
 STANDARD_MINUTES = 90            # 16–90 = 1 block; 91+ = 2 blocks
 MAX_FATIGUE = 3
 
+# ── Player stress (0–100, same scale as companion stress) ──────────────────
+# Only a real sleep clears it. Every full 100 converts into one fatigue
+# stack, so skipping two nights costs a stack instead of one per night.
+STRESS_MAX = 100
+STRESS_PER_UNSLEPT_DAY = 50      # one skipped night = half the meter
+STRESS_WORN_MIN = 34             # band thresholds (display + dream flavor)
+STRESS_RATTLED_MIN = 67          # rattled: +1 hallucination tier
+
 # (id, icon) in day order — Morning / Noon / Night
 PHASES = (("morning", "☀"), ("noon", "🌤"), ("night", "🌙"))
 PHASE_ORDER = {pid: idx for idx, (pid, _icon) in enumerate(PHASES)}
 ALL_PHASES = ("morning", "noon", "night")
+
+# Weather glyphs — weather replaces the phase icon; the phase word stays.
+WEATHER_ICONS = {"rain": "🌧", "snow": "🌨", "fog": "🌫"}
+WEATHER_HEAVY_ICONS = {"rain": "⛈", "snow": "❄"}
 
 # ── Default service hours (docs/time_system_design.md §9) ───────────────────
 # Template only — cities may override (per-city flavor, confirmed). Missing
@@ -82,8 +97,9 @@ def blocks_for_minutes(minutes):
 # (30min -> 3, 40min -> 4, 220min -> 10) PLUS a flat +2 supply overhead per
 # hop (pacing: even short trips should matter; mount shaves cancel it),
 # minimum 1 block. Mounts shave blocks by tier // 2 (T2/T3 -1, T4 -2; T1 -0)
-# and KEEP their encounter mitigation either way. Rain adds +1 block, heavy
-# rain +2; tier 3+ mounts ignore plain rain and take only +1 from heavy rain.
+# and KEEP their encounter mitigation either way. Weather adds +1 block
+# (light) or +2 (heavy), once per hop; tier 3+ mounts ignore light weather
+# and take only +1 from heavy weather.
 
 TRAVEL_MINUTES_PER_BLOCK = 30
 TRAVEL_MIN_BLOCKS = 1
@@ -91,10 +107,10 @@ TRAVEL_SUPPLY_OVERHEAD = 2       # flat per-hop supplies/pacing cost (rev 3.2)
 
 
 def travel_blocks_for(minutes, mount_tier=0, rain=0):
-    """Travel cost in blocks: ceil(min/30) + 2 supply, mount shave, then rain.
+    """Travel cost in blocks: ceil(min/30) + 2 supply, mount shave, then weather.
 
-    rain: 0 = clear, 1 = rain (+1), 2 = heavy rain (+2);
-    tier 3+ mounts take only +1 from heavy rain (plain rain ignored).
+    rain: weather severity — 0 = clear, 1 = light (+1), 2 = heavy (+2);
+    tier 3+ mounts take only +1 from heavy weather (light weather ignored).
     """
     try:
         minutes = int(minutes or 0)
@@ -124,11 +140,13 @@ def travel_blocks_for(minutes, mount_tier=0, rain=0):
 
 
 def travel_rain_level(player):
-    """Current rain level for travel pricing: 0 clear, 1 rain, 2 heavy rain.
+    """Weather severity for travel pricing: 0 clear, 1 light, 2 heavy.
 
-    Reads `daily_effects["rain_level"]`; falls back to the legacy
-    `travel_time_mult` value so existing events keep working mid-migration
-    (>= +25% counts as heavy rain).
+    Rain, snow, and fog all ride this one channel — weather is the only
+    numeric dial, and season only decides which weather can roll. Reads
+    `daily_effects["rain_level"]`; falls back to the legacy
+    `travel_time_mult` value for saves made before the block migration
+    (>= +25% counts as heavy weather).
     """
     eff = (player or {}).get("daily_effects", {}) or {}
     try:
@@ -148,6 +166,17 @@ def travel_rain_level(player):
     return 0
 
 
+def weather_icon(player):
+    """Weather glyph for today's HUD, or "" when the skies are clear."""
+    eff = (player or {}).get("daily_effects", {}) or {}
+    kind = eff.get("weather")
+    if not isinstance(kind, str) or not kind:
+        return ""
+    if travel_rain_level(player) >= 2 and kind in WEATHER_HEAVY_ICONS:
+        return WEATHER_HEAVY_ICONS[kind]
+    return WEATHER_ICONS.get(kind, "")
+
+
 def travel_blocks(player, minutes):
     """Player-aware travel cost: pulls mount tier and rain level itself."""
     tier = 0
@@ -159,8 +188,18 @@ def travel_blocks(player, minutes):
             tier = int(mount.get("tier", 0)) if mount else 0
         except Exception:
             tier = 0
-    return travel_blocks_for(minutes, mount_tier=tier,
-                             rain=travel_rain_level(player))
+    blocks = travel_blocks_for(minutes, mount_tier=tier,
+                               rain=travel_rain_level(player))
+    # Deed titles: shave whole blocks (a 2–3% minute cut rarely survives the
+    # 30-minute ceil, so apply the budget to the final block cost instead).
+    from titles import mod as _title_mod
+    _title_travel = _title_mod(player, "travel_time_pct")
+    if _title_travel > 0 and blocks > 0:
+        saved = int(round(blocks * _title_travel))
+        if blocks >= 4:
+            saved = max(1, saved)      # ensure the title measurably helps
+        blocks = max(1, blocks - saved)
+    return blocks
 
 
 # ── Phase / display helpers ─────────────────────────────────────────────────
@@ -189,10 +228,10 @@ def blocks_remaining(player):
 
 
 def format_block_track(player, include_day=True):
-    """Compact display track, e.g. `☀ Morning ▮▮▯▯ · Day 12`.
+    """Compact display track, e.g. `☀ Morning ▮▮▯▯ · 12/01 · Spring`.
 
     Pips are the *remaining* blocks of the current phase (drain as time
-    passes); the day counter comes from the player dict. Wonderland is a
+    passes); the calendar date comes from the player dict. Wonderland is a
     time pocket: no track at all (returns "") — the whimsical flavor day
     line carries the display instead (docs §7, rev 3.4).
     """
@@ -201,6 +240,9 @@ def format_block_track(player, include_day=True):
     blocks = max(0, min(DAY_BLOCKS - 1, _blocks_of(player)))
     phase_idx = min(2, blocks // BLOCKS_PER_PHASE)
     name, icon = PHASES[phase_idx]
+    weather = weather_icon(player)
+    if weather:
+        icon = weather          # phase word still carries the time of day
     spent_in_phase = blocks % BLOCKS_PER_PHASE
     pips = "▮" * (BLOCKS_PER_PHASE - spent_in_phase) + "▯" * spent_in_phase
     text = f"{icon} {name.title()} {pips}"
@@ -208,8 +250,17 @@ def format_block_track(player, include_day=True):
     if stacks > 0:
         roman = {1: "I", 2: "II", 3: "III"}.get(stacks, str(stacks))
         text += (" · \U0001F441 FATIGUE " if stacks >= 2 else " · FATIGUE ") + roman
+    stress = get_stress(player)
+    if stress > 0:
+        # The eye marks the band where hallucinations become possible.
+        mark = "\U0001F441 " if stress >= STRESS_RATTLED_MIN else ""
+        text += f" · {mark}STRESS {stress}"
     if include_day:
-        text += f" · Day {player.get('day', 1)}"
+        try:
+            from events import format_date
+            text += f" · {format_date(player)}"
+        except Exception:
+            text += f" · Day {player.get('day', 1)}"
     return text
 
 
@@ -223,6 +274,59 @@ def get_fatigue_stacks(player):
 def get_fatigue_penalty(player):
     """All-stat penalty from fatigue (−N where N = stacks)."""
     return -get_fatigue_stacks(player)
+
+
+def get_stress(player):
+    """Player stress meter, 0–100 (same scale as companion stress)."""
+    try:
+        return max(0, min(STRESS_MAX, int(player.get("stress", 0) or 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def stress_band(player):
+    """'calm' | 'worn' | 'rattled' — HUD wording + hallucination pressure."""
+    value = get_stress(player)
+    if value >= STRESS_RATTLED_MIN:
+        return "rattled"
+    if value >= STRESS_WORN_MIN:
+        return "worn"
+    return "calm"
+
+
+def is_rattled(player):
+    """True while stress is high enough to distort a night in the dark."""
+    return stress_band(player) == "rattled"
+
+
+def add_stress(player, amount):
+    """Add (or relieve) stress; every full 100 becomes one fatigue stack.
+
+    Wonderland is a time pocket and Event Horizon freezes the clock, so
+    neither accrues stress (fatigue-suppression rule, §10). Returns the
+    number of fatigue stacks gained.
+    """
+    try:
+        amount = int(amount or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    if amount == 0 or (player or {}).get("wonderland_active"):
+        return 0
+    if _fatigue_suppressed(player):
+        return 0
+
+    value = get_stress(player) + amount
+    gained = 0
+    while value >= STRESS_MAX:
+        value -= STRESS_MAX
+        stacks = get_fatigue_stacks(player)
+        if stacks < MAX_FATIGUE:
+            player["fatigue_stacks"] = stacks + 1
+            gained += 1
+        # A body already at MAX_FATIGUE cannot convert further; the excess
+        # is dropped instead of banking an instant stack for later.
+    player["stress"] = max(0, min(STRESS_MAX - 1, value))
+    return gained
 
 
 # ── Service hours (§9) ──────────────────────────────────────────────────────
@@ -345,22 +449,12 @@ def _apply_day_rollover(player, days_passed, old_day):
     Deliberately mirrors `utils.advance_time`'s rollover block; the
     switchover batch deletes the duplicate there and delegates here.
     """
-    from events import process_day_rollover, display_event_alert, queue_event_alerts
+    from events import process_day_rollover, queue_event_alerts
     events = process_day_rollover(player, days_passed, old_day)
 
     if events:
-        # GUI mode: always queue — the Event Notice popup surfaces them
-        # (city entry / safe moments). Terminal: dungeon queues, others print.
-        try:
-            import tkinter as tk
-            gui_mode = bool(tk._default_root and tk._default_root.winfo_exists())
-        except Exception:
-            gui_mode = False
-        if player.get("location") == "dungeon" or gui_mode:
-            queue_event_alerts(player, events)
-        else:
-            for evt in events:
-                display_event_alert(evt)
+        # GUI-only: the Event Notice popup surfaces queued events at safe moments.
+        queue_event_alerts(player, events)
 
     # Bounty expiry after day rollover
     from facilities.guild import check_bounty_expiry
@@ -390,20 +484,17 @@ def _apply_day_rollover(player, days_passed, old_day):
         bill = process_monthly_billing(player, bill_day)
         if bill:
             record_event(player, bill)
-            try:
-                import tkinter as tk
-                gui_mode = bool(tk._default_root and tk._default_root.winfo_exists())
-            except Exception:
-                gui_mode = False
-            if player.get("location") == "dungeon" or gui_mode:
-                queue_event_alerts(player, [bill])
-            else:
-                display_event_alert(bill)
+            queue_event_alerts(player, [bill])
 
     # Dispatch: resolve returns + nightly recovery
     if player.get("dispatch"):
         from facilities.dispatch import process_dispatch_progress
         process_dispatch_progress(player, days_passed)
+
+    # Family system: pregnancy period tracking + child growth scaffolding
+    # (docs/family_system_design.md §5/§6.2). No-op until Phase 2 creates state.
+    from family import family_tick
+    family_tick(player, old_day)
 
 
 def end_day(player, slept):
@@ -420,8 +511,9 @@ def end_day(player, slept):
     player["day_blocks"] = 0
     if slept:
         player["fatigue_stacks"] = 0
-    elif not _fatigue_suppressed(player):
-        player["fatigue_stacks"] = min(MAX_FATIGUE, get_fatigue_stacks(player) + 1)
+        player["stress"] = 0          # only real sleep clears the meter
+    else:
+        add_stress(player, STRESS_PER_UNSLEPT_DAY)
     _sync_minutes(player)
     _apply_day_rollover(player, 1, old_day)
     _notify_time_advanced(player)
@@ -498,6 +590,10 @@ def spend_travel_segment(player, blocks, camp=False):
         blocks = 0
     if blocks <= 0 or player.get("wonderland_active"):
         return 0
+
+    # Deed titles: count completed travel segments (one per spent segment).
+    from titles import note_deed as _note_title_deed
+    _note_title_deed(player, "travel_segments", 1)
 
     remaining = DAY_BLOCKS - _blocks_of(player)
     if blocks < remaining:

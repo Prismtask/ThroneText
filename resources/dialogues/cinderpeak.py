@@ -57,7 +57,7 @@ CINDERPEAK_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Don't worry about the rumbling. The volcano hasn't blown in a century.",
-        "Eight hours of toasty sleep. You'll wake feeling forged anew.",
+        "A night of toasty sleep. You'll wake feeling forged anew.",
         "The inn is built on a stable vent. Safer than it sounds.",
     ],
     "leave": [

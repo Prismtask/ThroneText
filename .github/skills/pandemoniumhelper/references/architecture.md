@@ -16,10 +16,12 @@
 | `./leveling.py` | XP, level-up rewards |
 | `./dungeon.py` | Dungeon crawl, floor gen, combat triggers, superboss milestones |
 | `./inventory.py` / `./inventory_ui.py` | Inventory & equipment |
+| `./karma.py` | Single global standing score — tiers, daily cap, gate responses, atonement helpers; City Favor is gone |
+| `./karma_dialogue.py` | Karma-tier NPC/shop/guard/inn lines (Blackwake variants; non-Blackwake inns and Wonderland stay neutral) |
 | `./save_load.py` | Save/load |
 | `./city.py` / `./city_dialogue.py` | City hub, NPC dialogue |
 | `./events.py` | Date-based event system, time tracking |
-| `./utils.py` | `_tprint`/`_tpause`/`_tinput`, `advance_time()`, `apply_death_penalty()`, `handle_player_death()`, `clear_screen()`, `format_time()`, `get_time_period()`, `get_difficulty_multiplier_from_time()`, `strip_ansi()` |
+| `./utils.py` | `_tprint`/`_tpause`/`_tinput`, `advance_time()`, `apply_death_penalty()`, `clear_screen()`, `format_time()`, `get_time_period()`, `get_difficulty_multiplier_from_time()`, `strip_ansi()` (GUI-only runtime; `_t*` console fallbacks are for headless tests) |
 
 ## Combat Module
 
@@ -33,6 +35,7 @@
 | `./combat/ally_skills.py` | Ally innate/learnable skill execution |
 | `./combat/superboss_common.py` | Shared superboss combat loop |
 | `./combat/capture.py` | Monster-girl capture |
+| `./combat/city_guards.py` | Non-lethal city-gate guard squads, jail outcome, gate cooldowns |
 | `./combat/stats.py` | Effective stats (base+eq+buffs), 1.7× Pandemonium multiplier |
 | `./combat/status_effects.py` | Poison, burn, bleed, curse, dread, silence, fear, etc. |
 | `./combat/stat_milestones.py` | Every 5 base-attr: STR→+dmg, CON→-dmg, DEX→dodge%, WIS→init/flee+heal%, CHA→capture%, LRN→skill% |
@@ -82,7 +85,8 @@
 
 | File | Role |
 |---|---|
-| `./facilities/house.py` | Monster girl housing, affection, recruitment |
+| `./facilities/house/` | Monster girl housing package: `menu.py`, `lounge.py`, `storage.py`, `rest.py`, `management.py`, `dispatch_board.py`, `family_menu.py`, `core.py`, `constants.py` |
+| `./heroine_quests/` | Heroine quest rules/actions launched from any hub (e.g. `sylvana_mirror.py`); quest content lives in the heroine's YAML entry |
 | `./facilities/shop.py` | Item shop |
 | `./facilities/inn.py` | Rest/HP recovery |
 | `./facilities/blacksmith.py` | Equipment crafting/upgrading |
@@ -188,15 +192,19 @@
 
 ## Tests
 
+Naming convention (authoritative): `./tests/README.md`. pytest collects only
+`test_*.py`; config lives in `./pyproject.toml` (`testpaths = ["tests"]`,
+`pythonpath = ["."]`).
+
 | File | Role |
 |---|---|
-| `./tests/test_health_checks.py` | Health/sanity checks |
-| `./tests/test_phase0.py` | Phase 0 validation |
-| `./tests/test_phase1.py` | Phase 1 validation |
-| `./tests/test_phase2.py` | Phase 2 validation |
-| `./tests/test_phase3.py` | Phase 3 validation |
-| `./tests/test_phase4.py` | Phase 4 validation |
-| `./tests/test_phase19.py` | Phase 19 validation |
+| `./tests/test_*.py` | pytest suite — health checks, phase 2/3/4/19, bestiary, event horizon, wild dungeons, house routing, party reinforcement, gloves rework |
+| `./tests/_smoke_phase0.py` / `./tests/_smoke_phase1.py` | Manual import/instantiation smoke scripts (not collected; were `test_phase0/1.py`) |
+| `./tests/_diag_*.py` | Manual diagnostic scripts, one system each (`_diag_casino`, `_diag_karma`, `_diag_family`, …) |
+| `./tests/_temp_*.py` / `./tests/_repro_*.py` | Throwaway one-change checks / bug reproductions — safe to delete |
+| `./tests/_fix_*.py` | One-off savefile surgery scripts |
+| `./tests/_tk_test_utils.py` | `shared_tk_root()` — one withdrawn Tk root for all GUI tests; never `root.destroy()` |
+| `./tests/enemy_audit.py`, `./tests/gen_wiki_html.py` | Project tools, not tests |
 
 ## Dev Utilities
 

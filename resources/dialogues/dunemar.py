@@ -63,7 +63,7 @@ DUNEMAR_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deep. The desert night is quiet.",
-        "Eight hours of peace. You'll wake refreshed.",
+        "A night of peace. You'll wake refreshed.",
         "Dream of green oases and full waterskins.",
         "The inn is safe. The dunes can wait.",
     ],

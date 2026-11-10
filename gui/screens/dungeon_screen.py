@@ -37,7 +37,8 @@ class DungeonScreen(FacilityScreen):
         def _run_dungeon():
             from dungeon import explore_dungeon
             return explore_dungeon(self.player, combat_override=self._gui_combat,
-                                   superboss_override=self._gui_superboss)
+                                   superboss_override=self._gui_superboss,
+                                   floor_clear_override=self._gui_floor_clear)
 
         super().__init__(
             parent,
@@ -110,6 +111,7 @@ class DungeonScreen(FacilityScreen):
         self._dungeon_name = dungeon_name
         self._dungeon_floor = floor
         self._dungeon_max_floor = max_floor
+        self._dungeon_region = region
 
         self.sm.update_top_bar(top_line)
 
@@ -125,13 +127,36 @@ class DungeonScreen(FacilityScreen):
             font=Theme.FONT_LARGE,
         ).pack()
 
-        tk.Label(
+        # Kept as an attribute so _update_top_bar can refresh it — the
+        # subtitle is captured at build time, and a run that is resumed
+        # (or simply descends) would otherwise keep showing the floor the
+        # screen was built on.
+        self._subtitle_label = tk.Label(
             header_frame,
             text=subtitle,
             bg=Theme.BG_DARK,
             fg=Theme.TEXT_DIM,
             font=Theme.FONT_SMALL,
-        ).pack(pady=(2, 0))
+        )
+        self._subtitle_label.pack(pady=(2, 0))
+
+        # Regional craft signature — favoured forms drop 3x as often here.
+        craft_hint = ""
+        if not self._eh_run:
+            from resources.item_generation import biome_craft_hint
+            forms = biome_craft_hint(region)
+            if forms:
+                craft_hint = f"Local crafts favour {forms}"
+        if craft_hint:
+            tk.Label(
+                header_frame,
+                text=craft_hint,
+                bg=Theme.BG_DARK,
+                fg=Theme.TEXT_DIM,
+                font=Theme.FONT_SMALL,
+                wraplength=760,
+                justify=tk.CENTER,
+            ).pack(pady=(1, 0))
 
         # Log dungeon entry to session log
         if self._eh_run:
@@ -402,6 +427,16 @@ class DungeonScreen(FacilityScreen):
             self.output_text.see(tk.END)
             self.output_text.config(state=tk.DISABLED)
 
+    def _set_subtitle(self, text):
+        """Refresh the header subtitle (floor/room line)."""
+        label = getattr(self, "_subtitle_label", None)
+        if label is None:
+            return
+        try:
+            label.config(text=text)
+        except tk.TclError:
+            pass  # Screen torn down
+
     def _update_top_bar(self):
         """Refresh the dungeon header (time spends / screen builds)."""
         p = self.player
@@ -417,14 +452,17 @@ class DungeonScreen(FacilityScreen):
             if state.get("rush_mode"):
                 total = int(state.get("rush_total", 0) or 0)
                 felled = total - len(state.get("rush_queue") or [])
+                self._set_subtitle(
+                    f"Space-Time Distortion \u00b7 Boss Rush {felled}/{total}")
                 rush_top = f"{self._dungeon_name} \u2014 Boss Rush {felled}/{total}"
                 if track:
                     rush_top += f" | {track}"
                 self.sm.update_top_bar(rush_top)
                 return
             room = int(state.get("room", 0)) + 1
-            eh_top = (f"{self._dungeon_name} \u2014 Room {room} \u00b7 "
-                      f"\u25ce {int(state.get('motes', 0))}")
+            self._set_subtitle(
+                f"Space-Time Distortion \u00b7 Room {room} \u00b7 \u25ce {motes} Motes")
+            eh_top = f"{self._dungeon_name} \u2014 Room {room} \u00b7 \u25ce {motes}"
             if track:
                 eh_top += f" | {track}"
             self.sm.update_top_bar(eh_top)
@@ -435,6 +473,8 @@ class DungeonScreen(FacilityScreen):
             wild = get_wild_dungeon(p, p.get("wild_dungeon_id")) or self._wild_dungeon
             floor = int(wild.get("highest_floor_cleared", 0)) + 1
             max_floor = max(1, int(wild.get("total_floors", 1) or 1))
+            self._set_subtitle(
+                f"{self._dungeon_region.title()} Region · Floor {floor}")
             wild_top = f"{self._dungeon_name} — Floor {floor}/{max_floor}"
             if track:
                 wild_top += f" | {track}"
@@ -445,6 +485,8 @@ class DungeonScreen(FacilityScreen):
         city_prog = p.get("city_floors", {}).get(origin_city, {})
         floor = city_prog.get("floor", self._dungeon_floor)
         max_floor = city_prog.get("max_floor", self._dungeon_max_floor)
+        self._set_subtitle(
+            f"{self._dungeon_region.title()} Region · Floor {floor}")
         top = f"{self._dungeon_name} — Floor {floor}/{max_floor}"
         if track:
             top += f" | {track}"
@@ -509,7 +551,7 @@ class DungeonScreen(FacilityScreen):
             map_str = _orig_render(rooms, explored, current_room_idx, floor, player=player)
             if map_str:
                 self._update_map(map_str)
-            return map_str
+            return ""  # panel shows it — suppress duplicate log output
 
         def _gui_party(player):
             # Render modern GUI party panel directly (no ASCII text in log)
@@ -577,148 +619,10 @@ class DungeonScreen(FacilityScreen):
 
     def _show_acquire_dialog(self, player, item):
         """Show a GUI dialog when inventory is full after a dungeon drop."""
-        import tkinter as tk
-        from inventory import (get_inventory_caps, count_inventory,
-                               get_sorted_equipment, get_sorted_items,
-                               remove_item_by_reference)
-        from inventory_ui import _format_equipment_stat_line
-
-        is_equip = item.get("type") == "equipment"
-        cat_name = "Equipment" if is_equip else "Items"
-        equip_cap, other_cap = get_inventory_caps(player)
-        equip_count, other_count = count_inventory(player)
-        cur_count = equip_count if is_equip else other_count
-        cur_cap = equip_cap if is_equip else other_cap
-
-        if is_equip:
-            candidates = get_sorted_equipment(player)
-        else:
-            candidates = get_sorted_items(player)
-
-        # Filter out unique items — they cannot be discarded
-        from resources.items import is_unique_item
-        candidates = [itm for itm in candidates if not is_unique_item(itm)]
-
-        result = [False]  # Mutable container: True = acquired, False = dropped
-
-        root = self.sm.root if self.sm else self.winfo_toplevel()
-        dialog = tk.Toplevel(root)
-        dialog.title("Inventory Full")
-        dialog.transient(root)
-        dialog.grab_set()
-        dialog.resizable(False, False)
-        dialog.configure(bg=Theme.BG_DARK)
-
-        # Center
-        dialog.update_idletasks()
-        px = root.winfo_x()
-        py = root.winfo_y()
-        pw = root.winfo_width()
-        ph = root.winfo_height()
-        dw = 520
-        dh = min(500, 120 + len(candidates) * 26)
-        dialog.geometry(f"{dw}x{dh}+{px + (pw - dw)//2}+{py + (ph - dh)//2}")
-
-        # Header
-        rarity = item.get("rarity", "common")
-        rarity_color = Theme.RARITY_COLORS.get(rarity, Theme.TEXT)
-
-        tk.Label(
-            dialog,
-            text=f"⚠️  Your {cat_name.lower()} bag is full! ({cur_count}/{cur_cap})",
-            bg=Theme.BG_DARK, fg=Theme.ACCENT,
-            font=Theme.FONT_BOLD,
-        ).pack(pady=(12, 4))
-
-        # New item info
-        item_text = f"New drop: {item['name']}"
-        if is_equip:
-            item_text += f"  {_format_equipment_stat_line(item)}"
-        item_text += f"  [{rarity}]"
-
-        tk.Label(
-            dialog, text=item_text,
-            bg=Theme.BG_DARK, fg=rarity_color,
-            font=Theme.FONT,
-        ).pack(pady=(0, 8))
-
-        tk.Label(
-            dialog, text="Choose an item to discard, or drop the new item:",
-            bg=Theme.BG_DARK, fg=Theme.TEXT_DIM,
-            font=Theme.FONT_SMALL,
-        ).pack(pady=(0, 4))
-
-        # Candidate list with scrollbar
-        list_frame = tk.Frame(dialog, bg=Theme.BG_DARK)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=5)
-
-        scrollbar = tk.Scrollbar(list_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        cand_list = tk.Listbox(
-            list_frame,
-            yscrollcommand=scrollbar.set,
-            bg=Theme.BG_MID,
-            fg=Theme.TEXT,
-            font=Theme.FONT,
-            selectbackground=Theme.ACCENT,
-            selectforeground=Theme.BG_DARK,
-            height=min(12, len(candidates)),
-            exportselection=False,
+        from gui.widgets.acquire_dialog import show_acquire_dialog
+        return show_acquire_dialog(
+            self, self.sm, player, item, log_fn=self._append_output,
         )
-        cand_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=cand_list.yview)
-
-        for idx, itm in enumerate(candidates):
-            extra = f" ({itm['slot']})" if is_equip else f" ({itm['type']})"
-            count_str = f" (x{itm.get('count', 1)})" if not is_equip and itm.get('count', 1) > 1 else ""
-            stat = _format_equipment_stat_line(itm) if is_equip else ""
-            stat_part = f" {stat}" if stat else ""
-            label = f"{idx + 1}. {itm['name']}{count_str}{extra}{stat_part} [{itm.get('rarity', 'common')}]"
-            cand_list.insert(tk.END, label)
-
-        # Buttons
-        btn_frame = tk.Frame(dialog, bg=Theme.BG_DARK)
-        btn_frame.pack(fill=tk.X, padx=12, pady=(4, 12))
-
-        def _discard_selected():
-            sel = cand_list.curselection()
-            if sel:
-                idx = sel[0]
-                if 0 <= idx < len(candidates):
-                    discarded = candidates[idx]
-                    remove_item_by_reference(player, discarded)
-                    player.setdefault("inventory", []).append(item)
-                    self._append_output(f"Discarded {discarded['name']}. Acquired {item['name']}!")
-                    result[0] = True
-            dialog.destroy()
-
-        def _drop_new():
-            self._append_output(f"You drop the {item['name']}.")
-            result[0] = False
-            dialog.destroy()
-
-        tk.Button(
-            btn_frame, text="Discard Selected & Keep New",
-            command=_discard_selected,
-            bg=Theme.ACCENT, fg=Theme.TEXT_HEADER,
-            font=Theme.FONT_BOLD, width=26,
-        ).pack(side=tk.LEFT, padx=5)
-
-        tk.Button(
-            btn_frame, text=f"Drop {item['name']}",
-            command=_drop_new,
-            bg="#5a3a5a", fg=Theme.BUTTON_FG,
-            font=Theme.FONT_BOLD, width=18,
-        ).pack(side=tk.RIGHT, padx=5)
-
-        # Double-click to discard
-        cand_list.bind("<Double-Button-1>", lambda e: _discard_selected())
-
-        dialog.protocol("WM_DELETE_WINDOW", _drop_new)
-        dialog.wait_window()
-
-        return result[0]
 
     # ── Combat integration ────────────────────────────────────────────────────
 
@@ -790,6 +694,67 @@ class DungeonScreen(FacilityScreen):
 
         self.sm.root.after(0, start_combat)
         return self._await_combat_result(result_queue, "Combat")
+
+    def _gui_floor_clear(self, player, floor_num=None, total_floors=None,
+                         name=None):
+        """Callback passed to explore_dungeon as floor_clear_override.
+
+        Wild runs call this after each cleared floor (except the last). Shows
+        the floor-clear window on the GUI thread and blocks the dungeon
+        thread until the player picks an option. Returns "continue",
+        "city", or "save_exit".
+        """
+        result_queue = queue.Queue()
+        floor_num = int(floor_num or 0)
+        total_floors = int(total_floors or 0)
+
+        def show():
+            try:
+                from gui.widgets.confirm_dialog import choice_dialog
+                from character import player_max_hp
+                from time_blocks import format_block_track
+
+                hp_max = player_max_hp(player)
+                details = [f"HP: {player.get('current_hp', 0)}/{hp_max}",
+                           f"Gold: {player.get('gold', 0)}"]
+                track = format_block_track(player)
+                if track:
+                    details.append(f"Time: {track}")
+
+                next_floor = min(floor_num + 1, total_floors)
+                choice_dialog(
+                    parent=self,
+                    title="Floor Cleared!",
+                    heading=f"=== FLOOR {floor_num}/{total_floors} CLEARED ===",
+                    subtitle=(f"{name or 'Wild Dungeon'} — "
+                              f"now entering Floor {next_floor}/{total_floors}"),
+                    details="\n".join(details),
+                    options=[
+                        ("continue", "1. Continue to next floor"),
+                        ("city", "2. Return to city"),
+                        ("save_exit", "3. Save and return to main menu"),
+                    ],
+                    on_choice=result_queue.put,
+                    default_choice="continue",
+                )
+            except Exception:
+                # Never leave the dungeon thread waiting on a window that
+                # failed to open (screen destroyed / TclError).
+                import traceback
+                traceback.print_exc()
+                result_queue.put("continue")
+
+        try:
+            self.sm.root.after(0, show)
+        except (tk.TclError, RuntimeError):
+            return "continue"  # GUI gone — keep the run going headless
+
+        while True:
+            try:
+                return result_queue.get(timeout=0.5)
+            except queue.Empty:
+                if self._stopped:
+                    return "continue"
 
     def _gui_superboss(self, tier, floor):
         """Callback passed to explore_dungeon as superboss_override.
@@ -918,6 +883,7 @@ class DungeonScreen(FacilityScreen):
             5: ("rientrante_frostbound", None),
             6: ("captain_everlong_ship", None),
             7: ("black_silence", None),
+            8: ("chromatic_artisan", None),
         }
         entry = superboss_map.get(tier)
         if entry is None:
@@ -942,6 +908,8 @@ class DungeonScreen(FacilityScreen):
             from combat.everlong_ship import combat_everlong_ship as func
         elif tier == 7:
             from combat.black_silence import combat_black_silence as func
+        elif tier == 8:
+            from combat.palette_chromatic_artisan import combat_palette as func
         else:
             return "victory"
 
@@ -965,7 +933,17 @@ class DungeonScreen(FacilityScreen):
     def _handle_result(self, result=None):
         """Called when the dungeon thread exits."""
         if self._on_result:
-            self._on_result(result)
+            try:
+                self._on_result(result)
+            except Exception:
+                # A result callback crash must never strand the player on a
+                # finished dungeon screen (2026-10-23: the wild completion
+                # dialog was parented to the already-destroyed WorldMapScreen
+                # → TclError, and every button was a no-op afterwards).
+                import traceback
+                traceback.print_exc()
+                self._on_result = None
+                self.sm.switch_to(CityScreen)
         else:
             self.sm.switch_to(CityScreen)
 
@@ -1080,6 +1058,7 @@ class DungeonScreen(FacilityScreen):
                                  get_all_reserve_allies_including_defeated)
         from combat.combat_ui import _get_entity_buff_tags
         from character import player_max_hp
+        from titles import format_name as _format_title_name
 
         ensure_party_order(player)
         front_allies = get_all_active_allies_including_defeated(player)
@@ -1089,7 +1068,9 @@ class DungeonScreen(FacilityScreen):
 
         # Player
         members.append({
-            "name": player["name"],
+            "name": _format_title_name(
+                player, "compact",
+                show_title=self.sm.settings.get("show_title_beside_name", True)),
             "level": player.get("level", 1),
             "hp": player.get("current_hp", 0),
             "max_hp": player_max_hp(player),

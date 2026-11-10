@@ -327,15 +327,15 @@ Superbosses:
       dark: 1.5
   chromatic_artisan:
     name: Palette, the Chromatic Artisan
-    race: Human
+    race: Elemental
     level: 35
     base_hp: 900
     mods:
       Strength: 7
-      Constitution: 8
-      Dexterity: 9
+      Constitution: 5
+      Dexterity: 10
       Wisdom: 10
-      Learning: 12
+      Learning: 10
       Charisma: 10
     boss: true
     super_boss: true

@@ -58,7 +58,7 @@ class ScreenManager:
             text="",
             font=Theme.FONT,
             bg=Theme.BG_MID,
-            fg=Theme.TEXT_HEADER,
+            fg=Theme.TEXT_DIM,
         )
         self.top_info.pack(side=tk.LEFT, padx=4, pady=5)
 
@@ -308,6 +308,11 @@ class ScreenManager:
         """Update the persistent top status bar (legacy simple string)."""
         self.top_name.config(text=text)
         self.top_info.config(text="")
+
+    def update_top_bar_parts(self, primary: str, secondary: str = ""):
+        """Two-tier top bar: `primary` status (bold) + `secondary` context (dim)."""
+        self.top_name.config(text=primary)
+        self.top_info.config(text=f"   {secondary}" if secondary else "")
 
     def refresh_top_bar(self, player=None):
         """Update structured top bar from player dict."""

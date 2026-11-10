@@ -3,20 +3,8 @@ import os
 
 import pytest
 
-from character import allocate_points
 from combat.stats import player_str_mod
-from resources.races_classes import ATTRIBUTES
 import save_load
-
-
-def test_allocate_points_preserves_partial_allocation(monkeypatch):
-    answers = iter(["2"] + [""] * (len(ATTRIBUTES) * 2) + ["n"])
-    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
-
-    base_attrs = {attr: 0 for attr in ATTRIBUTES}
-    result = allocate_points(base_attrs)
-
-    assert result["Strength"] == 2
 
 
 def test_player_mod_helpers_use_effective_values():

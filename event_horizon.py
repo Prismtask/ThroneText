@@ -30,7 +30,7 @@ from resources.races_classes import ATTRIBUTES
 EH_SOURCE = "event_horizon"
 
 # ── Tunable constants (docs/event_horizon_design.md §12) ────────────────────
-EH_UNLOCK_MAX_FLOOR = 20
+EH_UNLOCK_MAX_FLOOR = 20        # this floor must be CLEARED (max_floor > 20)
 EH_ENEMY_HP_PER_ROOM = 0.018    # curve cut (playtest 2026-10-07)
 EH_ENEMY_DMG_PER_ROOM = 0.013
 EH_ENEMY_DEF_PER_ROOM = 0.010
@@ -387,6 +387,21 @@ def get_enemy_mods(player):
     }
 
 
+def scale_enemy_elemental(enemy, factor):
+    """Scale real (>1.0) elemental damage entries only.
+
+    Neutral 1.0 placeholders must stay neutral: multiplying every entry turned
+    all nine elements above 1.0, which handed neutral enemies a phantom fire
+    element (AI and debuff channel pick the first entry over the threshold) on
+    trial cards that boost enemy elemental damage.
+    """
+    if factor == 1.0:
+        return
+    for el, val in list(enemy.get("elemental_dmg", {}).items()):
+        if val > 1.0:
+            enemy["elemental_dmg"][el] = val * factor
+
+
 def apply_enemy_scaling(enemy, player):
     """Hook for ``combat/stats.enemy_stats`` — no-op outside an active run."""
     if not in_run(player):
@@ -403,9 +418,7 @@ def apply_enemy_scaling(enemy, player):
     enemy["con_mod"] = int(enemy.get("con_mod", 0) * mods["def"])
     enemy["dex_mod"] = int(enemy.get("dex_mod", 0) * mods["def"])
     enemy["status_res"] = min(1.0, enemy.get("status_res", 0.0) + mods["status_res"])
-    if mods["ele_dmg"] != 1.0:
-        for el, val in enemy.get("elemental_dmg", {}).items():
-            enemy["elemental_dmg"][el] = val * mods["ele_dmg"]
+    scale_enemy_elemental(enemy, mods["ele_dmg"])
     if mods["regen"] > 0:
         enemy["rift_regen_pct"] = mods["regen"]
     # Trial-burden indicator: stamp the active negative-card count + what the
@@ -1073,8 +1086,15 @@ def joker_judgement_pulse(player, enemies, round_num):
     Every standing enemy loses 20% of max HP; from round 3 the party
     suffers the same (drawback — World lifts it; the party never drops
     below 1 HP). Called by the combat engine at the start of each round.
+
+    Only fires inside an active run. Joker records persist in state while
+    a run is suspended (they feed ``restore_event_horizon_effects``), and
+    this hook reads them directly — with no roster entry for the strip to
+    remove, the pulse used to bleed into overworld fights (2026-10-15
+    report: "judgement effect leaks outside of EH"). Same gate as
+    ``apply_enemy_scaling`` / ``apply_joker_battle_start``.
     """
-    if not has_owned_joker(player, "joker_judgement"):
+    if not in_run(player) or not has_owned_joker(player, "joker_judgement"):
         return []
     msgs = []
     pct = 0.20
@@ -1187,8 +1207,13 @@ def joker_mirror_debuffs(player, inflictor, targets, before_sig):
     ally's AoE burn mires the caster once, not once per enemy hit. An
     enemy's infliction mirrors for free; the party's own infliction is
     the drawback (The World lifts it).
+
+    Only fires inside an active run — like Judgement, this reads the
+    Joker records directly and has no roster entry to strip, so the raw
+    ownership check must not mirror debuffs in overworld fights
+    (2026-10-15 leak audit alongside Judgement).
     """
-    if not has_owned_joker(player, "joker_justice"):
+    if not in_run(player) or not has_owned_joker(player, "joker_justice"):
         return []
     inflictor_is_party = "current_hp" in inflictor
     if inflictor_is_party and not joker_drawbacks_active(player, "joker_justice"):
@@ -1778,7 +1803,7 @@ def consume_beating_root(player, actor):
     actor.setdefault("equipped", {}).setdefault("accessory3", None)
     if actor is player:
         return ("The root sinks into your chest — a third accessory slot "
-                "opens. Equip it in Inventory → Stats & Equip.")
+                "opens. Equip it in Inventory → Character.")
     return (f"The root sinks into {name}'s chest — a third accessory slot "
             f"opens for her. Equip it in Inventory → Allies.")
 
@@ -2064,8 +2089,31 @@ EVENT_HORIZON_POSITION = (730, 280)   # fixed remote coordinate (docs §6.1)
 
 
 def site_unlocked(player):
-    """The distortion appears on the world map once the gate is met."""
-    return int(player.get("max_floor", 1) or 1) >= EH_UNLOCK_MAX_FLOOR
+    """The distortion appears once Floor 20 has been CLEARED (docs §6.1).
+
+    ``max_floor`` reaches 20 by merely *descending into* the floor-20
+    milestone, so a failed attempt on its superboss used to unlock the site
+    (2026-11-07 fix). A victory advances ``max_floor`` to 21 — the gate is
+    therefore ``> EH_UNLOCK_MAX_FLOOR``.
+
+    Saves with an existing rift footprint (intro seen, run active, best room)
+    stay unlocked — never take the site away mid-run.
+    """
+    try:
+        deepest = int(player.get("max_floor", 1) or 1)
+    except (TypeError, ValueError):
+        deepest = 1
+    if deepest > EH_UNLOCK_MAX_FLOOR:
+        return True
+    if player.get("eh_intro_seen"):
+        return True
+    state = player.get("event_horizon") or {}
+    if state.get("run_active"):
+        return True
+    try:
+        return int(state.get("best_room", 0) or 0) > 0
+    except (TypeError, ValueError):
+        return False
 
 
 def event_horizon_site(player):

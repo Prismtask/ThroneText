@@ -78,8 +78,8 @@ def find_shortest_path(player, origin_id, dest_id):
     ship_reduction = ship.get("sea_time_reduction", 0) if ship else 0.0
     ship_cap = ship.get("cargo_capacity", 0) if ship else 0
 
-    # Daily events: Heavy Rain makes travel take longer
-    daily_time_mult = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
+    # Weather is not applied to minutes: rain/snow/fog add blocks once in
+    # time_blocks.travel_blocks() (single source of truth).
 
     # Cargo load penalty / blocking — per segment, using that segment's vehicle
     from resources.trade_goods import cargo_travel_penalty, cargo_overloaded_for_travel
@@ -133,8 +133,6 @@ def find_shortest_path(player, origin_id, dest_id):
                 effective_time = int(raw_time * (1 - mount_reduction))
                 seg_cost = 0
                 seg_cap = mount_cap
-            if daily_time_mult != 1.0:
-                effective_time = int(effective_time * daily_time_mult)
             seg_penalty = cargo_travel_penalty(player, seg_cap)
             if seg_penalty > 0:
                 effective_time = int(effective_time * (1 + seg_penalty))

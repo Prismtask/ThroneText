@@ -2,10 +2,10 @@
 """
 Thread-safe I/O redirection for combat code.
 
-Terminal mode (default):
-    Uses standard print() and input().
+Headless mode (default):
+    Uses standard print() and input() — tests and diagnostics only.
 
-GUI mode:
+GUI mode (the only shipped runtime):
     The GUI sets a custom IO object via set_io() before starting combat.
     Combat functions call get_io().print() / get_io().input() instead of
     builtins, so output is captured and input is bridged to the GUI.
@@ -42,6 +42,12 @@ def reset_io():
 
 class BaseCombatIO:
     """Abstract I/O interface for combat code."""
+
+    # True when this bridge draws the engine's menus itself (the tkinter GUI
+    # renders its own item / capture-net panels). Combat code then skips the
+    # legacy numbered menu prints — otherwise the whole inventory list leaks
+    # into the combat log as a wall of unreadable text.
+    renders_menus = False
 
     def print(self, *args, **kwargs):
         raise NotImplementedError
@@ -92,3 +98,26 @@ def c_input(prompt=""):
 def c_clear():
     """Clear via the current thread's I/O object."""
     return get_io().clear()
+
+
+def c_renders_menus():
+    """True when the active bridge draws menus natively (GUI mode).
+
+    Callers should skip their legacy numbered list prints in that case and
+    only emit the `c_input()` prompt, which the GUI maps to its own panel.
+    """
+    return bool(getattr(get_io(), "renders_menus", False))
+
+
+# ── Legacy decoration lines ───────────────────────────────────────────────────
+
+# Characters used by the old terminal-mode dividers ("=" * 60, "!" * 50,
+# "═" * 60, "─" * 66, "~" * 60). A line made of a single repeated glyph is
+# pure decoration; the GUI's 3-line ticker cannot afford the row.
+_BORDER_CHARS = frozenset("=-~*!─═_#")
+
+
+def is_border_line(text):
+    """True for a decorative divider line ('=====', '!!!!!', '─────')."""
+    t = str(text).strip()
+    return len(t) >= 8 and len(set(t)) == 1 and t[0] in _BORDER_CHARS

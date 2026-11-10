@@ -1,0 +1,1039 @@
+# resources/family_scenes.yaml
+# All Shared Night, child-bond, and birth scene text.
+# Edit this file to tune dialogue; resources/family_scenes.py loads it.
+# Per-girl keys use the monster-girl template key (e.g. harpy_scout).
+action_prompts:
+  tender: Hold her close — slow and warm
+  playful: Play along — tease her, make her laugh
+  bold: Take the lead — meet her boldly
+  shy: Whisper — soft words, no hurry
+  end: End the night — just rest together
+action_lines:
+  tender:
+  - You draw {name} close; she settles against you like she has been waiting for the invitation.
+  - Her shoulder relaxes under your hand. The room goes quiet in the good way.
+  - You hold her without hurry. She counts your heartbeat with one palm.
+  - She tucks her head beneath your chin and lets out a breath she has been holding all day.
+  - She fits herself into the curve of your shoulder, and the last of the day drains out of her.
+  - You smooth her hair back; she closes her eyes and leans into the touch.
+  - For a while neither of you speaks. The silence is doing the work.
+  - She takes your hand and presses it flat over her heart, as if to prove something.
+  playful:
+  - You tease her gently; she swats your shoulder, laughing.
+  - A sly remark earns you a narrowed look and a smile she tries to hide.
+  - You make her laugh — really laugh — and the sound settles warmly between you.
+  - She threatens to push you off the bed. She does not.
+  - You steal the blanket; she declares war with a pillow and terrible aim.
+  - She challenges you to a staring contest and loses because she keeps laughing.
+  - You trade increasingly ridiculous stories until neither of you can breathe.
+  - She draws a face on your hand and dares you to leave it there.
+  bold:
+  - You meet her gaze and do not look away. She does not either.
+  - Your hand finds hers; she laces her fingers through yours and pulls.
+  - You close the distance first. She makes a small, surprised sound and leans in.
+  - There is nothing tentative about the way she answers you.
+  - You take her hand and pull her gently into your space; she comes willingly.
+  - She tilts her head, waiting. You answer by closing the distance.
+  - You tell her what you want. Her smile sharpens with interest.
+  - She starts to speak; you kiss her instead, and she does not complain.
+  shy:
+  - You murmur something only she can hear. Her ear tips toward you.
+  - You tell her a small, true thing. She answers with a softer one.
+  - Your voice drops; she leans in until the words are almost not needed.
+  - You whisper her name like a promise. She goes still, listening.
+  - You ask permission with a look. She answers with a small nod.
+  - She reaches for your sleeve and holds on, saying nothing.
+  - You let her set the pace. She takes a breath and moves closer.
+  - She confesses something in a whisper; you keep it safe.
+mood_lines:
+  tender:
+  - She is quiet tonight, her hand resting in yours. She wants to be held close.
+  - She leans against you without a word. Tonight she wants closeness, not talk.
+  - She keeps finding reasons to touch your hand. Tonight she wants to be close.
+  - Her voice is softer than usual, and she keeps looking at you like she is about to ask for something.
+  playful:
+  - There is a spark in her eye tonight. She is waiting for you to play along.
+  - She keeps almost-laughing, watching you. She wants you to tease her back.
+  - She is in a mood to be chased tonight, eyes bright with mischief.
+  - She nudges your foot under the table and pretends it was an accident.
+  bold:
+  - She holds your gaze without flinching. She wants you to meet her halfway.
+  - She is bold tonight, all sharp smiles and steady hands. She wants you to take the lead.
+  - She has already decided what she wants. She is waiting for you to catch up.
+  - There is no hesitation in her tonight, only a steady, warm challenge.
+  shy:
+  - She is shy tonight, her words careful and her eyes averted. She is listening for a soft word.
+  - She keeps looking away, then back. She wants you to close the distance gently.
+  - She keeps her hands folded, but her eyes keep returning to you.
+  - She has something to say and is working up to it.
+match_lines:
+- Perfect — that is exactly what she wanted.
+- She lights up; you read her right.
+- Something clicks into place between you.
+- She makes a small, pleased sound — you found the shape of her.
+- That was the answer. Her whole posture changes.
+compatible_lines:
+- Close enough; she leans into it.
+- Not exact, but the same language.
+- She softens, willing to follow where you are going.
+- It lands a little sideways, but she meets you there.
+- Not the words she expected, but close enough to keep.
+miss_lines:
+- The moment slips; she humors you.
+- You misread her, and the air cools a little.
+- She tries, but the rhythm is not there.
+- She blinks, recalculating. The moment needs a moment.
+- You step on the punchline. She forgives you with a look.
+random_beats:
+- She shifts closer, her breathing evening out.
+- A floorboard creaks; you both freeze, then laugh.
+- Rain begins against the window. Neither of you mentions it.
+- She traces a small pattern on your sleeve, thinking.
+- The lamp gutters; the room settles into softer light.
+- She asks a question she has been saving. You answer honestly.
+- The house creaks around you, settling in for the night.
+- She hums a few bars of something and stops when she notices you listening.
+- A moth taps the window once, then goes still.
+- She steals a sip of water and leaves the cup on your side.
+- You compare hands. Hers are colder. She does not pull away.
+- Somewhere down the hall, a door closes softly.
+ending_lines:
+  together:
+  - The night finds its rhythm, and neither of you rushes the end. Afterward, the quiet holds you both.
+  - You end up tangled together, breathing in time, and the morning feels very far away.
+  - Whatever the morning brings, it will find you both here, together.
+  - She stays awake a little longer just to watch you breathe.
+  - You fall asleep at different times and wake up in the same place.
+  - The night does not need to be perfect. It needs to be this.
+  warm:
+  - It is not perfect, but it is warm, and she stays close.
+  - The night settles into something gentle. She falls asleep with her hand in yours.
+  - 'You do not get everything right, but you get this: her, here, staying.'
+  - She curls against your back and falls asleep mid-sentence.
+  - You talk until the words run out, then stay anyway.
+  - The lamp stays on. Neither of you wants to be the first to move.
+  quiet:
+  - The night is gentle rather than bright. She falls asleep first.
+  - You lie together in comfortable silence, closer than before.
+  - It is enough — quiet, and warm, and not quite what either of you hoped.
+  - You listen to the house settle and her breathing slow.
+  - She leaves her hand where you can reach it. You do.
+  - The silence is not empty. It is shared.
+  rest:
+  - You hold each other until sleep takes you. It is enough.
+  - The night passes in comfortable quiet. In the morning, she is still there.
+  - You choose rest, and the quiet is its own kind of closeness.
+  - 'You let the night be simple: warm, quiet, together.'
+  - She sleeps first. You stay awake a little longer, listening.
+  - Nothing more happens. That is the point.
+ending_titles:
+  together: Together
+  warm: Warm
+  quiet: Quiet
+  rest: Rest
+written_action_lines:
+  tender:
+  - You take your time. Her hands find the small of your back; the kiss deepens by degrees, and neither of you hurries to end it.
+  - She presses closer until there is no polite distance left, only warmth and the sound of her breathing changing.
+  - You take her face in both hands and kiss her slowly, giving her every chance to set the pace.
+  - She melts against you by inches, her fingers curling into your shirt, and the room narrows to the two of you.
+  - You let the kiss deepen until the only thing left is warmth, breath, and the weight of her against you.
+  playful:
+  - Her laugh turns into a gasp against your mouth. The teasing stops being a game somewhere between one kiss and the next.
+  - She hooks a leg around yours and pulls you off balance, grinning, already reaching for the lamp.
+  - She laughs into the kiss, then stops laughing. Her hands are already at your collar.
+  - You catch her wrist, pull her back, and kiss her until the teasing runs out of both of you.
+  - She pushes you down first, triumphant, and then forgets to be smug.
+  bold:
+  - You let your hands answer for you. She arches into the touch, eyes dark, and does not look away.
+  - She pulls you down beside her and makes her expectations clear — softly, but without a trace of doubt.
+  - You hold her gaze while your hands learn her, slow and deliberate. She lets you see exactly what it does to her.
+  - She pulls you close by the belt and kisses you like she has decided the night is hers.
+  - You answer her challenge without words. She stops pretending she is in control.
+  shy:
+  - You keep your voice low and your hands gentle. She leans in to hear, then stays for the kiss.
+  - She hesitates at the edge of the bed, then reaches for you first. The lamp goes out.
+  - You brush her hair back and ask, quietly. She says yes before you finish the question.
+  - She kisses you first — clumsily, bravely — and you let her lead.
+  - You keep the lamp low and your touches gentle. She stays close enough to hear your heartbeat.
+written_ending_lines:
+  together:
+  - Afterward you lie tangled together, breath slowing, her hand still open on your chest.
+  - The night narrows to warmth and closeness. She falls asleep against you, and you let yourself follow.
+  - You stay awake in the dark, memorizing the weight of her, and let the night take its time.
+  - In the morning neither of you moves first. There is nowhere else either of you wants to be.
+  warm:
+  - 'You do not get everything right, but you get this: her, close, staying. The rest can wait for morning.'
+  - She kisses your shoulder and settles. The lamp burns low; neither of you reaches to put it out.
+  - She falls asleep with her hand on your chest. You cover it with yours and let the lamp burn.
+  - It was not perfect. It was real, and warm, and she is still here.
+  quiet:
+  - The night is gentler than either of you expected. She stays close, and that is enough.
+  - You lie together in the dark, not speaking, not apart.
+  - You hold each other without asking for more. The quiet settles in around you both.
+  - She sleeps first. You stay awake a little longer, listening to the house and her breathing.
+  rest:
+  - You hold her until sleep takes you both. Nothing more needs to happen tonight.
+  - The night passes in quiet closeness. In the morning, she is still there.
+  - You let the night be simple. That is enough.
+  - She sleeps; you follow. In the morning, neither of you regrets the quiet.
+written_girl_action_lines: {}
+written_girl_ending_lines: {}
+girl_action_lines:
+  harpy_scout:
+    tender:
+    - She folds a wing around you, feathers soft as a held breath.
+    - She presses her forehead to yours and lets her guard down.
+    playful:
+    - She nips at your shoulder and laughs when you flinch.
+    - She challenges you to a staring contest and loses on purpose.
+    bold:
+    - She meets you halfway, all wind and nerve.
+    - She pulls you close with a scout's unerring confidence.
+    shy:
+    - She tucks her head under your chin and stays there.
+    - Her wings half-close, hiding the smile she cannot help.
+  goblin_girl:
+    tender:
+    - She burrows against your side like a small, warm storm.
+    - She holds your hand in both of hers and does not let go.
+    playful:
+    - She steals the blanket, then pretends she did not.
+    - She tells you an outrageous story and dares you to believe it.
+    bold:
+    - She grins, grabs your collar, and pulls.
+    - She climbs into your lap like she owns the place.
+    shy:
+    - She counts the seams on your sleeve instead of meeting your eyes.
+    - She mumbles something sweet and immediately denies it.
+  vampire_seductress:
+    tender:
+    - She rests her cool forehead against yours and lets herself be still.
+    - She holds you carefully, as if afraid of her own strength.
+    playful:
+    - She traces a lazy circle on your chest and waits for you to notice.
+    - She makes a dramatic show of being scandalized. She is not.
+    bold:
+    - She tilts your chin up with one finger. Tonight she is not asking.
+    - She smiles with all her teeth, and you do not look away.
+    shy:
+    - She looks away first — and that, from her, is saying something.
+    - She forgets her practiced lines and simply holds on.
+  succubus_seductress:
+    tender:
+    - Her tail curls loosely around your wrist, possessive and gentle.
+    - She presses a kiss to your knuckles and lets the night be simple.
+    playful:
+    - She whispers a scandalous joke and watches you turn red.
+    - She steals a pillow and declares war. The war is mostly giggling.
+    bold:
+    - She pulls you close with a confidence that leaves no room for doubt.
+    - She tells you exactly what she wants. Then she waits.
+    shy:
+    - She falters mid-tease, surprised by her own honesty.
+    - She hides her face against your shoulder and mutters something soft.
+  alraune_fledger:
+    tender:
+    - She twines a vine loosely around your wrist and leaves it there.
+    playful:
+    - She hides a flower behind your ear and pretends it grew there.
+    bold:
+    - She draws you down into the moss with her, certain and unhurried.
+    shy:
+    - Her petals fold closed, then open again when you do not laugh.
+  kobold_tinkerer:
+    tender:
+    - She presses her cheek to your shoulder, tail curling tight.
+    playful:
+    - She shows you a gadget that does absolutely nothing, proudly.
+    bold:
+    - She climbs into your lap to explain her latest invention.
+    shy:
+    - She hides behind her toolbox, then peeks out.
+  dryad_protector:
+    tender:
+    - She leans her forehead to yours, bark warm under your hand.
+    playful:
+    - She grows a tiny flower in your hair and dares you to notice.
+    bold:
+    - She pulls you against her trunk, roots shifting to make room.
+    shy:
+    - Her leaves rustle a quiet answer before she finds words.
+  ghost_maid:
+    tender:
+    - She rests her cool hand over yours and lets herself be solid.
+    playful:
+    - She floats through the furniture and makes you laugh at the draft.
+    bold:
+    - She drifts close until the cold is a choice, not a surprise.
+    shy:
+    - She flickers at the edge of the lamplight, waiting to be invited.
+  centaur_scout:
+    tender:
+    - She folds her legs down beside you and leans into your shoulder.
+    playful:
+    - She challenges you to a race and starts before you agree.
+    bold:
+    - She sweeps you up onto her back and asks where you want to go.
+    shy:
+    - She paws the floor, tail swishing, and offers you the blanket.
+  moth_girl_flutterer:
+    tender:
+    - She settles against your chest, wings soft and still.
+    playful:
+    - She dusts your nose with pollen and laughs at your sneeze.
+    bold:
+    - She flutters up and kisses you before she can lose her nerve.
+    shy:
+    - She hides her face in her wings, peeking through the gap.
+  slime_girl:
+    tender:
+    - She wraps a cool, gentle arm around you and holds.
+    playful:
+    - She wobbles into a silly shape until you laugh.
+    bold:
+    - She presses close, all soft confidence and no apologies.
+    shy:
+    - She ripples uncertainly, then pools against your side.
+  lamia_constrictor:
+    tender:
+    - She coils loosely around you, careful of her strength.
+    playful:
+    - She steals your hand and refuses to give it back.
+    bold:
+    - She pulls you into her coils and smiles with all her teeth.
+    shy:
+    - Her tail tightens once, then relaxes when you stroke it.
+  lizard_queen:
+    tender:
+    - She rests her cool brow against yours, crown set aside.
+    playful:
+    - She flicks her tongue at your ear and calls it a royal decree.
+    bold:
+    - She tilts your chin up and holds your gaze like a throne.
+    shy:
+    - She looks away first, scales flushing darker.
+  mimic_girl:
+    tender:
+    - She opens her arms instead of her lid and holds you.
+    playful:
+    - She mimics your voice badly until you both give up.
+    bold:
+    - She shifts into a shape that fits you perfectly and pulls you close.
+    shy:
+    - She stays in her plain form, watching, waiting for permission.
+  umbral_weaver:
+    tender:
+    - Her shadow hand finds yours and stays.
+    playful:
+    - She makes a shadow puppet of you and gives it a ridiculous hat.
+    bold:
+    - She steps out of the dark and kisses you before it can swallow her.
+    shy:
+    - She waits in the corner until you beckon, then comes all at once.
+  winter_fairy:
+    tender:
+    - She presses her cool cheek to yours and lets the frost soften.
+    playful:
+    - She draws a snowflake on your palm and dares you to keep it.
+    bold:
+    - She pulls you into the cold and warms you herself.
+    shy:
+    - Her breath fogs between you; she writes stay in it.
+  holstaur_brawler:
+    tender:
+    - She rests her heavy head on your shoulder and sighs.
+    playful:
+    - She challenges you to arm-wrestle and lets you win.
+    bold:
+    - She lifts you easily and sets you where she wants you.
+    shy:
+    - She fiddles with her bell, then offers you the warm spot.
+  gargoyle_watcher:
+    tender:
+    - She stays still under your hand, stone warm from the fire.
+    playful:
+    - She makes a face at you and cracks, just a little.
+    bold:
+    - She wraps a stone wing around you and draws you in.
+    shy:
+    - She watches the door, then shifts closer when you look away.
+  yuki_onna:
+    tender:
+    - She lets her cold fingers lace with yours and does not pull away.
+    playful:
+    - She breathes a snowflake onto your nose and smiles.
+    bold:
+    - She pulls you into her chill and holds you until it fades.
+    shy:
+    - She hides her face behind her sleeve, eyes bright.
+  amazon_warrior:
+    tender:
+    - She sets her spear aside and rests her hand on your back.
+    playful:
+    - She challenges you to a sparring match, then cheats.
+    bold:
+    - She pulls you close with the same grip she uses on a blade.
+    shy:
+    - She rubs the back of her neck and offers you first pick of the blankets.
+  banshee_wailer:
+    tender:
+    - She hums low, a sound that does not hurt, and holds on.
+    playful:
+    - She makes a ghostly face and laughs when you flinch.
+    bold:
+    - She presses her cold lips to your temple and dares you to stay.
+    shy:
+    - She flickers, then solidifies just enough to lean against you.
+  neko_ninja:
+    tender:
+    - She tucks her head under your chin and purrs despite herself.
+    playful:
+    - She steals your sleeve and hides it somewhere improbable.
+    bold:
+    - She drops from the rafters into your arms and calls it stealth.
+    shy:
+    - She kneads the blanket and looks anywhere but at you.
+  arachne_weaver:
+    tender:
+    - She wraps a silk thread around your wrist, a gentle anchor.
+    playful:
+    - She webs your boots to the floor and pretends not to know.
+    bold:
+    - She pulls you into her web and makes no apology.
+    shy:
+    - She busies herself with her loom, but leaves a space beside her.
+  mummy_princess:
+    tender:
+    - She lets her bandages loosen and rests her head on you.
+    playful:
+    - She unravels a length of linen and snaps it at you, laughing.
+    bold:
+    - She wraps you close, regal and certain.
+    shy:
+    - She holds out a strip of linen, asking without words.
+  oni_bruiser:
+    tender:
+    - She holds you carefully, as if you are the fragile thing.
+    playful:
+    - She challenges you to a drinking contest and loses on purpose.
+    bold:
+    - She hooks an arm around your waist and lifts.
+    shy:
+    - She ducks her head, horns nearly knocking the lamp.
+  salamander_dancer:
+    tender:
+    - She presses her warm hands to your cheeks and smiles.
+    playful:
+    - She spins you into a dance step you did not agree to.
+    bold:
+    - She pulls you into the firelight and does not let go.
+    shy:
+    - She fidgets with her sash, then offers you her hand.
+  dullahan_knight:
+    tender:
+    - She sets her helm aside and rests her forehead against yours.
+    playful:
+    - She makes a show of searching for her head and laughs.
+    bold:
+    - She catches your chin and kisses you, armor and all.
+    shy:
+    - She holds her helm like a shield, then sets it down.
+  kitsune_miko:
+    tender:
+    - She folds her tails around you like a blanket.
+    playful:
+    - She flicks a foxfire spark at your nose and giggles.
+    bold:
+    - She pulls you close, tails curling possessively.
+    shy:
+    - She hides her smile behind her sleeve, ears twitching.
+  siren_empress:
+    tender:
+    - She sings something low and private, meant only for you.
+    playful:
+    - She hums a song that makes you miss a step and laughs.
+    bold:
+    - She draws you into the water's edge and holds you there.
+    shy:
+    - She stops mid-note, surprised by how much she means it.
+  crimson_countess:
+    tender:
+    - She rests her cool hand over your heart and listens.
+    playful:
+    - She pretends to be scandalized by your joke, then laughs.
+    bold:
+    - She pulls you close by the collar, eyes bright.
+    shy:
+    - She looks away, then back, her composure cracking.
+  demon_whip_master:
+    tender:
+    - She coils her whip loosely around your wrist and tugs gently.
+    playful:
+    - She snaps the whip at a candle and grins when you jump.
+    bold:
+    - She pulls you in with a practiced hand and no hesitation.
+    shy:
+    - She winds the whip around her fingers, at a loss.
+  minotaur_gladiator:
+    tender:
+    - She leans her forehead to yours, breath slow and warm.
+    playful:
+    - She challenges you to a rematch and loses beautifully.
+    bold:
+    - She sweeps you off your feet and calls it a victory.
+    shy:
+    - She scuffs a hoof on the floor and offers you the good pillow.
+  vampire_matriarch:
+    tender:
+    - She holds you like something precious and rare.
+    playful:
+    - She traces a lazy pattern on your wrist and waits.
+    bold:
+    - She draws you into her lap and smiles with all her teeth.
+    shy:
+    - She forgets her grand manner and simply holds on.
+  centaur_champion:
+    tender:
+    - She folds her legs and wraps her arms around you.
+    playful:
+    - She races you to the door and lets you win by a nose.
+    bold:
+    - She lifts you onto her back and sets off at a gallop.
+    shy:
+    - She covers the distance with a blanket and a quiet question.
+  infernal_empress:
+    tender:
+    - She cools her flame to a warmth you can hold.
+    playful:
+    - She conjures a spark crown for you and laughs at the fit.
+    bold:
+    - She pulls you onto her throne and dares the court to comment.
+    shy:
+    - She lets her fire dim, just for you.
+  scylla_wrecker:
+    tender:
+    - She wraps a tentacle around you, gentle despite its strength.
+    playful:
+    - She steals your shoe with a tentacle and hides it behind her.
+    bold:
+    - She pulls you into the deep and holds you close.
+    shy:
+    - She retreats into her shell, then peeks out.
+  gorgon_petrifier:
+    tender:
+    - She keeps her gaze soft, her hands gentler, and holds you.
+    playful:
+    - She threatens to turn you to stone and then laughs.
+    bold:
+    - She lifts her blindfold and trusts you to meet her eyes.
+    shy:
+    - She turns her face away, snakes hissing softly.
+  ninetales_fox:
+    tender:
+    - She curls all nine tails around you and rests.
+    playful:
+    - She hides a foxfire in your pocket and waits for the yelp.
+    bold:
+    - She draws you down beside her, tails possessive.
+    shy:
+    - She looks away, ears flat, then leans in.
+  mermaid_siren_queen:
+    tender:
+    - She rests her cool cheek against yours, salt and song.
+    playful:
+    - She splashes you and pretends it was the tide.
+    bold:
+    - She pulls you into the water and holds you until you laugh.
+    shy:
+    - She sings a note she did not mean to, then hides her face.
+  draconic_valkyrie:
+    tender:
+    - She folds her wings around you like a tent.
+    playful:
+    - She challenges you to a flying race and carries you instead.
+    bold:
+    - She lifts you into the air and kisses you at the apex.
+    shy:
+    - She offers you the warm spot under her wing.
+  sphinx_riddler:
+    tender:
+    - She rests her chin on your shoulder and stops asking questions.
+    playful:
+    - She poses a riddle with an obvious answer and watches you squirm.
+    bold:
+    - She draws you close and says the answer is you.
+    shy:
+    - She pretends to study the wall, tail twitching.
+  lich_queen_avatar:
+    tender:
+    - She lets her cold hand rest in yours, unmoving.
+    playful:
+    - She animates a teacup to steal your biscuit.
+    bold:
+    - She pulls you into her throne and holds you like a decree.
+    shy:
+    - She looks at you as if you are a spell she did not plan.
+  valkyrie_commander:
+    tender:
+    - She sets her spear aside and rests her hand on your shoulder.
+    playful:
+    - She challenges you to a spar and calls a draw.
+    bold:
+    - She pulls you close with a warrior's certainty.
+    shy:
+    - She offers you the first pick of the blankets.
+  dragon_goddess_avatar:
+    tender:
+    - She folds her divinity down to your size and holds you.
+    playful:
+    - She makes a tiny thundercloud over your head and laughs.
+    bold:
+    - She draws you into her lap and dares the world to object.
+    shy:
+    - She lets her light dim, just enough to be close.
+  arachne_brood_queen:
+    tender:
+    - She wraps a silk blanket around you and tucks it in.
+    playful:
+    - She webs your sleeve to the chair and pretends it was an accident.
+    bold:
+    - She pulls you into her nest and makes room.
+    shy:
+    - She leaves a silk thread on your pillow, an invitation.
+  cosmic_slime_empress:
+    tender:
+    - She holds you in a soft, starry embrace.
+    playful:
+    - She shapes herself into a comet and nearly takes out the lamp.
+    bold:
+    - She pulls you into her orbit and holds you there.
+    shy:
+    - She ripples with colors, then settles close.
+  gnome_gear_maiden:
+    tender:
+    - She sets her tools down and rests her head on your shoulder.
+    playful:
+    - She winds up a tiny toy to march across your knee.
+    bold:
+    - She climbs into your lap to show you her newest gear.
+    shy:
+    - She hides behind a cogwheel and peeks out.
+  orc_war_sister:
+    tender:
+    - She rests her forehead against yours, breath slow.
+    playful:
+    - She challenges you to a brawl and pulls her punches.
+    bold:
+    - She hooks an arm around you and lifts.
+    shy:
+    - She grunts something soft and looks away.
+  shadow_dusk_weaver:
+    tender:
+    - Her shadow hand rests over yours, cool and steady.
+    playful:
+    - She makes your shadow wave back at you.
+    bold:
+    - She steps out of the dark and kisses you.
+    shy:
+    - She waits at the edge of the lamplight.
+  clockwork_automata_doll:
+    tender:
+    - She holds you with precise, careful strength.
+    playful:
+    - She recites a joke in perfect deadpan.
+    bold:
+    - She pulls you close with a soft mechanical click.
+    shy:
+    - Her gears slow, then speed up when you take her hand.
+  giant_maiden_of_stone:
+    tender:
+    - She kneels down to your height and holds you.
+    playful:
+    - She makes a tiny stone figure of you and grins.
+    bold:
+    - She lifts you onto her shoulder and carries you.
+    shy:
+    - She offers you a warm spot in the hollow of her hand.
+  dragonkin_flame_heart:
+    tender:
+    - She banks her inner fire down to a warmth you can hold.
+    playful:
+    - She breathes a smoke ring and laughs at your face.
+    bold:
+    - She pulls you into the heat and holds you.
+    shy:
+    - She lets her flame gutter, just for you.
+  angel_seraph_ascendant:
+    tender:
+    - She folds her wings around you and lets the light soften.
+    playful:
+    - She makes a halo of sparks and crowns you.
+    bold:
+    - She draws you into her light and holds you.
+    shy:
+    - She covers her face with a wing, then peeks.
+  fey_star_court_dancer:
+    tender:
+    - She rests her head on your shoulder, starlight settling.
+    playful:
+    - She spins you into a dance and refuses to let go.
+    bold:
+    - She pulls you close under the stars.
+    shy:
+    - She offers you her hand, then looks away.
+  demon_infernal_bride:
+    tender:
+    - She takes your hand as if it is a vow.
+    playful:
+    - She steals a kiss and pretends it was an accident.
+    bold:
+    - She pulls you close with bridal certainty.
+    shy:
+    - She looks away, then back, burning quietly.
+  undead_grave_queen:
+    tender:
+    - She rests her cold hand over yours and stays.
+    playful:
+    - She makes the candles gutter and laughs when you jump.
+    bold:
+    - She draws you into her dark and holds you.
+    shy:
+    - She looks at you like a lost prayer.
+  wonderland_alice:
+    tender:
+    - She leans into your shoulder, all the sharp edges gone quiet.
+    playful:
+    - She quotes a rule at you, then breaks it.
+    bold:
+    - She pulls you close and dares the Queen to comment.
+    shy:
+    - She looks away first, then back, smiling.
+  wonderland_red_hood:
+    tender:
+    - She sets the axe down and rests her head on your shoulder.
+    playful:
+    - She challenges you to a race through the woods.
+    bold:
+    - She pulls you close, all nerve and warmth.
+    shy:
+    - She fiddles with her cloak, then leans in.
+  wonderland_dorothy:
+    tender:
+    - She takes your hand and holds it like something precious.
+    playful:
+    - She clicks her heels and declares the night officially good.
+    bold:
+    - She pulls you into a dance with no music.
+    shy:
+    - She looks away, then back, smiling.
+girl_mood_lines: {}
+girl_ending_lines: {}
+child_talk_low:
+- She is still deciding how much of herself to show you. Today, it is a small story about the garden.
+- You sit together while she works. She does not say much, but she does not leave.
+- She asks a careful question about your day, then listens to the whole answer.
+child_talk_mid:
+- She shows you something she made — rough, careful, proud. You make room for it on the shelf.
+- She tells you a joke she has been saving. It is not very good. You laugh anyway.
+- She leans against your shoulder for a moment, then pretends she did not.
+child_talk_high:
+- She talks about the future as if you are certain to be in it. You decide to be worthy of that.
+- She calls you her family without hesitating. The word settles warmly in the room.
+- She falls asleep mid-sentence, trusting you to be there when she wakes.
+child_gift_love:
+- Her eyes go wide. She turns the gift over and over, then hugs it to her chest.
+- She tries to thank you formally, fails, and hugs you instead.
+- She puts the gift somewhere safe, then comes back to sit closer.
+child_gift_hate:
+- She accepts it politely, but you can tell it is not for her. She keeps it anyway.
+- She thanks you and sets it aside. Next time, you will ask first.
+child_race_talk:
+  Goblin:
+    low:
+    - She counts her coin collection and asks if you want to see the best one.
+    mid:
+    - She shows you a shiny button she found and explains why it is lucky.
+    high:
+    - She tells you a secret plan for the house and makes you swear not to tell.
+  Beast:
+    low:
+    - She brings you a feather she found and waits for your verdict.
+    mid:
+    - She curls up against your side and listens to the house settle.
+    high:
+    - She falls asleep with her head in your lap, purring without meaning to.
+  Fey:
+    low:
+    - She grows a flower in a cracked cup and checks whether you noticed.
+    mid:
+    - She asks why the moths come to the window and listens to the whole answer.
+    high:
+    - She makes the room smell like rain and wildflowers just before you enter.
+  Dragonkin:
+    low:
+    - She shows you a scale she polished until it shone.
+    mid:
+    - She practices a proud stance, then asks if it looked convincing.
+    high:
+    - She curls her tail around your ankle and tells you about her hoard.
+  Shadow:
+    low:
+    - She practices stepping through your shadow and nearly gets it right.
+    mid:
+    - She tells you a story about the dark that is not frightening at all.
+    high:
+    - She leaves a warm shadow on your pillow and pretends it was nothing.
+  Elemental:
+    low:
+    - She changes colour when she is happy and hopes you did not see.
+    mid:
+    - She makes a small, warm light in her palm and holds it out to you.
+    high:
+    - She settles into your side like weather that has decided to stay.
+  Lizardfolk:
+    low:
+    - She basks on the warm stone and saves you the sunny spot.
+    mid:
+    - She flicks her tongue out at the rain and decides it is acceptable.
+    high:
+    - She curls her tail around yours and tells you the house is warm enough now.
+  Abomination:
+    low:
+    - She asks why she has extra eyes and trusts you to answer honestly.
+    mid:
+    - She shows you how many things she can look at at once.
+    high:
+    - She leans all her strange, sharp weight against you and calls it home.
+  Construct:
+    low:
+    - She tightens a loose bolt on her wrist and asks you to check it.
+    mid:
+    - She stands very still while you work, then hums a small thank-you.
+    high:
+    - She tells you that her favourite sound is the house at night.
+  Vampire:
+    low:
+    - She drinks her juice from a cup with a lid and avoids your eyes.
+    mid:
+    - She reads aloud from a book and does all the dramatic voices.
+    high:
+    - She takes your hand and tells you she is not hungry when you are near.
+  Undead:
+    low:
+    - She asks what the sun feels like and listens without flinching.
+    mid:
+    - She makes the candle flames dance and laughs at her own trick.
+    high:
+    - She rests her cold hand in yours and says the house feels alive.
+  Human:
+    low:
+    - She asks about your day and remembers the small parts.
+    mid:
+    - She tells you a joke from school and waits for the laugh.
+    high:
+    - She says she is glad you are her family, then hides under the blanket.
+  Demon:
+    low:
+    - She practices her fearsome roar and is pleased when you pretend to fear it.
+    mid:
+    - She shows you a drawing of the two of you with tiny horns on you.
+    high:
+    - She curls against you, all her fire banked to a safe warmth.
+  Giant:
+    low:
+    - She ducks under the doorway and asks if she will ever stop growing.
+    mid:
+    - She lifts you onto her shoulder to reach the high shelf.
+    high:
+    - She sits on the floor so you can reach her, and stays.
+  Orc:
+    low:
+    - She challenges you to arm-wrestle and loses with great drama.
+    mid:
+    - She shows you a bruise and asks if it looks impressive.
+    high:
+    - She rests her forehead to yours and says nothing at all.
+  Clockwork:
+    low:
+    - She winds herself up and asks you to listen to the tick.
+    mid:
+    - She recites the house rules in perfect order, then adds one of her own.
+    high:
+    - She slows her gears to match your breathing without being asked.
+  Angel:
+    low:
+    - She sings to the houseplants and checks if you are listening.
+    mid:
+    - She folds her wings small so she fits beside you.
+    high:
+    - She tells you the house feels like a blessing and means it.
+  Gnome:
+    low:
+    - She takes apart a clock and promises to put it back together.
+    mid:
+    - She shows you a tiny machine that opens and closes a little door.
+    high:
+    - She falls asleep on your workbench, still holding a screwdriver.
+  Storybook:
+    low:
+    - She asks for a story and corrects your voices.
+    mid:
+    - She draws a map of a place that does not exist and invites you.
+    high:
+    - She reads aloud until you both forget who is listening.
+child_race_gift:
+  Goblin:
+    love:
+    - She adds it to her hoard and gives you the best piece in return.
+    hate:
+    - She tries to trade it for something shinier.
+  Beast:
+    love:
+    - She tucks it into her nest and curls around it.
+    hate:
+    - She sniffs it once and loses interest.
+  Fey:
+    love:
+    - She ties it to a branch and calls it a garden treasure.
+    hate:
+    - She thanks you and lets the moths inspect it instead.
+  Dragonkin:
+    love:
+    - She polishes it and places it with her hoard.
+    hate:
+    - She tries to look impressed, then hides it.
+  Shadow:
+    love:
+    - She keeps it in a shadow-wrapped box.
+    hate:
+    - She leaves it somewhere dark and forgets it.
+  Elemental:
+    love:
+    - She glows a little and does not hide it.
+    hate:
+    - She turns it over, then sets it gently aside.
+  Lizardfolk:
+    love:
+    - She places it on the warm stone where she naps.
+    hate:
+    - She gives it a polite lick and hands it back.
+  Abomination:
+    love:
+    - She lets all her eyes look at it at once.
+    hate:
+    - She asks what it is. She is not being cruel.
+  Construct:
+    love:
+    - She displays it on her workbench with precision.
+    hate:
+    - She logs it as 'received' and sets it aside.
+  Vampire:
+    love:
+    - She keeps it in a velvet box under her bed.
+    hate:
+    - She thanks you with a smile that does not reach her eyes.
+  Undead:
+    love:
+    - She places it where the candlelight hits it.
+    hate:
+    - She says it is lovely, then puts it away.
+  Human:
+    love:
+    - She hugs it and then hugs you.
+    hate:
+    - She says thank you and tries to mean it.
+  Demon:
+    love:
+    - She declares it the finest tribute she has ever received.
+    hate:
+    - She calls it a mortal custom and hides it carefully.
+  Giant:
+    love:
+    - She holds it in one hand like a treasure.
+    hate:
+    - She thanks you and puts it on the highest shelf.
+  Orc:
+    love:
+    - She grins and shows it off to the empty room.
+    hate:
+    - She grunts, then gives it to someone who wanted it.
+  Clockwork:
+    love:
+    - She records it as 'kept' in her little ledger.
+    hate:
+    - She records it as 'reviewed' and files it away.
+  Angel:
+    love:
+    - She holds it to the light and blesses it.
+    hate:
+    - She thanks you and gives it to the house shrine.
+  Gnome:
+    love:
+    - She puts it on her workbench where she can see it.
+    hate:
+    - She tries to improve it with a screwdriver.
+  Storybook:
+    love:
+    - She writes it into the margin of her favourite page.
+    hate:
+    - She says it belongs in a different story.
+girl_child_talk:
+  goblin_girl:
+    low:
+    - She counts her coin collection and asks if you want to see the best one.
+    mid:
+    - She shows you a shiny button and explains why it is lucky.
+    high:
+    - She tells you a secret plan for the house and makes you swear not to tell.
+  harpy_scout:
+    low:
+    - She brings you a feather she found and waits for your verdict.
+    mid:
+    - She curls a wing around your shoulders and listens to the house settle.
+    high:
+    - She falls asleep under your chin, wings half-spread.
+  vampire_seductress:
+    low:
+    - She drinks her juice from a cup with a lid and avoids your eyes.
+    mid:
+    - She reads aloud from a book and does all the dramatic voices.
+    high:
+    - She takes your hand and tells you she is not hungry when you are near.
+  succubus_seductress:
+    low:
+    - She practices her most scandalous joke and forgets the punchline.
+    mid:
+    - She shows you a drawing of the two of you with tiny horns on you.
+    high:
+    - She curls against you, all her fire banked to a safe warmth.
+girl_child_gift:
+  goblin_girl:
+    love:
+    - She adds it to her hoard and gives you the best piece in return.
+    hate:
+    - She tries to trade it for something shinier.
+  harpy_scout:
+    love:
+    - She tucks it into her nest and curls around it.
+    hate:
+    - She sniffs it once and loses interest.
+  vampire_seductress:
+    love:
+    - She keeps it in a velvet box under her bed.
+    hate:
+    - She thanks you with a smile that does not reach her eyes.
+  succubus_seductress:
+    love:
+    - She declares it the finest tribute she has ever received.
+    hate:
+    - She calls it a mortal custom and hides it carefully.
+birth_lines:
+- The house is quiet when {mother} calls for you. The lamp is low; her hand finds yours.
+- She is tired, but her smile is steady. The child in her arms is small and warm and real.
+- You sit together for a long time, none of you saying much. The house seems to hold its breath around you.
+birth_name_prompt: What will you name the child?
+stage_labels:
+  infant: infant
+  child: child
+  adult: adult

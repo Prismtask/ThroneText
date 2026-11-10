@@ -38,6 +38,10 @@ class GUICombatIO(BaseCombatIO):
     damage) with no visible output.
     """
 
+    # The screen draws its own item / capture-net panels, so the engine must
+    # not print the legacy "1. Health Potion (consumable)" list into the log.
+    renders_menus = True
+
     def __init__(self):
         self.input_queue = queue.Queue()
         self.output_queue = queue.Queue()
@@ -55,6 +59,12 @@ class GUICombatIO(BaseCombatIO):
         if not self._active:
             return
         text = " ".join(str(a) for a in args)
+        # Legacy decoration ("======", "!!!!!!", "──────") is terminal art:
+        # it would eat a row of the 3-line ticker for no information.
+        from combat.combat_io import is_border_line
+        text = "\n".join(l for l in text.splitlines() if not is_border_line(l))
+        if not text.strip():
+            return
         self.pacer.before_print(text)
         self.output_queue.put(("OUTPUT", text))
         self.pacer.after_print(text)
@@ -153,13 +163,16 @@ class CombatScreen(BaseScreen):
             self.sm.update_top_bar("Combat | On the Road")
         elif self.combat_context == "training":
             self.sm.update_top_bar("⚔ Sparring | Training Dummy")
+        elif self.combat_context == "city_guard":
+            self.sm.update_top_bar("⚔ City Gate | Non-lethal Guard Fight")
         else:
             eh_run = bool(self.player and self.player.get("_eh_in_run"))
             if eh_run:
                 top = (f"Combat | \u2694 The Event Horizon | "
                        f"Room {self.room_num or '?'}")
             else:
-                top = f"Combat | Floor {self.floor or '?'} | Room {self.room_num or '?'}/{self.total_rooms or '?'}"
+                top = (f"Combat | Floor {self._floor_display()} | "
+                       f"Room {self.room_num or '?'}/{self.total_rooms or '?'}")
             # ── Pandemonium: append active curse to the top bar ─────────
             if self.player and self.player.get("pandemonium_mode"):
                 curse = self.player.get("pandemonium_curse")
@@ -199,7 +212,17 @@ class CombatScreen(BaseScreen):
         self._ticker_feed = []
         self._skill_banner = None
         self._last_damage_actor = None  # Persists the latest damage line across turns
+        self._actor_has_output = False  # First action line of the current turn?
         self._ticker_width = None
+        # Important non-combat lines (quests, captures, unique loot). These
+        # are pinned in the feed and survive the end-of-combat wipe; the
+        # result slot lists them again before the player leaves the battle.
+        self._notices = []
+        self._notice_line = None
+        # Boss gimmick banner ("⚙ [GIMMICK] ...", "[PHASE 2] ..."). Pinned
+        # like a notice so phase changes stay readable in the 3-line strip
+        # instead of scrolling out with the action spam.
+        self._gimmick_line = None
 
         ticker_row = tk.Frame(self, bg=Theme.BG_MID)
         ticker_row.pack(fill=tk.X, padx=10, pady=(0, 8))
@@ -266,6 +289,18 @@ class CombatScreen(BaseScreen):
         # Bind mouse wheel to scroll
         self.log_text.bind("<MouseWheel>", lambda e: self.log_text.yview_scroll(-1 * (e.delta // 120), "units"))
 
+        # ── Boss-intro paging (2026-11-10) ────────────────────────────────
+        # Superboss modules print 15-25 lines of prose before their opening
+        # "Press Enter to face ..." prompt. The 3-line ticker made that wall
+        # unreadable (the dungeon-screen arena scene told the same story, so
+        # the two surfaces competed). The first prompt now rewinds the log
+        # and reveals the intro 3 lines per Continue press.
+        # _log_mark = where the CURRENT prompt's output started.
+        self._log_mark = self.log_text.index("end-1c")
+        self._inputs_handled = 0
+        self._narration_pages = []
+        self._narration_page_total = 0
+
         # ── Bottom: Action Panel ─────────────────────────────────────────────
         self.action_panel = ActionPanel(
             self,
@@ -291,6 +326,24 @@ class CombatScreen(BaseScreen):
             command=self._on_continue_click,
         )
         self.continue_btn.pack(expand=True)
+
+        # Quest/capture notices shown above the Leave Battle button at the
+        # end of a fight. Hidden for ordinary Continue prompts. The wrapper
+        # has a fixed height, so showing the label never moves the HUD.
+        self.result_notice_label = tk.Label(
+            self.continue_wrap,
+            text="",
+            bg=Theme.BG_DARK,
+            fg=Theme.TEXT,
+            font=(Theme.FONT_FAMILY, 9),
+            justify=tk.LEFT,
+            anchor=tk.W,
+            wraplength=900,
+        )
+        self.continue_wrap.bind(
+            "<Configure>",
+            lambda e: self._resize_notice_label(e.width),
+        )
         # Don't pack the wrapper yet — shown only when needed
 
         # ── Item selection list (hidden by default) ──────────────────────────
@@ -380,6 +433,15 @@ class CombatScreen(BaseScreen):
         if self._pending_input_mode is None:
             self.io.pacer.request_skip()
 
+    def _floor_display(self):
+        """Floor segment for the top bar.
+
+        Wild ruins store the real floor index in player["_combat_floor_label"]
+        because `self.floor` carries the ruin's level for scaling.
+        """
+        label = (self.player or {}).get("_combat_floor_label")
+        return label or self.floor or '?'
+
     def _update_top_bar(self):
         """Called by the game clock tick — preserves curse/quirk info in combat."""
         if self.combat_context == "superboss":
@@ -396,7 +458,8 @@ class CombatScreen(BaseScreen):
                 top = (f"Combat | \u2694 The Event Horizon | "
                        f"Room {self.room_num or '?'}")
             else:
-                top = f"Combat | Floor {self.floor or '?'} | Room {self.room_num or '?'}/{self.total_rooms or '?'}"
+                top = (f"Combat | Floor {self._floor_display()} | "
+                       f"Room {self.room_num or '?'}/{self.total_rooms or '?'}")
             if self.player and self.player.get("pandemonium_mode"):
                 curse = self.player.get("pandemonium_curse")
                 if curse:
@@ -532,10 +595,49 @@ class CombatScreen(BaseScreen):
             if self.player:
                 self.player["_ally_switch_mode"] = False
 
+    def _acquire_item_gui(self, player, item):
+        """Combat-thread bridge for a full inventory (called from the fight thread).
+
+        Schedules the shared GUI dialog on the main thread and blocks the
+        combat thread until the player chooses. Without this, the legacy
+        inventory_ui path would call builtins.input() on a background thread
+        with no console attached.
+        """
+        import queue as _queue
+        result_q = _queue.Queue()
+
+        def _show():
+            try:
+                from gui.widgets.acquire_dialog import show_acquire_dialog
+                result_q.put(show_acquire_dialog(
+                    self, self.sm, player, item, log_fn=self._append_log,
+                ))
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                result_q.put(False)
+
+        try:
+            self.after(0, _show)
+        except (RuntimeError, tk.TclError):
+            return False
+
+        while True:
+            try:
+                return result_q.get(timeout=0.5)
+            except _queue.Empty:
+                if getattr(self, "_destroyed", False):
+                    return False
+
     # ── Combat thread lifecycle ───────────────────────────────────────────────
 
     def _start_combat(self):
         """Launch combat in a daemon thread."""
+        # Loot prompts from the combat thread must use the GUI dialog, not
+        # the legacy console fallback in inventory_ui.
+        from inventory_ui import set_acquire_handler
+        set_acquire_handler(self._acquire_item_gui)
+
         # ── Reconcile vorpal skills before combat ─────────────────────────
         # Safety net: ensures all heroines' innate/learned skills match their
         # vorpal flags before combat actions are built.
@@ -571,10 +673,16 @@ class CombatScreen(BaseScreen):
                 import traceback
                 self.io.output_queue.put(("ERROR", str(e) + "\n" + traceback.format_exc()))
             finally:
+                from inventory_ui import set_acquire_handler
+                set_acquire_handler(None)
                 reset_io()
 
         # ── Presentation pacing config (docs/combat_plan_phase_design.md §7) ─
         settings = getattr(self.sm, "settings", None) or {}
+        # Combat HUD cards show the title honourific; matching still uses the
+        # base name (combat_ui keeps `name` and `display_name` separate).
+        self.player["_show_title_beside_name"] = settings.get(
+            "show_title_beside_name", True)
         self.io.pacer.configure(
             party_names=[self.player.get("name", "")] +
                         [display_name(a) for a in self.player.get("allies", [])],
@@ -623,7 +731,11 @@ class CombatScreen(BaseScreen):
             elif kind == "OUTPUT":
                 self._handle_output(data)
             elif kind == "CLEAR":
-                self._clear_log()
+                # The engine calls c_clear() at every round start (terminal
+                # screen refresh). In the GUI the log popup is the fight
+                # recap — erasing it each round threw away every earlier
+                # message, including failed capture feedback.
+                self._reset_round_feed()
             elif kind == "RESULT":
                 self._handle_result(data)
                 return
@@ -679,6 +791,11 @@ class CombatScreen(BaseScreen):
             # it...') and round pauses no longer resize the HUD.
             self._active_ally = None  # Continue prompts are never per-ally
             self.action_panel.pack_forget()
+            # First prompt of the fight = the boss/encounter intro. Reveal its
+            # prose in 3-line pages instead of dumping it (2026-11-10).
+            if self._inputs_handled == 0 and self._begin_intro_pagination():
+                self._inputs_handled += 1
+                return
             self._show_continue("▶ Continue", self._on_continue_click)
 
         elif self._pending_input_mode == "action":
@@ -788,17 +905,32 @@ class CombatScreen(BaseScreen):
             self._show_capture_net_selection()
 
         elif self._pending_input_mode == "capture_choice":
-            # Capture duplicate menu: show Sell / Release / Bond as action buttons
+            # Capture duplicate menu: broker / slaver / release / bond.
             self.continue_wrap.pack_forget()
             self.item_frame.pack_forget()
             self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
-            self.action_panel.set_capture_choice_actions(self._on_action_click)
+            self.action_panel.set_capture_choice_actions(
+                self._on_action_click, player=self.player
+            )
+        elif self._pending_input_mode == "capture_full_choice":
+            # House-full menu: broker / slaver / release.
+            self.continue_wrap.pack_forget()
+            self.item_frame.pack_forget()
+            self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
+            self.action_panel.set_capture_choice_actions(
+                self._on_action_click, player=self.player, house_full=True
+            )
 
         else:
             # Fallback: show action buttons
             self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
             enemies = self._enemies_snapshot()
             self.action_panel.set_actions(self.player, enemies, active_ally=self._active_ally)
+
+        # The prompt is up — anything printed from here on belongs to the
+        # next prompt's window (boss-intro paging reads from this mark).
+        self._inputs_handled += 1
+        self._mark_log_position()
 
     def _handle_output(self, text: str):
         """Append combat output to the log widget and detect target-selection context.
@@ -819,16 +951,14 @@ class CombatScreen(BaseScreen):
         turn_match = re.match(r'^\s*\[(\d+/\d+)\]\s+(.+)\'s\s+Turn:', text.strip())
         if turn_match:
             self._turn_step_prefix = f"[{turn_match.group(1)}]"
-            # A new turn sweeps the previous actor's event lines and the skill
-            # banner — but the latest DAMAGE line stays. Hits must not flash
-            # away when the next turn starts; the line persists until the next
-            # combatant's damage replaces it (2026-10-05 feedback). Evasion
-            # results (dodges/misses) stay too — a blinded attacker's
-            # "enemy dodges" line otherwise flashes for one pacing beat and
-            # is swept before it can be read (2026-10-08 bug report).
+            # A new turn only clears the skill banner. The previous actor's
+            # ACTION results (damage, item use, failed effects, heals, ...)
+            # stay readable through this header; the first action line of the
+            # new combatant sweeps them (below). Sweeping everything except
+            # damage/evade here made item-use output vanish instantly
+            # (2026-11-07 feedback: "using item didn't get printed in the box").
             self._skill_banner = None
-            self._ticker_feed = [l for l in self._ticker_feed
-                                 if self._is_damage_line(l) or self._is_evade_line(l)]
+            self._actor_has_output = False
             self._render_ticker()
             # HUD feedback: spotlight the combatant who is acting now, and
             # track them for the turn-order bar highlight. The full engine
@@ -892,6 +1022,9 @@ class CombatScreen(BaseScreen):
         t = text.strip()
 
         # ── NEVER prefix these: they are UI/interaction, not action results ──
+        # Quest/capture/loot notices are system messages, not action results.
+        if self._is_notice_line(t):
+            return False
         # Skill descriptions (player: >>>, ally: >>)
         if t.startswith(">") and not t.startswith(">> ROUND"):
             return False
@@ -978,6 +1111,9 @@ class CombatScreen(BaseScreen):
             return False
 
         # Separator lines
+        from combat.combat_io import is_border_line
+        if is_border_line(t):
+            return False
         if all(c in "-─═~" for c in t) and len(t) > 10:
             return False
 
@@ -1041,7 +1177,9 @@ class CombatScreen(BaseScreen):
                 qs = format_quirk_summary(self.player)
                 if qs:
                     clean += f" | {qs}"
-        # Block time: swap the engine's HH:MM segment for the phase track
+        # Legacy headers carried the old HH:MM clock ("| Time: 09:14"). The
+        # engine now prints the phase track itself; this branch only rewrites
+        # an old-format string (e.g. a stale saved log).
         if "Time:" in clean and self.player:
             from time_blocks import format_block_track
             clean = clean.split("| Time:")[0].rstrip()
@@ -1067,6 +1205,15 @@ class CombatScreen(BaseScreen):
         self._skill_banner = None
         self._ticker_feed = []
         self._last_damage_actor = None
+        # Pinned notices are re-listed above Leave Battle; clear the ticker
+        # line so a stale capture/item message cannot override the result.
+        self._notice_line = None
+        # A half-read intro must never keep the Leave Battle button on a
+        # "next page" click.
+        self._narration_pages = []
+        self._narration_page_total = 0
+        # The gimmick banner describes a phase that no longer exists.
+        self._gimmick_line = None
         self._append_log(f"\n=== Combat ended: {result.upper()} ===")
         # Clear turn step prefix so the result line isn't prefixed
         self._turn_step_prefix = ""
@@ -1105,7 +1252,11 @@ class CombatScreen(BaseScreen):
 
         self.action_panel.pack_forget()
         self.item_frame.pack_forget()
-        self._show_continue("▶ Leave Battle", self._finish_combat)
+        # Keep quest/capture lines visible after the fight: the ticker was
+        # just cleared, and these are the lines the player must not miss
+        # (capture-girl quest completion, the follow-up quest, house joins).
+        self._show_continue("▶ Leave Battle", self._finish_combat,
+                            notices=self._notices)
 
     def _finish_combat(self):
         """Proceed after combat ends — dismiss overlay (result already delivered)."""
@@ -1178,10 +1329,15 @@ class CombatScreen(BaseScreen):
         if key == "f":
             # Flee — confirm first since this abandons the dungeon run
             from gui.widgets.confirm_dialog import confirm_dialog
+            message = (
+                "Flee from the gate? You will return to the world map."
+                if self.combat_context == "city_guard"
+                else "Flee from combat? You will return to the city."
+            )
             confirm_dialog(
                 parent=self,
                 title="Flee Combat?",
-                message="Flee from combat? You will return to the city.",
+                message=message,
                 on_yes=lambda: self._do_send_action(key),
             )
         else:
@@ -1192,22 +1348,117 @@ class CombatScreen(BaseScreen):
         self.io.send_input(key)
         self.action_panel.disable_all()
 
-    def _show_continue(self, text: str, command):
+    def _show_continue(self, text: str, command, notices=None):
         """Show the Continue/Leave button in an action-panel-height slot.
 
         The slot is sized from the action panel's canonical reserved height,
         so encounter intros, skill descriptions ('Press Enter to use it...'),
         target selection and the end-of-combat button never move the HUD.
+
+        `notices` (end-of-combat only) lists quest/capture lines above the
+        button — a non-modal summary so those messages cannot be lost when
+        the 3-line feed is cleared.
         """
         self.continue_wrap.config(height=self.action_panel.reserved_height)
         self.continue_btn.config(text=text, command=command)
+        body = self._format_result_notices(notices or [])
+        if body:
+            self.result_notice_label.config(text=body)
+            self.result_notice_label.pack(
+                side=tk.TOP, fill=tk.X, padx=18, pady=(10, 2),
+                before=self.continue_btn,
+            )
+        else:
+            self.result_notice_label.pack_forget()
         self.continue_wrap.pack(fill=tk.X, padx=10, pady=(0, 10))
 
+    def _format_result_notices(self, notices):
+        """One-line-each summary of important messages for the result slot."""
+        lines = [str(n).strip() for n in notices if str(n).strip()]
+        if not lines:
+            return ""
+        shown = lines[-5:]
+        if len(lines) > len(shown):
+            return (f"… (+{len(lines) - len(shown)} earlier in 📜 Log)\n"
+                    + "\n".join(shown))
+        return "\n".join(shown)
+
+    def _resize_notice_label(self, width):
+        """Keep the result-notice text wrapped to the slot width."""
+        try:
+            self.result_notice_label.config(wraplength=max(260, width - 60))
+        except tk.TclError:
+            pass
+
     def _on_continue_click(self):
-        """Handle Continue button click — same as pressing Enter."""
+        """Handle Continue button click — next narration page, else press Enter."""
+        if self._narration_pages:
+            self._reveal_next_narration_page()
+            return
         self.io.send_input("")
         self.continue_wrap.pack_forget()
         self.action_panel.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+    # ── Boss-intro paging ─────────────────────────────────────────────────────
+
+    _INTRO_PAGE_LINES = 3  # narration lines revealed per Continue press
+
+    def _mark_log_position(self):
+        """Remember where the next prompt's output starts in the log."""
+        try:
+            self._log_mark = self.log_text.index("end-1c")
+        except tk.TclError:
+            self._log_mark = "1.0"
+
+    def _begin_intro_pagination(self) -> bool:
+        """Split the first prompt's pending prose into 3-line pages.
+
+        Returns True when paging started (the caller must NOT send input
+        until the last page has been revealed). Short intros — and fights
+        whose first prompt has no prose before it — return False and keep
+        the old single-"Continue" behaviour.
+        """
+        try:
+            text = self.log_text.get(self._log_mark, "end-1c")
+        except tk.TclError:
+            return False
+        pending = [line for line in strip_ansi(text).splitlines() if line.strip()]
+        if len(pending) <= self._INTRO_PAGE_LINES:
+            return False
+        # Rewind the log: the pages are replayed one Continue at a time.
+        try:
+            self.log_text.config(state=tk.NORMAL)
+            self.log_text.delete(self._log_mark, tk.END)
+            self.log_text.config(state=tk.DISABLED)
+        except tk.TclError:
+            return False
+        self._ticker_feed = []
+        self._skill_banner = None
+        self._last_damage_actor = None
+        self._actor_has_output = False
+        self._narration_pages = [
+            pending[i:i + self._INTRO_PAGE_LINES]
+            for i in range(0, len(pending), self._INTRO_PAGE_LINES)
+        ]
+        self._narration_page_total = len(self._narration_pages)
+        self._reveal_next_narration_page()
+        return True
+
+    def _reveal_next_narration_page(self):
+        """Append the next 3-line page, then wait for the following click."""
+        page = self._narration_pages.pop(0)
+        for line in page:
+            self._append_log(line)
+        done = self._narration_page_total - len(self._narration_pages)
+        if self._narration_pages:
+            self._show_continue(
+                f"▶ Continue  ({done}/{self._narration_page_total})",
+                self._on_continue_click,
+            )
+            return
+        self._narration_page_total = 0
+        self._mark_log_position()
+        self._show_continue("▶ Continue", self._on_continue_click)
 
     def _on_enemy_click(self, index: int):
         """Player clicked an enemy (target selection) or backup party ally (switch mode).
@@ -1258,10 +1509,17 @@ class CombatScreen(BaseScreen):
         self.item_listbox.delete(0, tk.END)
         self.item_listbox2.delete(0, tk.END)
         self._item_refs = []
+        self._item_entry_count = len(entries)
         for display_idx, (true_idx, item, label) in enumerate(entries):
             box = self.item_listbox if display_idx % 2 == 0 else self.item_listbox2
             box.insert(tk.END, f"{display_idx + 1}. {label}")
             self._item_refs.append((true_idx, item))
+        # Odd item count: the right column would otherwise have one fewer
+        # row. Its yview range was shorter, so scrolling clamped it while
+        # the left column kept moving. Pad it with a blank, non-selectable
+        # placeholder row so both columns stay aligned.
+        if len(entries) % 2 == 1:
+            self.item_listbox2.insert(tk.END, "")
 
     def _show_item_panel(self):
         """Pack the item slot at the action panel's reserved height."""
@@ -1302,18 +1560,28 @@ class CombatScreen(BaseScreen):
 
         entries = []
         for true_idx, net in nets:
-            bonus = net.get("rarity_mult_bonus", 25)
             qty = net.get("count", 1)
             qty_str = f" x{qty}" if qty > 1 else ""
-            entries.append((true_idx, net, f"{net['name']} (+{bonus} catch){qty_str}"))
+            if net.get("guaranteed_capture"):
+                cap = net.get("capture_level_cap", 8)
+                tag = f"(guaranteed · below lvl {cap})"
+            else:
+                bonus = net.get("rarity_mult_bonus", 25)
+                tag = f"(+{bonus} catch)"
+            entries.append((true_idx, net, f"{net['name']} {tag}{qty_str}"))
         self._populate_item_columns(entries)
         self._show_item_panel()
 
     def _on_item_select(self, event):
         """Keep the two item columns mutually exclusive."""
         source = event.widget
+        sel = source.curselection()
+        if sel and not source.get(sel[0]).strip():
+            # Blank padding row from an odd item count — not a real item.
+            source.selection_clear(0, tk.END)
+            return
         other = self.item_listbox2 if source is self.item_listbox else self.item_listbox
-        if source.curselection():
+        if sel:
             other.selection_clear(0, tk.END)
 
     def _on_item_scroll(self, *args):
@@ -1331,11 +1599,16 @@ class CombatScreen(BaseScreen):
     def _on_item_confirmed(self):
         """Player confirmed item selection (from either column)."""
         idx = None
+        entry_count = getattr(self, "_item_entry_count", 0)
         for col, box in enumerate((self.item_listbox, self.item_listbox2)):
             sel = box.curselection()
-            if sel:
-                idx = sel[0] * 2 + col  # row-major display index
-                break
+            if not sel:
+                continue
+            candidate = sel[0] * 2 + col  # row-major display index
+            if candidate >= entry_count:
+                continue  # blank padding row
+            idx = candidate
+            break
         if idx is None:
             return
         self.io.send_input(str(idx + 1))
@@ -1453,6 +1726,9 @@ class CombatScreen(BaseScreen):
         if "net choice" in p_lower:
             return "capture_net_select", None
 
+        if "capture_full_choice" in p_lower:
+            return "capture_full_choice", None
+
         if "capture_duplicate_choice" in p_lower:
             return "capture_choice", None
 
@@ -1510,6 +1786,57 @@ class CombatScreen(BaseScreen):
         self.log_text.config(state=tk.DISABLED)
         self._set_ticker(text)
 
+    # Important lines that must survive the 3-line feed's turn sweep AND the
+    # end-of-combat wipe. Emoji prefixes come from the producing modules:
+    # 📜 quests (quests.py), 💕 captured girl joined the house (capture.py),
+    # 🏆/🎁/🔑 loot and key items (superboss/dungeon rewards).
+    _NOTICE_PREFIXES = ("📜", "💕", "🏆", "🎁", "🔑")
+    _NOTICE_HINTS = (
+        "quest complete", "new main quest", "new side quest",
+        "ready to turn in", "key item acquired", "you obtained:",
+    )
+
+    # Boss phase / mechanic announcements. These are pinned above the feed so
+    # a gimmick explanation ("Mirror Reflection", "[PHASE 3] ...") does not
+    # get swept away by the next actor's damage line. Add new tags here as
+    # content appears — the check is an explicit allow-list, not a regex.
+    _GIMMICK_TAGS = (
+        "[gimmick]", "[final form]", "[phase 2]", "[phase 3]",
+        "[crack fades]", "[core]", "[truth]",
+    )
+
+    def _is_gimmick_line(self, line: str) -> bool:
+        """True for superboss gimmick/phase banners."""
+        t = strip_ansi(str(line)).strip()
+        if not t:
+            return False
+        t = re.sub(r'^\[\d+/\d+\]\s*', '', t)  # tolerate a turn prefix
+        low = t.lower()
+        return any(tag in low for tag in self._GIMMICK_TAGS)
+
+    def _is_notice_line(self, line: str) -> bool:
+        """True for quest/capture-success/loot lines that must not be lost.
+
+        Capture FAILURE feedback is deliberately NOT a notice: it is an
+        action result (it persists across the next turn header) and must not
+        pin itself above the result line at combat end.
+        """
+        t = strip_ansi(str(line)).strip()
+        if not t:
+            return False
+        t = re.sub(r'^\[\d+/\d+\]\s*', '', t)  # tolerate a turn prefix
+        if t.startswith(self._NOTICE_PREFIXES):
+            return True
+        low = t.lower()
+        if any(hint in low for hint in self._NOTICE_HINTS):
+            return True
+        # Quest reward continuation lines ("   +200 XP", "Received: ...").
+        if t.startswith("Received:"):
+            return True
+        if re.match(r'^\+\s*\d[\d,]*\s*(?:xp|gold)\b', t, re.IGNORECASE):
+            return True
+        return "command resonance" in low
+
     def _is_damage_line(self, line: str) -> bool:
         """True for damage feedback lines ('Ninetales Fox [Assault] → Wolf: 87 dmg')."""
         return bool(re.search(r'→\s*.+?:\s*\d[\d,]*\s*dmg', line, re.IGNORECASE))
@@ -1536,6 +1863,10 @@ class CombatScreen(BaseScreen):
         the banner — the old log pane used to show the description while
         the action resolved. Damage lines persist across turn headers until
         the next combatant's damage replaces them (2026-10-05).
+
+        Quest/capture/loot notices are pinned SEPARATELY above the feed:
+        they never scroll out, never get a turn prefix, and survive the
+        end-of-combat feed wipe.
         """
         lines = [l for l in (line.strip() for line in strip_ansi(text).splitlines()) if l]
         if not lines:
@@ -1549,6 +1880,31 @@ class CombatScreen(BaseScreen):
                 if banner:
                     self._skill_banner = banner
                 continue  # the banner row represents it — don't duplicate it
+            if self._is_notice_line(line):
+                # A multi-line chunk may have inherited a turn prefix even
+                # though the notice itself must not carry one.
+                clean = re.sub(r'^\[\d+/\d+\]\s*', '', line).strip()
+                self._notice_line = clean
+                if clean not in self._notices:
+                    self._notices.append(clean)
+                    self._notices = self._notices[-20:]
+                    # Mirror to the session log so quest/capture info is
+                    # still readable after the combat log is destroyed.
+                    try:
+                        self.sm.log(clean, category="info")
+                    except Exception:
+                        pass
+                continue  # pinned above the feed — don't duplicate it
+            if self._is_gimmick_line(line):
+                # Gimmick banners pin one row of the strip; the explaining
+                # lines that follow stay normal feed/log lines.
+                clean = re.sub(r'^\[\d+/\d+\]\s*', '', line).strip()
+                self._gimmick_line = clean
+                try:
+                    self.sm.log(clean, category="info")
+                except Exception:
+                    pass
+                continue
             if self._is_damage_line(line):
                 # Damage messages own their feed slot: when the next combatant
                 # lands a hit it REPLACES the previous damage line instead of
@@ -1557,25 +1913,64 @@ class CombatScreen(BaseScreen):
                     self._ticker_feed = [l for l in self._ticker_feed
                                          if not self._is_damage_line(l)]
                 self._last_damage_actor = self._current_actor_name
+            if not self._actor_has_output:
+                # First action line of this combatant: drop the previous
+                # combatant's damage/evade lines that were kept across the
+                # turn header. Without this, an ally's Root Strike line sat
+                # next to every enemy block/dodge for the rest of the round.
+                self._ticker_feed = []
+                self._actor_has_output = True
             self._ticker_feed.append(line)
         self._ticker_feed = self._ticker_feed[-6:]
         self._render_ticker()
 
     def _render_ticker(self):
-        """Compose the ticker text from the skill banner + recent events."""
-        feed = self._ticker_feed[-(2 if self._skill_banner else 3):]
-        parts = [f"▶ {self._skill_banner}"] if self._skill_banner else []
-        text = "\n".join(parts + feed)
-        # Approximate capacity: 3 wrapped rows at ~7px per char. Overlong
-        # content trims from the TOP — the newest lines stay complete.
+        """Compose the ticker from pinned notice + banner + recent events.
+
+        The pinned notice owns the first row so quest/capture messages can
+        never be pushed out by combat spam or a turn header.
+        """
+        slots = 3
+        parts = []
+        if self._notice_line:
+            parts.append(self._clip_ticker_line(self._notice_line))
+            slots -= 1
+        if self._gimmick_line and slots > 0:
+            parts.append(self._clip_ticker_line(self._gimmick_line))
+            slots -= 1
+        if self._skill_banner and slots > 0:
+            parts.append(self._clip_ticker_line(f"▶ {self._skill_banner}"))
+            slots -= 1
+        if slots > 0:
+            parts.extend(self._clip_ticker_line(l, keep_tail=True)
+                         for l in self._ticker_feed[-slots:])
+        text = "\n".join(parts)
+        # Backstop for unusual font/width combinations. Rows are already
+        # clipped individually, so only trim when there is no pinned notice
+        # (trimming from the top would cut the quest/capture line first).
         width = self._ticker_width or 900
         cap = max(120, int((width - 110) / 7) * 3)
-        if len(text) > cap:
+        if len(text) > cap and not self._notice_line:
             text = "\u2026" + text[len(text) - cap:]
         try:
             self.ticker_label.config(text=text or " ")
         except tk.TclError:
             pass
+
+    def _clip_ticker_line(self, line: str, keep_tail: bool = False) -> str:
+        """Clamp one feed row to the strip width.
+
+        Notices keep their HEAD (the quest/capture name); ordinary events
+        keep their TAIL (damage numbers live at the end of the line).
+        """
+        width = self._ticker_width or 900
+        max_chars = max(48, int((width - 120) / 7))
+        text = strip_ansi(str(line)).replace("\n", " ").strip()
+        if len(text) <= max_chars:
+            return text
+        if keep_tail:
+            return "\u2026" + text[-(max_chars - 1):]
+        return text[:max_chars - 1].rstrip() + "\u2026"
 
     def _on_ticker_configure(self, event):
         """Track the strip width so the feed wraps and trims correctly."""
@@ -1588,14 +1983,33 @@ class CombatScreen(BaseScreen):
             return
         self._render_ticker()
 
-    def _clear_log(self):
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.delete("1.0", tk.END)
-        self.log_text.config(state=tk.DISABLED)
+    def _reset_round_feed(self):
+        """Start a new round: clear the ticker feed, keep the fight history.
+
+        The engine calls c_clear() every round (a terminal screen refresh).
+        The GUI combat log is a scrollable fight recap, so wiping it here
+        used to discard all earlier rounds — including capture feedback.
+        Pinned notices persist (they are also in the full log).
+        """
         self._ticker_feed = []
         self._skill_banner = None
         self._last_damage_actor = None
+        self._actor_has_output = False
         self._render_ticker()
+
+    def _clear_log(self):
+        """Full reset (new fight): wipe log text, feed, and notices."""
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.delete("1.0", tk.END)
+        self.log_text.config(state=tk.DISABLED)
+        self._notices = []
+        self._notice_line = None
+        self._gimmick_line = None
+        self._narration_pages = []
+        self._narration_page_total = 0
+        self._inputs_handled = 0
+        self._mark_log_position()
+        self._reset_round_feed()
 
     def open_log_popup(self):
         """Toggle the full combat log (ticker button / top-bar 📜 in combat).

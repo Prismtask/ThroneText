@@ -1,0 +1,10 @@
+{
+  "window_size": "1536x793",
+  "window_position": "+-230+87",
+  "font_size": 10,
+  "theme": "dark",
+  "sound_enabled": false,
+  "keyboard_mode": true,
+  "show_splash": true,
+  "log_max_lines": 1000
+}

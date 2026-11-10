@@ -167,7 +167,7 @@ def _inner_dragon_combat(player, outer_enemies=None):
     # Otherwise frame indices and target_index_map keys mismatch,
     # causing enemies to become untargetable and the frame to freeze.
     outer_snapshot = None
-    combat_enemies = minions  # fallback for terminal mode
+    combat_enemies = minions  # tests/headless fallback
     if outer_enemies is not None:
         outer_snapshot = list(outer_enemies)
         outer_enemies[:] = minions
@@ -204,8 +204,7 @@ def _inner_dragon_combat(player, outer_enemies=None):
         if ctx["wedge_activations"] < 2 and ctx["turn_counter"] >= next_trigger:
             ctx["wedge_activations"] += 1
             max_hp_player = player_max_hp(player)
-            c_print("\n" + "✦" * 55)
-            c_print(f"☁ HEAVEN PINNING WEDGE activates!")
+            c_print(f"\n☁ HEAVEN PINNING WEDGE activates!")
 
             for e in elist:
                 if e["hp"] > 0:
@@ -234,7 +233,6 @@ def _inner_dragon_combat(player, outer_enemies=None):
                     c_print(f"{player['name']} is crushed by Heaven's weight inside the Dragon!")
                     return "dead"
 
-            c_print("✦" * 55)
             ctx["defending_this_turn"] = False
 
     def inner_on_kill(target, elist, ctx):
@@ -341,13 +339,12 @@ def combat_yinglong(player, floor=None, enemies=None):
             boss["base_str_mod"] = boss.get("str_mod", 0)
             enemies.append(boss)
 
-    c_print("\n" + "═" * 60)
-    c_print("The sky CRACKS.  A shape descends from the wound in heaven —")
+    c_print("\nThe sky CRACKS.  A shape descends from the wound in heaven —")
     c_print("colossal, serpentine, wreathed in clouds that weep lightning.")
     c_print("This is no mere monster.  This is a GOD cast down from the")
     c_print("celestial realm, still furious, still DIVINE.")
     c_print(f"\nYinglong, Heaven-Banished Dragon — HP: {boss['hp']}")
-    c_print("═" * 60)
+
     c_input("Press Enter to face the Heaven-Banished Dragon...")
 
     context = {
@@ -427,12 +424,10 @@ def combat_yinglong(player, floor=None, enemies=None):
             ctx["immortal"] = True
             b["str_mod"] = int(b["base_str_mod"] * IMMORTAL_DMG_MULT)
 
-            c_print("\n" + "!" * 60)
-            c_print("[IMMORTAL RAGE]  Yinglong REFUSES to die.")
+            c_print("\n[IMMORTAL RAGE]  Yinglong REFUSES to die.")
             c_print("Crackling divine light seals its wounds shut — IMMORTAL!")
             c_print("A Heaven Pinning Wedge descends — destroy it to")
             c_print("force 7% MAX HP true damage!")
-            c_print("!" * 60)
             c_input("Press Enter...")
 
             try:
@@ -457,11 +452,9 @@ def combat_yinglong(player, floor=None, enemies=None):
                 ctx["pillar_active"] = True
                 pillar = _make_pillar()
                 elist.append(pillar)
-                c_print("\n" + "═" * 55)
-                c_print("⚡ [HEAVEN PILLAR]  A crystalline spire erupts from the floor!")
+                c_print("\n⚡ [HEAVEN PILLAR]  A crystalline spire erupts from the floor!")
                 c_print("Destroy it to shatter Yinglong's divine scales and deal")
                 c_print("FULL damage for 3 turns! (Shattered Heaven buff)")
-                c_print("═" * 55)
 
     # ── Custom HUD ──────────────────────────────────────────────────
     def custom_hud(ctx, elist):
@@ -509,10 +502,8 @@ def combat_yinglong(player, floor=None, enemies=None):
                 ctx["wedge_active"] = False
                 b["str_mod"] = b["base_str_mod"]
                 
-                c_print("\n" + "✦" * 55)
-                c_print(f"💥 The Heaven Pinning Wedge shatters! Backlash deals {backlash_dmg} true damage to Yinglong!")
+                c_print(f"\n💥 The Heaven Pinning Wedge shatters! Backlash deals {backlash_dmg} true damage to Yinglong!")
                 c_print(f"🐉 Yinglong's immortality SHATTERS! HP forced down to {b['hp']}/{b['max_hp_total']}!")
-                c_print("✦" * 55)
             return
 
         if _is_pillar(target):
@@ -553,8 +544,7 @@ def combat_yinglong(player, floor=None, enemies=None):
         wedge = next((e for e in elist if _is_wedge(e) and e["hp"] > 0), None)
         if wedge:
             max_hp = player_max_hp(player)
-            c_print("\n" + "✦" * 55)
-            c_print("⚡ Heaven Pinning Wedge fires at turn-end!")
+            c_print("\n⚡ Heaven Pinning Wedge fires at turn-end!")
             if ctx["defending_this_turn"]:
                 c_print("You DEFENDED — the Wedge's energy scatters harmlessly!")
                 bonus = int(max_hp * WEDGE_HP_DMG_PCT)
@@ -586,7 +576,6 @@ def combat_yinglong(player, floor=None, enemies=None):
                     dict.__setitem__(wrapped_wedge, "hp", 1)
                     dict.__setitem__(wrapped_wedge, "max_hp", 1)
                     elist[i] = wrapped_wedge
-            c_print("✦" * 55)
             ctx["defending_this_turn"] = False
 
     # Resistance handling
@@ -631,12 +620,10 @@ def combat_yinglong(player, floor=None, enemies=None):
     if result == "victory":
         # Guard: only award loot once per save
         if not player.get("boss_defeated_yinglong"):
-            c_print("\n" + "═" * 60)
-            c_print("Yinglong collapses. The wound in heaven slowly seals shut.")
+            c_print("\nYinglong collapses. The wound in heaven slowly seals shut.")
             c_print("As the colossal form dissolves into cloud and lightning,")
             c_print("a soft rain falls — the first rain in this place in")
             c_print("a thousand years. You stand in it, breathing.")
-            c_print("═" * 60)
 
 
             # Award Tarnished Jade

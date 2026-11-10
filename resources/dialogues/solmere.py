@@ -63,7 +63,7 @@ SOLMERE_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deep, traveler. The city guard keeps watch tonight.",
-        "Eight hours in a real bed. You'll wake renewed, I promise.",
+        "A night in a real bed. You'll wake renewed, I promise.",
         "Dream of open skies and full purses, friend.",
         "No monsters here. Only soft pillows and quiet.",
     ],
@@ -74,7 +74,7 @@ SOLMERE_INNKEEPER_DIALOGUE = {
         "Take care out there. Solmere can be... political.",
     ],
     "early_sleep": [
-        "The innkeeper chuckles: 'The capital's lanterns are still bright, friend. Rest a few hours if you must, but full slumber comes later.'",
+        "The innkeeper chuckles: 'The capital's lanterns are still bright, friend. Rest a while if you must, but full slumber comes at Night.'",
     ],
 }
 
@@ -136,6 +136,19 @@ SOLMERE_TEMPLE_DIALOGUE = {
         "May order follow your footsteps.",
         "Return when your soul needs mending.",
         "The temple's light will wait for you.",
+    ],
+}
+
+SOLMERE_GAMES_DIALOGUE = {
+    "enter": [
+        "The Gilded Hearth keeps a back table for travelers with more coin than sense.",
+        "A guild clerk watches the dice from the corner, pretending not to.",
+        "The innkeeper clears two chairs. 'Dice or cards? The house doesn't care which way you lose.'",
+    ],
+    "leave": [
+        "The capital's lamps are steady. Your purse may not be.",
+        "The innkeeper rings the house bell once as you go.",
+        "Come back when your purse is heavier. Or lighter. The house is patient.",
     ],
 }
 

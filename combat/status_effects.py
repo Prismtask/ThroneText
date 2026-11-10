@@ -18,6 +18,49 @@ BLEED_FEAST_MULT = 2.0     # Vampire lifesteal/drain multiplier vs bleeding targ
 
 
 # ===========================================================================
+# OFFENSIVE BUFF TOTALS
+# ===========================================================================
+# Percentage damage sources stack ADDITIVELY: 1.00 + power_buff + every
+# damage_boost. +15% and +30% therefore total +45%, not +49.5%.
+def get_damage_buff_multiplier(actor, consume_power_buff=False, messages=None):
+    """Return one additive multiplier for every percentage damage buff.
+
+    ``power_buff`` empowers a single action; when ``consume_power_buff`` is
+    true, one such buff is removed and announced through ``messages`` (a
+    list). ``damage_boost`` buffs are multi-turn and are not consumed.
+
+    The total is floored at +10% so stacked negative drawbacks (Event
+    Horizon cards) can never drive outgoing damage to zero or below.
+    """
+    total = 0.0
+    for buff in actor.get("active_buffs", [])[:]:
+        if buff.get("type") == "power_buff":
+            val = buff.get("value", 0)
+            total += val
+            if consume_power_buff:
+                actor["active_buffs"].remove(buff)
+                if messages is not None:
+                    messages.append(f"Empowered! Damage increased by {int(val * 100)}%!")
+            break
+    for buff in actor.get("active_buffs", []):
+        if buff.get("type") == "damage_boost":
+            total += buff.get("value", 0)
+    return max(0.1, 1.0 + total)
+
+
+def get_aggro_multiplier(actor):
+    """Return the enemy-targeting weight multiplier from aggro/taunt buffs."""
+    mult = 1.0
+    for buff in actor.get("active_buffs", []):
+        if buff.get("type") == "aggro" and buff.get("remaining", 0) > 0:
+            try:
+                mult *= float(buff.get("value", 1.0) or 1.0)
+            except (TypeError, ValueError):
+                pass
+    return max(1.0, mult)
+
+
+# ===========================================================================
 # GLOBAL STATUS RESISTANCE  (superboss system, separate from elemental_res)
 # ===========================================================================
 # Bosses may carry ``status_res`` (0.0–1.0) from their YAML template.
@@ -657,7 +700,7 @@ apply_slow = apply_slow_to_player
 # 2. BARRIER / WARD (Damage-Absorb Shield)
 # ---------------------------------------------------------------------------
 
-def apply_barrier(target, amount, duration=3):
+def apply_barrier(target, amount, duration=3, source=None):
     """Grant a damage-absorbing barrier to target (player or ally).
 
     Barrier absorbs incoming damage before HP is reduced.
@@ -669,12 +712,17 @@ def apply_barrier(target, amount, duration=3):
     if existing:
         existing["value"] += amount
         existing["remaining"] = max(existing["remaining"], duration)
+        if source and not existing.get("source"):
+            existing["source"] = source
         return "reinforced"
-    target.setdefault("active_buffs", []).append({
+    buff = {
         "type": "barrier",
         "value": amount,
         "remaining": duration,
-    })
+    }
+    if source:
+        buff["source"] = source
+    target.setdefault("active_buffs", []).append(buff)
     return "applied"
 
 
@@ -956,6 +1004,12 @@ def apply_healing(target, amount, source=None):
         from pandemonium_curses import apply_healing_reduction
         amount = apply_healing_reduction(source, amount)
 
+    # Form tradition healing (Mending — from the healer, else the recipient)
+    from combat.form_perks import get_form_healing_bonus
+    _form_heal = get_form_healing_bonus(source if isinstance(source, dict) else target)
+    if _form_heal > 0:
+        amount = max(1, int(round(amount * (1 + _form_heal))))
+
     hp_key = "current_hp" if "current_hp" in target else "hp"
     max_key = "max_hp" if "current_hp" in target else "max_hp"
 
@@ -993,6 +1047,13 @@ def tick_enemy_debuffs(enemy):
     Returns (messages, died).
     """
     messages = []
+
+    # Stun stagger window (capture): set when a stunned girl loses her turn,
+    # cleared after her next turn so the player gets exactly one net window.
+    if enemy.get("capture_stagger"):
+        enemy["capture_stagger"] = int(enemy.get("capture_stagger", 0) or 0) - 1
+        if enemy["capture_stagger"] <= 0:
+            enemy.pop("capture_stagger", None)
 
     # ── Tick the enemy's own timed buffs ──
     # Superbosses tick their buffs in their own post_round hooks, so the engine
@@ -1376,8 +1437,9 @@ def tick_player_buffs(player):
                 player["active_buffs"].remove(buff)
                 messages.append("Your healing salve's effect has worn off.")
 
-        elif btype in ("blessing", "well_rested", "floor_buff"):
-            # Permanent / floor-based — never expires through round ticking
+        elif btype in ("blessing", "well_rested", "floor_buff",
+                       "shared_night", "beloved", "dream_blessed"):
+            # Permanent / room-based — never expires through round ticking
             continue
 
         elif btype == "divine_shield":
@@ -1509,6 +1571,31 @@ def dispel_dread(player):
         d for d in player.get("active_debuffs", []) if d.get("type") != "dread"
     ]
     return "dispelled"
+
+
+def clear_stun(actor):
+    """Drop all Stun state from an actor (combat start / combat end scrub)."""
+    actor["stunned"] = False
+    if actor.get("active_debuffs"):
+        actor["active_debuffs"] = [
+            d for d in actor["active_debuffs"] if d.get("type") != "stun"
+        ]
+
+
+def consume_stun(actor):
+    """Consume a Stun when the actor's action comes up.
+
+    Returns True when the actor must lose this action. Party-side Stun is a
+    one-action penalty, matching ``enemy_ai`` (an enemy clears its own
+    ``stunned`` flag on its next turn). The flag and its marker entries are
+    cleared here rather than ticked in ``tick_player_debuffs``: that tick
+    runs at end of round, so a stun applied after the actor already acted
+    would expire before the actor ever paid for it.
+    """
+    if not actor.get("stunned"):
+        return False
+    clear_stun(actor)
+    return True
 
 
 # ===========================================================================

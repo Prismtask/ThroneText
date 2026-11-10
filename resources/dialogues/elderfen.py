@@ -63,7 +63,7 @@ ELDERFEN_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deeply. The lanterns will keep nightmares away.",
-        "Eight hours of dreamless rest. You'll wake renewed.",
+        "A night of dreamless rest. You'll wake renewed.",
         "The marsh is quiet tonight. Sleep well.",
         "I'll watch over you. No creeping vines here.",
     ],

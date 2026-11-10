@@ -1,0 +1,103 @@
+# ═══════════════════════════════════════════════════════════════════
+# STANDALONE HEROINES
+# Heroines recruited outside the Wonderland tea-party chain.
+# ═══════════════════════════════════════════════════════════════════
+
+sylvana:
+  name: Sylvana
+  race: Fey
+  level: 1
+  base_hp: 26
+  mods:
+    Dexterity: 4
+    Wisdom: 3
+    Charisma: 3
+    Constitution: 2
+    Strength: -2
+    Learning: 2
+  boss: false
+  super_boss: false
+  _heroine: sylvana
+  _heroine_passive: mirror_queens_grace
+  dialogue:
+    house_talk_low: Sylvana watches you from the mirror's edge. 'You keep coming back. I have not decided whether that is courage or a bad habit.'
+    house_talk_mid: Sylvana tilts her head, matching your movement a half-second late. 'I used to practice your face,' she admits. 'Now I find I prefer your company.'
+    house_talk_high: Sylvana steps halfway out of the glass, close enough that you can see the tiny cracks in her smile. 'When I am whole,' she says, 'I want to spend a day being nobody's reflection.'
+    house_talk_max: Sylvana's hand rests against the inside of the glass, aligned with yours. 'Every mirror in this house shows me the same thing now,' she says softly. 'You, choosing me.'
+    house_talk_engaged_1: Sylvana turns her ring so the light catches it. 'A promise looks different when it is not a reflection,' she says. 'It looks real. It looks like you.'
+    house_talk_engaged_2: Sylvana leans out of the mirror to rest her forehead against yours. 'The Queen of Mirrors is getting married,' she murmurs. 'The court will be furious. I am delighted.'
+    house_special_gift: Sylvana holds out a silver locket. 'Two portraits,' she says. 'One of me. One of you. Now neither of us can be mistaken for a reflection.'
+    house_gift_love: Sylvana turns the gift over in her hands, then hides it in the mirror where no one else can see it. 'Mine,' she says, and the word sounds new.
+    house_gift_hate: Sylvana sets the gift down with exaggerated grace. 'How thoughtful,' she says, in a tone that suggests it was not.
+    house_buff: Sylvana touches two fingers to your reflection. 'Take every version of me with you,' she says. 'Even the ones that are afraid.'
+  # ── Heroine quest: The Cracked Mirror ─────────────────────────────────
+  # Rules + per-player progress live in heroine_quests/sylvana_mirror.py.
+  # This block is quest *content*: tuning values and milestone dialogue.
+  quest:
+    id: sylvana_mirror
+    title: The Cracked Mirror
+    item: cracked_mirror
+    repair_step: 5
+    repair_blocks: 6
+    milestone_lines:
+      0: "A cracked mirror shard sits in the lounge. A woman watches you from behind the glass, saying nothing."
+      5: "A hairline crack closes. The woman in the glass blinks. '...You came back.'"
+      10: "The glass warms under your hand. 'I had forgotten what warmth felt like,' she says."
+      15: "'You are wasting your time,' the reflection says — but she does not look away."
+      20: "'Most people leave the mirror in the dark,' she murmurs. 'You keep bringing light.'"
+      25: "Two shards align. For an instant, two Sylvana eyes watch you instead of a thousand."
+      30: "'I copied whoever I needed to be,' she says. 'It was easier than being no one.'"
+      35: "'Why do you keep looking at the cracks?' she asks. 'There is nothing beautiful in them.'"
+      40: "'I do not remember my own face,' she admits. 'Only yours.'"
+      45: "A long fracture fades. She stands a little straighter on the other side."
+      50: "'Half whole,' she says. 'Half a queen. Half a person. What is left of me worth keeping?'"
+      55: "'You could stop,' she says. 'I would understand.' You do not stop."
+      60: "The surface steadies. For a moment, your reflections stand side by side."
+      65: "'When I am whole, I will owe you a debt I cannot repay,' she says."
+      70: "'Do not mistake gratitude for softness,' she warns, but her voice has gone gentle."
+      75: "She presses a hand to the inside of the glass. You press yours to the other side."
+      80: "'A thousand faces,' she says. 'None of them mine. This one is. I want to keep it.'"
+      85: "Her reflection no longer lags behind her movements. She looks... present."
+      90: "'When the last crack closes,' she says, 'I will step out. If you will have me.'"
+      95: "One crack remains. For the first time, the Queen of Mirrors looks nervous."
+      100: "The last crack closes. The glass turns to light — and Sylvana steps out, whole."
+
+wonderland_palette:
+  name: Palette
+  race: Elemental
+  level: 1
+  base_hp: 24
+  mods:
+    Wisdom: 4
+    Learning: 3
+    Charisma: 3
+    Strength: -2
+    Constitution: 1
+    Dexterity: 1
+  boss: false
+  super_boss: false
+  _heroine: palette
+  _heroine_passive: living_pigment
+  dialogue:
+    capture: Palette blinks at the net, genuinely puzzled. 'Oh — no, I don't think
+      I'd paint well in a net. Would you like to talk instead? I don't... get
+      many visitors.'
+    recruit_denied: Palette's shoulders dip, just a little. 'That's... that's
+      alright. The atelier is quiet. I'm used to quiet.' They fuss with a brush
+      and do not quite look at you.
+    recruit_accepted: Palette's face lights up like wet paint catching the sun.
+      'Truly? Oh — I'll be careful, I promise. No accidental masterpieces on
+      your walls. Unless you'd like one. Do you like one?'
+    house_talk_low: Palette fidgets with the bristles of a brush, dipping it into
+      a pigment that isn't there. 'You're... you're not scary, you know. I was
+      sure you would be.'
+    house_talk_mid: Palette examines your sleeves with professional horror. 'That
+      color doesn't suit you at all. Here —' They paint a thread-thin stripe of
+      a different color up the cuff. Somehow, it is perfect.
+    house_talk_high: Palette has started leaving tiny painted gifts on your
+      windowsill — a storm cloud, a sleeping cat, a cup of tea that is somehow
+      still warm. Each one seems to say 'I thought of you', and then it is
+      painted into being.
+    house_talk_max: Palette curls up beside you, hands stained in seven colors.
+      'The others only ever saw the Artisan. You're the first person who let me
+      just... be Palette. Thank you. For letting the paint dry.'

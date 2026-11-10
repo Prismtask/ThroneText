@@ -18,6 +18,7 @@ from .saltmarsh import *
 from .cinderpeak import *
 from .veilholt import *
 from .wonderland import *
+from .celestia import *
 
 # Recreate BLACKSMITH_DIALOGUES mapping (originally at end of old dialogues.py)
 BLACKSMITH_DIALOGUES = {

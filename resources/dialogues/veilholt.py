@@ -57,7 +57,7 @@ VEILHOLT_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep among the branches. The woodland wards will keep you safe.",
-        "Eight hours in the heart of the forest. You'll wake harmonious.",
+        "A night in the heart of the forest. You'll wake harmonious.",
         "The ancient trees watch over your slumber. Rest well.",
     ],
     "leave": [

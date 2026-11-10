@@ -36,10 +36,7 @@ env/
 .venv/
 
 # ── Game Save Files ──────────────────────────────────────────
-savefile/
 savefiles/
-docs/
-tests/
 saves/
 save/
 dist/

@@ -25,17 +25,18 @@ from gui.theme import Theme
 from gui.widgets.confirm_dialog import confirm_dialog
 
 from resources.cities import CITIES
-from resources.items import ITEMS, build_item, ITEM_RARITY, is_unique_item
+from resources.items import ITEMS, build_item, ITEM_RARITY, is_unique_item, soften_rarity
+from resources.item_generation import pick_equipment_id, player_biome
 from resources.trade_goods import (
     roll_cargo_good, build_cargo,
     cargo_merchant_stock_price, cargo_merchant_sell_price,
 )
 from facilities.pathfinding import find_shortest_path
 from facilities.travel_events import (
-    _random_item_id, _discovery_rarity, _merchant_stock_rarity,
+    _discovery_rarity, _merchant_stock_rarity,
     _merchant_price, _sell_price, _item_stat_line, _charisma_discount,
 )
-from inventory import add_item_to_inventory, remove_item_by_reference
+from inventory import add_item_to_inventory, remove_item_by_reference, is_sellable_item
 from combat.stats import get_effective_attribute
 from utils import get_difficulty_multiplier_from_time
 from character import player_max_hp
@@ -81,6 +82,7 @@ _BIOME_COLORS = {
     "tropical":     "#00d2d3",
     "sea_caves":    "#576574",
     "pandemonium":  "#c44dff",
+    "celestial":    "#f7d794",
 }
 
 _SERVICE_ICONS = {
@@ -118,6 +120,7 @@ _WILD_BIOME_ICONS = {
     "tropical":    "\U0001F334",    # 🌴
     "sea_caves":   "\U0001F41A",    # 🐚
     "pandemonium": "\U0001F48E",    # 💎
+    "celestial":   "\U0001F31F",    # 🌟
     "wonderland":  "\U0001F407",    # 🐇
 }
 _WILD_FALLBACK_ICON = "\u2620"      # ☠
@@ -148,6 +151,7 @@ class WorldMapScreen(BaseScreen):
         self._travel_mode = travel_mode  # True = travel mode (pathfinding + highlights + Travel Here)
         self._path_result = None        # cached pathfinding result for travel mode
         self._route_lines = {}           # (a,b) sorted tuple → [canvas line IDs]
+        self._route_defaults = {}        # line ID → (fill, width, dash) at draw time
 
         # Map panning (drag) state
         self._drag_start = None          # (x, y) where the mouse was pressed
@@ -193,6 +197,17 @@ class WorldMapScreen(BaseScreen):
         c = CITIES.get(city_id, {})
         return "port" in c.get("services", [])
 
+    def _missing_entry_item(self, city_id):
+        """Return the display name of a required entry item the player lacks."""
+        city = CITIES.get(city_id, {})
+        item_id = city.get("entry_item")
+        if not item_id:
+            return None
+        inventory = (self.player or {}).get("inventory", [])
+        if any(item.get("id") == item_id for item in inventory):
+            return None
+        return (ITEMS.get(item_id) or {}).get("name", item_id)
+
     def _update_top_bar(self):
         """Show the origin city format with live time — same as CityScreen."""
         if not self.player:
@@ -203,8 +218,10 @@ class WorldMapScreen(BaseScreen):
         city = self.city
         city_name = city.get("name", cid) if isinstance(city, dict) else str(city)
         _cf = self.player.get("city_floors", {}).get(cid, {})
-        _cur = _cf.get("floor", 1)
-        _max = _cf.get("max_floor", 1)
+        _start = max(1, int(city.get("dungeon_start_floor", 1) or 1)
+                     if isinstance(city, dict) else 1)
+        _cur = _cf.get("floor", _start)
+        _max = _cf.get("max_floor", _start)
         from events import format_date
         from time_blocks import format_block_track
         track = format_block_track(self.player, include_day=False)
@@ -404,14 +421,17 @@ class WorldMapScreen(BaseScreen):
                         cx1, cy1, cx2, cy2,
                         fill="#4a6fa5", width=1.2, dash=(5, 4), tags=tags,
                     )
+                    default_style = ("#4a6fa5", 1.2, (5, 4))
                 else:
                     lid = self._canvas.create_line(
                         cx1, cy1, cx2, cy2,
                         fill="#5a7a5a", width=1.2, tags=tags,
                     )
-                # Store for path highlighting
+                    default_style = ("#5a7a5a", 1.2, ())
+                # Store for path highlighting / exact restore
                 ek = tuple(sorted([city_id, dest]))
                 self._route_lines.setdefault(ek, []).append(lid)
+                self._route_defaults[lid] = default_style
                 mid_x = (cx1 + cx2) / 2
                 mid_y = (cy1 + cy2) / 2
                 raw_time = conn.get("travel_time", 0)
@@ -848,7 +868,14 @@ class WorldMapScreen(BaseScreen):
     # ── Path highlighting ────────────────────────────────────────────────
 
     def _highlight_path(self, result):
-        """Draw gold highlights along the computed path."""
+        """Draw gold highlights along the computed path.
+
+        Only the stroke appearance is changed — the lines keep their original
+        stacking order (below city nodes, wild markers, labels).  Raising them
+        here used to leave the routes painted over the whole map after the
+        selection was cleared, because restoring colours cannot undo z-order
+        (the leftover "green trail" over city boxes).
+        """
         for seg in result["segments"]:
             ek = tuple(sorted([seg["from"], seg["to"]]))
             for lid in self._route_lines.get(ek, []):
@@ -856,23 +883,18 @@ class WorldMapScreen(BaseScreen):
                     self._canvas.itemconfig(lid, fill="#f1c40f", width=2.5, dash=(5, 4))
                 else:
                     self._canvas.itemconfig(lid, fill="#f1c40f", width=2.5, dash=())
-                self._canvas.lift(lid)
 
     def _clear_path_highlight(self):
-        """Restore all route lines to default appearance."""
-        for ek, lids in self._route_lines.items():
-            a, b = ek
-            cdata = CITIES.get(a, {})
-            is_sea = False
-            for conn in cdata.get("travel", {}).get("connections", []):
-                if conn["dest"] == b and conn.get("type") == "sea":
-                    is_sea = True
-                    break
+        """Restore all route lines to the exact style they were drawn with."""
+        for lids in self._route_lines.values():
             for lid in lids:
-                if is_sea:
-                    self._canvas.itemconfig(lid, fill="#4a6fa5", width=1.2, dash=(5, 4))
-                else:
-                    self._canvas.itemconfig(lid, fill="#5a7a5a", width=1.2, dash=())
+                fill, width, dash = self._route_defaults.get(
+                    lid, ("#5a7a5a", 1.2, ()))
+                try:
+                    self._canvas.itemconfig(
+                        lid, fill=fill, width=width, dash=dash)
+                except tk.TclError:
+                    pass  # stale canvas item (defensive)
 
     # ── Info panel ───────────────────────────────────────────────────────
 
@@ -1098,6 +1120,13 @@ class WorldMapScreen(BaseScreen):
         if len(desc) > 100:
             desc = desc[:97] + "..."
 
+        missing_entry = self._missing_entry_item(city_id)
+        if missing_entry:
+            tk.Label(inner, text=f"\u26d4 Sealed \u2014 requires {missing_entry}",
+                     bg=Theme.BG_CARD, fg=Theme.BUFF_NEGATIVE,
+                     font=Theme.FONT_SMALL, wraplength=270, justify=tk.LEFT,
+                     ).pack(anchor=tk.W, padx=10, pady=(0, 4))
+
         tk.Label(inner, text=name.upper(),
                  bg=Theme.BG_CARD, fg=Theme.ACCENT,
                  font=Theme.FONT_BOLD).pack(anchor=tk.W, padx=10, pady=(10, 2))
@@ -1180,6 +1209,19 @@ class WorldMapScreen(BaseScreen):
 
     def _on_travel_here(self):
         if self._selected_city is None or self._selected_city == self.city_id:
+            return
+
+        missing_entry = self._missing_entry_item(self._selected_city)
+        if missing_entry:
+            dest = CITIES.get(self._selected_city, {}).get(
+                "name", self._selected_city)
+            confirm_dialog(
+                parent=self, title="Road Sealed",
+                message=(f"The road to {dest} is sealed.\n\n"
+                         f"Only a traveler bearing the {missing_entry} may pass. "
+                         "You do not carry it."),
+                on_yes=lambda: None, yes_text="OK", no_text=None,
+            )
             return
 
         # Always recompute — cargo load may have changed since the route was
@@ -1904,8 +1946,8 @@ class WorldMapScreen(BaseScreen):
     # ── Travel events ────────────────────────────────────────────────────
 
     def _roll_events(self, seg):
-        from facilities.travel_events import LAND_EVENTS, SEA_EVENTS
-        pool = SEA_EVENTS if seg["type"] == "sea" else LAND_EVENTS
+        from facilities.travel_events import _event_pool
+        pool = _event_pool(self.player, seg["type"])
         events = []
         for _ in range(_EVENT_CHECKPOINTS):
             if random.random() < 0.35:
@@ -1933,6 +1975,8 @@ class WorldMapScreen(BaseScreen):
             self.after(0, lambda: self._handle_storm_gui(event))
         elif etype == "calm":
             self.after(0, lambda: self._handle_calm_gui(event))
+        elif etype == "moral":
+            self.after(0, lambda: self._handle_moral_gui(event))
         else:
             self._resume_anim()
 
@@ -1961,8 +2005,9 @@ class WorldMapScreen(BaseScreen):
                 your_price, road_price = cargo_merchant_stock_price(good_id, player)
                 stock.append((item, your_price, road_price))
                 continue
-            item_id = _random_item_id()
+            item_id = pick_equipment_id(max(1, player.get("floor", 1)), player_biome(player))
             rarity = _merchant_stock_rarity(player)
+            rarity = soften_rarity(item_id, rarity)
             item = build_item(item_id, rarity)
             your_price, road_price = _merchant_price(player, item)
             stock.append((item, your_price, road_price))
@@ -2166,12 +2211,13 @@ class WorldMapScreen(BaseScreen):
                     pass
             return
 
-        # Cargo sells at road cargo rates; everything else at the normal rate
+        # Cargo sells at road cargo rates; everything else at the normal rate.
+        # Key items and crafting materials (flowers) are never sellable.
         sellable = []
         for i in inv:
             if i.get("type") == "cargo":
                 sellable.append((i, cargo_merchant_sell_price(i)))
-            else:
+            elif is_sellable_item(i):
                 sellable.append((i, _sell_price(i, player)))
         if not sellable:
             self._log('"Nothing I want off you — yet."', "dim")
@@ -2356,7 +2402,9 @@ class WorldMapScreen(BaseScreen):
                 self._log(f"+{gold} gold found at sea!", "green")
             else:
                 rarity = _discovery_rarity(player)
-                item = build_item(_random_item_id(), rarity)
+                item_id = pick_equipment_id(max(1, player.get("floor", 1)), player_biome(player))
+                rarity = soften_rarity(item_id, rarity)
+                item = build_item(item_id, rarity)
                 added = add_item_to_inventory(player, item.copy())
                 msg = f"A waterlogged satchel surfaces from the deep.\nYou haul it aboard.\n\n"
                 msg += f"Found: {item['name']}  {_item_stat_line(item)}"
@@ -2374,7 +2422,9 @@ class WorldMapScreen(BaseScreen):
                 self._log(f"+{gold} gold found on the road!", "green")
             else:
                 rarity = _discovery_rarity(player)
-                item = build_item(_random_item_id(), rarity)
+                item_id = pick_equipment_id(max(1, player.get("floor", 1)), player_biome(player))
+                rarity = soften_rarity(item_id, rarity)
+                item = build_item(item_id, rarity)
                 added = add_item_to_inventory(player, item.copy())
                 msg = f"A hollow tree stump — something's wedged inside.\n\n"
                 msg += f"Found: {item['name']}  {_item_stat_line(item)}"
@@ -2458,6 +2508,61 @@ class WorldMapScreen(BaseScreen):
         self._log(f"\u2600 Calm waters — recover {regen} HP.", "green")
 
         self._show_event_popup("Calm Seas", msg)
+
+    def _handle_moral_gui(self, event):
+        """Karma choice during travel: help, rob, or walk away."""
+        from gui.widgets.confirm_dialog import choice_dialog
+        import karma
+
+        player = self.player
+        if not karma.is_enabled(player):
+            self._resume_anim()
+            return
+        travel_type = event.get("seg", {}).get("type", "land")
+        if travel_type == "sea":
+            heading = "A Castaway in the Water"
+            details = ("A castaway clings to a splintered mast, waving weakly.\n"
+                       "Their boat is gone. The current is pulling them under.")
+        else:
+            heading = "A Wounded Traveler"
+            details = ("A wounded traveler sits beside the road, clutching a\n"
+                       "bloodied leg. Their pack is still strapped shut.")
+
+        def _choose(key):
+            if key == "help":
+                applied = karma.change_karma(
+                    player, 2, "Helped a stranded traveler")
+                self._log("You share water and bind the wound.", "green")
+                if applied:
+                    self._log(f"Karma {applied:+d}.", "green")
+                else:
+                    self._log("Your conscience can only grow so much in a day.", "dim")
+            elif key == "rob":
+                gold = random.randint(25, 65)
+                player["gold"] = player.get("gold", 0) + gold
+                applied = karma.change_karma(
+                    player, -3, "Robbed a stranded traveler")
+                self._log(f"You take {gold} gold and leave them behind.", "gold")
+                if applied:
+                    self._log(f"Karma {applied:+d}.", "red")
+            else:
+                self._log("You keep walking. The sound fades behind you.", "dim")
+            self._resume_anim()
+
+        choice_dialog(
+            parent=self,
+            title="On the Road",
+            heading=heading,
+            subtitle="A choice that will be remembered",
+            details=details,
+            options=[
+                ("help", "Help them (+2 Karma)"),
+                ("rob", "Take what you can (+gold, -3 Karma)"),
+                ("leave", "Walk away"),
+            ],
+            on_choice=_choose,
+            default_choice="leave",
+        )
 
     def _show_event_popup(self, title, message):
         """Show a brief event popup that resumes travel when dismissed."""
@@ -2596,7 +2701,7 @@ class WorldMapScreen(BaseScreen):
                 # ── Post-combat rewards (mirrors travel_events._handle_combat) ──
                 from resources.enemies import ENEMIES
                 from resources.items import build_item
-                from facilities.travel_events import _combat_drop_rarity, _random_item_id, _add_to_inv
+                from facilities.travel_events import _combat_drop_rarity, _add_to_inv
 
                 total_xp = sum(ENEMIES[k]["level"] * 10 for k in enemy_keys)
                 total_gold = sum(ENEMIES[k]["level"] * 5 + random.randint(3, 12)
@@ -2613,7 +2718,8 @@ class WorldMapScreen(BaseScreen):
                     if random.random() < 0.40:
                         enemy_level = ENEMIES[key]["level"]
                         rarity = _combat_drop_rarity(enemy_level)
-                        item_id = _random_item_id()
+                        item_id = pick_equipment_id(enemy_level, player_biome(player))
+                        rarity = soften_rarity(item_id, rarity)
                         item = build_item(item_id, rarity)
                         if not _add_to_inv(player, item.copy()):
                             self._log(f"Found: {item['name']} (bag full — dropped!)", "dim")
@@ -2680,6 +2786,15 @@ class WorldMapScreen(BaseScreen):
             return
 
         player["wild_dungeon_id"] = dungeon["id"]
+        # Never show another dungeon's log under the ruin's branding. The
+        # previous run's tail (e.g. a Wonderland superboss floor) used to
+        # bleed into the wild dungeon's Dungeon Log panel (2026-11-10).
+        player.pop("_dungeon_log", None)
+        # Same hygiene as a city-dungeon launch: a stale run flag must not
+        # colour a wild ruin's combat as Pandemonium / Event Horizon.
+        player.pop("pandemonium_mode", None)
+        player.pop("_eh_in_run", None)
+        player.pop("_combat_floor_label", None)
         # Flee / death / timeout exits all route to origin_city — point it at
         # the nearest city so wild dungeon failures send the player there.
         player["origin_city"] = dungeon.get("nearest_city", "solmere")
@@ -2720,6 +2835,9 @@ class WorldMapScreen(BaseScreen):
             self.sm.switch_to(DungeonScreen, on_result=self._on_wild_result,
                               push_history=False)
         else:
+            if self.player:
+                import karma
+                karma.mark_city_arrival(self.player)
             from gui.screens.city_screen import CityScreen
             self.sm.switch_to(CityScreen, push_history=False)
 
@@ -2748,6 +2866,7 @@ class WorldMapScreen(BaseScreen):
         prev_floor = self.player.pop("_wild_prev_floor", None)
         if prev_floor is not None:
             self.player["floor"] = prev_floor
+        self.player.pop("_combat_floor_label", None)
         for key in ("saved_wild_floor", "saved_wild_rooms", "saved_wild_room_index"):
             self.player.pop(key, None)
         self.player.pop("pandemonium_mode", None)
@@ -2759,14 +2878,19 @@ class WorldMapScreen(BaseScreen):
         self.sm.switch_to(CityScreen, push_history=False)
 
     def _show_wild_completion(self):
-        """Reward summary for a conquered ruin, then return to the city."""
+        """Reward window for a conquered ruin, then return to the city.
+
+        The window is parented to the LIVE top screen, never to ``self``:
+        this callback runs on the WorldMapScreen instance that was destroyed
+        when the run started, so creating a Toplevel on it raised
+        ``TclError: bad window path name`` and stranded the player
+        (2026-10-23). The only option is "Return to City".
+        """
         info = self.player.pop("_wild_completion", None) or {}
         name = info.get("name", "Wild Dungeon")
+        floors = info.get("floors", "?")
         lines = [
-            f"You have conquered {name}!",
-            "",
-            f"Floors cleared: {info.get('floors', '?')}  |  "
-            f"Level: {info.get('level', '?')}",
+            f"Floors cleared: {floors}  |  Level: {info.get('level', '?')}",
             f"Spoils: +{info.get('gold', 0)} gold  |  +{info.get('exp', 0)} XP",
         ]
         items = info.get("items", [])
@@ -2777,11 +2901,23 @@ class WorldMapScreen(BaseScreen):
                 lines.append(f"  \u2022 {it.get('name', '?')} "
                              f"[{str(it.get('rarity', '')).upper()}]")
 
-        from gui.widgets.confirm_dialog import ok_dialog
-        ok_dialog(self, f"\u2605 {name} Conquered", "\n".join(lines))
+        def _back_to_city(_key=None):
+            from gui.screens.city_screen import CityScreen
+            self.sm.switch_to(CityScreen, push_history=False)
 
-        from gui.screens.city_screen import CityScreen
-        self.sm.switch_to(CityScreen, push_history=False)
+        parent = self.sm.get_top_screen() or self.sm.root
+
+        from gui.widgets.confirm_dialog import choice_dialog
+        choice_dialog(
+            parent=parent,
+            title=f"\u2605 {name} Conquered",
+            heading=f"\u2605 {name.upper()} CONQUERED \u2605",
+            subtitle=f"All {floors} floors cleared",
+            details="\n".join(lines),
+            options=[("city", "Return to City")],
+            on_choice=_back_to_city,
+            default_choice="city",
+        )
 
     # ── Navigation ──────────────────────────────────────────────────────
 

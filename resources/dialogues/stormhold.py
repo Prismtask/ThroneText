@@ -63,7 +63,7 @@ STORMHOLD_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deep. The walls are thick and the guards are alert.",
-        "Eight hours in a warm bed. You'll wake ready to face the tundra.",
+        "A night in a warm bed. You'll wake ready to face the tundra.",
         "Dream of southern shores and warm winds, friend.",
         "No monsters here. Only the howl of the northern wind.",
     ],
@@ -74,7 +74,7 @@ STORMHOLD_INNKEEPER_DIALOGUE = {
         "Take care out there. The glacier takes the unwary.",
     ],
     "early_sleep": [
-        "The innkeeper grunts: 'The northern sun still hangs low, friend. Rest a few hours, but full slumber comes when the ice moon rises.'",
+        "The innkeeper grunts: 'The northern sun still hangs low, friend. Rest a while, but full slumber comes when the ice moon rises.'",
     ],
 }
 

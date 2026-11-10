@@ -60,6 +60,7 @@ def begin_wedding_combat(player, floor=None, room_num=None):
     player["wedding_shadow_cloak_used"] = False
     player["wedding_homeward_used"] = False
     player["wedding_cosmic_gravity_used"] = False
+    player["wedding_mirror_locket_used"] = False
 
 
 def end_wedding_combat(player):
@@ -70,6 +71,7 @@ def end_wedding_combat(player):
     player.pop("wedding_shadow_cloak_used", None)
     player.pop("wedding_homeward_used", None)
     player.pop("wedding_cosmic_gravity_used", None)
+    player.pop("wedding_mirror_locket_used", None)
     player.pop("wedding_overclock_proc", None)
     player.pop("wedding_grave_reign_stacks", None)
     player.pop("wedding_crimson_feast_cha_buff", None)
@@ -182,9 +184,9 @@ def apply_wedding_combat_start(player, enemies):
             })
             _msg("Oni Horn Ring — hellfire surges through your veins! (+2 STR, +2 CON)")
 
-    # infernal_crown (base or bonded): +15% fire and dark damage
+    # infernal_crown (base or bonded): fire damage (via elemental_dmg)
     if special == "infernal_crown":
-        # Handled via elemental_dmg on the item itself, which is already wired.
+        # Handled via the item's single primary fire profile.
         # The bonded extra (burn 10 + dread on melee attacker) is handled in on_damage_taken.
         pass
 
@@ -392,7 +394,7 @@ def apply_wedding_attack_bonus(player, target, base_dmg, is_first_attack):
                     a["current_hp"] = min(a["current_hp"] + 2, a.get("max_hp", a["current_hp"]))
             _msg("Seraph's Feather — your radiance restores allies! (+2 HP each)")
 
-    # infernal_vow: +8% fire and dark damage; bonded +12%
+    # infernal_vow: +8% fire damage; bonded +12%
     if special == "infernal_vow":
         pct = 0.12 if bonded else 0.08
         bonus += max(1, int(base_dmg * pct))
@@ -624,8 +626,8 @@ def apply_wedding_on_hit(player, target, enemies, damage_dealt):
         apply_burn(target, b_tier, 3)
         _msg(f"Stardust Crown — {target['name']} is bathed in starfire! ({get_burn_tier_name(b_tier)})")
 
-    # infernal_crown: +15% fire/dark damage (handled by elemental stats), melee burn 5
-    # The melee burn is handled in on_damage_taken (retribution).
+    # infernal_crown: fire damage (handled by the item's elemental profile),
+    # melee burn 5. The melee burn is handled in on_damage_taken (retribution).
 
     # overclock (bonded): 30% chance to refresh a skill cooldown
     if special == "overclock" and bonded and random.random() < 0.30:
@@ -969,6 +971,19 @@ def apply_wedding_on_damage_taken(player, enemy, damage, outcome):
                         a["current_hp"] = min(a["current_hp"] + a_heal, a.get("max_hp", a["current_hp"]))
                 _msg("Homeward Locket — the warmth spreads to your whole party! (+5% HP each)")
 
+    # mirror_locket: the first blow each combat is reflected at 50%
+    if (special == "mirror_locket" and damage > 0
+            and not player.get("wedding_mirror_locket_used")):
+        player["wedding_mirror_locket_used"] = True
+        reflected = max(1, int(damage * 0.50))
+        from combat.weapon.chance_and_choice import apply_chance_and_choice
+        reflected = apply_chance_and_choice(player, reflected)
+        enemy["hp"] = max(0, enemy["hp"] - reflected)
+        _msg(
+            f"Looking-Glass Locket — the first blow shatters into the mirror! "
+            f"{enemy['name']} takes {reflected} reflected damage."
+        )
+
     # foxfire_trick: 20% when attacked to miss + 5 fire; bonded 35% and blind 1 turn
     if special == "foxfire_trick" and damage > 0:
         chance = 0.35 if bonded else 0.20
@@ -1279,7 +1294,7 @@ _WEDDING_BLURBS = {
                            "allies gain +5% max HP and regenerate 2 HP/turn"),
     "champion_charge": ("first attack deals +8 damage and gains +15% accuracy",
                         "first attack deals +12 and ignores 50% armor"),
-    "infernal_crown": ("+15% fire and dark damage; melee attackers catch Burn",
+    "infernal_crown": ("+15% fire damage; melee attackers catch Burn",
                        "their Burn becomes Blaze and inflicts 1-turn dread"),
     "abyssal_grasp": ("30% chance to reduce enemy DEX by 3 for 3 turns",
                       "bound enemies are slowed and take 3 water damage per turn"),
@@ -1321,8 +1336,8 @@ _WEDDING_BLURBS = {
                    "take 4 less physical damage and become immune to stun"),
     "dragon_heart": ("+10% fire damage; 30% chance to inflict Burn for 3 turns",
                      "+15% fire; Burn becomes Blaze and spreads"),
-    "infernal_vow": ("+8% fire and dark damage; 25% chance to inflict Burn",
-                     "+12%; 35% chance to inflict Blaze and dread"),
+    "infernal_vow": ("+8% fire damage; 25% chance to inflict Burn",
+                     "+12% fire damage; 35% chance to inflict Blaze and dread"),
     "grave_reign": ("at combat start, all enemies take 3 dark damage",
                     "all enemies take 5 dark damage"),
     "palettes_palette": ("no effect unless Palette is in the active party",
@@ -1335,6 +1350,8 @@ _WEDDING_BLURBS = {
                     "your party gains +3 initiative on every round's roll"),
     "huntsman_oath": ("first attack each combat deals +30% damage",
                       "first attack deals +45% damage"),
+    "mirror_locket": ("the first enemy hit each combat reflects 50% of its damage",
+                      "the first enemy hit each combat reflects 50% of its damage"),
 }
 
 

@@ -69,9 +69,31 @@ def ensure_wild_dungeon_state(player):
     return state
 
 
+def _city_accessible(player, city_id):
+    """Item-locked cities (e.g. Celestia) only seed/reveal wild ruins once
+    the player actually carries their entry item."""
+    item_id = CITIES.get(city_id, {}).get("entry_item")
+    if not item_id:
+        return True
+    return any(item.get("id") == item_id
+               for item in player.get("inventory", []))
+
+
+def _dungeon_accessible(player, dungeon):
+    """A wild ruin is hidden while either its seed city or its travel
+    gateway city is inaccessible. Prevents pre-Sigil celestial ruins from
+    appearing (or being used as a back-door into Celestia)."""
+    for key in ("seed_city", "nearest_city"):
+        city_id = dungeon.get(key)
+        if city_id and not _city_accessible(player, city_id):
+            return False
+    return True
+
+
 def get_active_dungeons(player):
-    """Return the list of active (spawned, not yet cleared/expired) dungeons."""
-    return ensure_wild_dungeon_state(player)["active"]
+    """Return active (spawned, not cleared/expired) dungeons visible to the player."""
+    active = ensure_wild_dungeon_state(player)["active"]
+    return [d for d in active if _dungeon_accessible(player, d)]
 
 
 def get_wild_dungeon(player, dungeon_id):
@@ -124,14 +146,28 @@ def roll_dungeon_level(player):
     return random.randint(lo, hi)
 
 
-def find_nearest_city(position):
-    """Return the city id whose node center is closest to *position*."""
+def find_nearest_city(position, allowed=None):
+    """Return the city id whose node center is closest to *position*.
+
+    ``allowed`` optionally restricts the search to accessible cities (used
+    so an item-locked gateway cannot become a wild-ruin travel target).
+    """
     best, best_dist = "solmere", float("inf")
     for cid, (cx, cy) in city_node_centers().items():
+        if allowed is not None and cid not in allowed:
+            continue
         dist = (cx - position[0]) ** 2 + (cy - position[1]) ** 2
         if dist < best_dist:
             best, best_dist = cid, dist
     return best
+
+
+def _available_seed_cities(player):
+    """World-map cities that may currently seed a wild dungeon."""
+    return {
+        cid for cid in CITIES
+        if cid in city_node_centers() and _city_accessible(player, cid)
+    }
 
 
 def _roll_name(biome):
@@ -173,7 +209,7 @@ def _pick_position(existing_positions, near_city=None):
     return fallback
 
 
-def generate_reward_pool(level, total_floors):
+def generate_reward_pool(level, total_floors, biome=None):
     """Pre-roll the completion rewards at spawn time (previewable on the map).
 
     Always returns exactly ``total_floors + 2`` entries. The first entry is
@@ -194,7 +230,7 @@ def generate_reward_pool(level, total_floors):
         else ("rare", "epic", "legendary")
     top_id, top_rarity = "iron_sword", "rare"
     for _ in range(100):
-        item_id, rarity = _roll_equipment_drop(level, pandemonium=False)
+        item_id, rarity = _roll_equipment_drop(level, pandemonium=False, biome=biome)
         top_id, top_rarity = item_id, rarity
         if rarity in allowed:
             break
@@ -202,7 +238,7 @@ def generate_reward_pool(level, total_floors):
 
     # ── Remaining entries: standard drops, no None rolls ─────────────────
     while len(pool) < total_floors + 2:
-        drop = roll_drop(level)
+        drop = roll_drop(level, biome=biome)
         if not drop:
             continue
         item_id, rarity = drop
@@ -227,7 +263,7 @@ def expire_dungeons(player):
     return expired
 
 
-def _spawn_one(player, state, seed_city, taken_positions):
+def _spawn_one(player, state, seed_city, taken_positions, available_cities=None):
     """Create one dungeon dict (does not append to state)."""
     dungeon_id = f"wild_{state['next_id']}"
     state["next_id"] += 1
@@ -238,6 +274,7 @@ def _spawn_one(player, state, seed_city, taken_positions):
     position = _pick_position(taken_positions, near_city=seed_city)
     day = int(player.get("day", 1) or 1)
     lifespan = random.randint(MIN_LIFESPAN_DAYS, MAX_LIFESPAN_DAYS)
+    allowed = available_cities or _available_seed_cities(player)
 
     return {
         "id": dungeon_id,
@@ -250,9 +287,9 @@ def _spawn_one(player, state, seed_city, taken_positions):
         "spawn_day": day,
         "expire_day": day + lifespan,
         "seed_city": seed_city,
-        "nearest_city": find_nearest_city(position),
+        "nearest_city": find_nearest_city(position, allowed=allowed or None),
         "attempted": False,
-        "reward_pool": generate_reward_pool(level, total_floors),
+        "reward_pool": generate_reward_pool(level, total_floors, biome),
     }
 
 
@@ -276,7 +313,8 @@ def maybe_spawn_cycle(player):
 
     state["last_spawn_day"] = day
 
-    city_ids = [cid for cid in CITIES if cid in city_node_centers()]
+    available_cities = _available_seed_cities(player)
+    city_ids = sorted(available_cities)
     if not city_ids:
         return [], None
 
@@ -286,7 +324,8 @@ def maybe_spawn_cycle(player):
     taken = [tuple(d.get("position", (0, 0))) for d in state["active"]]
     spawned = []
     for seed_city in seed_cities:
-        dungeon = _spawn_one(player, state, seed_city, taken)
+        dungeon = _spawn_one(player, state, seed_city, taken,
+                             available_cities=available_cities)
         taken.append(tuple(dungeon["position"]))
         state["active"].append(dungeon)
         spawned.append(dungeon)
@@ -356,14 +395,15 @@ def record_completion_event(player, dungeon, gold, exp):
     })
 
 
-# ── Travel (shared by GUI world map and terminal mode) ──────────────────────
+# ── Travel (shared by GUI world map) ──────────────────────────────
 
 def offroad_segment(player, dungeon, to=None):
     """Build the synthetic final travel segment (nearest city → dungeon).
 
     Mirrors facilities.pathfinding's land-segment math — mount time
-    reduction, daily travel effect (e.g. Heavy Rain), and cargo
-    penalty/overload — so the off-road leg behaves like any other road.
+    reduction and cargo penalty/overload — so the off-road leg behaves like
+    any other road. Weather adds blocks later, once, in
+    `time_blocks.travel_blocks()`.
 
     The segment's ``to`` is ``"wild:<id>"``; GUI/terminal travel code
     recognizes this prefix instead of a city key.
@@ -382,10 +422,6 @@ def offroad_segment(player, dungeon, to=None):
 
     raw_time = random.randint(WILD_OFFROAD_MIN_MINUTES, WILD_OFFROAD_MAX_MINUTES)
     effective_time = int(raw_time * (1 - mount_reduction))
-
-    daily_time_mult = player.get("daily_effects", {}).get("travel_time_mult", 1.0)
-    if daily_time_mult != 1.0:
-        effective_time = int(effective_time * daily_time_mult)
 
     penalty = cargo_travel_penalty(player, mount_cap)
     if penalty > 0:
@@ -439,30 +475,3 @@ def build_journey_to_dungeon(player, dungeon, to=None):
         "segments": segments,
         "blocked_segments": blocked,
     }
-
-
-def embark_wild_dungeon_journey(player, dungeon, combat_override=None):
-    """Terminal-mode journey to a wild dungeon.
-
-    Runs the city legs and the off-road leg through the existing travel
-    event system, then sets the wild-dungeon entry fields on arrival.
-
-    Returns
-    -------
-    "dead"     – player died en route
-    "blocked"  – cargo overloaded for the journey
-    "no_route" – no path to the nearest city
-    None       – arrived at the dungeon (player["wild_dungeon_id"] set)
-    """
-    journey = build_journey_to_dungeon(player, dungeon)
-    if journey is None:
-        return "no_route"
-    if journey.get("blocked_segments"):
-        return "blocked"
-
-    from facilities.travel import embark_multi_leg_journey
-    return embark_multi_leg_journey(
-        player, journey["segments"],
-        combat_override=combat_override,
-        wild_dungeon=dungeon,
-    )

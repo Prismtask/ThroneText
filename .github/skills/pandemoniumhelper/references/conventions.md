@@ -6,7 +6,7 @@
 1. Player & ally displays must match identically (headers, stats, rarity).
 2. Combat HUD: Fixed 68-char ASCII box. Party left (31 chars), enemies right (33 chars). 2 rows/entity: row1=name/HP/♀, row2=buff/debuff tags.
 3. Stat Display: `Attribute: base + N(eq) + N(buff) = total`
-4. Monster Girls: ♀ symbol. Captured via nets → `./facilities/house.py`. Recruited when affection ≥ threshold. Allies via `create_ally_from_girl()`.
+4. Monster Girls: ♀ symbol. Captured via nets → `./facilities/house/` package. Recruited when affection ≥ threshold. Allies via `create_ally_from_girl()`. Heroine quests live in `./heroine_quests/`.
 
 ### Combat Scale
 5. Max 1 player + 3 allies vs 5 enemies. Player controls all ally actions.

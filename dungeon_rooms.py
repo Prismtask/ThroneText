@@ -9,18 +9,21 @@ Room types:
 """
 
 import random
+
+import karma
 from character import player_max_hp
 from combat.stats import compute_player_stats
 from utils import clear_screen, advance_time, _tprint, _tpause, _tclear, _tmenu, _tinput, display_name
-from resources.items import ITEMS, ITEM_RARITY, build_item
-from inventory import add_item_to_inventory, remove_item_by_reference
+from resources.items import ITEMS, ITEM_RARITY, build_item, soften_rarity
+from resources.item_generation import pick_equipment_id, dungeon_biome
+from inventory import add_item_to_inventory, remove_item_by_reference, is_sellable_item
 from leveling import gain_exp, gain_exp_ally
 from combat.combat_engine import combat
 from combat.ally import get_alive_allies
 
 # Import merchant helpers from travel events
 from facilities.travel_events import (
-    _random_item_id, _item_stat_line, _charisma_discount,
+    _item_stat_line, _charisma_discount,
     _merchant_price, _sell_price, _merchant_stock_rarity, _add_to_inv
 )
 from resources.trade_goods import (
@@ -45,6 +48,24 @@ STAT_CHECK_EVENTS = {
         "stat": "Wisdom",
         "base_dc": 12,
         "dc_floor_mult": 0.6,
+        "choices": [
+            {
+                "id": "help",
+                "label": "Help them (WIS check)",
+                "karma": 2,
+                "reason": "Helped a wounded adventurer",
+            },
+            {
+                "id": "rob",
+                "label": "Take their purse (DEX check, +gold)",
+                "stat": "Dexterity",
+                "base_dc": 12,
+                "dc_floor_mult": 0.7,
+                "karma": -4,
+                "requires_karma": True,
+                "reason": "Robbed a wounded adventurer",
+            },
+        ],
     },
     "bury_corpse": {
         "name": "Ancient Corpse",
@@ -52,6 +73,24 @@ STAT_CHECK_EVENTS = {
         "stat": "Strength",
         "base_dc": 10,
         "dc_floor_mult": 0.8,
+        "choices": [
+            {
+                "id": "bury",
+                "label": "Bury them with proper rites (STR check)",
+                "karma": 2,
+                "reason": "Buried the dead",
+            },
+            {
+                "id": "loot",
+                "label": "Loot the remains (DEX check, +gold/item)",
+                "stat": "Dexterity",
+                "base_dc": 10,
+                "dc_floor_mult": 0.8,
+                "karma": -3,
+                "requires_karma": True,
+                "reason": "Looted an ancient corpse",
+            },
+        ],
     },
     "monster_approaching": {
         "name": "Monster Approaching",
@@ -59,6 +98,53 @@ STAT_CHECK_EVENTS = {
         "stat": "Charisma",
         "base_dc": 11,
         "dc_floor_mult": 0.6,
+        "choices": [
+            {
+                "id": "calm",
+                "label": "Calm it (CHA check)",
+                "karma": 1,
+                "reason": "Calmed a wild beast",
+            },
+            {
+                "id": "ambush",
+                "label": "Ambush it (combat, +loot)",
+                "karma": -2,
+                "no_check": True,
+                "requires_karma": True,
+                "reason": "Ambushed a peaceful beast",
+            },
+        ],
+    },
+    "forgotten_shrine": {
+        "name": "Forgotten Shrine",
+        "desc": (
+            "A moss-eaten altar stands in a pocket of still air. Coins and faded "
+            "offerings are heaped at its base. The carved face has worn smooth, "
+            "but the air still feels watched."
+        ),
+        "stat": "Dexterity",
+        "base_dc": 12,
+        "dc_floor_mult": 0.7,
+        "karma_only": True,
+        "choices": [
+            {
+                "id": "offer",
+                "label": "Leave 50 gold and pray",
+                "karma": 2,
+                "no_check": True,
+                "reason": "Offered gold at a forgotten shrine",
+            },
+            {
+                "id": "steal",
+                "label": "Take the offerings (DEX check, +gold)",
+                "stat": "Dexterity",
+                "base_dc": 12,
+                "dc_floor_mult": 0.7,
+                "karma": -3,
+                "requires_karma": True,
+                "reason": "Stole from a forgotten shrine",
+            },
+        ],
     },
 }
 
@@ -225,14 +311,38 @@ def _get_member_stat(member, stat_name, player):
 
 
 def _roll_stat_check(member, stat_name, dc, player):
-    """Roll a d20 + stat against DC. Returns (success, roll, total, stat)."""
+    """Roll a d20 + stat against DC. Returns (success, roll, total, stat).
+
+    Natural 20 always succeeds and natural 1 always fails, matching the
+    probabilities shown by ``_calc_pass_probability``.
+    """
     stat = _get_member_stat(member, stat_name, player)
     # Wonderland: Through the Looking Glass — reroll low d20 rolls
     from wonderland_curses import roll_d20_with_looking_glass
     roll, _ = roll_d20_with_looking_glass(player, verbose=True)
     total = roll + stat
-    success = total >= dc
+    if roll == 20:
+        success = True
+    elif roll == 1:
+        success = False
+    else:
+        success = total >= dc
     return success, roll, total, stat
+
+
+def _prompt_event_choice(choices):
+    """Show the moral-choice menu for an event. Returns a choice dict or None."""
+    options = []
+    for choice in choices:
+        label = choice["label"]
+        if choice.get("karma"):
+            label += f" ({choice['karma']:+d} Karma)"
+        options.append(label)
+    idx = _tmenu(options, prompt="What do you do?", allow_cancel=True,
+                 cancel_label="Walk away")
+    if idx < 0 or idx >= len(choices):
+        return None
+    return choices[idx]
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -299,7 +409,7 @@ def render_event_horizon_status(player):
     """Left-panel stand-in for the floor map during Event Horizon runs.
 
     The rift has no map (rooms, not floors) — the GUI redirects this to the
-    Map panel (relabeled "Rift"); terminal mode prints it like a map render.
+    Map panel (relabeled "Rift").
     """
     import event_horizon as eh
 
@@ -482,8 +592,9 @@ def handle_merchant_room(player, floor):
             your_price, road_price = cargo_merchant_stock_price(good_id, player)
             stock.append((item, your_price, road_price))
             continue
-        item_id = _random_item_id()
+        item_id = pick_equipment_id(player.get("floor", 1), dungeon_biome(player))
         rarity = _merchant_stock_rarity(player)
+        rarity = soften_rarity(item_id, rarity)
         item = build_item(item_id, rarity)
         your_price, road_price = _merchant_price(player, item)
         stock.append((item, your_price, road_price))
@@ -525,7 +636,7 @@ def handle_merchant_room(player, floor):
             for i in inv:
                 if i.get("type") == "cargo":
                     sellable.append((i, cargo_merchant_sell_price(i)))
-                else:
+                elif is_sellable_item(i):
                     sellable.append((i, _sell_price(i, player)))
             if not sellable:
                 _tprint('  "Nothing I want off you."')
@@ -577,22 +688,32 @@ def handle_treasure_room(player, floor):
     # Guaranteed rare+ item
     rarities = ["rare", "epic", "legendary"]
     if floor <= 10:
-        weights = [0.60, 0.35, 0.05]
+        weights = [0.65, 0.33, 0.02]
     elif floor <= 25:
-        weights = [0.40, 0.45, 0.15]
+        weights = [0.45, 0.46, 0.09]
     else:
-        weights = [0.25, 0.50, 0.25]
+        weights = [0.30, 0.52, 0.18]
 
+    item_id = pick_equipment_id(floor, dungeon_biome(player))
     rarity = random.choices(rarities, weights=weights)[0]
-    item_id = _random_item_id()
+    rarity = soften_rarity(item_id, rarity)
     item = build_item(item_id, rarity)
 
     _tprint(f"\nYou found: {item['name']}  {_item_stat_line(item)}")
     from inventory_ui import prompt_acquire_item
     prompt_acquire_item(player, item.copy())
 
-    # Bonus gold
+    # Tempering flowers — treasure rooms are the reliable farming spot
+    from resources.item_generation import pick_flower_id
+    from resources.items import build_item as _build_item
+    flower = _build_item(pick_flower_id(dungeon_biome(player)), "common")
+    _tprint(f"Tucked among the coins: {flower['name']} (tempering flower).")
+    prompt_acquire_item(player, flower.copy())
+
+    # Bonus gold (deed titles can improve dungeon gold finds)
     gold = 20 + floor * 5 + random.randint(5, 15)
+    from titles import apply_gold_find
+    gold = apply_gold_find(player, gold)
     player["gold"] = player.get("gold", 0) + gold
     _tprint(f"You also found {gold} gold in a small chest!")
 
@@ -626,23 +747,37 @@ def handle_trap_room(player, floor):
     stat = (dex + wis) // 2
     roll = random.randint(1, 20)
     total = roll + stat
-    success = total >= dc
+    # Natural 20 always succeeds; natural 1 always fails (matches the
+    # pass-probability preview shown in _select_party_member).
+    if roll == 20:
+        success = True
+    elif roll == 1:
+        success = False
+    else:
+        success = total >= dc
 
     name = member.get("name", "You") if member is player else display_name(member)
     _tprint(f"\n{name} attempts to disarm the trap...")
     _tprint(f"Roll: {roll} + {stat} (DEX+WIS) = {total} vs DC {dc}")
+    if roll == 20:
+        _tprint("  🎲 Natural 20 — automatic success!")
+    elif roll == 1:
+        _tprint("  🎲 Natural 1 — automatic failure!")
 
     if success:
         _tprint(f"\n✅  Success! The trap is carefully disarmed.")
-        # Hidden loot
+        # Hidden loot (deed titles can improve dungeon gold finds)
         gold = 15 + floor * 4 + random.randint(3, 10)
+        from titles import apply_gold_find
+        gold = apply_gold_find(player, gold)
         player["gold"] = player.get("gold", 0) + gold
         _tprint(f"You find {gold} gold hidden in the trap mechanism!")
 
         # Small chance for extra item
         if random.random() < 0.30:
             rarity = random.choices(["common", "uncommon", "rare"], weights=[0.50, 0.35, 0.15])[0]
-            item_id = _random_item_id()
+            item_id = pick_equipment_id(floor, dungeon_biome(player))
+            rarity = soften_rarity(item_id, rarity)
             item = build_item(item_id, rarity)
             if not _add_to_inv(player, item.copy()):
                 _tprint(f"You also found: {item['name']}! (but your bag is full — dropped!)")
@@ -680,69 +815,163 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
     _tprint(event["desc"])
     _tprint("=" * 50)
 
-    dc = int(event["base_dc"] + floor * event["dc_floor_mult"])
+    # ── Moral choice step ────────────────────────────────────────────
+    choice = None
+    event_choice = "default"
+    choices = event.get("choices") or []
+    if choices:
+        enabled_choices = [
+            c for c in choices
+            if karma.is_enabled(player) or not c.get("requires_karma")
+        ]
+        if not enabled_choices:
+            _tprint("\nYou decide not to get involved.")
+            _tpause()
+            return "continue"
+        if len(enabled_choices) == 1 and not enabled_choices[0].get("requires_karma"):
+            # Classic (Karma-off) mode: preserve the original no-prompt flow.
+            choice = enabled_choices[0]
+        else:
+            choice = _prompt_event_choice(enabled_choices)
+            if choice is None:
+                _tprint("\nYou walk away.")
+                return "continue"
+        event_choice = choice.get("id", "default")
+        # A paid offering only counts if the player can actually pay.
+        if (event_key == "forgotten_shrine" and event_choice == "offer"
+                and player.get("gold", 0) < 50):
+            _tprint("\nYou do not have 50 gold to leave.")
+            _tpause()
+            return "continue"
+        if choice.get("karma"):
+            applied = karma.change_karma(
+                player, choice["karma"], choice.get("reason", "Event choice")
+            )
+            if applied:
+                tier = karma.get_karma_tier(player)
+                _tprint(
+                    f"  Karma {applied:+d} ({tier['label']} "
+                    f"{karma.get_karma(player):+d})"
+                )
 
-    # Pandemonium: Mirrored Mind / Unstable Ground curses increase DC
-    from pandemonium_curses import get_stat_check_dc_modifier
-    dc_mod = get_stat_check_dc_modifier(player, event["stat"])
-    if dc_mod > 0:
-        dc += dc_mod
-        _tprint(f"  ⚠️  Pandemonium's curse twists reality... DC increased by {dc_mod}!")
+    stat_name = choice.get("stat", event["stat"]) if choice else event["stat"]
+    if choice and "base_dc" in choice:
+        dc = int(choice["base_dc"] + floor * choice.get(
+            "dc_floor_mult", event["dc_floor_mult"]))
+    else:
+        dc = int(event["base_dc"] + floor * event["dc_floor_mult"])
 
-    # Wonderland: Caterpillar's Insight reduces DC
-    from wonderland_curses import get_caterpillars_insight_reduction
-    wl_reduction = get_caterpillars_insight_reduction(player)
-    if wl_reduction > 0:
-        dc = max(1, dc - int(wl_reduction))
-        _tprint(f"  🐛 The Caterpillar's wisdom guides you... DC reduced by {int(wl_reduction)}!")
+    requires_check = not (choice and choice.get("no_check"))
 
-    # Wonderland Shadow: Author's Will increases DC
-    from wonderland_curses import get_shadow_stat_check_dc_increase
-    wl_shadow_dc = get_shadow_stat_check_dc_increase(player)
-    if wl_shadow_dc > 0:
-        dc += int(wl_shadow_dc)
-        _tprint(f"  📖 The Author's pen scratches — DC increased by {int(wl_shadow_dc)}!")
+    if requires_check:
+        # Pandemonium: Mirrored Mind / Unstable Ground curses increase DC
+        from pandemonium_curses import get_stat_check_dc_modifier
+        dc_mod = get_stat_check_dc_modifier(player, stat_name)
+        if dc_mod > 0:
+            dc += dc_mod
+            _tprint(f"  ⚠️  Pandemonium's curse twists reality... DC increased by {dc_mod}!")
 
-    _tprint(f"\nRequired check: {event['stat']} (DC {dc})")
+        # Wonderland: Caterpillar's Insight reduces DC
+        from wonderland_curses import get_caterpillars_insight_reduction
+        wl_reduction = get_caterpillars_insight_reduction(player)
+        if wl_reduction > 0:
+            dc = max(1, dc - int(wl_reduction))
+            _tprint(f"  🐛 The Caterpillar's wisdom guides you... DC reduced by {int(wl_reduction)}!")
 
-    member = _select_party_member(player, stat_name=event["stat"], dc=dc)
-    if member is None:
-        _tprint(f"\nYou ignore the {event['name'].lower()} and move on.")
-        return "continue"
+        # Wonderland Shadow: Author's Will increases DC
+        from wonderland_curses import get_shadow_stat_check_dc_increase
+        wl_shadow_dc = get_shadow_stat_check_dc_increase(player)
+        if wl_shadow_dc > 0:
+            dc += int(wl_shadow_dc)
+            _tprint(f"  📖 The Author's pen scratches — DC increased by {int(wl_shadow_dc)}!")
 
-    success, roll, total, stat = _roll_stat_check(member, event["stat"], dc, player)
+        _tprint(f"\nRequired check: {stat_name} (DC {dc})")
 
-    name = member.get("name", "You") if member is player else display_name(member)
-    _tprint(f"\n{name} attempts the task...")
-    _tprint(f"Roll: {roll} + {stat} ({event['stat']}) = {total} vs DC {dc}")
+        member = _select_party_member(player, stat_name=stat_name, dc=dc)
+        if member is None:
+            _tprint(f"\nYou ignore the {event['name'].lower()} and move on.")
+            return "continue"
+
+        success, roll, total, stat = _roll_stat_check(member, stat_name, dc, player)
+
+        name = member.get("name", "You") if member is player else display_name(member)
+        _tprint(f"\n{name} attempts the task...")
+        _tprint(f"Roll: {roll} + {stat} ({stat_name}) = {total} vs DC {dc}")
+        if roll == 20:
+            _tprint("  🎲 Natural 20 — automatic success!")
+        elif roll == 1:
+            _tprint("  🎲 Natural 1 — automatic failure!")
+    else:
+        if event_key == "forgotten_shrine" and event_choice == "offer":
+            if player.get("gold", 0) >= 50:
+                player["gold"] -= 50
+                player.setdefault("active_buffs", []).append({
+                    "type": "blessing", "stat": "all", "value": 2,
+                    "remaining": 2, "source": "forgotten_shrine",
+                })
+                _tprint("\n✅ You leave 50 gold and pray. A warm stillness settles over you.")
+                _tprint("Gained +2 to all stats for 2 floors.")
+            else:
+                _tprint("\nYou do not have 50 gold to leave.")
+            _tpause()
+            return "continue"
+        if event_key == "monster_approaching" and event_choice == "ambush":
+            # Skip the calm check; the hostile branch below resolves the fight.
+            member = player
+            success = False
+            roll = total = stat = 0
+        else:
+            return "continue"
 
     if event_key == "heal_wounded":
-        if success:
+        if event_choice == "rob":
+            if success:
+                gold = 30 + floor * 6 + random.randint(10, 30)
+                player["gold"] = player.get("gold", 0) + gold
+                _tprint(f"\n✅  Success! You take {gold} gold from the dying adventurer.")
+                _tprint("They will not need it where they are going.")
+            else:
+                _tprint("\n❌  Failure! Your hand slips; the adventurer clutches their purse and cries out.")
+                _tprint("You leave empty-handed — but the attempt is remembered.")
+        elif success:
             gold = 15 + floor * 2
             _tprint(f"\n✅  Success! You stabilize the wounded adventurer.")
             _tprint(f"They reward you with {gold} gold and their eternal gratitude.")
             player["gold"] = player.get("gold", 0) + gold
-
-            # Favor bonus in current city
-            city_id = player.get("origin_city", "solmere")
-            if "favor" not in player:
-                player["favor"] = {}
-            if city_id not in player["favor"]:
-                player["favor"][city_id] = 0
-            favor_gain = 3 + random.randint(1, 3)
-            player["favor"][city_id] += favor_gain
-            _tprint(f"Gained {favor_gain} favor in {city_id.title()}!")
         else:
             _tprint(f"\n❌  Failure! The wounds are too deep. The adventurer passes away.")
-            city_id = player.get("origin_city", "solmere")
-            if "favor" in player and city_id in player["favor"]:
-                favor_loss = min(5, player["favor"][city_id])
-                player["favor"][city_id] -= favor_loss
-                _tprint(f"Word spreads. You lose {favor_loss} favor in {city_id.title()}.")
             _tprint("A heavy weight settles on your conscience.")
 
     elif event_key == "bury_corpse":
-        if success:
+        if event_choice == "loot" and success:
+            gold = 25 + floor * 4 + random.randint(5, 15)
+            player["gold"] = player.get("gold", 0) + gold
+            _tprint(f"\n✅  Success! You pry {gold} gold from the remains.")
+            if random.random() < 0.30:
+                rarities = ["common", "uncommon", "rare"]
+                weights = [0.55, 0.30, 0.15]
+                rarity = random.choices(rarities, weights=weights)[0]
+                item_id = pick_equipment_id(floor, dungeon_biome(player))
+                rarity = soften_rarity(item_id, rarity)
+                item = build_item(item_id, rarity)
+                if not _add_to_inv(player, item.copy()):
+                    _tprint(f"You also find: {item['name']} (but your bag is full — dropped!)")
+                else:
+                    _tprint(f"You also find: {item['name']}!")
+        elif event_choice == "loot":
+            if member is player:
+                max_hp = player_max_hp(player)
+                damage = max(5, int(max_hp * 0.10))
+                player["current_hp"] = max(1, player["current_hp"] - damage)
+                _tprint(f"\n❌  Failure! The remains shudder with anger!")
+                _tprint(f"You take {damage} damage. HP: {player['current_hp']}/{max_hp}")
+            else:
+                max_hp = member.get("max_hp", member.get("current_hp", 10))
+                damage = max(5, int(max_hp * 0.10))
+                member["current_hp"] = max(1, member.get("current_hp", max_hp) - damage)
+                _tprint(f"\n❌  Failure! The remains shudder with anger!")
+                _tprint(f"{display_name(member)} takes {damage} damage. HP: {member['current_hp']}/{max_hp}")
+        elif success:
             _tprint(f"\n✅  Success! The remains are laid to rest with proper rites.")
             _tprint("A gentle warmth fills the room — a blessing from the spirits.")
             player.setdefault("active_buffs", []).append({
@@ -765,7 +994,7 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 _tprint(f"{display_name(member)} takes {damage} damage. HP: {member['current_hp']}/{max_hp}")
 
     elif event_key == "monster_approaching":
-        if success:
+        if success and event_choice != "ambush":
             xp = floor * 15
             _tprint(f"\n✅  Success! You calm the creature with soothing words.")
             _tprint(f"It leaves peacefully, and you gain {xp} XP from the experience.")
@@ -774,7 +1003,10 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 if ally.get("current_hp", 0) > 0:
                     gain_exp_ally(ally, xp)
         else:
-            _tprint(f"\n❌  Failure! The creature snarls and attacks!")
+            if event_choice == "ambush":
+                _tprint("\nYou strike first. The creature answers in kind!")
+            else:
+                _tprint(f"\n❌  Failure! The creature snarls and attacks!")
             # Spawn a single enemy of the floor's level
             # Local import to avoid circular dependency at module load
             from resources.enemies import ENEMIES
@@ -803,7 +1035,8 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                     rarities = ["common", "uncommon", "rare"]
                     weights = [0.50, 0.35, 0.15]
                     rarity = random.choices(rarities, weights=weights)[0]
-                    item_id = _random_item_id()
+                    item_id = pick_equipment_id(enemy_level, dungeon_biome(player))
+                    rarity = soften_rarity(item_id, rarity)
                     item = build_item(item_id, rarity)
                     if not _add_to_inv(player, item.copy()):
                         _tprint(f"\nFound: {item['name']} (but your bag is full — dropped!)")
@@ -819,6 +1052,21 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                 apply_wedding_combat_end(player, victory=True)
 
                 _tpause()
+
+    elif event_key == "forgotten_shrine":
+        if event_choice == "steal":
+            if success:
+                gold = 80 + floor * 8 + random.randint(10, 20)
+                player["gold"] = player.get("gold", 0) + gold
+                _tprint(f"\n✅  Success! You pocket {gold} gold from the shrine.")
+                _tprint("The carved face watches you leave.")
+            else:
+                _tprint("\n❌  Failure! The shrine's guardian stirs.")
+                player.setdefault("active_debuffs", []).append({
+                    "type": "curse", "penalty": 2, "remaining": 2,
+                    "source": "forgotten_shrine",
+                })
+                _tprint("A curse settles on you (-2 to all attributes for 2 floors).")
 
     # ── Wonderland events ────────────────────────────────────────────
     elif event_key == "wl_tea_party":
@@ -867,7 +1115,8 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
             else:
                 weights = [0.20, 0.50, 0.30]
             rarity = random.choices(rarities, weights=weights)[0]
-            item_id = _random_item_id()
+            item_id = pick_equipment_id(floor, dungeon_biome(player))
+            rarity = soften_rarity(item_id, rarity)
             item = build_item(item_id, rarity)
             if not _add_to_inv(player, item.copy()):
                 _tprint(f"Received: {item['name']} (but your bag is full — dropped!)")
@@ -939,7 +1188,8 @@ def handle_stat_check_room(player, floor, event_key, combat_override=None):
                     rarities = ["common", "uncommon", "rare"]
                     weights = [0.45, 0.35, 0.20]
                     rarity = random.choices(rarities, weights=weights)[0]
-                    item_id = _random_item_id()
+                    item_id = pick_equipment_id(enemy_level, dungeon_biome(player))
+                    rarity = soften_rarity(item_id, rarity)
                     item = build_item(item_id, rarity)
                     if not _add_to_inv(player, item.copy()):
                         _tprint(f"\nFound: {item['name']} (but your bag is full — dropped!)")

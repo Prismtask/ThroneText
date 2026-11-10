@@ -19,9 +19,12 @@ except ImportError:
 
 # ── Level-up I/O helpers (GUI-first, terminal fallback) ──────────────
 
-def _choose_level_attr(entity_name, level, attributes):
+def _choose_level_attr(entity_name, level, attributes, note=None):
     """
     Ask the user to pick an attribute to increase.
+
+    `note` replaces the default "LEVEL UP!" banner — used for the
+    late-bloomer bonus point granted during an ally level-up.
 
     Tries the GUI dialog first. If unavailable or cancelled, falls back
     to the terminal menu. Returns (attr_key, used_gui) where used_gui
@@ -31,7 +34,7 @@ def _choose_level_attr(entity_name, level, attributes):
     # Try GUI dialog first
     if _gui_choose_attr is not None:
         try:
-            chosen = _gui_choose_attr(entity_name, level, attributes)
+            chosen = _gui_choose_attr(entity_name, level, attributes, note=note)
             if chosen is not None:
                 return chosen, True
             # GUI existed but returned no choice (dialog closed / timed out).
@@ -44,7 +47,10 @@ def _choose_level_attr(entity_name, level, attributes):
             _tprint(f"\n(Level-up popup could not be shown: {exc})")
 
     # Terminal fallback
-    _tprint(f"\n*** LEVEL UP! {entity_name} is now level {level} ***")
+    if note:
+        _tprint(f"\n*** {note} ***")
+    else:
+        _tprint(f"\n*** LEVEL UP! {entity_name} is now level {level} ***")
     _tprint("Choose an attribute to increase by 1:")
     attrs = ["Strength", "Constitution", "Dexterity", "Wisdom", "Learning", "Charisma"]
     attr_options = [f"{a} (current: {attributes[a]})" for a in attrs]
@@ -104,6 +110,68 @@ def get_city_dungeon_progress(player, city_id):
     return progress
 
 
+# ── Shared dungeon depth per biome (2026-11-04) ──────────────────────────────
+# Cities of the same biome are entrances into ONE dungeon: they share
+# ``max_floor`` (the unlocked depth) while each keeps its own ``floor``
+# cursor (the entrance the player last used). Dungeon content is already
+# biome-keyed (enemies/loot), so this removes redundant ladders such as
+# Thornwall/Solmere/Greyharbor all starting at Floor 1.
+
+def cities_in_biome(city_id):
+    """City ids sharing ``city_id``'s biome (the shared-depth dungeon group)."""
+    biome = CITIES.get(city_id, {}).get("biome", "temperate")
+    return [cid for cid, data in CITIES.items()
+            if data.get("biome", "temperate") == biome]
+
+
+def _safe_floor(value, default=1):
+    try:
+        return max(1, int(value or default))
+    except (TypeError, ValueError):
+        return default
+
+
+def get_shared_biome_max_floor(player, city_id):
+    """Highest unlocked floor among existing records in this city's biome."""
+    floors = player.get("city_floors") or {}
+    best = 1
+    for cid in cities_in_biome(city_id):
+        prog = floors.get(cid)
+        if isinstance(prog, dict):
+            best = max(best, _safe_floor(prog.get("max_floor", 1)))
+    return best
+
+
+def sync_biome_dungeon_depth(player):
+    """Make every existing city record share its biome's deepest floor.
+
+    Only existing city records are touched: unvisited cities are seeded on
+    first entry by ``dungeon._ensure_city_floors`` so they never look
+    "visited" to other systems before the player actually arrives. The
+    operation is monotonic and idempotent — safe on every load.
+    """
+    floors = player.get("city_floors")
+    if not isinstance(floors, dict) or not floors:
+        return
+    groups = {}
+    for cid, prog in floors.items():
+        if isinstance(prog, dict):
+            # Unknown city ids get their own group rather than falling into
+            # the temperate bucket and borrowing its depth.
+            biome = (CITIES.get(cid, {}).get("biome", "temperate")
+                     if cid in CITIES else f"unknown:{cid}")
+            groups.setdefault(biome, []).append(prog)
+    for entries in groups.values():
+        best = max((_safe_floor(p.get("max_floor", 1)) for p in entries), default=1)
+        for prog in entries:
+            if _safe_floor(prog.get("max_floor", 1)) < best:
+                prog["max_floor"] = best
+    # Keep the legacy global field monotonic as well.
+    best_global = max((_safe_floor(p.get("max_floor", 1))
+                       for p in floors.values() if isinstance(p, dict)), default=1)
+    player["max_floor"] = max(_safe_floor(player.get("max_floor", 1)), best_global)
+
+
 def _get_unique_biomes():
     """Return the set of all unique biome names across all cities.
     Wonderland is excluded — it is a hidden realm that does not count toward ascension."""
@@ -161,8 +229,10 @@ def get_incomplete_biomes(player):
             best_city = None
             best_floor = 0
             for city_id, city_name in biome_cities[biome]:
+                city_data = CITIES.get(city_id, {})
+                start_floor = max(1, int(city_data.get("dungeon_start_floor", 1) or 1))
                 city_prog = player.get("city_floors", {}).get(city_id, {})
-                max_floor = city_prog.get("max_floor", 1)
+                max_floor = city_prog.get("max_floor", start_floor)
                 if max_floor > best_floor:
                     best_floor = max_floor
                     best_city = city_name
@@ -200,6 +270,9 @@ def get_current_city_id(player):
 def check_level_cap_milestone(player, city_id):
     """Check if enough unique biomes have been cleared to the current cap.
     Prints a message when the global milestone is newly reached."""
+    # Floor progression is the main deed trigger for dungeon titles.
+    from titles import check_unlock as _check_title_unlock
+    _check_title_unlock(player)
     current_cap = player.get("level_cap", 10)
     required = get_required_biomes_for_cap(current_cap)
     
@@ -234,6 +307,11 @@ def gain_exp(player, amount):
     amount = int(amount * get_learning_bonus(player))
     # Daily events: Scholar's Day (+25% XP)
     amount = int(amount * get_daily_bonus_multiplier(player, "xp_bonus"))
+    # Deed titles: small player-only XP bonus.
+    from titles import mod as _title_mod
+    _title_xp = _title_mod(player, "xp_pct")
+    if _title_xp > 0:
+        amount = int(amount * (1.0 + _title_xp))
     old_attributes = player["attributes"].copy()
     player["exp"] = player.get("exp", 0) + amount
     leveled = False
@@ -341,8 +419,15 @@ def gain_exp_ally(ally, amount):
         new_val = ally["attributes"][chosen]
 
         # Late-bloomer growth (docs/awakening_design.md Part A) — low-base
-        # girls gain bonus points as they level in the party.
-        growth_msgs = apply_ally_growth(ally)
+        # girls gain bonus points as they level in the party. Each point is
+        # a level-up pick, just like the manual point above.
+        growth_msgs = apply_ally_growth(
+            ally,
+            choose_attr=lambda attrs: _choose_level_attr(
+                display_name(ally), ally["level"], attrs,
+                note="Late Bloomer bonus",
+            )[0],
+        )
 
         # Check for stat milestone notifications (growth gains included)
         milestones = (check_milestone_notification(ally, old_attributes) or []) + growth_msgs

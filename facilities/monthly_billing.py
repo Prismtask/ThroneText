@@ -10,6 +10,7 @@ events.get_month_day(day)[1] == 1).
 """
 
 from events import get_month_day
+from karma import get_bills_mult
 
 
 def is_month_start(day):
@@ -55,7 +56,14 @@ def process_monthly_billing(player, day):
     if not bills:
         return None
 
-    total = sum(amount for _, amount in bills)
+    base_total = sum(amount for _, amount in bills)
+    mult = get_bills_mult(player)
+    total = max(0, int(round(base_total * mult)))
+    # Deed titles: Hearthkeeper trims the monthly upkeep.
+    from titles import mod as _title_mod
+    _upkeep_cut = _title_mod(player, "upkeep_pct")
+    if _upkeep_cut:
+        total = max(0, int(round(total * (1.0 - _upkeep_cut))))
     player["gold"] = player.get("gold", 0) - total
 
     item_lines = "\n".join(f"    • {name}: {amount}g" for name, amount in bills)
@@ -65,6 +73,10 @@ def process_monthly_billing(player, day):
         f"  Total: {total}g\n"
         f"  Gold after payment: {player['gold']}g"
     )
+    if mult != 1.0:
+        desc += f"\n  Karma adjustment: ×{mult:.2f}"
+    if _upkeep_cut:
+        desc += f"\n  Title adjustment: −{round(_upkeep_cut * 100)}%"
 
     return {
         "day": day,

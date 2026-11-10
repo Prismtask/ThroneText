@@ -60,11 +60,10 @@ def generate_room(player):
     if roll < 0.70:
         pack = 2 + min(3, number // 12)
         count = random.randint(max(2, pack - 1), pack)
-        from dungeon import get_random_enemy_key  # lazy — avoid import cycle
+        from dungeon import build_enemy_group  # lazy — avoid import cycle
         level, band_lo = eh.enemy_band_for_room(player, number)
-        enemies = [get_random_enemy_key(level, boss=False, region=None,
-                                        player=player, band_lo=band_lo)
-                   for _ in range(count)]
+        enemies = build_enemy_group(level, count, region=None,
+                                    player=player, band_lo=band_lo)
         return {"type": "combat", "number": number, "enemies": enemies}
     if roll < 0.82:
         return {"type": "shop", "number": number}
@@ -186,8 +185,9 @@ def _play_combat(player, room, combat_override):
 def _play_boss_rush(player, room, superboss_override):
     """One Boss Rush fight (docs §6.4). Flee is blocked — the fight restarts.
 
-    Terminal mode calls the boss combat function directly; the GUI injects
-    ``superboss_override(spec, None)`` which shows the shared CombatScreen.
+    The GUI injects ``superboss_override(spec, None)`` which shows the shared
+    CombatScreen. Without an override (tests/headless) the boss combat
+    function is called directly.
     Rush scaling itself lives in ``event_horizon.apply_enemy_scaling`` (the
     ``rush_mode`` branch), so both paths scale identically.
     """
@@ -585,38 +585,22 @@ def retry_pending_trophies(player):
 
 def post_room_choice(player):
     """Return 'continue' | 'suspend' | 'abandon'. Inventory opens inline (GUI)."""
-    t = _term()
-    if t:
-        while True:
-            choice = t.menu(
-                ["Continue", "Inventory / Stats", "Save and quit", "Abandon the run"],
-                prompt="The distortion waits. What now?", allow_cancel=False)
-            if choice == 1:
-                t.open_inventory()
-                continue
-            if choice == 0:
-                return "continue"
-            if choice == 2:
-                return "suspend"
-            confirm = t.menu(
-                ["Yes — collapse the run", "No — keep descending"],
-                prompt="Abandon the run? All progress, motes, cards and flask buffs are lost.",
-                allow_cancel=False)
-            if confirm == 0:
-                return "abandon"
-
     while True:
-        print("\n[Enter] to continue  [I]nventory/Stats  [S]ave and quit  [A]bandon the run")
-        cmd = input().strip().lower()
-        if cmd == "":
-            return "continue"
-        if cmd == "i":
-            print("Inventory management is only available in GUI mode. Please use the launcher.")
+        choice = _tmenu(
+            ["Continue", "Inventory / Stats", "Save and quit", "Abandon the run"],
+            prompt="The distortion waits. What now?", allow_cancel=False)
+        if choice == 1:
+            t = _term()
+            if t:
+                t.open_inventory()
             continue
-        if cmd == "s":
+        if choice == 2:
             return "suspend"
-        if cmd == "a":
-            confirm = input("Abandon the run? All progress is lost. [y/N] ").strip().lower()
-            if confirm in ("y", "yes"):
-                return "abandon"
-            continue
+        if choice == 0 or choice < 0:
+            return "continue"
+        confirm = _tmenu(
+            ["Yes — collapse the run", "No — keep descending"],
+            prompt="Abandon the run? All progress, motes, cards and flask buffs are lost.",
+            allow_cancel=False)
+        if confirm == 0:
+            return "abandon"

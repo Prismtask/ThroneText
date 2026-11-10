@@ -2,8 +2,10 @@
 from combat.skills import (
     PASSIVE_SKILLS,
     get_class_skill_map, get_skill_mastery_level, get_mastery_bonuses,
-    format_mastery_label,
+    format_mastery_label, get_equipped_skill_ids, MAX_SKILL_LOADOUT,
+    get_passive_skill, can_choose_profession, get_class_capstone_id,
 )
+from resources.skill_loader import PROFESSIONS
 from combat.ally import get_alive_allies
 from combat.ally_skills import (
     get_race_passive, get_innate_skill_def, get_learnable_skill_def,
@@ -19,6 +21,7 @@ def display_skill_book(player):
     term.clear()
     term.print(f"=== {player['name']}'s Skill Book ===")
     term.print(f"Class: {player['class']} | Level: {player.get('level', 1)}")
+    term.print(f"Battle Loadout: {len(get_equipped_skill_ids(player))}/{MAX_SKILL_LOADOUT} equipped")
     term.print("=" * 60)
 
     # ── Player Skills ──
@@ -36,11 +39,26 @@ def display_skill_book(player):
 
 def _display_player_skill_book(player):
     """Display the player's class skills with locked/unlocked status."""
-    # Passive skill
-    passive = PASSIVE_SKILLS.get(player.get("class"))
+    # Passive skill (upgraded by the chosen profession)
+    passive = get_passive_skill(player)
     if passive:
         term.print(f"\n[Player Passive] {passive['name']}")
         term.print(f"    {passive['description']}")
+
+    # Profession status (Phase 3)
+    cls = player.get("class")
+    profs = PROFESSIONS.get(cls, {})
+    if profs:
+        chosen = player.get("profession")
+        if chosen and chosen in profs:
+            pdata = profs[chosen]
+            term.print(f"\n[Profession] {pdata['name']} — {pdata.get('tagline', '')}")
+            other = ", ".join(p['name'] for pid, p in profs.items() if pid != chosen)
+            term.print(f"    Locked out: {other}")
+        elif can_choose_profession(player):
+            term.print("\n[Profession] None chosen yet — visit any Guild to choose (this choice is permanent).")
+        else:
+            term.print("\n[Profession] Unlocks at the Guild once you learn your capstone (Lv 40).")
 
     # Active skills
     skill_map = get_class_skill_map(player)
@@ -49,24 +67,30 @@ def _display_player_skill_book(player):
         return
 
     unlocked = set(player.get("skills", []))
+    equipped_ids = set(get_equipped_skill_ids(player))
     level = player.get("level", 1)
     cooldowns = player.get("skill_cooldowns", {})
     mastery_data = player.get("skill_mastery", {})
 
-    # Group by tier
-    tiers = {
-        "Tier 1 (Level 3-8)": [],
-        "Tier 2 (Level 10-15)": [],
-    }
-
+    # Group by tier bands (wave ladder: launch 3–15, wave 2 at 20–32,
+    # capstone/professions at 40+)
+    bands = [
+        ("Tier 1 (Level 3-8)", 1, 8),
+        ("Tier 2 (Level 10-15)", 9, 15),
+        ("Tier 3 (Level 20-32)", 16, 32),
+        ("Tier 4 (Level 40+)", 33, 999),
+    ]
+    tiers = {label: [] for label, _lo, _hi in bands}
     for sid, sdef in skill_map.items():
         ul = sdef["unlock_level"]
-        if ul <= 8:
-            tiers["Tier 1 (Level 3-8)"].append((sid, sdef))
-        else:
-            tiers["Tier 2 (Level 10-15)"].append((sid, sdef))
+        for label, lo, hi in bands:
+            if lo <= ul <= hi:
+                tiers[label].append((sid, sdef))
+                break
 
     for tier_name, skills in tiers.items():
+        if not skills:
+            continue
         term.print(f"\n--- {tier_name} ---")
         for sid, sdef in skills:
             name = sdef["name"]
@@ -81,6 +105,8 @@ def _display_player_skill_book(player):
             status = ""
             if not is_unlocked:
                 status = " [LOCKED]"
+            elif sid not in equipped_ids:
+                status = " [not equipped]"
             elif is_on_cd:
                 status = f" [CD: {cooldowns[sid]}]"
 
@@ -100,6 +126,16 @@ def _display_player_skill_book(player):
                     term.print(f"      +{bonuses['duration_bonus']} turn to effect duration")
                 if bonuses["extra_effect"]:
                     term.print(f"      Bonus effect at ★★★")
+
+    # The other profession branch (locked out once a choice is made)
+    chosen = player.get("profession")
+    if chosen and chosen in profs:
+        for pid, pdata in profs.items():
+            if pid == chosen:
+                continue
+            term.print(f"\n--- {pdata['name']} (LOCKED — you chose {profs[chosen]['name']}) ---")
+            for sid, sdef in sorted(pdata.get("skills", {}).items(), key=lambda kv: kv[1].get("unlock_level", 0)):
+                term.print(f"  {sdef['name']} (Lv {sdef.get('unlock_level', '?')})")
 
 
 def _display_ally_skill_book(ally):
@@ -207,9 +243,50 @@ def skill_book_menu(player):
         term.print(f"=== {player['name']}'s Skill Book ===")
         choice = term.menu([
             "View Skills",
+            "Manage Battle Loadout",
             "Back"
         ], prompt="What would you like to do?")
         if choice == 0:
             display_skill_book(player)
-        elif choice == 1 or choice == -1:
+        elif choice == 1:
+            _manage_battle_loadout(player)
+        elif choice == 2 or choice == -1:
             break
+
+
+def _manage_battle_loadout(player):
+    """Equip/unequip skills in the Battle Loadout (max 9 for combat)."""
+    skill_map = get_class_skill_map(player)
+    unlocked = [sid for sid in skill_map if sid in set(player.get("skills", []))]
+    if not unlocked:
+        term.print("You have no skills to equip yet.")
+        term.pause()
+        return
+    # Materialise the loadout (missing key = everything equipped).
+    if player.get("skill_loadout") is None:
+        player["skill_loadout"] = list(unlocked)
+    while True:
+        term.clear()
+        equipped = set(get_equipped_skill_ids(player))
+        loadout = player["skill_loadout"]
+        term.print("=== BATTLE LOADOUT ===")
+        term.print(f"Equipped {len(equipped)}/{MAX_SKILL_LOADOUT} — up to {MAX_SKILL_LOADOUT} "
+                   "skills can be brought into combat.")
+        term.print("Unequipped skills keep their mastery and stay in your Skill Book.")
+        term.print("Swap freely outside combat.\n")
+        options = []
+        for sid in unlocked:
+            mark = "[✓]" if sid in equipped else "[  ]"
+            options.append(f"{mark} {skill_map[sid]['name']}")
+        options.append("Done")
+        choice = term.menu(options, prompt="Toggle a skill:")
+        if choice < 0 or choice >= len(unlocked):
+            break
+        sid = unlocked[choice]
+        if sid in equipped:
+            loadout.remove(sid)
+        elif len(equipped) >= MAX_SKILL_LOADOUT:
+            term.print(f"Loadout full ({MAX_SKILL_LOADOUT} skills). Unequip one first.")
+            term.pause()
+        else:
+            loadout.append(sid)

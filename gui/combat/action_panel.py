@@ -7,6 +7,7 @@ combat/action_menu.py. Handles cooldown grey-out and target-selection mode.
 
 import tkinter as tk
 
+import karma
 from gui.theme import Theme
 from combat.action_menu import get_action_menu
 from combat.ally import _ally_action_menu
@@ -21,7 +22,9 @@ class ActionPanel(tk.Frame):
 
     # Button rows the panel ALWAYS reserves (see _reserve_rows) so 1-row and
     # 2-row menus render at identical height — spare room from the HUD rework.
-    MIN_ROWS = 2
+    # Wave 2 (2026-10-15): 9 skills + utility buttons (and the gloves' 9
+    # workshops + Furioso) wrap to 3 rows, so the reservation is now 3.
+    MIN_ROWS = 3
 
     def __init__(self, parent, on_action=None, **kwargs):
         """
@@ -195,27 +198,48 @@ class ActionPanel(tk.Frame):
         else:
             self.cooldown_label.config(text="")
 
-    def set_capture_choice_actions(self, on_action):
-        """Show 3 buttons for capture duplicate: Sell / Release / Bond."""
+    def set_capture_choice_actions(self, on_action, player=None, house_full=False):
+        """Show the capture disposition buttons (Karma-aware)."""
         # Clear existing
         for widget in self.btn_container.winfo_children():
             widget.destroy()
         self._buttons.clear()
 
-        self.section_label.config(
-            text="⌖ Duplicate Monster Girl Captured — Choose Action",
-            fg="#e67e22",
-        )
+        karma_on = karma.is_enabled(player)
+        if house_full:
+            title = "⌖ House Full — Choose What Happens to Her"
+            if karma_on:
+                choices = [
+                    ("1", "Sell to a Broker"),
+                    ("2", "Sell to a Slaver (−5 Karma)"),
+                    ("3", "Release (+1 Karma)"),
+                ]
+            else:
+                choices = [
+                    ("1", "Sell to a Broker"),
+                    ("2", "Release to Wild"),
+                ]
+        else:
+            title = "⌖ Duplicate Monster Girl Captured — Choose Action"
+            if karma_on:
+                choices = [
+                    ("1", "Sell to a Broker"),
+                    ("2", "Sell to a Slaver (−5 Karma)"),
+                    ("3", "Release (+1 Karma)"),
+                    ("4", "Bond (+20 Affection)"),
+                ]
+            else:
+                choices = [
+                    ("1", "Sell to a Broker"),
+                    ("2", "Release to Wild"),
+                    ("3", "Bond (+20 Affection)"),
+                ]
+
+        self.section_label.config(text=title, fg="#e67e22")
         self.config(bg=Theme.BG_DARK)
         self.btn_container.config(bg=Theme.BG_DARK)
         self.target_instruction.config(text="")
         self.cooldown_label.config(text="")
-
-        choices = [
-            ("1", "Sell for Gold"),
-            ("2", "Release to Wild"),
-            ("3", "Bond (+20 Affection)"),
-        ]
         row_frame = tk.Frame(self.btn_container, bg=Theme.BG_DARK)
         row_frame.pack(fill=tk.X, pady=1)
         for key, label in choices:

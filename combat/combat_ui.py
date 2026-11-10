@@ -4,10 +4,38 @@ from combat.status_effects import format_player_status_line
 from combat.action_menu import get_action_menu
 from combat.weapon.abyss_fang import is_abyssal_tempo_active, get_abyss_fang_cooldown_display
 from combat.weapon.captain_cutlass import get_captain_cutlass_cooldown_display
+from combat.weapon.moonlight_greatsword import get_moonlight_status_display
 from combat.ally import format_ally_status_line, _ally_action_menu
 from combat.ally_skills import get_all_ally_skills
 from combat.skills import get_all_unlocked_skills
 from combat.combat_io import c_print, c_input, c_clear
+
+
+# ── Deferred dialogue (played by the dungeon screen) ────────────────────────
+# Heroine endings used to print their prose into the combat log, where the
+# GUI's 3-line ticker made it unreadable and the story was split between the
+# dungeon log (arena scene) and the combat screen. Combat modules keep the
+# mechanics (promotion, flags) in the fight and hand the prose to the dungeon
+# screen, which prints it in its own log once the battle is over (2026-11-10).
+
+_PENDING_DIALOGUE_KEY = "_pending_combat_dialogue"
+
+
+def defer_dialogue(player, lines, title=""):
+    """Queue dialogue lines for the dungeon screen to play after combat."""
+    cleaned = [str(line) for line in (lines or [])]
+    if not cleaned:
+        return
+    payload = player.setdefault(_PENDING_DIALOGUE_KEY,
+                                {"title": title, "lines": []})
+    if title:
+        payload["title"] = title
+    payload["lines"].extend(cleaned)
+
+
+def take_deferred_dialogue(player):
+    """Pop and return the queued dialogue payload ({"title","lines"}) or None."""
+    return player.pop(_PENDING_DIALOGUE_KEY, None)
 
 
 def format_enemy_status_line(enemy, extra=""):
@@ -106,6 +134,11 @@ def _get_entity_buff_tags(entity):
     if potion_sickness > 0:
         statuses.append(f"SICK×{potion_sickness}")
 
+    # Moonlight Greatsword — empowered basics (magical AoE waves)
+    moon_turns = entity.get("moonlight_turns", 0)
+    if moon_turns > 0:
+        statuses.append(f"MOON×{moon_turns}")
+
     # Debuff types from active_debuffs
     debuff_map = {
         "poison": "PSN",
@@ -158,18 +191,25 @@ def _get_entity_buff_tags(entity):
     if fatigue > 0:
         roman = {1: "I", 2: "II", 3: "III"}.get(int(fatigue), str(fatigue))
         statuses.append(("\U0001F441 " if fatigue >= 2 else "") + f"FATIGUE {roman}")
+    # Companion stress bands — the ally-side counterpart to the player's
+    # fatigue (Weary/Frayed/Burned Out penalties, see combat/party_stress.py).
+    if entity.get("is_ally"):
+        from combat.party_stress import stress_tag
+        stress_tag_text = stress_tag(entity)
+        if stress_tag_text and stress_tag_text not in statuses:
+            statuses.append(stress_tag_text)
     # Expose stacks (enemy only)
     expose = entity.get("expose_stacks", 0)
     if expose > 0:
         statuses.append(f"EXP×{expose}")
 
-    # Prescript Ledger (GRC/KRM on wearers; Target mark on the enemy)
+    # Prescript Ledger (GRC/DBT on wearers; Target mark on the enemy)
     grace = entity.get("prescript_grace_stacks", 0)
     if grace > 0:
         statuses.append(f"GRC×{grace}")
-    karma = entity.get("prescript_karma_stacks", 0)
-    if karma > 0:
-        statuses.append(f"KRM×{karma}")
+    debt = entity.get("prescript_karma_stacks", 0)
+    if debt > 0:
+        statuses.append(f"DBT×{debt}")
     if entity.get("prescript_mark"):
         statuses.append("📜TGT")
 
@@ -246,7 +286,13 @@ def _get_entity_buff_tags(entity):
         elif btype == "power_buff":
             tag = f"PWR+{int(b.get('value', 0) * 100)}%"
         elif btype == "well_rested":
-            tag = "RST"
+            tag = "SHR" if b.get("shared_night") else "RST"
+        elif btype == "dream_blessed":
+            tag = "DRM"
+        elif btype == "shared_night":
+            tag = "SHR"
+        elif btype == "beloved":
+            tag = "BLV"
         elif btype == "arcane_ward":
             tag = "MYS"
         elif btype == "arcane_blessing":
@@ -256,6 +302,14 @@ def _get_entity_buff_tags(entity):
         elif btype == "eh_ele_dmg":
             # Prism flasks — Event Horizon elemental damage (docs §3.2)
             tag = f"ELM+{round(b.get('value', 0) * 100)}%"
+        elif btype == "crit_damage":
+            tag = f"CDMG+{int(b.get('value', 0) * 100)}%"
+        elif btype == "elemental_dmg":
+            tag = f"ELM+{int(b.get('value', 0) * 100)}%"
+        elif btype == "regen_pct":
+            tag = f"REG+{b.get('value', 0) * 100:g}%"
+        elif btype == "mark_damage_bonus":
+            tag = f"MRK+{int(b.get('value', 0) * 100)}%"
         elif btype == "fear_immunity":
             tag = "FER-IMN"
         elif btype == "barrier":
@@ -312,6 +366,11 @@ def _get_entity_elem_tags(entity, is_enemy=False):
     if weapon:
         from combat.elemental import get_attack_element
         attack_el = get_attack_element(entity, weapon)
+        # Moonlight Greatsword: the damage path uses magical while empowered,
+        # so the HUD tag must not keep advertising the physical base element.
+        from combat.weapon.moonlight_greatsword import is_moonlight_active
+        if is_moonlight_active(entity):
+            attack_el = "magical"
     else:
         best_dmg_el = None
         best_dmg_val = 1.1
@@ -365,6 +424,8 @@ _RESET = "\033[0m"
 
 def format_skill_elemental_tag(skill_def):
     """Return a colored elemental tag string for a skill, or '' if none/neutral."""
+    if skill_def.get("elements"):
+        return " [MULTI]"
     element = skill_def.get("elemental")
     if not element:
         return ""
@@ -423,9 +484,14 @@ def format_combat_hud_data(player, enemies, active_ally=None, header=""):
     # Party data
     party_data = []
 
-    # Player (always front)
+    # Player (always front). `name` stays the base name for flash/damage
+    # matching; `display_name` carries the compact title honourific.
+    from titles import format_name as _format_title_name
     party_data.append({
         "name": player["name"],
+        "display_name": _format_title_name(
+            player, "compact",
+            show_title=player.get("_show_title_beside_name", True)),
         "hp": player["current_hp"],
         "max_hp": _max_hp,
         "is_active": active_ally is None,
@@ -513,6 +579,9 @@ def format_combat_hud_data(player, enemies, active_ally=None, header=""):
         cd_msg2 = get_captain_cutlass_cooldown_display(player)
         if cd_msg2:
             cooldowns.append(cd_msg2)
+        moon_msg = get_moonlight_status_display(player)
+        if moon_msg:
+            cooldowns.append(moon_msg)
         skill_cds = player.get('skill_cooldowns', {})
         if skill_cds:
             unlocked = get_all_unlocked_skills(player)
@@ -521,6 +590,9 @@ def format_combat_hud_data(player, enemies, active_ally=None, header=""):
                 if cd > 0:
                     cooldowns.append(f"({sdef['name']} recharging: {cd} turn(s))")
     else:
+        moon_msg = get_moonlight_status_display(active_ally)
+        if moon_msg:
+            cooldowns.append(moon_msg)
         skill_cds = active_ally.get('skill_cooldowns', {})
         if skill_cds:
             all_skills = get_all_ally_skills(active_ally)
@@ -657,6 +729,10 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
         if cd_msg2:
             c_print(f"|  {cd_msg2:<66}|")
 
+        moon_msg = get_moonlight_status_display(player)
+        if moon_msg:
+            c_print(f"|  {moon_msg:<66}|")
+
         # Skill cooldown messages
         skill_cds = player.get('skill_cooldowns', {})
         if skill_cds:
@@ -667,7 +743,10 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
                     cd_msg = f"({sdef['name']} recharging: {cd} turn(s))"
                     c_print(f"|  {cd_msg:<66}|")
     else:
-        # Ally skill cooldown messages
+        # Ally Moonlight + skill cooldown messages
+        moon_msg = get_moonlight_status_display(active_ally)
+        if moon_msg:
+            c_print(f"|  {moon_msg:<66}|")
         skill_cds = active_ally.get('skill_cooldowns', {})
         if skill_cds:
             all_skills = get_all_ally_skills(active_ally)
@@ -689,11 +768,11 @@ def print_combat_hud(player, enemies, active_ally=None, header=""):
 
 
 def print_superboss_header(player, floor, boss_name, extra_gimmick_line=""):
-    time_str = format_time(player)
+    time_str = current_time_label(player)
     if floor is not None:
-        c_print(f" Floor {floor} - Superboss: {boss_name} | Time: {time_str}")
+        c_print(f" Floor {floor} - Superboss: {boss_name} | {time_str}")
     else:
-        c_print(f" Superboss: {boss_name} | Time: {time_str}")
+        c_print(f" Superboss: {boss_name} | {time_str}")
     if extra_gimmick_line:
         c_print(extra_gimmick_line)
     status_line = format_player_status_line(player)
@@ -716,12 +795,35 @@ def print_turn_order(turn_order, current_idx=None):
     c_print(f"  Turn Order: {' -> '.join(entries)}")
 
 
+def current_time_label(player):
+    """Current in-game time for combat headers.
+
+    The block model replaced the legacy HH:MM clock, so headers show the same
+    `☀ Morning ▮▮▮▮▮▮▮▯` track the top bar uses instead of a stale clock
+    reading. Wonderland is a time pocket (no track) — its whimsical clock
+    flavour is kept as the fallback.
+    """
+    try:
+        from time_blocks import format_block_track
+        track = format_block_track(player, include_day=False)
+        if track:
+            return track
+    except Exception:
+        pass
+    return format_time(player)
+
+
 def print_round_header(round_num, floor=None, room_num=None, total_rooms=None, time_str=None):
     """Print a clean round header."""
     parts = [f">> ROUND {round_num}"]
-    if floor is not None and room_num is not None and total_rooms is not None:
-        parts.append(f"Floor {floor} | Room {room_num}/{total_rooms}")
+    if floor is not None:
+        if room_num is not None and total_rooms is not None:
+            parts.append(f"Floor {floor} | Room {room_num}/{total_rooms}")
+        else:
+            # Superbosses have no room counter — show the floor alone.
+            parts.append(f"Floor {floor}")
     if time_str:
-        parts.append(f"Time: {time_str}")
+        # Already the phase track (`☀ Morning ▮▮▮▮▮▮▮▯`) — no clock label.
+        parts.append(time_str)
     c_print("  " + " | ".join(parts))
     c_print("  " + "-" * 66)

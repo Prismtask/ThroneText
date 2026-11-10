@@ -113,7 +113,6 @@ def combat_queen_of_hearts(player, floor=None, enemies=None):
 
     # ── Opening narration ─────────────────────────────────────────────────
     c_clear()
-    c_print("=" * 60)
     c_print("You push through a hedge of perfectly manicured roses —")
     c_print("half red, half white. The gardeners flee at your approach,")
     c_print("their paintbrushes clattering to the ground.")
@@ -123,7 +122,6 @@ def combat_queen_of_hearts(player, floor=None, enemies=None):
     c_print("wine. Two Card Soldiers snap to attention at her sides.")
     c_print("")
     c_print('"WHO DARES TRAMPLE MY ROSES?"')
-    c_print("=" * 60)
     c_print(f"\nQueen of Hearts — HP: {boss['hp']}")
     for e in enemies:
         if _is_soldier(e):
@@ -152,8 +150,7 @@ def combat_queen_of_hearts(player, floor=None, enemies=None):
 
         # ── Mercy Rule (5% HP) ────────────────────────────────────────
         if hp_pct <= 0.05 and not queen.get("captured"):
-            c_print("\n" + "─" * 50)
-            c_print("The Queen throws her crown to the ground.")
+            c_print("\nThe Queen throws her crown to the ground.")
             c_print("Cards scatter everywhere like startled birds.")
             c_print("")
             c_print('"Enough! ENOUGH! I\'ll behave! Just... just don\'t write me out.')
@@ -161,7 +158,6 @@ def combat_queen_of_hearts(player, floor=None, enemies=None):
             c_print(' They don\'t even get to be FOOTNOTES!"')
             c_print("")
             c_print("She sinks onto her throne, suddenly very small.")
-            c_print("─" * 50)
             c_input("Press Enter...")
             queen["hp"] = 0  # Defeat the Queen
             return "victory"
@@ -169,9 +165,7 @@ def combat_queen_of_hearts(player, floor=None, enemies=None):
         # ── Temper Tantrum (30% HP) ───────────────────────────────────
         if hp_pct <= 0.30 and not ctx["temper_triggered"]:
             ctx["temper_triggered"] = True
-            c_print("\n" + "!" * 50)
             c_print('"THIS IS COMPLETELY UNACCEPTABLE!!!"')
-            c_print("!" * 50)
 
             # Clear ALL buffs and debuffs on all combatants
             for e in elist:

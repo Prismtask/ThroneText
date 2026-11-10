@@ -161,23 +161,16 @@ def _collect_attack_buff_mult(actor, messages):
 
     - ``power_buff`` (Overclock / Tinker Enhancement): consumed once per
       action, exactly like basic attacks and ally skills.
-    - ``damage_boost`` buffs (Frabjous Day, rift DMG flasks): multiplicative
-      and non-consuming.
+    - ``damage_boost`` buffs (Frabjous Day, rift DMG flasks): non-consuming.
 
-    Historically the workshop path ignored both while every other attack
-    path applied them — a wiring gap, not a design choice.
+    Percentage sources stack additively (1.00 + every source).
     """
-    mult = 1.0
-    for buff in actor.get("active_buffs", [])[:]:
-        if buff.get("type") == "power_buff":
-            val = buff.get("value", 0)
-            mult *= 1.0 + val
-            actor["active_buffs"].remove(buff)
-            messages.append(f"  ⚡ Empowered! Damage increased by {int(val * 100)}%!")
-            break
-    for buff in actor.get("active_buffs", []):
-        if buff.get("type") == "damage_boost":
-            mult *= 1.0 + buff.get("value", 0)
+    from combat.status_effects import get_damage_buff_multiplier
+    _buff_msgs = []
+    mult = get_damage_buff_multiplier(
+        actor, consume_power_buff=True, messages=_buff_msgs
+    )
+    messages.extend(f"  ⚡ {msg}" for msg in _buff_msgs)
     return mult
 
 

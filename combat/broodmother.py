@@ -377,8 +377,7 @@ def combat_broodmother(player, floor=None, enemies=None):
             enemies.append(boss)
 
     # ── Opening narration ────────────────────────────────────────────
-    c_print("\n" + "=" * 60)
-    c_print("The air grows thick with the stench of rot and venom.")
+    c_print("\nThe air grows thick with the stench of rot and venom.")
     c_print("Hundreds of tiny legs skitter in the darkness above and below.")
     c_print("A monstrous, bloated silhouette rises — crowned with thrashing")
     c_print("limbs and dripping fangs. Countless spider eyes gleam with")
@@ -389,7 +388,6 @@ def combat_broodmother(player, floor=None, enemies=None):
     c_print("This creature has ruled this pit for centuries. It will not")
     c_print("give it up without a fight.")
     c_print(f"\n  Broodmother Vileheart — HP: {boss['hp']}")
-    c_print("=" * 60)
     c_input("\nPress Enter to face the Broodmother...")
 
     # ── Context state ─────────────────────────────────────────────────
@@ -442,14 +440,12 @@ def combat_broodmother(player, floor=None, enemies=None):
             ctx["boss_escaped_data"] = boss
             elist.remove(boss)
 
-            c_print("\n" + "-" * 40)
-            c_print("The Broodmother SCREECHES — a sound that rattles your teeth!")
+            c_print("\nThe Broodmother SCREECHES — a sound that rattles your teeth!")
             c_print("She skitters UP the walls, vanishing into the darkness above.")
             c_print("")
             c_print("From every corner, egg sacs BURST open!")
             c_print("Four Spiderlings and a massive VENOMWEAVER descend!")
             c_print('"Protect the Brood!" their chittering seems to say.')
-            c_print("-" * 40)
             c_input("\nPress Enter...")
 
             # Spawn minions
@@ -471,14 +467,12 @@ def combat_broodmother(player, floor=None, enemies=None):
             ctx["_consume_brood_cd"] = 3
             ctx["boss_enraged_turns"] = 999  # Permanent 2 actions
 
-            c_print("\n" + "-" * 40)
-            c_print("The Broodmother's vile heart PULSES with green light!")
+            c_print("\nThe Broodmother's vile heart PULSES with green light!")
             c_print("The walls of the nest THROB — alive, aware, and FURIOUS.")
             c_print("")
             c_print("Her venom grows darker. Her movements become frantic,")
             c_print("desperate. This is the last stand of a dying queen.")
             c_print('"The nest will NOT fall!" her shriek seems to promise.')
-            c_print("-" * 40)
             c_input("\nPress Enter...")
             return
 
@@ -507,12 +501,10 @@ def combat_broodmother(player, floor=None, enemies=None):
             ctx["_heart_pulse_charging"] = True
             ctx["_heart_pulse_dmg_taken"] = 0
             ctx["_heart_pulse_hp_at_start"] = boss["hp"]  # Track HP for damage calc
-            c_print("\n" + "!" * 50)
-            c_print("The Broodmother's vile heart glows BRIGHT GREEN!")
+            c_print("\nThe Broodmother's vile heart glows BRIGHT GREEN!")
             c_print("Pulses of venomous light fill the chamber.")
             c_print('She is channeling HEART PULSE — her final, desperate act!')
             c_print(f"  ⚡ Deal {HEART_PULSE_DMG_NEEDED}+ damage this turn to INTERRUPT!")
-            c_print("!" * 50)
 
     def enemy_turn_hook(enemy, ctx, pl, p_con, defending, **kwargs):
         """AI-driven turn logic for all phases."""
@@ -630,9 +622,9 @@ def combat_broodmother(player, floor=None, enemies=None):
             if not minions_alive or timer <= 0:
                 # Broodmother returns
                 if not minions_alive and timer > 0:
-                    c_print("\n[GIMMICK] You slaughtered the swarm!")
+                    c_print("\n⚙ [GIMMICK] You slaughtered the swarm!")
                 else:
-                    c_print("\n[GIMMICK] Time's up! The Broodmother is done waiting!")
+                    c_print("\n⚙ [GIMMICK] Time's up! The Broodmother is done waiting!")
 
                 c_print("Broodmother Vileheart CRASHES down from the ceiling, ENRAGED!")
                 c_print("The impact sends shockwaves through the nest!")
@@ -762,8 +754,7 @@ def combat_broodmother(player, floor=None, enemies=None):
     if result == "victory":
         # Guard: only award loot once per save
         if not player.get("boss_defeated_broodmother"):
-            c_print("\n" + "=" * 60)
-            c_print("The Broodmother lets out one final, shuddering screech.")
+            c_print("\nThe Broodmother lets out one final, shuddering screech.")
             c_print("Her massive body crumples. The nest falls silent.")
             c_print("")
             c_print("The egg sacs stop pulsing. The skittering in the walls")
@@ -773,7 +764,6 @@ def combat_broodmother(player, floor=None, enemies=None):
             c_print("At the center of her thorax, something glints in the dark —")
             c_print("her crystallized heart, still warm, still pulsing faintly.")
             c_print("You reach out and claim it.")
-            c_print("=" * 60)
 
             # Grant loot
             from resources.items import build_item

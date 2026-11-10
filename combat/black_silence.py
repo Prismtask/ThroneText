@@ -237,11 +237,9 @@ def _execute_boss_workshop(boss, player, workshop_id, ctx, defending):
 
 def _execute_boss_furioso(boss, player, ctx, defending):
     """Boss executes Furioso — 9 attacks at 0.75x, effects at 50% potency."""
-    c_print("\n" + "=" * 50)
     c_print("⚔️  The Black Silence extends both hands.")
     c_print("    Nine spectral weapons fan out — a halo of steel and sorrow.")
     c_print('    "FURIOSO."')
-    c_print("=" * 50)
 
     p_con = compute_player_stats(player)[1]
     furioso_mult = 0.75
@@ -330,8 +328,7 @@ def _execute_boss_furioso(boss, player, ctx, defending):
 
 def _trigger_revival(boss, ctx):
     """Trigger the revival sequence."""
-    c_print("\n" + "-" * 40)
-    c_print("The Black Silence collapses. The gloves fall still.")
+    c_print("\nThe Black Silence collapses. The gloves fall still.")
     c_input("\nPress Enter...")
     c_print("...")
     c_input("Press Enter...")
@@ -341,7 +338,6 @@ def _trigger_revival(boss, ctx):
     c_print("eyes that have seen everything and lost more.")
     c_print('"\\"That\'s that, and this is this.\\""')
     c_print("The gloves ignite. All nine voices scream at once.")
-    c_print("-" * 40)
 
     # Restore HP
     max_hp = boss.get("max_hp", 500)
@@ -394,8 +390,7 @@ def combat_black_silence(player, floor=None, enemies=None):
             enemies.append(boss)
 
     # Opening narration
-    c_print("\n" + "=" * 60)
-    c_print("You find yourself in a ruined workshop — or perhaps nine workshops,")
+    c_print("\nYou find yourself in a ruined workshop — or perhaps nine workshops,")
     c_print("collapsed into one another like a deck of cards shuffled by grief.")
     c_print("")
     c_print("A figure stands in the center. Black coat. Black gloves. No face —")
@@ -404,7 +399,6 @@ def combat_black_silence(player, floor=None, enemies=None):
     c_print("They do not speak. They do not need to. The gloves clench.")
     c_print("")
     c_print("Nine names are stitched into the leather. They whisper.")
-    c_print("=" * 60)
     c_print(f"\n  The Black Silence — HP: {boss['hp']}")
     c_input("\nPress Enter to face the Silence...")
 
@@ -444,14 +438,12 @@ def combat_black_silence(player, floor=None, enemies=None):
                 b["dex_mod"] = b.get("dex_mod", 0) + PHASE2_DEX_BONUS
                 ctx["phase2_dex_bonus_applied"] = True
 
-            c_print("\n" + "-" * 40)
-            c_print("The Black Silence staggers. The mask cracks —")
+            c_print("\nThe Black Silence staggers. The mask cracks —")
             c_print("not physically, but in the way reality bends around them.")
             c_print("They roll their shoulders.")
             c_print("")
             c_print("A fifth glove materializes from shadow. Then a sixth.")
             c_print('"No more holding back."')
-            c_print("-" * 40)
             c_input("\nPress Enter...")
 
         # Re-roll workshops
@@ -563,8 +555,7 @@ def combat_black_silence(player, floor=None, enemies=None):
     if result == "victory":
         # Guard: only award loot once per save
         if not player.get("boss_defeated_black_silence"):
-            c_print("\n" + "=" * 60)
-            c_print("The Black Silence kneels. The gloves fall still.")
+            c_print("\nThe Black Silence kneels. The gloves fall still.")
             c_print("")
             c_print("For a long moment, there is only silence — not the silence")
             c_print("of absence, but the silence of peace. Of an oath finally fulfilled.")
@@ -574,7 +565,6 @@ def combat_black_silence(player, floor=None, enemies=None):
             c_print("")
             c_print("They press the gloves into your hands.")
             c_print("They are warm. They are waiting.")
-            c_print("=" * 60)
 
             # Grant loot
             from resources.items import build_item

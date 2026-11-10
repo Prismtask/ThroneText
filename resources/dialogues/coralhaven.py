@@ -63,7 +63,7 @@ CORALHAVEN_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep to the sound of gentle waves.",
-        "Eight hours of peace. The reef protects.",
+        "A night of peace. The reef protects.",
         "Dream of colorful fish and calm waters.",
         "The inn is safe. The sea is kind tonight.",
     ],

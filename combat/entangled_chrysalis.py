@@ -1307,8 +1307,7 @@ def combat_entangled_chrysalis(player, floor=None, enemies=None):
                 enemies.append(shard)
 
     # Opening narration
-    c_print("\n" + "=" * 60)
-    c_print("The chamber stretches beyond what geometry should allow. Three hourglasses")
+    c_print("\nThe chamber stretches beyond what geometry should allow. Three hourglasses")
     c_print("hover at its vertices — one dripping amber sand upward, one pulsing with")
     c_print("silver light, one bleeding violet grains into an infinite abyss.")
     c_print("")
@@ -1320,7 +1319,6 @@ def combat_entangled_chrysalis(player, floor=None, enemies=None):
     c_print("What emerges is not a creature. It is a moment — stretched across")
     c_print("past, present, and future simultaneously. Wings of fractured glass.")
     c_print("Eyes that have seen every version of this fight. Every outcome.")
-    c_print("=" * 60)
     c_input("\nPress Enter to face the Entangled One...")
 
     # Shard HP snapshots
@@ -1397,8 +1395,7 @@ def combat_entangled_chrysalis(player, floor=None, enemies=None):
         # Guard: only award loot once per save
         if not player.get("boss_defeated_entangled_chrysalis"):
             # Victory narration
-            c_print("\n" + "=" * 60)
-            c_print("The three hourglasses crack simultaneously. Sand — amber, silver, violet")
+            c_print("\nThe three hourglasses crack simultaneously. Sand — amber, silver, violet")
             c_print("spills across the chamber floor and evaporates into mist.")
             c_print("")
             c_print("Chrysalis lowers its head. The wings fold. For a single, perfect moment,")
@@ -1408,13 +1405,13 @@ def combat_entangled_chrysalis(player, floor=None, enemies=None):
             c_print("")
             c_print("The creature dissolves into threads of light. They weave themselves into")
             c_print("a mantle that settles gently across your shoulders.")
-            c_print("=" * 60)
 
             # Loot: Chronoweave Mantle (100%) + Fractured Hourglass (100%)
             from resources.items import build_item
             from inventory_ui import prompt_acquire_item
             mantle = build_item("chronoweave_mantle", "unique")
-            hourglass = build_item("fractured_hourglass", "legendary")
+            # Unique template — rarity comes from the registry, not the roll.
+            hourglass = build_item("fractured_hourglass")
 
             c_print(f"\n  🎁 Loot: {mantle['name']}")
             c_print(f"  🎁 Loot: {hourglass['name']}")

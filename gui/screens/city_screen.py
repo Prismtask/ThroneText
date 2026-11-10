@@ -6,10 +6,14 @@ Travel, Dungeon, and Save & Quit actions.
 """
 
 import tkinter as tk
+import tkinter.font as tkfont
+
+import karma
+from karma_dialogue import service_line
 
 from gui.screens.base_screen import BaseScreen
 from gui.theme import Theme
-from gui.widgets.confirm_dialog import confirm_dialog, ok_dialog
+from gui.widgets.confirm_dialog import choice_dialog, confirm_dialog, ok_dialog
 from gui.widgets.hp_bar import HPBar
 
 from resources.cities import CITIES
@@ -18,6 +22,46 @@ from save_load import save_game
 from utils import display_name
 from events import format_date, get_event_queue_events
 from combat.combat_ui import _get_entity_buff_tags
+
+
+# The hero card is laid out for a full 8-actor party. Each member box uses
+# this fixed slot size, so a 2-member party does not stretch into huge boxes
+# and an 8-member party still fits without overflow.
+HERO_CARD_MAX_SLOTS = 8          # == combat.ally.MAX_PARTY_SIZE (player + 7)
+# Worst-case non-box width at 8 members: gaps + front/back dividers + margin.
+HERO_ROW_EXTRAS_MAX = 8 * (HERO_CARD_MAX_SLOTS - 1) + 15 + 32 + 10
+
+
+def _fit_text_to_width(text, font, max_width, ellipsis="\u2026"):
+    """Truncate `text` with an ellipsis so its rendered width fits `max_width`.
+
+    Used by the single-row party card: character names and titles are free
+    text, and a long one used to push the card past the window edge.
+    """
+    if not text:
+        return ""
+    if max_width <= 0:
+        return ""
+    try:
+        measure = tkfont.Font(font=font).measure
+    except Exception:
+        # No Tk root yet (e.g. headless call) — leave the text untouched.
+        return text
+    if measure(text) <= max_width:
+        return text
+    ell_width = measure(ellipsis)
+    if ell_width > max_width:
+        return ""
+    lo, hi = 0, len(text)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if measure(text[:mid]) + ell_width <= max_width:
+            lo = mid
+        else:
+            hi = mid - 1
+    if lo <= 0:
+        return ellipsis
+    return text[:lo].rstrip() + ellipsis
 
 
 class CityScreen(BaseScreen):
@@ -29,25 +73,8 @@ class CityScreen(BaseScreen):
         self._update_top_bar()
         self.sm.clear_log()
 
-        # Vesper Erebus first contact (docs/event_horizon_design.md §6.1) —
-        # deferred so the city screen finishes building first.
-        if self.player:
-            self.after(700, self._maybe_event_horizon_intro)
-
-        # Show any queued dungeon events — a level-up style popup displays
-        # them (name, day, duration, description), while the session log
-        # keeps the history for the 📜 popup.
-        if self.player:
-            events = get_event_queue_events(self.player)
-            if events:
-                from events import format_event_alert
-                for evt in events:
-                    self.sm.log(format_event_alert(evt), category="event")
-                from gui.widgets.event_dialog import show_event_notice
-                _root = self.sm.root
-                # Defer so the city screen finishes building first
-                _root.after(200, lambda: show_event_notice(
-                    events, day_text=format_date(self.player), parent=_root))
+        # Arrival checks run in order: Karma gate first, then story beats /
+        # Event Horizon. A low-Karma gate must never stack with a story overlay.
 
         # ── Main layout ────────────────────────────────────────────────────────
         self.content = self.styled_frame(self)
@@ -81,7 +108,9 @@ class CityScreen(BaseScreen):
         receptionist_lines = get_city_dialogues(self.city_id, "receptionist").get("enter", [])
         if receptionist_lines:
             import random as _random
-            dialogue = _random.choice(receptionist_lines)
+            dialogue = service_line(self.player, "receptionist", self.city_id)
+            if not dialogue:
+                dialogue = _random.choice(receptionist_lines)
             tk.Label(
                 self.content,
                 text=f'"{dialogue}"',
@@ -167,10 +196,10 @@ class CityScreen(BaseScreen):
         # ── Keyboard shortcuts ─────────────────────────────────────────────
         self._setup_city_keys()
 
-        # ── Story beats ────────────────────────────────────────────────────
-        # Scheduled after build so navigation callbacks stay clean; fires on
-        # every city entry (travel, dungeon exits, post-floor, menu loads).
-        self.after(200, self._check_story_beats)
+        # ── Arrival checks ─────────────────────────────────────────────────
+        # Deferred so navigation callbacks stay clean. The gate is one-shot
+        # per travel/menu arrival (flag set by the travel/load paths).
+        self.after(50, self._begin_arrival)
 
     def _setup_city_keys(self):
         """Bind keyboard shortcuts for city services and actions."""
@@ -221,6 +250,252 @@ class CityScreen(BaseScreen):
             positions = CITY_SERVICE_POSITIONS.get(self.city_id, {})
             self.city_map.refresh(self.city_id, self.city, positions)
 
+    # ── Karma gate (Phase 2) ──────────────────────────────────────────────────
+
+    def _begin_arrival(self):
+        """Run the one-shot gate check, then resume normal city arrivals."""
+        if not self.winfo_exists():
+            return
+        if self._start_karma_gate():
+            return
+        self._resume_arrival()
+
+    def _resume_arrival(self):
+        """Show queued world events, then schedule story beats / EH intro."""
+        if not self.winfo_exists():
+            return
+        self._show_queued_events()
+        self.after(200, self._check_story_beats)
+        if self.player:
+            self.after(700, self._maybe_event_horizon_intro)
+
+    def _show_queued_events(self):
+        """Display queued dungeon/world events once the gate is resolved."""
+        if not self.player:
+            return
+        events = get_event_queue_events(self.player)
+        if not events:
+            return
+        from events import format_event_alert
+        for evt in events:
+            self.sm.log(format_event_alert(evt), category="event")
+        from gui.widgets.event_dialog import show_event_notice
+        show_event_notice(
+            events,
+            day_text=format_date(self.player),
+            parent=self.sm.root,
+        )
+
+    def _start_karma_gate(self):
+        p = self.player
+        if not p:
+            return False
+        karma.ensure_state(p)
+        gate = p["karma_gate"]
+        if not gate.pop("check_pending", False):
+            return False
+        response = karma.get_gate_response(p, self.city_id)
+        if not response:
+            return False
+        self._show_karma_gate(response)
+        return True
+
+    def _show_karma_gate(self, response):
+        tier = response["tier"]
+        fee = int(response["fee"])
+        gold = max(0, int(self.player.get("gold", 0) or 0))
+        karma_tier = karma.get_karma_tier(self.player)
+
+        if tier == "warning":
+            heading = "The Gate Captain Stops You"
+            details = (
+                f"Karma: {karma_tier['label']} ({karma.get_karma(self.player):+d})\n\n"
+                "Your reputation has preceded you. This once, the captain offers "
+                f"to overlook it for a {fee}-gold processing fee."
+            )
+        elif tier == "suspect":
+            heading = "The Watch Is Waiting"
+            details = (
+                f"Karma: {karma_tier['label']} ({karma.get_karma(self.player):+d})\n\n"
+                f"They name a fee of {fee} gold. Pay it, or turn away."
+            )
+        elif tier == "wanted":
+            heading = "Wanted at the Gate"
+            details = (
+                f"Karma: {karma_tier['label']} ({karma.get_karma(self.player):+d})\n\n"
+                f"Three guards block the gate. The fee is {fee} gold — or you "
+                "can talk, submit, or fight."
+            )
+        else:
+            heading = "The Gate Is Closed to You"
+            details = (
+                f"Karma: {karma_tier['label']} ({karma.get_karma(self.player):+d})\n\n"
+                f"Two elite guards and two guards bar the way. The fee is {fee} gold "
+                "— or you can talk, submit, or fight."
+            )
+
+        if gold < fee:
+            details += f"\n\nYou only have {gold} gold."
+        guard_line = service_line(self.player, "guard", self.city_id)
+        if guard_line:
+            details += f"\n\n\"{guard_line}\""
+
+        options = []
+        if gold >= fee:
+            options.append(("pay", f"Pay {fee} gold and enter"))
+        if tier in ("wanted", "outlaw"):
+            options.append(("talk", "Talk them down (CHA check)"))
+            options.append(("submit", "Submit to judgment"))
+            options.append(("fight", "Fight the guards"))
+        options.append(("leave", "Turn away (return to map)"))
+
+        choice_dialog(
+            parent=self,
+            title="City Gate",
+            heading=heading,
+            subtitle=f"{self.city.get('name', self.city_id)} — Gate Check",
+            details=details,
+            options=options,
+            on_choice=lambda key: self._on_gate_choice(key, response),
+            default_choice="leave",
+        )
+
+    def _on_gate_choice(self, key, response):
+        if key == "pay":
+            self._gate_pay(response)
+        elif key == "talk":
+            self._gate_talk(response)
+        elif key == "submit":
+            self._gate_submit(response)
+        elif key == "fight":
+            self._gate_fight(response)
+        else:
+            self._gate_turn_away()
+
+    def _refresh_after_gate(self):
+        self._update_top_bar()
+        if hasattr(self, "_hero_card") and self._hero_card.winfo_exists():
+            self._refresh_hero_card()
+
+    def _gate_pay(self, response):
+        fee = int(response["fee"])
+        p = self.player
+        if int(p.get("gold", 0) or 0) < fee:
+            ok_dialog(self, "Not Enough Gold",
+                      f"You need {fee} gold, but you only have {p.get('gold', 0)}.")
+            return
+
+        p["gold"] = int(p.get("gold", 0) or 0) - fee
+        from combat.city_guards import resolve_gate
+        warning = response["tier"] == "warning"
+        resolve_gate(p, self.city_id, days=1 if warning else 3, warning=warning)
+        self.sm.log(
+            f"Gate fee paid: {fee} gold. "
+            + ("The captain waves you through — this once." if warning
+               else "The guards step aside.")
+        )
+        self._refresh_after_gate()
+        self._resume_arrival()
+
+    def _gate_talk(self, response):
+        import random
+        from combat.stats import compute_player_stats
+
+        p = self.player
+        cha = compute_player_stats(p)[5]
+        dc = karma.get_gate_talkdown_dc(p)
+        roll = random.randint(1, 20)
+        total = roll + cha
+        # Natural 20 always talks the guards down, no matter the DC.
+        if roll == 20 or total >= dc:
+            fee = max(1, int(response["fee"]) // 2)
+            if int(p.get("gold", 0) or 0) < fee:
+                ok_dialog(
+                    self, "Talk-Down Succeeded",
+                    f"You roll {roll} + {cha} = {total} vs DC {dc}.\n\n"
+                    f"They halve the fee to {fee} gold, but you cannot pay it. "
+                    "They offer you a cell instead.",
+                    on_ok=lambda: self._gate_submit(response),
+                )
+                return
+            p["gold"] = int(p.get("gold", 0) or 0) - fee
+            from combat.city_guards import resolve_gate
+            resolve_gate(p, self.city_id, days=3)
+            self.sm.log(
+                f"Talk-down: {roll} + {cha} = {total} vs DC {dc} — success. "
+                f"Half fee paid: {fee} gold."
+            )
+            self._refresh_after_gate()
+            self._resume_arrival()
+            return
+
+        ok_dialog(
+            self, "Talk-Down Failed",
+            f"You roll {roll} + {cha} = {total} vs DC {dc}.\n\n"
+            "The guards do not buy it. Steel rings as they close in.",
+            on_ok=lambda: self._gate_fight(response),
+        )
+
+    def _gate_submit(self, response):
+        from combat.city_guards import city_guard_jail
+        from gui.screens.city_screen import CityScreen
+
+        info = city_guard_jail(self.player, self.city_id)
+        msg = f"You spend the night in a cell. Fine: {info['fine']} gold."
+        if info.get("karma"):
+            msg += f"  Karma {info['karma']:+d}."
+        self.sm.switch_to(CityScreen, push_history=False)
+        self.sm.log(msg)
+
+    def _gate_fight(self, response):
+        from combat.city_guards import spawn_city_guards
+        from gui.screens.combat_screen import CombatScreen
+
+        enemies = spawn_city_guards(self.player, response["tier"])
+        self.sm.log("The guards draw steel.")
+        self.sm.switch_to(
+            CombatScreen,
+            enemy_keys=[],
+            enemies=enemies,
+            combat_context="city_guard",
+            on_result=self._after_city_guard_combat,
+        )
+
+    def _gate_turn_away(self):
+        from gui.screens.world_map_screen import WorldMapScreen
+
+        self.sm.switch_to(WorldMapScreen, travel_mode=True)
+        self.sm.log("You turn away from the gate. The road is still open.")
+
+    def _after_city_guard_combat(self, result):
+        """Resolve a non-lethal gate fight without ever showing DeathScreen."""
+        from combat import city_guards
+        from gui.screens.city_screen import CityScreen
+
+        if result == "victory":
+            city_guards.city_guard_victory(self.player, self.city_id)
+            self.sm.switch_to(CityScreen, push_history=False)
+            self.sm.log("The guards lower their weapons. You enter under watch.")
+            return
+        if result in ("dead", "defeat"):
+            info = city_guards.city_guard_jail(self.player, self.city_id)
+            self.sm.switch_to(CityScreen, push_history=False)
+            msg = f"You wake in a cell. Fine: {info['fine']} gold."
+            if info.get("karma"):
+                msg += f"  Karma {info['karma']:+d}."
+            self.sm.log(msg)
+            return
+        if result == "fled":
+            city_guards.city_guard_flee(self.player, self.city_id)
+            from gui.screens.world_map_screen import WorldMapScreen
+            self.sm.switch_to(WorldMapScreen, travel_mode=True)
+            self.sm.log("You slip away from the gate. The watch will remember.")
+            return
+
+        # Error / aborted combat: return to the city without a death penalty.
+        self.sm.switch_to(CityScreen, push_history=False)
+        self.sm.log(f"Gate combat ended unexpectedly: {result}.")
+
     def _build_hero_card(self):
         """Show party status card — all members in one horizontal row: 
         player + front allies + back allies. Front/back separated by a subtle divider.
@@ -238,6 +513,10 @@ class CityScreen(BaseScreen):
         # Click-to-swap state: absolute ally index awaiting a swap partner
         self._swap_selected = None
         self._member_blocks = {}  # absolute ally index -> card frame (highlight)
+        # Name labels are ellipsized to fit the party row (see _fit_hero_names)
+        self._hero_name_labels = []
+        self._hero_blocks = []      # (block, hp_bar, tag_label, full_tags)
+        self._hero_fit_state = None
 
         allies_list = p.get("allies", [])
 
@@ -259,10 +538,13 @@ class CityScreen(BaseScreen):
         card = self._hero_card  # alias for local use below
 
         # ── Collect all party members in order ─────────────────────────────
+        from titles import format_name as _format_title_name
         members = []
         # Player (always first, FRONT)
         members.append({
-            "name": p["name"],
+            "name": _format_title_name(
+                p, "full",
+                show_title=self.sm.settings.get("show_title_beside_name", True)),
             "level": p.get("level", 1),
             "hp": p.get("current_hp", 1),
             "max_hp": player_max_hp(p),
@@ -306,6 +588,10 @@ class CityScreen(BaseScreen):
         # ── Single horizontal party row ─────────────────────────────────────
         party_row = tk.Frame(card, bg=Theme.BG_CARD)
         party_row.pack(fill=tk.X, padx=10, pady=(8, 4))
+        self._hero_party_row = party_row
+        # Fixed layout budget for a full 8-actor party (gaps + dividers).
+        self._hero_row_extras = HERO_ROW_EXTRAS_MAX
+        party_row.bind("<Configure>", lambda e: self._fit_hero_names(e.width))
 
         last_section = None
         for i, m in enumerate(members):
@@ -339,10 +625,19 @@ class CityScreen(BaseScreen):
             if m.get("defeated"):
                 name_color = "#555555"
 
-            name_text = f"{m['name']}  Lv.{m['level']}"
-            tk.Label(block, text=name_text,
-                     bg=Theme.BG_CARD, fg=name_color,
-                     font=Theme.FONT_BOLD).pack(anchor=tk.W)
+            # Name + level on one row. The name gets ellipsized later to the
+            # per-member slot width so long names/titles never overflow.
+            name_row = tk.Frame(block, bg=Theme.BG_CARD)
+            name_row.pack(anchor=tk.W)
+            name_lbl = tk.Label(name_row, text=m["name"],
+                                bg=Theme.BG_CARD, fg=name_color,
+                                font=Theme.FONT_BOLD, anchor=tk.W)
+            name_lbl.pack(side=tk.LEFT)
+            level_lbl = tk.Label(name_row, text=f"Lv.{m['level']}",
+                                 bg=Theme.BG_CARD, fg=name_color,
+                                 font=Theme.FONT_BOLD)
+            level_lbl.pack(side=tk.LEFT, padx=(5, 0))
+            self._hero_name_labels.append((name_lbl, level_lbl, m["name"]))
 
             ratio = m["hp"] / max(1, m["max_hp"])
             if m["section"] == "back":
@@ -365,20 +660,26 @@ class CityScreen(BaseScreen):
             hp_bar = HPBar(block, current=m["hp"], maximum=m["max_hp"],
                            width=90, height=14, show_text=True,
                            fill_color=hp_fill)
-            hp_bar.pack(pady=(2, 0))
+            hp_bar.pack(anchor=tk.W, pady=(2, 0))
 
             # Always show tag label to maintain vertical alignment;
             # use a non-breaking space when there are no tags.
             tag_text = m["tags"] if m["tags"] else " "
-            tk.Label(block, text=tag_text, bg=Theme.BG_CARD,
-                     fg=Theme.BUFF_NEUTRAL,
-                     font=(Theme.FONT_FAMILY, 7),
-                     anchor=tk.W).pack(anchor=tk.W)
+            tag_lbl = tk.Label(block, text=tag_text, bg=Theme.BG_CARD,
+                               fg=Theme.BUFF_NEUTRAL,
+                               font=(Theme.FONT_FAMILY, 7),
+                               anchor=tk.W)
+            tag_lbl.pack(anchor=tk.W)
+            self._hero_blocks.append((block, hp_bar, tag_lbl, tag_text))
 
             # Click-to-swap registration (player card stays fixed)
             if m.get("party_idx") is not None:
                 self._member_blocks[m["party_idx"]] = block
                 self._bind_party_card_clicks(block, m)
+
+        # Widths are only known after the first layout pass — fit then, and
+        # refit whenever the window (and therefore the row) is resized.
+        self.after_idle(self._fit_hero_names)
 
         # ── Gold row ──────────────────────────────────────────────────────
         gold = p.get("gold", 0)
@@ -391,6 +692,85 @@ class CityScreen(BaseScreen):
                      text="Click two allies to swap positions",
                      bg=Theme.BG_CARD, fg=Theme.TEXT_DIM,
                      font=Theme.FONT_SMALL).pack(side=tk.RIGHT)
+
+    def _fit_hero_names(self, row_width=None):
+        """Ellipsize party-card names so the single-row party bar fits.
+
+        The player's name can include a title ("hundur the Hundred") and
+        ally nicknames are free text, so a fixed label grew the row past the
+        card/window edge. Each member gets the SAME fixed slot — sized for a
+        full 8-actor card — so a 2-member party does not stretch into huge
+        boxes. Only the name is shortened (the level suffix stays visible).
+        """
+        labels = getattr(self, "_hero_name_labels", None)
+        if not labels or not self.winfo_exists():
+            return
+        if row_width is None:
+            row = getattr(self, "_hero_party_row", None)
+            try:
+                row_width = row.winfo_width() if row is not None else 0
+            except tk.TclError:
+                return
+        if row_width <= 60:          # not mapped yet
+            return
+
+        extras = getattr(self, "_hero_row_extras", HERO_ROW_EXTRAS_MAX)
+        # Fixed slot sized for a full 8-actor card. Short parties keep the
+        # same box size and simply leave empty space to the right.
+        slot = max(56, (row_width - extras) // HERO_CARD_MAX_SLOTS)
+        block_w = max(52, slot - 4)
+
+        blocks = getattr(self, "_hero_blocks", [])
+        max_h = 0
+        for block, _hp, _tag, _tags in blocks:
+            try:
+                max_h = max(max_h, block.winfo_reqheight())
+            except tk.TclError:
+                pass
+        freeze_ok = max_h >= 20       # requested height is laid out
+
+        state = (row_width,
+                 tuple((full, lvl.cget("text")) for _, lvl, full in labels),
+                 freeze_ok)
+        if state == getattr(self, "_hero_fit_state", None):
+            return
+        self._hero_fit_state = state
+
+        for name_lbl, level_lbl, full_name in labels:
+            try:
+                level_w = level_lbl.winfo_reqwidth()
+            except tk.TclError:
+                level_w = 40
+            # 14px = level spacing + Tk label padding/border margin.
+            available = max(16, block_w - level_w - 14)
+            text = _fit_text_to_width(full_name, Theme.FONT_BOLD, available)
+            try:
+                name_lbl.config(text=text)
+            except tk.TclError:
+                pass
+
+        if freeze_ok:
+            # Freeze every member box at the same width/height so short
+            # names no longer produce visibly smaller cards.
+            for block, hp_bar, tag_lbl, full_tags in blocks:
+                try:
+                    block.pack_propagate(False)
+                    block.config(width=block_w, height=max_h)
+                except tk.TclError:
+                    pass
+                # Default bar is 90px; shrink only when the fixed slot is
+                # too narrow (e.g. 8 members at the minimum window width).
+                try:
+                    hp_bar.set_width(min(90, max(50, block_w - 10)))
+                except tk.TclError:
+                    pass
+                if full_tags.strip():
+                    tag_text = _fit_text_to_width(
+                        full_tags, (Theme.FONT_FAMILY, 7), max(20, block_w - 8))
+                    try:
+                        tag_lbl.config(text=tag_text)
+                    except tk.TclError:
+                        pass
 
     # ── Party position swap (click-to-swap) ──────────────────────────────
 
@@ -487,21 +867,11 @@ class CityScreen(BaseScreen):
         self._build_hero_card()
 
     def _update_top_bar(self):
-        if not self.player:
-            self.sm.update_top_bar("Pandemonium")
-            return
-        p = self.player
-        _cf = p.get("city_floors", {}).get(self.city_id, {})
-        _cur = _cf.get("floor", 1)
-        _max = _cf.get("max_floor", 1)
-        from time_blocks import format_block_track
-        track = format_block_track(p, include_day=False)
-        segments = [p['name'], self.city['name'], f"Floor {_cur}/{_max}"]
-        if track:
-            segments.append(track)
-        segments.append(format_date(p))
-        text = " | ".join(segments)
-        self.sm.update_top_bar(text)
+        # Priority-driven header (see base_screen.city_header_parts): the clock
+        # stays bright; floor, karma and the watched marker sit in the dim tier.
+        from gui.screens.base_screen import city_header_parts
+        primary, secondary = city_header_parts(self.player, self.city_id)
+        self.sm.update_top_bar_parts(primary, secondary)
 
     # ── Service handlers ──────────────────────────────────────────────────────
 
@@ -520,6 +890,10 @@ class CityScreen(BaseScreen):
         from city import SERVICE_HANDLERS
         handler = SERVICE_HANDLERS.get(service)
         if handler:
+            from karma_dialogue import title_line
+            _title_greeting = title_line(self.player, service, self.city_id)
+            if _title_greeting:
+                self.sm.log(_title_greeting)
             self.sm.log(f"Entering {service.replace('_', ' ').title()}...")
             from gui.screens.facility_screen import FacilityScreen
             self.sm.switch_to(
@@ -571,7 +945,8 @@ class CityScreen(BaseScreen):
         p = self.player
         if not p or p.get("eh_intro_seen"):
             return
-        if int(p.get("max_floor", 1) or 1) < 20:
+        from event_horizon import site_unlocked
+        if not site_unlocked(p):
             return
         if p.get("location") == "dungeon":
             return
@@ -639,10 +1014,39 @@ class CityScreen(BaseScreen):
         if not flags.get("intro_seen"):
             self._open_story_beat("archivist_intro")
             return
+        from facilities.story_beats import ensure_city_story_triggers
+        ensure_city_story_triggers(self.player, self.city_id)
         if quests.has_pending_story(self.player):
             beat_id = quests.pop_pending_story(self.player)
             if beat_id:
                 self._open_story_beat(beat_id)
+                return
+
+        # Fireside Tales can also find the player while travelling (city or
+        # phase triggers), instead of waiting at home.
+        from facilities.house_stories import claim_city_trigger
+        part = claim_city_trigger(self.player, self.city_id)
+        if part:
+            self._open_house_story(part)
+
+    def _open_house_story(self, part):
+        """Open a city-triggered house story as an overlay."""
+        from facilities.house_stories import play_part
+        from resources.house_stories import get_part
+        from gui.screens.story_screen import StoryScreen
+
+        _, story, _, _ = get_part(part["id"])
+        title = part.get("title", "Story")
+        if story:
+            title = f"{story.get('title', 'Story')} — {title}"
+
+        self.sm.push_overlay(
+            StoryScreen,
+            title=title,
+            func=play_part,
+            func_args=(self.player, part["id"]),
+            on_close=lambda _result: self.sm.dismiss_overlay(),
+        )
 
     def _open_story_beat(self, beat_id):
         """Open a story conversation as an overlay over the city."""
@@ -652,7 +1056,8 @@ class CityScreen(BaseScreen):
         func = get_story_beat(beat_id)
         if func is None:
             return
-        titles = {"archivist_intro": "A Message in Starlight"}
+        titles = {"archivist_intro": "A Message in Starlight",
+                  "voss_epilogue": "The First Page"}
         self.sm.push_overlay(
             StoryScreen,
             title=titles.get(beat_id, "Story"),
@@ -788,6 +1193,7 @@ class CityScreen(BaseScreen):
         self.player.pop("_dungeon_log", None)
         # A stale wild-dungeon id must never hijack a city-floor run
         self.player.pop("wild_dungeon_id", None)
+        self.player.pop("_combat_floor_label", None)
         for key in ("saved_wild_floor", "saved_wild_rooms", "saved_wild_room_index"):
             self.player.pop(key, None)
         # A stale Event Horizon gate must never hijack a city-floor run
@@ -833,6 +1239,8 @@ class CityScreen(BaseScreen):
         )
         sel_frame.pack(fill=tk.BOTH, expand=True, pady=8)
 
+        min_floor = max(1, int(self.city.get("dungeon_start_floor", 1) or 1))
+
         # Header
         tk.Label(
             sel_frame, text="Select Floor",
@@ -841,7 +1249,7 @@ class CityScreen(BaseScreen):
 
         tk.Label(
             sel_frame,
-            text=f"Click a floor to descend  (1 – {max_unlocked}):",
+            text=f"Click a floor to descend  ({min_floor} – {max_unlocked}):",
             bg=Theme.BG_DARK, fg=Theme.TEXT_DIM, font=Theme.FONT,
         ).pack(pady=(0, 6))
 
@@ -902,9 +1310,9 @@ class CityScreen(BaseScreen):
             self._restore_city_widgets()
             self.focus_set()
 
-        for f in range(1, max_unlocked + 1):
-            row = (f - 1) // COLS
-            col = (f - 1) % COLS
+        for f in range(min_floor, max_unlocked + 1):
+            row = (f - min_floor) // COLS
+            col = (f - min_floor) % COLS
             is_current = f == current_floor
             is_locked = shadow_locked and not is_current
 

@@ -99,7 +99,749 @@ class ChangelogScreen(BaseScreen):
         # _add_version() block ABOVE this one and update version.py. The
         # newest header here must always match version.py's VERSION_DISPLAY.
         # Checked by tests/_diag_version_consistency.py.
+        self._add_version("v0.1.9.0 — The Family We Choose")
+
+        self._add_section("Combat & Dungeon Presentation")
+        self._add_bullet("Superboss **intro narration** now reveals **three lines at a time** on the "
+                         "combat screen — each **Continue** press shows the next page — so the boss "
+                         "scene is readable without opening the combat log.")
+        self._add_bullet("Wonderland **heroine endings** (Red Hood, Dorothy, Alice, and Mary Sue's "
+                         "resolutions) now play on the **dungeon screen** after the battle instead of "
+                         "being squeezed into the combat ticker.")
+        self._add_bullet("Entering a **wild dungeon** now starts with a clean dungeon log — leftover "
+                         "lines from the previous run (such as a Wonderland superboss floor) no "
+                         "longer carry over.")
+
+        self._add_section("Wonderland — Heroine Weapon Timing")
+        self._add_bullet("The **Fairy Godmother** now offers Alice's **??? Blade** at **Floor 35** "
+                         "instead of Floor 20, so it appears after Alice joins at Floor 31 and "
+                         "before the Floor-40 Jabberwock.")
+        self._add_bullet("The **Wizard of Oz** now offers Dorothy's **Silver Slippers** at "
+                         "**Floor 25** instead of Floor 30, giving them a full chapter before "
+                         "the Wicked Witch.")
+        self._add_bullet("The **Woodcutter** now offers Red Hood's **Broken Axe** at "
+                         "**Floor 15** instead of Floor 20, giving her a full chapter between "
+                         "joining at Floor 11 and the Big Bad Wolf.")
+
+        self._add_section("Deed Titles — The Wonderland Set")
+        self._add_bullet("Nine **Wonderland titles** join the deed collection: **Curiouser** "
+                         "(enter the realm; +1% XP), **Tea-Party Guest** (the three-guest "
+                         "scene; +3% rest healing), **Shadow-Touched** (accept a Shadow; "
+                         "+2% damage), and one per floor boss — **Heartsbane** (+3% dungeon "
+                         "gold), **Wolf-Hunter** (+1 Strength), **Witch-Breaker** (+6% XP), "
+                         "**Vorpal Hand** (+4% damage), and **Author's Bane** (+2 Learning, "
+                         "+4% XP).")
+        self._add_bullet("The capstone, **Happily Ever After**, unlocks when Red Hood, "
+                         "Dorothy, and Alice all become permanent heroines and grants "
+                         "**+1 to all attributes**. Late-arc resolutions count.")
+        self._add_bullet("Unlocks fire on Wonderland entry, at the tea party, on every "
+                         "Shadow choice, on each Floor 10/20/30/40/50 boss kill, and when "
+                         "a heroine becomes permanent. Old saves reconcile the bosses and "
+                         "heroines they already finished on load, and a save already carrying "
+                         "Shadows backfills the lifetime Shadow counter.")
+
+        self._add_section("Sylvana — The Mirror Heroine")
+        self._add_bullet("Defeating the **Queen of Mirrors** now leaves a **Cracked Mirror** key "
+                         "item. Existing saves that already beat her receive it on load.")
+        self._add_bullet("The House menu gains **The Cracked Mirror**. Each repair restores **5%** "
+                         "for **6 time blocks**, and Sylvana's response changes at every step. At "
+                         "**100%** she steps out, joins at **100 affection**, and equips her unique "
+                         "**Decaying Aegis**.")
+        self._add_bullet("Sylvana's kit: **Null**, **Illusory Veil** (party evasion), **Hall of "
+                         "Mirrors** (party damage reduction + reflection), and **Mirror Guard** "
+                         "(aggro + shield + fixed pure damage to attackers). Her permanent passive, "
+                         "**Queen's Grace**, gives the party **+5% evasion**. She has no Awakening.")
+        self._add_bullet("Marrying Sylvana grants the **Looking-Glass Locket**, which reflects "
+                         "**50%** of the first enemy hit each combat.")
+
+        self._add_section("Equipment — Unique Element Profiles")
+        self._add_bullet("Every piece of **unique equipment** now carries **one primary element**. "
+                         "Hand-tuned secondary and tertiary elements are gone from the base item; "
+                         "the primary is fixed and defines the weapon's damage or the armor/"
+                         "accessory's resistance identity.")
+        self._add_bullet("The Blacksmith's **Infuse Element** service now accepts **unique gear**: "
+                         "flowers fill its **two open slots** (secondary and tertiary). Weapons gain "
+                         "damage, armor gains resistance, and accessories extend whichever profile "
+                         "they already carry (damage, resistance, or both). Unique names never take "
+                         "a flower word.")
+        self._add_bullet("**Reforge** can re-roll a unique's flower slots, but never its primary. "
+                         "Old saves collapse existing multi-element uniques to their primary on load.")
+
+        self._add_section("Unique Equipment — Moonlight Greatsword")
+        self._add_bullet("**Moonlight Greatsword** joins the Guild's **Legendary Rewards**. "
+                         "Claim it after defeating **3 different Super Bosses**. Its basic "
+                         "attacks are **physical**, scaling with Strength and Learning.")
+        self._add_bullet("**Moonlight** (action, **5-turn cooldown**): for the **next 3 rounds**, "
+                         "basic attacks become **magical waves** that strike **all enemies** for "
+                         "**75%** damage. The HUD shows remaining turns (**MOON×N**) and the "
+                         "weapon's attack tag switches to **⚔MAG** while empowered.")
+        self._add_bullet("Ally wielders can use Moonlight too — turns and cooldown are tracked "
+                         "per-actor and cleared when the fight ends.")
+
+        self._add_section("Wonderland — The Looking-Glass Road")
+        self._add_bullet("\"The Looking-Glass Road\" now shows how to reach Wonderland in the "
+                         "Journal's Side Quest tab: clear Floor 20 in two different biomes, buy "
+                         "a Looking Glass Shard from **Veilholt's Black Market (5,000g)**, then "
+                         "open the mysterious book in **Veilholt's Arcane Tower**. The quest "
+                         "appears once you hold a shard, clear a Floor-20 biome, or have prior "
+                         "Wonderland progress.")
+        self._add_bullet("Wonderland's unlock no longer requires **Day 60**. The Veilholt book "
+                         "and the Black Market shard only check the two-biome Floor-20 milestone.")
+
+        self._add_section("Wonderland — Guest Pacing & Boss Variants")
+        self._add_bullet("The Mad Hatter's tea party is empty until the Queen of Hearts falls. "
+                         "Clearing Floor 10 and entering the inn reveals the three-guest scene "
+                         "and invites Red Hood.")
+        self._add_bullet("Heroines now arrive in strict order: Red Hood before the Floor-20 "
+                         "Wolf, Dorothy before the Floor-30 Witch, and Alice before the Floor-40 "
+                         "Jabberwock. Accepting a heroine arms a variant of her boss — "
+                         "**Huntress's Oath**, **Emerald Road**, or **Vorpal Opening** — while "
+                         "the base fight stays unchanged if she is skipped.")
+        self._add_bullet("Skipping a heroine opens a **late arc** at the inn. She still becomes "
+                         "permanent and keeps her full weapon-upgrade path.")
+        self._add_bullet("\"Ask the Hatter about the guests\" always names the next trigger, "
+                         "and the Journal's **Down the Rabbit Hole** quest now asks you to "
+                         "return to the tea party after Floor 10.")
+        self._add_bullet("Heroine auto-equipment now follows Wonderland depth: **common +0** "
+                         "through Floor 15, **uncommon +1** through Floor 25, **rare +3** "
+                         "through Floor 35, and **rare +4** beyond. The old flat common +5 "
+                         "on all four pieces pushed Red Hood's effective Dexterity past 40 "
+                         "at her join floor.")
+        self._add_bullet("Leaving Wonderland through the Looking-Glass now reads the current "
+                         "**Morning**, **Noon**, or **Night** phase — matching the top bar — "
+                         "instead of the retired HH:MM clock.")
+
+        self._add_section("Capture & Check Tuning")
+        self._add_bullet("Incapacitated monster girls are now much easier to capture — the "
+                         "capture roll gains **+35%** vs stunned/paralyzed girls, **+30%** vs "
+                         "sleeping girls, **+25%** frozen, **+20%** entombed, **+10%** "
+                         "slowed/blinded/confused, and **+5%** weakened. The total status bonus "
+                         "is capped at **+50%**.")
+        self._add_bullet("A stun that makes a monster girl lose her turn now leaves her "
+                         "**off-balance** until her next turn, so the **+35%** stun bonus is "
+                         "still active when you throw the net on the following turn.")
+        self._add_bullet("Capture target menus and the capture roll now show the **exact "
+                         "success chance**, including status bonuses, so it is clear why a "
+                         "stunned girl is easier to catch.")
+        self._add_bullet("**Stun Bomb** no longer lists 8 damage — it is a pure control item "
+                         "and can never accidentally KO a low-HP monster girl you are trying "
+                         "to net.")
+        self._add_bullet("**Natural 20** is now an automatic success on d20 checks: dungeon "
+                         "stat events, trap disarming, city-gate talk-downs, and flee attempts. "
+                         "Dungeon checks and traps also treat **natural 1** as an automatic "
+                         "failure, matching the pass-probability display.")
+
+        self._add_section("Casino Games — Phases 1–3")
+        self._add_bullet("Inns now keep **tavern tables**: **Under & Over** (2d6) and **Blackjack** "
+                         "(Hit/Stand). Stakes are **25 / 100 / 250 gold**, with a **1,000g pot cap** "
+                         "and a **1,000g daily win cap**.")
+        self._add_bullet("The **Black Market back room** opens at night for players with **negative "
+                         "Karma**. Stakes are **250 / 1,000 / 2,500 gold**, gated at Karma below 0 / "
+                         "≤ −15 / ≤ −40 and levels 5 / 15 / 25; odds are better and the pot cap is 10,000g.")
+        self._add_bullet("Both venues share a **12-hand daily limit** and cost **20 minutes per hand**. "
+                         "Blackjack naturals pay **6:5**; ties return half the stake at the inn and push "
+                         "in the back room. Exactly 7 is offered only where the pot cap allows.")
+        self._add_bullet("Blackjack cards show their **suit** (`A♠`, `10♥`, `J♦`), and the dealer's hole "
+                         "card stays **?** until you stand; each dealer hit is revealed one card at a time.")
+        self._add_bullet("The back room's tables now offer **Cheat**: a DEX+CHA check vs DC 16/18/20, "
+                         "capped at **70%** success. Under & Over success pays **1.30×**; Blackjack "
+                         "success removes the **latest card** dealt to you. Getting caught loses the "
+                         "stake, costs **2 Karma**, and bars you from every back room for **7 days**. "
+                         "Two attempts per day, shared across games.")
+        self._add_bullet("Karma is only charged **when you're caught**; Karma-off saves still get the "
+                         "7-day blacklist. A caught cheat writes a `[CASINO]` Journal entry.")
+        self._add_bullet("Back-room dealers greet you by Karma tier, and the inn/back room now have "
+                         "per-city dialogue (Solmere, Ashkara, Blackwake) with generic fallbacks elsewhere.")
+        self._add_bullet("Three **gambling titles** join the deed collection: **The Gambler** (win 100 "
+                         "hands or record a 4,000g biggest win; **+1% casino payouts**), **Sleight-Hand** "
+                         "(10 unseen cheats; **+3% Black Market discount**), and **Marked** (3 caught "
+                         "cheats; **+5% Black Market discount**, **−5% shop discount**).")
+        self._add_bullet("All three show the same casino record line — **hands won · biggest win · "
+                         "cheats unseen · caught** — on locked and unlocked Journal cards. Old saves "
+                         "backfill the counters from their lifetime casino stats; unlocks are checked "
+                         "after every hand/cheat and on load.")
+
+        self._add_section("Economy — Market Index (Phase 3)")
+        self._add_bullet("Shop and black-market prices now scale with your **market index**: the higher "
+                         "of your level or highest cleared floor sets a **1.0–8.5×** multiplier. "
+                         "Sell prices scale with it too, so endgame loot stays valuable.")
+        self._add_bullet("Kill gold is reduced by the extra loot value, keeping total gold per kill "
+                         "roughly flat. **L1–5 is unchanged**; the ramp starts at L5.")
+        self._add_bullet("Blacksmith services — enhancement, reforge, scrolls and fusion — are "
+                         "**not** indexed; their Phase 1/2 costs stay exactly as tuned.")
+
+        self._add_section("Combat — Text Output & Quest Notices")
+        self._add_bullet("Retired the old **✦ emoji borders** from capture text and superboss gimmick "
+                         "output; the long decorated lines were overflowing the 3-line combat feed.")
+        self._add_bullet("**Quest, capture and unique-loot lines are now pinned combat notices.** They "
+                         "ignore turn-header sweeps and the end-of-combat feed wipe.")
+        self._add_bullet("At the end of a fight, the result slot lists these notices above **Leave "
+                         "Battle** — quest completion, rewards, the follow-up quest, and captured girls "
+                         "are no longer lost. No modal popup is used.")
+        self._add_bullet("The **Combat Log popup now keeps the full fight history**. The engine's "
+                         "per-round `c_clear()` only resets the compact ticker; it no longer erases "
+                         "every earlier round from the log.")
+        self._add_bullet("**Failed capture feedback** (net slips, no net, level-gated net, "
+                         "non-capturable target) is treated as an action result: it stays readable "
+                         "through the next turn header and in the full log, but no longer pins itself "
+                         "over the result. The end-of-battle ticker is cleared so VICTORY/DEFEAT "
+                         "always owns it.")
+        self._add_bullet("The combat feed now keeps **all action results** — damage, item use, heals, "
+                         "failed effects — readable across the next turn header; the new combatant's "
+                         "first action then sweeps them. Item-use lines lead with **“You use <item>.”** "
+                         "so the ticker/log shows what was used.")
+        self._add_bullet("The two-column **combat item picker** pads an odd item count with a blank "
+                         "placeholder row, so both columns have the same row count and scroll in "
+                         "lockstep. The placeholder cannot be selected or confirmed.")
+        self._add_bullet("**Legacy text menus no longer leak into the combat log.** Choosing an item "
+                         "(player or ally), picking a capture net, or opening the ally switch roster used "
+                         "to dump the whole numbered list into the ticker and log. The GUI already draws "
+                         "those panels from live state, so the engine now skips the duplicate list "
+                         "(terminal mode still prints it). Only the result line — e.g. “You use Health "
+                         "Potion.” — reaches the log.")
+        self._add_bullet("The same cleanup covers the **ally / party / revive target rosters** printed by "
+                         "skills and ally skills, and the **blacksmith** enhancement, scroll and fusion "
+                         "lists, which showed every item twice (once as text, once as a button). Lists that "
+                         "still carry information the buttons lack — shop multi-sell, house storage, guild "
+                         "bounties, the house roster — are unchanged.")
+        self._add_bullet("Player class skills now tag their damage lines with **`(CRITICAL!)`** — "
+                         "`hundur [Execute] → Night Stalker: 243 dmg (CRITICAL!) [PHYSICAL]` — matching "
+                         "ally and enemy attacks. The separate **Critical hit!** line stays, but a skill "
+                         "crit no longer loses the tag (Execute and every other player skill).")
+
+        self._add_section("Combat — Superboss Presentation")
+        self._add_bullet("All **16 superbosses** (Wolf, Black Silence, Broodmother, Chrysalis, Everlong "
+                         "Ship, Ignis, Jabberwock, Mary Sue, Palette, Queen of Hearts, Rientrante, "
+                         "Slitcurrent, Sylvana, White Knight, Wicked Witch, Yinglong) share one combat "
+                         "loop. That loop now prints the **standard round header** — `>> ROUND 2 | Floor "
+                         "12 | 🌤 Noon ▮▮▮▮▮▮▮▯` — so the combat top bar shows the floor and the current "
+                         "time again instead of a bare `ROUND 2`, and the action phase line matches the "
+                         "normal engine (`⚔️ ROUND n: ACTION PHASE`).")
+        self._add_bullet("Combat headers now show the **phase track** (`☀ Morning ▮▮▮▮▮▮▮▯`) instead of "
+                         "the retired HH:MM clock — the same morning/noon/night reading as the top bar, "
+                         "in normal fights *and* superbosses.")
+        self._add_bullet("**Gimmick banners are pinned in the message strip.** `⚙ [GIMMICK] …`, "
+                         "`[PHASE 2] …` and `[FINAL FORM] …` now own a row of the combat ticker and are "
+                         "mirrored to the session log, so \"Mirror Reflection — the copies bear subtly "
+                         "wrong names\" no longer scrolls past before you can read it. The banner clears "
+                         "when the fight ends.")
+        self._add_bullet("**Old `===` / `!!!` / `───` / `~~~` banners are gone** from every superboss "
+                         "module, and the combat bridge drops any divider line it still receives — each "
+                         "one used to eat a row of the 3-line strip for no information.")
+
+        self._add_section("UI — Party Cards")
+        self._add_bullet("Every member box on the city party card now gets a **fixed width/height "
+                         "sized for a full 8-actor party**; short names no longer produce smaller "
+                         "cards, and a 2-member party keeps the same box size instead of stretching "
+                         "across the row.")
+        self._add_bullet("Long player names/titles and ally nicknames are **width-aware ellipsized** "
+                         "(e.g. `prism the Ab…  Lv.50`) so the single-row party bar can no longer overflow "
+                         "the card or window edge. The level suffix is always preserved.")
+
+        self._add_section("UI — Time Display")
+        self._add_bullet("Absolute **Day N** stamps are gone from player-facing text: bounty-board "
+                         "refreshes, dispatch returns, pregnancy due dates, recovery timers, and "
+                         "dispatch-offer refreshes now read **today / tomorrow / in N days**.")
+        self._add_bullet("Fixed active bounties showing **EXPIRED** on their final day; the deadline "
+                         "day is still valid and matches the Guild Hall's turn-in rules.")
+
+        self._add_section("Allies — Late Bloomer Growth")
+        self._add_bullet("Late-bloomer bonus points are now **chosen during level-up** instead of "
+                         "being auto-assigned to the girl's highest attribute. Each bonus point opens "
+                         "the same attribute picker as the normal level-up, labeled **Late Bloomer "
+                         "bonus**.")
+
+        self._add_section("Combat — Human Elemental Traits")
+        self._add_bullet("**Human enemies now have a natural damage type** instead of a blank "
+                         "elemental profile: martial humans (Bandit, Elite Assassin, City Guard, ...) "
+                         "attack **physical**, while caster names (Novice Mage, High Mage, Cultist, ...) "
+                         "attack **magical**. The HUD now shows `⚔PHY` / `⚔MAG`.")
+        self._add_bullet("The fallback uses a **1.2× baseline** and feeds the elemental-debuff "
+                         "channel (physical → bleed, magical → confusion). Existing race/keyword "
+                         "traits (Gnome thunder, Undead dark, Dark Knight dark, Blade Dancer physical) "
+                         "are unchanged.")
+
+        self._add_section("Event Horizon — Unlock Fix")
+        self._add_bullet("The Event Horizon no longer opens on a **failed Floor 20 clear**. The "
+                         "world-map site, Vesper's first-contact scene, and the whole rift now "
+                         "require **Floor 20 to be cleared** (`max_floor` 21+). Reaching Floor 20 "
+                         "and dying to its superboss leaves the rift locked until you win.")
+        self._add_bullet("Saves already introduced to Vesper or holding rift progress stay "
+                         "unlocked — the fix never takes the site away mid-run.")
+
+        self._add_section("UI — World Map")
+        self._add_bullet("Deselecting a highlighted route no longer leaves a **green trail over "
+                         "city boxes and ruin markers** — route lines keep their original stacking "
+                         "order, so the map returns to its exact pre-selection look.")
+
+        self._add_section("Economy — Reforge (Phase 2)")
+        self._add_bullet("The Blacksmith can now **reforge one elemental infusion**: the element is "
+                         "re-rolled while its value (weapons) or tier (armor/accessories) is kept. "
+                         "The fee is **40× the item's value**, paid before the roll — keeping the old "
+                         "element does not refund it.")
+        self._add_bullet("This gives gold a **repeatable endgame sink** after enhancement and "
+                         "scrolls cap out. Uniques cannot be reforged; the piece must already have "
+                         "an infusion.")
+
+        self._add_section("Economy — House & Scroll Pacing (Phase 1)")
+        self._add_bullet("**House passive income** now scales as 1 + min(3, floor/15) (capped at 4×) "
+                         "instead of floor/3. The house screen shows the exact daily rate you "
+                         "collect — no hidden upkeep.")
+        self._add_bullet("House income is now banked for at most **5 days** (was 10). Saves with "
+                         "more than 5 days banked lose the excess once on collection.")
+        self._add_bullet("**Scroll of Fusion** craft costs are now value-derived: **2,000 / 2,800 / "
+                         "4,400 / 8,000 / 16,000 gold** (legendary was 80,000). The four-item fodder "
+                         "remains the real gate.")
+
+        self._add_section("Deed Titles — Worldbreaker Fix")
+        self._add_bullet("**Worldbreaker** now grants **+2 to all attributes** instead of +2 Strength, "
+                         "matching its original design. It remains the T4 completion title with a "
+                         "visible **−10% shop discount** drawback.")
+        self._add_bullet("**Stormbreaker** remains a fixed **+2 Strength** reward for three superbosses; "
+                         "the two endgame titles now have distinct effects.")
+
+        self._add_section("Deed Titles — Phase 3")
+        self._add_bullet("Five endgame titles arrive: **Stormbreaker** (+2 Strength after three "
+                         "superbosses), **Abyss Walker** (+6% XP after reaching Event Horizon room "
+                         "50), **Collector** (+2 Learning and +5% XP for 80% Bestiary completion), "
+                         "**Worldbreaker** (+2 Strength, but a visible −10% shop discount), and "
+                         "**First Page** (+10% rest healing after the Voss epilogue).")
+        self._add_bullet("Worldbreaker is the first title with a **visible drawback** — its power "
+                         "is shown up front and the trade-off is real, never hidden.")
+        self._add_bullet("New condition support: Event Horizon depth, Bestiary completion, and "
+                         "quest-runtime flags. Title-aware NPC greetings now appear when entering "
+                         "city services.")
+        self._add_bullet("The collection now holds **19 titles**; locked cards still show `???` "
+                         "with hints and progress, and every unlock writes a `[TITLE]` Journal entry.")
+
+        self._add_section("Deed Titles — Phase 2")
+        self._add_bullet("Five more titles join the collection: **Dragon-Slayer** (+1 Strength), "
+                         "**Contracted** (+5% bounty gold), **Hearthkeeper** (−5% monthly bills), "
+                         "**Honest** (+5% shop discount), and **Unrepentant** (+5% Black Market "
+                         "discount).")
+        self._add_bullet("Combat integration is now player-only and title-aware: the equipped "
+                         "title can add a small attribute or damage bonus, and combat HUD cards "
+                         "show the compact honourific without changing name matching or fixed "
+                         "widths.")
+        self._add_bullet("Economy hooks: bounty payouts, monthly upkeep, and Black Market prices "
+                         "all read the equipped title. Karma and family titles stay unavailable "
+                         "when their Game Rules toggle is off.")
+        self._add_bullet("Old saves backfill the new titles on load; unlock conditions are checked "
+                         "against existing bestiary, bounty, house, and Karma state.")
+
+        self._add_section("Deed Titles — Phase 1")
+        self._add_bullet("Deeds now leave a **title** behind. Nine titles unlock from play — "
+                         "first kills, floor clears, travel, shop spending, and captures — and "
+                         "are collected in **Inventory → Journal → Titles**.")
+        self._add_bullet("**One title may be equipped at a time.** The equipped title appears "
+                         "after your name (e.g. *Aria the Roadwarden*); a Settings toggle can "
+                         "hide the honourific.")
+        self._add_bullet("Locked titles show as **???** with a hint and, where countable, "
+                         "progress (e.g. `Floors Cleared: 3 / 25`). Unlocking reveals the name "
+                         "and effect and writes a `[TITLE]` entry to the Journal's Event tab.")
+        self._add_bullet("Swap titles freely at any safe point — city, house, camp, or the "
+                         "dungeon/Event Horizon post-room menu. Titles are locked during combat.")
+        self._add_bullet("Effects are small and never stack: travel time, shop discount, XP, "
+                         "capture chance, and dungeon gold, each capped. Old saves backfill "
+                         "titles they have already earned on first load.")
+
+        self._add_section("Enemy Roles & Spawn Composition")
+        self._add_bullet("Regular enemies now have an explicit combat role — attacker or supporter. "
+                         "Supporters prioritise healing and only occasionally use damaging skills; "
+                         "attackers never spend turns healing.")
+        self._add_bullet("Dungeon and Event Horizon rooms now compose encounters by role: early rooms "
+                         "are overwhelmingly attackers, support becomes more common with floor "
+                         "depth, groups cap at two supporters, always keep an attacker, and a lone "
+                         "enemy is always an attacker. Bounties still weight their role slot.")
+        self._add_bullet("Roles are inferred from enemy names, races and abilities, and designers can "
+                         "override them with role: attacker / role: supporter in enemy data.")
+
+        self._add_section("Dream Events — Phase 1")
+        self._add_bullet("Sleep can now bring a **dream**: a 20% chance per night at your house, "
+                         "at any inn, or at camp. Boon dreams grant XP, a small item, a wink of "
+                         "luck, or the new **Dream-Blessed** buff (+1 all attributes for 2 rooms); "
+                         "burden dreams take a little gold (capped at 5% or 50g), raise party "
+                         "stress, or leave only a warning you can't quite remember.")
+        self._add_bullet("Dreams never remove items, stats, or levels, and never chain two "
+                         "burdens in a row. A run of dreamless nights slowly raises the chance "
+                         "(soft pity); Wonderland and Event Horizon nights never dream.")
+        self._add_bullet("**Dream-Blessed** merges with Well-Rested and Shared Night instead of "
+                         "stacking, and wears off as you clear dungeon rooms. The HUD tags it "
+                         "**DRM**.")
+        self._add_bullet("Every dream is written to the Journal with a **[DREAM]** tag.")
+        self._add_bullet("**Choice dreams** can now find you (**The Offered Hand**, **The Accord Echo**, "
+                         "**The Mirror Self**, **The Feast**). Each option shows its trade-off — "
+                         "a buff or XP at the cost of stress, rest versus affection — and the "
+                         "choice you made is recorded in the Journal.")
+        self._add_bullet("Dreams you have had before now offer a **Skip** — let the dream go "
+                         "without taking anything from it.")
+        self._add_bullet("**Story dreams** now arrive on their own schedule: the first night you "
+                         "do not sleep alone, the lamp of an expected child, the Archive's "
+                         "rain-soaked library, and something counting your pulse in the walls. "
+                         "They never repeat and can set story flags.")
+        self._add_bullet("The Journal gains a **Dreams** tab (Inventory → Journal → Dreams): "
+                         "every dream you have had, re-readable, with how often it found you.")
+        self._add_bullet("Where you sleep now shapes the dream: **The Hearth's Song** and "
+                         "**The House Remembers** only come at your house, **The Road's Patience** "
+                         "only at camp, and **The Rented Room** only at inns.")
+        self._add_bullet("The **wiki** has a new **Dreams** page (every dream, its trigger and its "
+                         "numbers), and the Player Guide now covers Dreams plus the day-block, "
+                         "sleep, fatigue and stress rules.")
+
+        self._add_section("Time — Player Stress")
+        self._add_bullet("Skipping a night now builds **Stress** instead of instantly adding fatigue: "
+                         "**+50 per unslept day**, shown in every top bar (e.g. `STRESS 50`). A full "
+                         "meter — two skipped nights — converts into **one fatigue stack**, so real "
+                         "exhaustion has to be earned.")
+        self._add_bullet("Only a real sleep (home bed, inn Sleep, camp) clears stress. Wonderland and "
+                         "Event Horizon nights accrue nothing; Pandemonium still accrues.")
+        self._add_bullet("At **67+** stress you are **Rattled** (👁 marker): hallucinations gain a tier "
+                         "and can find you even without exhaustion — a Nightmare can follow you into "
+                         "the dark.")
+        self._add_bullet("Burden dreams feed the meter: Nightmare **+34**, Restless **+20**.")
+        self._add_bullet("A companion falling in combat is now the second big source: **you +34** "
+                         "stress per fall, the fallen girl **+34**, and everyone who saw it **+20**. "
+                         "Three falls in a run is a fatigue stack.")
+        self._add_bullet("Companions have their own stress teeth: **Weary (50+)** −1, "
+                         "**Frayed (75+)** −2 and **Burned Out (90+)** −3 to all attributes in "
+                         "combat (`WEA` / `FRY` / `EXH` HUD tags), and Burned Out girls refuse to "
+                         "fight that encounter — with something to say about it.")
+        self._add_bullet("A real sleep now also settles the party's nerves: **−10 companion "
+                         "stress** each.")
+
+        self._add_section("Family Content — Written Variants")
+        self._add_bullet("`Content level: written` now adds a more intimate prose layer to "
+                         "Shared Night actions and endings. Every girl keeps her signature "
+                         "line first; the written pool follows it and replaces the generic "
+                         "ending with a closer, more detailed one.")
+        self._add_bullet("Written mode remains **non-graphic**: it closes before explicit "
+                         "detail. `fade-to-black` stays the default, and `off` still disables "
+                         "Shared Night entirely.")
+        self._add_bullet("The scene now prints **“The rest is yours.”** in written mode instead "
+                         "of the fade-to-black marker.")
+        self._add_bullet("Dialogue pools widened: 8 generic lines per tone, 6 ending lines per "
+                         "tier, 12 random beats, and 4–5 written lines per tone/ending, on top "
+                         "of each girl's signature line.")
+        self._add_bullet("Family scene text now lives in `resources/family_scenes.yaml`; "
+                         "`resources/family_scenes.py` is a loader. Dialogue can be tuned "
+                         "without editing Python.")
+        self._add_bullet("`shared_night` and `beloved` now tick per dungeon room instead of "
+                         "per combat round: the MC keeps +1 all attributes and the girl keeps "
+                         "+2 to her primary attribute for two rooms.")
+        self._add_bullet("The HUD labels the merged Shared Night buff **SHR**, beloved **BLV**, "
+                         "and ordinary bed rest **RST**, so the night buff is no longer hidden "
+                         "behind RST.")
+
+        self._add_section("Family System")
+        self._add_bullet("A new optional family layer: an opt-in **Game Rules** toggle "
+                         "(`Family content`, final per save) plus the global **Content level** "
+                         "setting (`off` / `fade-to-black` / `written`). The system gates "
+                         "pregnancy, birth, and growth; Shared Night itself follows the content "
+                         "setting.")
+        self._add_bullet("**Shared Night** is a three-round Attunement scene with a visible "
+                         "mood each round. Hold her close, play along, take the lead, or whisper; "
+                         "exact matches score +2, the same energy family +1, and a clash +0. "
+                         "Endings are Together, Warm, Quiet, or Rest.")
+        self._add_bullet("Every capturable monster girl and the three Wonderland heroines now "
+                         "have a signature line for each tone, overlaid on the generic pool, plus "
+                         "her own personal closing line from her house dialogue.")
+        self._add_bullet("**Pregnancy** runs 30 days in three 10-day periods; the third period is "
+                         "lounge rest, followed by 7-day recovery and a 30-day conception cooldown. "
+                         "Birth, naming, and conception pity are wired into the day rollover.")
+        self._add_bullet("**True-born children** grow by total age — infant → child at 15 days, "
+                         "adult at 40, prime at 60 — and inherit their mother's race, innate skills, "
+                         "and race passive plus a weakened **Father's Legacy** from your race.")
+        self._add_bullet("Daughters use a 100-point **Bond** instead of romance affection. The "
+                         "lounge labels them **Daughter**, hides kiss/proposal/night actions, and "
+                         "uses daughter-specific talk and gift pools. Adults count toward the house "
+                         "cap and join the party through the normal recruitment/resonance flow.")
+        self._add_bullet("Pregnant, recovering, and underage girls are blocked from dispatch, "
+                         "ascension, and awakening. True-born adults awaken using their mother's "
+                         "upgraded innate kit.")
+
+        self._add_section("Voss & Lumen — The First Page")
+        self._add_bullet("After **Grand Resonance** and **A Moth at the Window** are complete, "
+                         "entering Skylume delivers a one-time Star Tower epilogue. It reveals "
+                         "Lumen Quillan's history and the Archive's first true-born entry, and "
+                         "grants **The First Page** keepsake (no combat power).")
+
+        self._add_section("Affection Ladder v2")
+        self._add_bullet("Base affection cap is now **200**; engaged and married girls cap at "
+                         "**300**. Awakening now requires **200** affection, and the wedding gift "
+                         "arrives at **300**. Shared Night gates are **140** (you initiate) and "
+                         "**160** (she initiates).")
+
+        self._add_version("v0.1.8.8 — The Distant Journey")
+
+        self._add_section("Karma — One Standing Score")
+        self._add_bullet("City Favor has been removed. **Karma** is now the only "
+                         "standing score, so the same reputation follows you to every "
+                         "shop, guild hall, gate, and port. Old saves keep their favor "
+                         "data, but it is no longer read or displayed.")
+        self._add_bullet("Guild bounties now scale with Karma: high Karma draws harder "
+                         "contracts with richer gold rewards, while low Karma keeps the "
+                         "board at its minimum and pays less. Karma-off saves use "
+                         "level-scaled contracts.")
+        self._add_bullet("Shops and blacksmiths use Charisma + Karma only. With Karma off, "
+                         "Charisma alone sets prices.")
+        self._add_bullet("Dispatch reports grant gold, items, and EXP only. The New Moon "
+                         "Festival now grants +25% bounty gold instead of favor.")
+
+        self._add_section("Seasons & Weather")
+        self._add_bullet("The calendar now has four 30-day seasons — Spring, Summer, "
+                         "Autumn, and Winter — cycling with the months. The season is "
+                         "shown beside the day in the top bar and time dialogs.")
+        self._add_bullet("Weather rolls from a season-weighted table: rain in Spring, "
+                         "snow in Winter, fog in Autumn. A weather day replaces the "
+                         "Morning/Noon/Night icon with its own glyph while the phase "
+                         "word stays visible.")
+        self._add_bullet("Weather now costs travel blocks exactly once: light weather "
+                         "+1 block, heavy weather +2, per hop. Heavy Rain no longer "
+                         "double-charges as both a 30% time multiplier and extra blocks.")
+
+        self._add_version("v0.1.8.7 — The Distant Journey")
+
+        self._add_section("Karma — Phase 3 Polish")
+        self._add_bullet("Low Karma now sharpens fatigue hallucinations and high Karma "
+                         "softens them by one instability tier at ±50 (still requiring "
+                         "at least two fatigue stacks). Wonderland keeps its existing rules.")
+        self._add_bullet("Receptionists, shopkeepers, blacksmiths, guild clerks, portmasters, "
+                         "gate guards, and Blackwake innkeepers now react to your Karma tier. "
+                         "Blackwake has its own outlaw-versus-saint lines.")
+        self._add_bullet("Travel can present a stranded traveler: help for +2 Karma, rob them "
+                         "for gold and −3 Karma, or walk away. The event is hidden when Karma "
+                         "is off.")
+        self._add_bullet("Blackwake offers a 50-gold smuggler's ferry berth to outlaws, and "
+                         "Black Markets stock a sealed outlaw crate at −25 Karma or lower.")
+        self._add_bullet("The Stats & Equipment tab now shows your Karma tier, its shop and "
+                         "bill effects, and your three most recent Karma changes.")
+
+        self._add_version("v0.1.8.6 — The Distant Journey")
+
+        self._add_section("Karma — Phase 2 Consequences")
+        self._add_bullet("Low Karma now meets you at the city gate. A one-time warning "
+                         "comes first; after that, Suspect entries demand a fee, while "
+                         "Wanted and Outlaw entries offer pay, talk-down, submission, or a "
+                         "non-lethal guard fight. Turning away leaves the gate unresolved.")
+        self._add_bullet("City guards scale to your level and never grant XP, loot, "
+                         "bestiary entries, captures, or quest credit. Victory or paying "
+                         "opens the city; defeat or submission sends you to jail instead "
+                         "of the death screen.")
+        self._add_bullet("Jail clamps the fine, advances to the next morning, heals the "
+                         "party to 50%, and marks you watched. Serving time grants "
+                         "**+3 Karma** once every 3 days, sharing the +8/day cap.")
+        self._add_bullet("Atonement paths are open: the temple's **Act of Contrition** "
+                         "restores 1 Karma per 50 gold toward 0, and guilds offer a weekly "
+                         "**Atonement contract** worth +5 Karma. Both share the daily cap.")
+        self._add_bullet("Blackwake, Wonderland, and Event Horizon runs never trigger the "
+                         "gate. Gate checks run once per travel/menu arrival, so dungeon "
+                         "and facility returns are safe. The Game Rules step now treats the "
+                         "Karma choice as final for the save.")
+
+        self._add_version("v0.1.8.5 — The Distant Journey")
+
+        self._add_section("Karma — Phase 1 Core")
+        self._add_bullet("New characters now choose **Karma** in a new **Game Rules** step "
+                         "during character creation (on by default). The step is ready for the "
+                         "family-system toggle and future difficulty rules. Karma is locked per "
+                         "save; existing saves keep it off for now.")
+        self._add_bullet("Dungeon events now ask how you treat the wounded, the dead, and wild "
+                         "beasts: help, bury, and calm for positive Karma — or rob, loot, and "
+                         "ambush for gold and negative Karma. A new **Forgotten Shrine** offers a "
+                         "blessing for 50 gold or a theft of its offerings.")
+        self._add_bullet("High Karma lowers shop and blacksmith prices, monthly upkeep, and waives "
+                         "Tax Day; low Karma raises them, but earns a discount at the Black Market. "
+                         "With Karma off, the classic Charisma + City Favor pricing returns.")
+        self._add_bullet("Duplicate captures now offer a licensed broker (standard gold), a "
+                         "slaver (+60% gold, −5 Karma), release (+1 Karma), or bonding. A full "
+                         "house now offers broker, slaver, or release instead of losing the capture.")
+        self._add_bullet("The Prescript Ledger's combat-local **Karma** display is now "
+                         "**Prescript Debt** (`DBT`), so it is not confused with the new moral axis.")
+
+        self._add_version("v0.1.8.4 — The Distant Journey")
+
+        self._add_section("Enemy AI Behaviors")
+        self._add_bullet("Regular enemies now choose between basic attacks, single-target skills, "
+                         "AoE skills, heals and AoE heals instead of always swinging once. Kits "
+                         "come from race and level, so low-level mooks stay simple while veteran "
+                         "enemies unleash themed attacks like Goblin Firebomb, Orc Cleave and "
+                         "Dragonkin Breath Weapon.")
+        self._add_bullet("Enemy cunning now scales with monster level: levels 1–4 only basic "
+                         "attack and heal, single-target skills unlock at level 5, AoE skills at "
+                         "level 10, and level 20+ / 35+ enemies use their kits more often and "
+                         "manage healing earlier.")
+        self._add_bullet("Enemies do not hand-pick the weakest party member. The AI only chooses "
+                         "the action — the existing weighted target selection still decides who "
+                         "gets hit, so enemies cannot focus-fire low-HP actors.")
+        self._add_bullet("Support enemies are recognised by role names — Goblin Shamans, "
+                         "Infernal Priests, Swamp Witches, Oracles and Alchemists mend themselves "
+                         "or their most wounded ally, and the stronger healers can restore the "
+                         "whole enemy group.")
+        self._add_bullet("Skills use cooldowns and normal resistance/dodge rules; AoE skills "
+                         "cannot be dodged but hit each party member for reduced damage. Monster "
+                         "girls never use AoE so capture nets stay viable, and superbosses / "
+                         "scripted floor bosses keep their existing behaviours.")
+
+        self._add_version("v0.1.8.3 — The Distant Journey")
+
+        self._add_section("Fireside Tales — House Stories")
+        self._add_bullet("Your house menu now holds a storybook. Fireside Tales are multi-part "
+                         "side stories about the household — romance, lore and quiet nights in — "
+                         "unlocked by who lives with you and how close you are.")
+        self._add_bullet("Requirements are shown in the book: a number of girls at a minimum "
+                         "affection, a featured girl or designated allies, a married companion, a "
+                         "house level, a quest flag, or a defeated superboss. Locked entries tell "
+                         "you exactly what is still missing.")
+        self._add_bullet("Eight arcs ship now: The Lucky Coin (Goblin Girl), Wind at the Window "
+                         "(Harpy Scout), Hoof and Wing (Harpy + Centaur pair), A Shape of Her Own "
+                         "(Slime Girl), Small Hours (ensemble household), A Moth at the Window "
+                         "(Archive lore), The Eighth Color (Palette) and The Last Oath (the White "
+                         "Knight). Parts are read in order, grant affection/stress/XP/gold, and "
+                         "can be re-read once complete.")
+        self._add_bullet("Some stories wait for a kill instead of an item: defeating Palette, the "
+                         "Chromatic Artisan unlocks The Eighth Color (with Palette's later parts "
+                         "requiring them in your household), and defeating the White Knight "
+                         "unlocks The Last Oath. Old saves are credited from each boss's own "
+                         "defeat flag.")
+        self._add_bullet("Some stories find you while travelling instead of waiting at home — "
+                         "A Moth at the Window begins when you enter Skylume after meeting Voss. "
+                         "Read parts are recorded as [STORY] entries in the Journal's Event tab.")
+
+        self._add_version("v0.1.8.2 — The Distant Journey")
+
+        self._add_section("Wonderland Quests")
+        self._add_bullet("Wonderland now has its own Journal side-quest chain. Step through the "
+                         "mysterious book to open \"Down the Rabbit Hole\"; \"The Storybook Road\" "
+                         "follows the dungeon's floor milestones, and \"The Author's Last Page\" "
+                         "tracks the five Wonderland superbosses from the Queen of Hearts to Mary Sue.")
+        self._add_bullet("\"The Looking-Glass Road\" now tracks how to reach Wonderland before you "
+                         "step through: clear Floor 20 in two city dungeons, reach Day 60, buy a "
+                         "Looking Glass Shard from Veilholt's Black Market (5,000g), then open the "
+                         "mysterious book in Veilholt's Arcane Tower.")
+        self._add_bullet("Alice, Red Hood and Dorothy each receive a Journal arc once you meet them "
+                         "at the Mad Hatter's tea party — from that first conversation, through "
+                         "recruitment, to the personal superboss that makes them permanent. Quest "
+                         "objectives resolve from your existing Wonderland state, so saves that "
+                         "already went down the rabbit hole catch up on their next city visit.")
+        self._add_bullet("Quest rewards for the new arcs are XP and gold; the Wonderland boss "
+                         "drops and heroine weapon chains are unchanged.")
+
+        self._add_section("Armor & Accessory Resistance Slots")
+        self._add_bullet("Armor and accessories now hold up to three infused elements, each "
+                         "with its own three-tier resistance track. A new flower fills the "
+                         "next slot; a fourth distinct flower replaces the third, keeping the "
+                         "first two. The first slot names the piece and owns the form's "
+                         "drawback — slotting an element that resists that drawback covers "
+                         "the weakness, so endgame gear is no longer locked to one defence.")
+        self._add_bullet("Accessories keep their form's stat identity through every infusion. "
+                         "Flowers now add or merge elemental resistance instead of re-attuning "
+                         "the accessory to the element's stat affinity.")
+        self._add_bullet("A weapon's primary element also powers matching skills, not only "
+                         "basic attacks and its trait. Examine now says so, and secondary/"
+                         "tertiary elements are called out as skill boosts.")
+
+        self._add_section("Mage Skill Rework — Time Warp & Cataclysm")
+        self._add_bullet("Time Warp now unlocks at Level 20 (Elemental Focus moves to Level 12). "
+                         "Casting Time Warp is now a free action: it still reduces every skill "
+                         "cooldown by 2 turns, then the action menu immediately reopens so you act "
+                         "again in the same turn. Its own cooldown is clamped to at least 1 turn so "
+                         "it can never be chain-cast.")
+        self._add_bullet("Cataclysm is no longer one massive Fire hit. It now unleashes seven "
+                         "strikes, one for each element — Fire, Water, Thunder, Wind, Earth, Light "
+                         "and Dark — spread round-robin across living enemies. Each strike uses its "
+                         "own resistance check; the Fire strike still applies Inferno. Mastery "
+                         "upgrades that burn to Conflagration, but seven hits is the cap.")
+        self._add_bullet("The combat skill menu now shows Cataclysm's [MULTI] tag, and the web wiki "
+                         "reflects the updated Mage ladder.")
+
         self._add_version("v0.1.8.1 — The Distant Journey")
+
+        self._add_section("Rarity, Grade & Flowers — Audit Patch")
+        self._add_bullet("The hard grade ceiling is gone. Rarity is now a soft ceiling: an epic "
+                         "rolled on grade 1 survives 60% of the time, a legendary 15%; on grade 2 a "
+                         "legendary survives 40%; grade 3 is unrestricted. A Legendary Ember or "
+                         "Legendary Blaze can finally drop — rarely — instead of being silently "
+                         "demoted, and treasure rooms at low floors stop being 100% rare.")
+        self._add_bullet("Scrolls no longer refuse to finish a rarity above a grade's old ceiling. "
+                         "The blacksmith's \"Temper it to a higher grade first\" refusal is gone, and "
+                         "so is the matching silent failure in the inventory fusion path. Tempering, "
+                         "scrolling and enhancing now stack in any order.")
+        self._add_bullet("City shops never stock a legendary below grade 3; late-game shops get "
+                         "fresh stock under the new rule. Road and dungeon merchants were already "
+                         "epic-capped.")
+        self._add_bullet("Tempering gold now scales with rarity — a legendary grade-up costs ×4 "
+                         "the common price — so preserving a legendary's value isn't free.")
+        self._add_bullet("Blacksmith: Forge Commission (Order a Base). Pick a form and an element, "
+                         "pay one flower of that element plus gold, and receive a common "
+                         "base-form piece of exactly that shape. Rarity stays drop/scroll "
+                         "territory, so the chase is preserved while a specific base becomes "
+                         "obtainable on purpose.")
+        self._add_bullet("Flowers now transmute 3:1 at the blacksmith: three blooms of one element "
+                         "become one bloom of another, free of charge. A farming streak in the wrong "
+                         "biome can always be converted into the flower your build actually needs.")
+        self._add_bullet("Dungeon loot follows the run, not the map pin: wild ruins and world-map "
+                         "dungeons roll their own biome's elements and flowers instead of the "
+                         "origin city's.")
+        self._add_bullet("Trap caches, wandering-monster drops, the rose-painting cache and the "
+                         "Cheshire Cat's gift now use the same grade-gated loot pipeline as every "
+                         "other dungeon drop — no more floor-1 grade-3 surprises or rarity-tagged "
+                         "flowers.")
+
+        self._add_section("Flower Infusion Rework — Grade Retired")
+        self._add_bullet("Equipment no longer has grades. Every drop is a base form — 29 weapon "
+                         "shapes, 16 armor, 17 accessories — and rarity is the only power roll, "
+                         "compressed to ×1.0–1.4 so a legendary is stronger without being another "
+                         "game. Enhancement adds stats only; elemental power is no longer "
+                         "multiplied by rarity or enhancement.")
+        self._add_bullet("Flowers set the element. The blacksmith's new Infuse Element service "
+                         "works one flower into a piece: the same flower strengthens that "
+                         "element's slot, a new flower adds one. Weapons hold three elements — "
+                         "primary up to 1.48 with the trait at 1.25/1.35/1.48, secondary up to "
+                         "1.20, tertiary up to 1.15. Armor and accessories hold one element with "
+                         "a three-tier resistance track; accessories re-attune their stats to "
+                         "the element.")
+        self._add_bullet("Item names now read the flower tier: Ember → Blaze → Inferno for "
+                         "fire, and each element's own three words otherwise. A piece's name "
+                         "moves to the next word at 1.25 (tier II) and 1.40 (tier III); an "
+                         "uninfused drop is just its form — Common Greatsword.")
+        self._add_bullet("Unique weapons keep their hand-written names and state their element "
+                         "in Examine instead: “This weapon causes Dark damage "
+                         "(×1.35 | Leech II).” The popup already listed the equip effect; "
+                         "now it also says what the weapon actually strikes with.")
+        self._add_bullet("Flowers finally have their own Bag tab with live counts — “Flowers "
+                         "(12)” — listed in element order, so you can see at a glance how many "
+                         "of each bloom you hold instead of digging through Key Items. The "
+                         "Bag also rebuilds when you open it, so loot from the run you just "
+                         "finished is there.")
+        self._add_bullet("Dungeon loot carries its region's craft signature: the favoured "
+                         "weapon and armor forms drop three times as often, and the dungeon "
+                         "header now names them (volcanic → axes, hammers and plate; forest "
+                         "→ bows, spears and leathers).")
+        self._add_bullet("Flower drops now follow the fight too: 60% of flowers match the "
+                         "defeated enemy's own attack element, the other 40% follow the "
+                         "region's weights — fire creatures feed fire flowers even in a "
+                         "tundra run. Neutral foes and room caches stay purely regional.")
+        self._add_bullet("Every element now has a proper trait ladder. Fire's "
+                         "Burn->Conflagration line has company: Sunder, Douse, Chain, Swift, "
+                         "Bulwark, Purge, Leech and Pierce each gain three infusion tiers "
+                         "(previously only fire scaled).")
+        self._add_bullet("Tempering is retired. Existing grid gear migrates automatically on "
+                         "load to its base form plus the element it carried (save formula v4), "
+                         "keeping rarity and enhancement.")
+        self._add_bullet("Forge Commission now forges the base form and works in your chosen "
+                         "flower; city shops never stock legendaries (epic is the ceiling).")
+        self._add_bullet("Enhancement is capped by rarity: +5 common, +6 uncommon, +7 rare, "
+                         "+8 epic, +10 legendary (uniques keep +5). A common piece can no "
+                         "longer ride a flat +10 past the whole rarity curve.")
+        self._add_bullet("Unique weapons are standardized: each carries one primary element "
+                         "at infusion tier II (1.35) and gains that element's trait II, and "
+                         "unique stat totals are budgeted at +5 — 32 weapon, 33 armor, "
+                         "26 accessory — with the old hidden +5 bonus removed. Gimmicks and "
+                         "specials carry their identity; raw stats no longer dwarf maxed gear.")
+        self._add_bullet("Enemies now deal exactly the element they advertise: each one carries "
+                         "a single damage element that drives both its attacks and its "
+                         "elemental debuff proc, instead of extra damage entries that never "
+                         "contributed. Resistances stay multi-element.")
 
         self._add_section("Combat UI")
         self._add_bullet("The combat screen finally holds still: the action panel keeps one fixed "
@@ -146,12 +888,26 @@ class ChangelogScreen(BaseScreen):
                          "aftermath and your companions' lines in the dungeon log, then walk "
                          "into the real room instead of crashing straight from one fight into "
                          "the next.")
+        self._add_bullet("Divine Intervention had a hole: with its pins spent (or never built "
+                         "up), the Tarnished Jade still repelled every incoming blow at the "
+                         "20% line — \"REPULSED … takes 0 damage!\" once per round, forever, "
+                         "with nothing consumed, and the wearer simply could not be brought "
+                         "down. The shatter now fires exactly when a blow (or the pins' own "
+                         "toll) brings you down to 20% or less, paid for with the pins it "
+                         "consumes — one save per descent. Once you're under the line the "
+                         "Jade is spent: blows land, the pins only dig deeper, and the next "
+                         "save must be earned by climbing back above the line.")
 
         self._add_section("Time Rework")
         self._add_bullet("Pandemonium finally feels the day: fatigue stacks accrue, Night rolls "
                          "the same hallucinations, and every stack dulls your stats there too — "
                          "the old suppression was hiding the whole system inside the one dungeon "
                          "built for long pushes. The Event Horizon alone stays frozen.")
+        self._add_bullet("Inns and taverns speak in blocks now: Rest says 1 block and tells you "
+                         "what it healed (or that you were already at full health), the "
+                         "innkeeper's \"eight hours\" sleep line is just a night, and your own "
+                         "house quotes rest costs in blocks — free from Villa upward. Journey "
+                         "narration at the port and on the road shows block estimates too.")
 
         self._add_section("Lounge & Marriage")
         self._add_bullet("Proposing now shows you which rings you own and lets you choose: the "
@@ -171,6 +927,250 @@ class ChangelogScreen(BaseScreen):
                          "below 35% HP), Rabbit's Pocket Watch (+2 initiative to the whole party "
                          "every round, +3 when bonded), and Huntsman's Oath (+30% damage on the "
                          "first strike of each fight, +45% when bonded).")
+
+        self._add_section("Player Skills — Wave 2")
+        self._add_bullet("Every class grows a second wave: three new actives unlock at levels 20, "
+                         "26 and 32 — right where the long climb to the cap used to have nothing "
+                         "waiting. Warriors charge and plant war banners, Mages focus the elements "
+                         "and cast Glacial Prison, Rogues scatter caltrops and poison blades, "
+                         "Clerics mend and ward their allies, Rangers camouflage and call down blast "
+                         "arrows, Paladins bless the faithful and shatter the dark with Dawnbreaker, "
+                         "Warlocks grasp the void and siphon souls, and Barbarians enter battle "
+                         "trances. The Skill Book lists them all as Tier 3 (Level 20-32).")
+        self._add_bullet("The new support effects are real, not renamed: Blessed Aegis is a true "
+                         "damage-absorbing barrier (the absorb bar shows on your party frames), "
+                         "Prayer of Mending restores 6% max HP each round, War Banner buffs the "
+                         "whole party, Elemental Focus boosts every element you wield, Perfect "
+                         "Opening and Reckless Abandon feed a new crit-damage bonus, and Caltrops "
+                         "and Grasp of the Void leave their targets bleeding.")
+
+        self._add_section("Player Skills — Capstones & Battle Loadout")
+        self._add_bullet("Every class now ends its ladder with a capstone at level 40 (cooldown 9): "
+                         "Warrior's Onslaught (five blows, the last one executes), Mage's Cataclysm "
+                         "(the field in Inferno), Rogue's Death's Embrace (an execution that refunds "
+                         "its own cooldown on a kill), Cleric's Providence (party heal plus a "
+                         "shielded revive), Ranger's Skyfall Volley, Paladin's Heaven's Sword "
+                         "(party-wide healing from the blow), Warlock's Dark Apotheosis and "
+                         "Barbarian's Wrath Incarnate.")
+        self._add_bullet("Combat now runs on a Battle Loadout: you bring at most 9 of your "
+                         "unlocked skills into a fight. Everything past the ninth unlock queues "
+                         "outside the fight — equip what fits your plan at the Skill Book's new "
+                         "'Manage Battle Loadout' screen, and remember unequipped skills keep "
+                         "their mastery.")
+        self._add_bullet("Support skills finally earn mastery: heals, buffs, barriers and revives "
+                         "count every cast toward ★ progress — previously only damaging skills "
+                         "tracked uses at all. Frost Nova also slows again (the freeze had been "
+                         "missing since the shared damage rework).")
+
+        self._add_section("Player Skills — Professions")
+        self._add_bullet("Every class now forks at level 40: once your capstone is learned, visit any "
+                         "Guild and choose one of two professions — permanently. Warlord or "
+                         "Sentinel, Evoker or Chronomancer, Assassin or Shadowdancer, Hierophant or "
+                         "Inquisitor, Sharpshooter or Warden, Crusader or Templar, Nethermancer or "
+                         "Infernalist, Berserker or Juggernaut. Your class passive is upgraded "
+                         "with new powers (crit chance, elemental mastery, combat-start cooldowns, "
+                         "regeneration, evasion, low-HP fury), your signature skill arrives "
+                         "immediately, and two more unlock at levels 50 and 60. The other path is "
+                         "closed forever.")
+        self._add_bullet("Forty-eight new skills across the sixteen paths: command the party with "
+                         "Iron Command, lock the field with Time Stop, vanish behind a Veil of "
+                         "Shadows, raise the fallen with Greater Resurrection, brand a target with "
+                         "Mark for Death, blanket the field in Hellfire, or simply refuse to die "
+                         "with Undying Rage.")
+        self._add_bullet("The Skill Book shows your profession, its upgraded passive and the locked "
+                         "branch you gave up — your Inventory's Skills tab carries the banner too. "
+                         "Profession skills flow through mastery, the Battle Loadout and the wiki "
+                         "like everything else.")
+
+        self._add_section("Event Horizon")
+        self._add_bullet("Judgement holds its court only inside the rift now — and its gavel was "
+                         "falling everywhere. Arcana stay in your run's records while a run is "
+                         "suspended, and Judgement's round-start pulse read those records directly, "
+                         "so ordinary dungeon fights were being judged too: every enemy bled 20% "
+                         "max HP each round (and from round 3, so did your party). Justice could "
+                         "mirror debuffs outside the rift the same way. Both hooks now verify a "
+                         "run is actually turning; they snap back to full strength the moment you "
+                         "step back into the Event Horizon.")
+
+        self._add_section("Equipment Economy Tuning")
+        self._add_bullet("Equipment is now priced by what it is: value = (base stats + elemental "
+                         "richness + special bonuses + enhancement) × rarity. A Legendary Iron "
+                         "Sword is cheap; a Legendary Inferno Greatsword is not. Selling uses the "
+                         "same value, so enhanced and higher-value gear finally sells for more.")
+        self._add_bullet("Shops roll stock by city tier (early / mid / late) with a level clamp: "
+                         "early cities stock almost entirely common/uncommon, epic gear requires "
+                         "level 12, legendary level 20. A starting character no longer sees rares "
+                         "as everyday stock, and legendaries only appear regularly in high-bias "
+                         "late cities.")
+        self._add_bullet("Drop curves flattened: legendary is capped at 5% (normal) / 10% "
+                         "(Pandemonium) at level 30+, with epics as the endgame workhorse. "
+                         "Treasure rooms are re-tuned (18% legendary at depth, down from 25%). "
+                         "Base value also caps the rarity an item can roll (low-value bases stop "
+                         "at rare/epic), so 'Legendary Iron Sword' drops are gone.")
+        self._add_bullet("Enhancement is multiplicative with rarity: +N is applied before the "
+                         "rarity multiplier (a legendary +10 greatsword has 28 STR vs a common "
+                         "one's 15), matching the 8× enhancement cost. Existing owned gear is "
+                         "rescaled automatically on load.")
+        self._add_bullet("Scroll fusion now charges for the value it adds — cheap for junk hops, "
+                         "expensive for legendary ones (Inferno Greatsword +10 common → legendary "
+                         "≈ 7,350g) — and rescales the elemental profile, so fused items match "
+                         "natural drops instead of being permanently weaker.")
+
+        self._add_section("Compositional Weapons — Form × Element × Grade")
+        self._add_bullet("The weapon catalog is no longer a fixed list: 29 forms × 9 elements × "
+                         "3 grades (~750 weapons) are generated at load. Every form can be found "
+                         "in every element and tier, named by the prefix families the design "
+                         "always promised — an Ember, Blaze and Inferno Greatsword are now the same "
+                         "form at grades 1–3 (STR 4 / 6 / 8, fire 1.10 / 1.30 / 1.50).")
+        self._add_bullet("Grade gates depth: grade 1 drops on floors 1–10, grade 2 on 11–25, "
+                         "grade 3 on 26+, and city shops mix grades by tier (early cities are "
+                         "grade 1 only). Rarity stays luck, capped by grade: a grade-1 weapon can "
+                         "never be legendary, grade 2 caps at epic.")
+        self._add_bullet("Regions bias elements: volcanic shops favour fire and earth, tundra "
+                         "water and wind, Pandemonium dark and void — the same form plays "
+                         "differently depending on where you find it.")
+        self._add_bullet("Tempering now raises elemental damage as well: +0.02 per enhancement "
+                         "step, so a +10 Ember Greatsword reaches Blaze-tier fire without being "
+                         "renamed. Existing gear is rescaled automatically on load.")
+        self._add_bullet("Curated weapons (Iron Sword, Inferno Greatsword, boss and quest "
+                         "rewards) keep their hand-tuned stats as overrides; the grid fills every "
+                         "combination that didn't exist before. Uniques, heroine and wedding gear "
+                         "are untouched.")
+
+        self._add_section("Compositional Armor & Accessories")
+        self._add_bullet("Armor and accessories join the grid: 16 armor forms × 9 elements × 3 "
+                         "grades and 17 accessory forms × 9 × 3 (~850 new pieces). An Ember, Blaze "
+                         "and Inferno Padded Armor are the same silhouette at grades 1–3, and every "
+                         "ring, crown or cloak now exists in every element.")
+        self._add_bullet("Armor elements are defensive triangles, not cosmetic resists: a fire "
+                         "piece resists fire (15/25/35% by grade) and earth, but takes ~15% more "
+                         "water damage; light armor trades total entries for having no weakness. "
+                         "Deep sets (Plate, Runic Plate) cover more elements at a lower value.")
+        self._add_bullet("Accessories follow the element→stat affinity the old catalog only "
+                         "hinted at: fire is STR/CON, water CON/DEX, wind DEX/CHA, light CHA/WIS, "
+                         "magical LRN/WIS. Single-stat forms pour the whole budget into the primary "
+                         "stat; two-stat forms split it.")
+        self._add_bullet("Grades apply everywhere: +1 primary stat per grade, resistance values "
+                         "climb with grade (secondary resists only appear from grade 2), and the "
+                         "same rarity caps hold — grade 1 can never be legendary. City shops roll "
+                         "armor and accessories by their tier's grade mix; floors gate them the same "
+                         "way as weapons.")
+        self._add_bullet("Armor and accessories are priced with a smaller grade premium than "
+                         "weapons, so a grade-3 breastplate is valuable without out-pricing a "
+                         "grade-3 greatsword. Curated pieces, uniques and wedding gear keep their "
+                         "hand-tuned stats and are untouched.")
+
+        self._add_section("Form Traditions")
+        self._add_bullet("Every piece of equipment now carries a form tradition, and every "
+                         "equipped slot contributes: weapon, armor, accessory 1 and accessory 2 "
+                         "(four traditions), plus accessory 3 once an actor has consumed a "
+                         "Beating Root (five). Two pieces with the same tradition stack.")
+        self._add_bullet("Weapons: swords, rapiers, bows and daggers sharpen crits (Keen); axes "
+                         "and tongue daggers deepen them (Brutal); greatswords, blades, mauls and "
+                         "flails add damage (Cleaving); hammers, maces, halberds and crossbows "
+                         "punch through armour (Sundering); shields and gauntlets reduce damage "
+                         "taken (Guarded); spears, chakrams and bells act earlier (Swift); "
+                         "staves, orbs, grimoires, wands and spellblades boost magical damage "
+                         "(Focused); focus orbs, scepters, lutes and harps boost healing (Mending).")
+        self._add_bullet("Armor and accessories use the same vocabulary: plate and mail guard, "
+                         "leathers and silks dodge, robes and regalia focus, vestments and mantles "
+                         "mend, dragonhide hardens its own element, rings and crowns sharpen, "
+                         "boots and earrings quicken. Examine and shop lines name the tradition.")
+        self._add_bullet("Unique gear participates through its form — Vorpal Blade counts as a "
+                         "blade, Sky Piercer as a talisman, wedding bands as bands — so nothing "
+                         "is left out. Traditions don't scale with grade, rarity or enhancement, "
+                         "and don't change an item's price.")
+
+        self._add_section("Equipment Catalog Rebuilt")
+        self._add_bullet("The old hand-written catalog has been retired: every non-unique weapon, "
+                         "armor and accessory is now generated from its form, element and grade, "
+                         "so stats, elements and prices finally follow the same formulas. Shops, "
+                         "merchants, dungeons and treasure rooms already drew from this grid, so "
+                         "drops are canonical everywhere.")
+        self._add_bullet("Existing gear is rescaled automatically on load, names included. A "
+                         "handful of story pieces that don't fit the grid (Magma Locket, "
+                         "Cyclone Anklet, Captain's Hook…) remain as legacy trophies — still "
+                         "equippable, but they no longer drop or appear in shops.")
+        self._add_bullet("Drop rules made explicit: grade comes from the floor (1–10 → grade 1, "
+                         "11–25 → grade 2, 26+ → grade 3) and rarity is capped by grade. "
+                         "Legendary only exists on grade-3 gear, so 'legendary iron sword' is "
+                         "structurally impossible — every legendary you find is endgame-tier.")
+
+        self._add_section("Tempering & Flowers")
+        self._add_bullet("The blacksmith now offers Temper (Raise Grade): grade 1 → 2 costs 3 "
+                         "element flowers and 1,200 gold; grade 2 → 3 costs 6 flowers and 3,000 "
+                         "gold (city discounts apply). Enhancement and rarity survive the "
+                         "upgrade.")
+        self._add_bullet("Nine flowers exist — Ironbriar, Emberbloom, Frostlotus, Stormlily, "
+                         "Galeorchid, Stonebloom, Sunpetal, Nightbloom and Manabloom, one per "
+                         "element. They are never sold: they drop from enemies (about 12% of "
+                         "drop rolls, weighted to the region's elements) and every treasure "
+                         "room hides one.")
+        self._add_bullet("Element and form are locked. Fire gear can only ever become stronger "
+                         "fire gear — there is no service that turns a fire blade into a water "
+                         "blade. Tempering is the fallback for players who can't find a grade-3 "
+                         "legendary naturally.")
+        self._add_bullet("Fusion scrolls now respect grade ceilings: a scroll can finish a "
+                         "grade's rarity cap (grade 1 → rare, grade 2 → epic, grade 3 → any) but "
+                         "never exceed it. A legendary scroll on a grade-1 Ember is refused with "
+                         "'temper it first' instead of creating a 'legendary' item weaker than a "
+                         "plain grade-3 Inferno. Items made before this change keep their rarity.")
+
+        self._add_section("Elemental Resistances — Convention Fix")
+        self._add_bullet("Resistance values now work as designed: higher = stronger. The damage "
+                         "formula used to multiply by the raw value, so fire armor made you take "
+                         "MORE fire damage and 'flame' enemies were weak to fire — every "
+                         "resistance in the game was inverted. The damage-taken multiplier is now "
+                         "2.0 - rating (1.3 = 30% resist, 0.7 = 30% weakness), fixing gear, races, "
+                         "enemy profiles, keyword specialisations and boss elemental attacks in "
+                         "one pass.")
+        self._add_bullet("Pierce (Magical weapons) now correctly bypasses resistance ratings, "
+                         "and the White Knight / Wicked Witch target selection follows the fixed "
+                         "convention (lowest fire resistance = weakest).")
+        self._add_bullet("The training dummy uses the corrected scale too: its resistance % maps "
+                         "to 1.0 + value behind the scenes, so '+80%' now truly resists 80% "
+                         "instead of 20%.")
+
+        self._add_section("Wild Dungeons — Header Floor Fixes")
+        self._add_bullet("The dungeon header subtitle now tracks the run: entering or resuming a "
+                         "ruin at floor 3 and descending to floor 5 no longer leaves "
+                         "'Volcanic Region · Floor 3' frozen at the top of the screen — the "
+                         "subtitle refreshes with the same floor the map and log show.")
+        self._add_bullet("Combat round headers show the ruin's floor index (Floor 5/6) instead "
+                         "of its enemy level. The level is still used for scaling and the "
+                         "final-room empowerment; only the display changed. Event Horizon room "
+                         "subtitles refresh with the room counter too.")
+
+        self._add_section("Wild Dungeons — Clear Windows")
+        self._add_bullet("Conquering a wild dungeon no longer strands the player on a dead "
+                         "screen. The reward window was parented to the WorldMapScreen instance "
+                         "that had already been destroyed when the run started, so opening it "
+                         "raised a TclError and every button — including Flee to City — became a "
+                         "no-op. The conquest window now opens on the live screen, lists the "
+                         "spoils recovered from the hoard, and offers a single Return to City "
+                         "button.")
+        self._add_bullet("Clearing a wild-dungeon floor now opens the same floor-clear window "
+                         "as city dungeons: continue to the next floor, return to the city, or "
+                         "save and return to the main menu. Terminal mode keeps the plain "
+                         "'Press Enter to descend' prompt.")
+        self._add_bullet("Safety net: a crash inside a dungeon result callback now falls back "
+                         "to the city instead of leaving the finished run stuck on screen.")
+
+        self._add_section("Voss's Stellar Field Kit — Research Loan")
+        self._add_bullet("The Stellar Field Kit is now its own item: a one-use capture net that "
+                         "never misses on monster girls below level 8. The weave refuses anything "
+                         "at level 8 or higher without spending the kit.")
+        self._add_bullet("The kit is spent on the throw even when you have no house to bring the "
+                         "girl home to, and you can only carry one at a time. Once it is used, ask "
+                         "Archivist Voss at the Star Tower for another — the request appears in the "
+                         "archive menu whenever the kit is not in your bag.")
+        self._add_bullet("Voss stops issuing kits once Field Study One (\"A Place to Belong\") is "
+                         "complete — the loan was only ever meant to bring the first girl home.")
+        self._add_bullet("Allies can no longer consume capture nets from the shared battle bag — "
+                         "previously an ally could waste one for no effect.")
+        self._add_bullet("The Fractured Hourglass is now consistently marked unique (red) in every "
+                         "save. Old saves that stored it as a common consumable are repaired on "
+                         "load, and it can no longer be sold or dropped.")
 
         self._add_version("v0.1.8.0 — The Distant Journey")
 
@@ -270,7 +1270,7 @@ class ChangelogScreen(BaseScreen):
                          "like “Fervor×2, Edge×1”).")
         self._add_bullet("Entropy is the price of depth: +1 per room from room 5, −1% to every "
                          "party member's attributes per stack (capped −45%), and every 10 stacks "
-                         "it permanently gains a random **affliction** — a lasting debuff identity "
+                         "it permanently gains a random affliction — a lasting debuff identity "
                          "like Burn, Silence or Dread, listed in your inventory's Event Horizon "
                          "tab. Rift battles open with debuffs drawn ONLY from the afflictions "
                          "you've already gained (none before your first — the early rift is "
@@ -284,7 +1284,7 @@ class ChangelogScreen(BaseScreen):
                          "and pays a gold payout scaled by rooms AND Entropy (death pays after the "
                          "usual toll, exempt from it). The corner button during a run reads ← Leave "
                          "Rift: it confirms before saving you out mid-room (and no longer "
-                         "flashes past unread). Rift combat counts **rooms, never floors** — "
+                         "flashes past unread). Rift combat counts rooms, never floors — "
                          "the top bar and round headers read ⚔ The Event Horizon | Room N. A closing "
                          "summary tallies the run: rooms, gold, cards taken, and every flask effect. "
                          "Rift power stays in the rift — while a run is suspended, none of its "
@@ -607,8 +1607,8 @@ class ChangelogScreen(BaseScreen):
                          "yourself or one ally.")
 
         self._add_section("Barracks Tiers V & VI")
-        self._add_bullet("Two endgame skill tiers join the Barracks: **Tier V Elite** (Lv.35 · Cap 40 · "
-                         "10,000 EXP) and **Tier VI Legend** (Lv.45 · Cap 50 · 20,000 EXP). Sixteen "
+        self._add_bullet("Two endgame skill tiers join the Barracks: Tier V Elite (Lv.35 · Cap 40 · "
+                         "10,000 EXP) and Tier VI Legend (Lv.45 · Cap 50 · 20,000 EXP). Sixteen "
                          "new skills — eight per tier — covering every category.")
         self._add_bullet("New mechanics: Aegis Shell's barrier absorbs 30% of the caster's max HP; "
                          "Phoenix Call (revive 30%) and Radiant Rebirth (revive 75% + a 15% caster-HP "

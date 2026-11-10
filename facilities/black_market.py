@@ -1,6 +1,9 @@
+import casino
+import karma
+import karma_dialogue
 from utils import advance_time, _get_wonderland_max_floor
 from inventory import add_item_to_inventory
-from resources.items import random_equipment, build_item, ITEM_RARITY
+from resources.items import random_equipment, build_item, ITEM_RARITY, market_value, market_anchor_level
 from city_dialogue import service_dialogue
 from gui.terminal import term
 import random
@@ -13,6 +16,28 @@ _NET_TIERS = [
     ("reinforced_capture_net",  "Reinforced Capture Net",  1200,   5, 20,  37),
     ("mythril_capture_net",     "Mythril Capture Net",     3000,   3, 40,  55),
 ]
+
+
+def _karma_price(player, cost):
+    """Black Market inverse Karma + the title discount."""
+    discount = 0.0
+    if karma.is_enabled(player):
+        discount = min(20, max(0, -karma.get_karma(player) * 0.2))
+    from titles import mod as _title_mod
+    title_discount = min(10, max(0, _title_mod(player, "black_market_pct") * 100))
+    discount = min(30, discount + title_discount)
+    if discount <= 0:
+        return cost
+    return max(1, int(round(cost * (1 - discount / 100.0))))
+
+
+def _outlaw_stock_available(player, city_id):
+    """Outlaw-only stock at Karma ≤ −25; Wonderland waits for its own pass."""
+    return (
+        city_id != "wonderland"
+        and karma.is_enabled(player)
+        and karma.get_karma(player) <= -25
+    )
 
 
 def _buy_capture_nets(player, city_id):
@@ -39,7 +64,8 @@ def _buy_capture_nets(player, city_id):
         sub_options = []
         available_tiers = []
 
-        for net_id, name, cost, cap, unlock_floor, bonus in _NET_TIERS:
+        for net_id, name, base_cost, cap, unlock_floor, bonus in _NET_TIERS:
+            cost = _karma_price(player, base_cost)
             owned = net_counts.get(net_id, 0)
             unlocked = max_floor >= unlock_floor
             if unlocked:
@@ -89,7 +115,8 @@ def _buy_capture_nets(player, city_id):
 def _woodcutter_interaction(player):
     """Handle the Woodcutter encounter in Wonderland's Black Market.
 
-    Phase 1: Give Woodcutter's Broken Axe (requires floor 20+)
+    Phase 1: Give Woodcutter's Broken Axe (requires floor 15+ — Red Hood
+             arrives after Floor 10 and her Wolf chapter ends at 20)
     Phase 2: Upgrade Broken Axe → Grandmother's Axe (requires Big Bad Wolf defeat + materials)
     """
     from resources.dialogues.wonderland import WONDERLAND_WOODCUTTER_DIALOGUE as WD
@@ -219,37 +246,49 @@ def _woodcutter_interaction(player):
 def black_market_service(player, city_id):
     """Black market: buy rare/illegal items at high prices."""
     service_dialogue(city_id, "black_market", "enter")
+    market_line = karma_dialogue.service_line(player, "black_market", city_id)
+    if market_line:
+        term.print(f'  "{market_line}"')
     term.print("A shadowy figure whispers about forbidden wares.")
 
-    # ── Wonderland Woodcutter check ────────────────────────────────────
+    # ── Wonderland Woodcutter check (Floor 15+; Red Hood joins at 11 and
+    #    her Wolf chapter ends at 20) ───────────────────────────────────
     woodcutter_available = (
         city_id == "wonderland" and
-        _get_wonderland_max_floor(player) >= 20
+        _get_wonderland_max_floor(player) >= 15
     )
 
     options = [
         "Buy mysterious relic (450 gold) – random rare item",
         "Buy Capture Nets...",
     ]
+    outlaw_available = _outlaw_stock_available(player, city_id)
+    if outlaw_available:
+        term.print("A sealed crate sits under the counter, reserved for outlaws.")
+        options.append("Buy sealed outlaw crate — epic relic")
 
     # ── Veilholt: Looking Glass Shard (when floor milestone met) ────────
     _looking_glass_available = False
     if city_id == "veilholt" and not player.get("wonderland_unlocked"):
-        city_floors = player.get("city_floors", {})
-        cities_f20 = sum(
-            1 for _cid, prog in city_floors.items()
-            if prog.get("max_floor", 1) >= 20
-        )
+        # Two different biomes at Floor 20+ — same-biome cities share one
+        # dungeon depth, so city records are not a valid count any more.
+        from leveling import get_biomes_cleared_to_cap
+        biomes_f20 = get_biomes_cleared_to_cap(player, 20)
         has_shard = any(
             item.get("id") == "looking_glass_shard"
             for item in player.get("inventory", [])
         )
-        if cities_f20 >= 2 and not has_shard:
+        if len(biomes_f20) >= 2 and not has_shard:
             _looking_glass_available = True
             options.append("Buy Looking Glass Shard - 5,000 gold")
 
     if woodcutter_available:
         options.append("Speak with the Woodcutter")
+
+    # ── The back room (casino games) ────────────────────────────────────
+    back_room_available = city_id != "wonderland"
+    if back_room_available:
+        options.append(casino.back_room_entry_label(player))
 
     options.append("Leave")
 
@@ -259,42 +298,68 @@ def black_market_service(player, city_id):
     opt_idx = 0
     relic_opt = opt_idx; opt_idx += 1          # 0
     net_opt = opt_idx; opt_idx += 1            # 1
+    outlaw_opt = opt_idx if outlaw_available else -1
+    if outlaw_available: opt_idx += 1
     glass_opt = opt_idx if _looking_glass_available else -1
-    if _looking_glass_available: opt_idx += 1  # 2 (if available)
+    if _looking_glass_available: opt_idx += 1  # next (if available)
     woodcutter_opt = opt_idx if woodcutter_available else -1
     if woodcutter_available: opt_idx += 1
+    back_room_opt = opt_idx if back_room_available else -1
+    if back_room_available: opt_idx += 1
     leave_opt = opt_idx                         # last
 
     if choice == relic_opt:
-        # Relic pricing scales with the new rarity tiers
+        # Relic pricing follows computed item value (economy tuning)
         relic_rarity = random.choices(
             ["common", "uncommon", "rare", "epic", "legendary"],
             weights=[10, 22, 30, 24, 14])[0]
-        cost = int(450 * ITEM_RARITY.get(relic_rarity, ITEM_RARITY["common"])["price_mult"])
+        item = random_equipment(rarity=relic_rarity)
+        anchor = market_anchor_level(player)
+        cost = max(1, int(round(450 * market_value(item, anchor) / 4)))
+        cost = _karma_price(player, cost)
         if player.get("gold", 0) >= cost:
             player["gold"] -= cost
-            item = random_equipment(rarity=relic_rarity)
             if add_item_to_inventory(player, item):
-                term.print(f"You acquire: {item['name']} ({relic_rarity.title()})")
+                term.print(f"You acquire: {item['name']} ({item['rarity'].title()})")
                 service_dialogue(city_id, "black_market", "buy")
             else:
                 term.print("Your bag is full! Cannot carry the relic.")
                 player["gold"] += cost  # refund
         else:
-            term.print("Not enough gold.")
+            term.print(f"Not enough gold. This relic costs {cost:,}g.")
 
     elif choice == net_opt:
         _buy_capture_nets(player, city_id)
+
+    elif outlaw_available and choice == outlaw_opt:
+        item = random_equipment(rarity="epic")
+        anchor = market_anchor_level(player)
+        cost = max(1, int(round(900 * market_value(item, anchor) / 4)))
+        cost = _karma_price(player, cost)
+        if player.get("gold", 0) >= cost:
+            player["gold"] -= cost
+            if add_item_to_inventory(player, item):
+                term.print(f"The dealer unlocks a sealed crate. You acquire: {item['name']} (Epic, outlaw stock)")
+                service_dialogue(city_id, "black_market", "buy")
+            else:
+                term.print("Your bag is full! Cannot carry the crate's contents.")
+                player["gold"] += cost  # refund
+        else:
+            term.print(f"Not enough gold. The outlaw crate costs {cost:,}g.")
 
     elif choice == glass_opt:
         # Looking Glass Shard — key item for Wonderland unlock
         cost = 5000
         if player.get("gold", 0) >= cost:
-            if term.confirm(
+            term.print(
                 "The dealer produces a shard of glass that reflects nothing "
-                "from this world.\n'This? Found it in the forest. Shows things "
-                "that aren't... yet. 5,000 gold.'\nBuy it?"
-            ):
+                "from this world."
+            )
+            term.print(
+                "'This? Found it in the forest. Shows things that aren't... "
+                "yet. 5,000 gold.'"
+            )
+            if term.confirm("Buy it?"):
                 player["gold"] -= cost
                 shard = build_item("looking_glass_shard")
                 if add_item_to_inventory(player, shard):
@@ -311,6 +376,21 @@ def black_market_service(player, city_id):
 
     elif choice == woodcutter_opt:
         _woodcutter_interaction(player)
+
+    elif back_room_available and choice == back_room_opt:
+        status = casino.back_room_status(player)
+        if not status.get("ok"):
+            from facilities.casino_ui import print_back_room_refusal
+            print_back_room_refusal(player, status)
+            term.pause()
+            advance_time(player, 30)
+            return
+        from facilities.casino_ui import back_room_menu
+        back_room_menu(player, city_id)
+        term.pause()
+        # The back-room sub-menu charges 20 minutes per hand; skip the
+        # normal 30-minute Black Market visit fee to avoid double-charging.
+        return
 
     elif choice == leave_opt or choice == -1:
         service_dialogue(city_id, "black_market", "leave")

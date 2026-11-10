@@ -1,4 +1,5 @@
 # facilities/temple.py
+import karma
 from utils import advance_time, _int_to_roman, _get_wonderland_max_floor, display_name
 from city_dialogue import service_dialogue
 from facilities.shop import get_discounted_price
@@ -136,7 +137,8 @@ def recover_allies(player, city_id):
 def _godmother_interaction(player, city_id):
     """Handle the Fairy Godmother encounter in Wonderland's temple.
     
-    Phase 1: Give the ??? Blade to the player (requires floor 20+)
+    Phase 1: Give the ??? Blade to the player (requires floor 35+ — Alice
+             arrives after Floor 30 and her Jabberwock chapter ends at 40)
     Phase 2: Upgrade ??? Blade → Vorpal Blade (requires Jabberwock defeat + fragment)
     """
     from resources.dialogues.wonderland import WONDERLAND_GODMOTHER_DIALOGUE as GD
@@ -302,6 +304,60 @@ def _day_of_respite(player, city_id):
     term.pause()
 
 
+def _act_of_contrition(player, city_id):
+    """Spend gold to restore negative Karma toward 0, sharing the +8/day cap."""
+    if not karma.is_enabled(player):
+        term.print("The priestess cannot read a moral ledger you do not keep.")
+        term.pause()
+        return
+
+    current = karma.get_karma(player)
+    if current >= 0:
+        term.print("You carry no guilt the temple can lift. There is nothing to atone for.")
+        term.pause()
+        return
+
+    remaining = karma.get_daily_positive_remaining(player)
+    max_points = min(
+        -current,
+        max(0, int(player.get("gold", 0) or 0) // 50),
+        remaining,
+    )
+    if max_points <= 0:
+        if remaining <= 0:
+            term.print("Your conscience can only grow so much in a day. Return tomorrow.")
+        elif int(player.get("gold", 0) or 0) < 50:
+            term.print("Contrition costs 50 gold per point. You cannot afford a single rite.")
+        else:
+            term.print("There is nothing the temple can do for you right now.")
+        term.pause()
+        return
+
+    term.print(f"Current Karma: {current:+d} ({karma.get_karma_tier(player)['label']})")
+    term.print(f"Contrition costs 50 gold per point. You can restore up to {max_points} today.\n")
+    options = [f"Restore {n} Karma — {n * 50} gold" for n in range(1, max_points + 1)]
+    choice = term.menu(options, prompt="How much do you atone?",
+                       allow_cancel=True, cancel_label="Back")
+    if choice < 0:
+        return
+
+    points = choice + 1
+    applied = karma.change_karma_toward_zero(player, points, "Act of Contrition")
+    if applied <= 0:
+        term.print("The rite does not take hold. Your conscience is already as light as it can be today.")
+        term.pause()
+        return
+
+    cost = applied * 50
+    player["gold"] = int(player.get("gold", 0) or 0) - cost
+    term.print(
+        f"\nContrition: Karma {applied:+d} ({current} → {karma.get_karma(player)}). "
+        f"Cost: {cost} gold."
+    )
+    service_dialogue(city_id, "temple", "bless")
+    term.pause()
+
+
 def temple_menu(player, city_id="solmere"):
     while True:
         term.clear()
@@ -325,11 +381,13 @@ def temple_menu(player, city_id="solmere"):
         
         # Check if ascension stones are available
         stones_available = bool(_get_available_ascension_stones(player))
+        contrition_available = karma.is_enabled(player) and karma.get_karma(player) < 0
         
-        # Check for Godmother availability (Wonderland floor 20+)
+        # Check for Godmother availability (Wonderland floor 35+; Alice's
+        # weapon must not appear before her Floor-30 introduction).
         godmother_available = (
             city_id == "wonderland" and
-            _get_wonderland_max_floor(player) >= 20
+            _get_wonderland_max_floor(player) >= 35
         )
         
         options = [
@@ -351,6 +409,8 @@ def temple_menu(player, city_id="solmere"):
             options.append("Buy Ascension Stone")
         if godmother_available:
             options.append("Speak with the Godmother")
+        if contrition_available:
+            options.append("Act of Contrition — restore Karma (50 gold/point)")
         options.append("Leave")
         
         choice = term.menu(options, prompt="What seek you from the temple?")
@@ -365,6 +425,8 @@ def temple_menu(player, city_id="solmere"):
         if stones_available: opt_idx += 1       # 3 (if available)
         godmother_opt = opt_idx if godmother_available else -1
         if godmother_available: opt_idx += 1    # 3 or 4
+        contrition_opt = opt_idx if contrition_available else -1
+        if contrition_available: opt_idx += 1
         leave_opt = opt_idx                      # last
         
         if choice == curse_opt:
@@ -384,6 +446,9 @@ def temple_menu(player, city_id="solmere"):
             advance_time(player, 15)
         elif choice == godmother_opt:
             _godmother_interaction(player, city_id)
+            advance_time(player, 30)
+        elif choice == contrition_opt:
+            _act_of_contrition(player, city_id)
             advance_time(player, 30)
         elif choice == leave_opt or choice == -1:
             service_dialogue(city_id, "temple", "leave")

@@ -26,10 +26,12 @@ UNIQUE_EFFECTS = {
     ),
     "tarnished_jade": (
         "Taking hits embeds Jade Pins (max 10; +1 STR/WIS per 2 pins). Pins "
-        "deal 5% max-HP damage per pin at turn start. At 20% HP or less they "
-        "shatter: 6+ pins — Divine Lament (all enemies take pins × (STR+WIS)/2; "
-        "wearer heals 5% max HP per pin); fewer pins — Wedge Backlash (halved "
-        "blast, but the wearer's stats are halved for the battle)."
+        "deal 5% max-HP damage per pin at turn start. Brought down to 20% HP "
+        "or less — by a blow or by the pins themselves — they shatter: 6+ pins "
+        "— Divine Lament (all enemies take pins × (STR+WIS)/2; wearer heals 5% "
+        "max HP per pin); fewer pins — Wedge Backlash (halved blast, but the "
+        "wearer's stats are halved for the battle). Already under the line, a "
+        "spent Jade cannot save: blows land and the pins only dig deeper."
     ),
     "captain_cutlass": (
         "Kills build High Tide (max 5: +5% damage dealt and +10% damage taken "
@@ -64,8 +66,17 @@ UNIQUE_EFFECTS = {
         "damage each). Once per floor, survive a fatal blow at 1 HP and gain "
         "+50% dodge for 1 turn."
     ),
+    "decaying_aegis": (
+        "At the start of each round, raise a mirrored barrier equal to 15% "
+        "max HP. It decays by 4% max HP per round; when it breaks, it takes "
+        "5 rounds to re-form."
+    ),
     "last_oath": (
         "Basic attacks reduce the target's armour by 1 (2 on a critical hit)."
+    ),
+    "moonlight_greatsword": (
+        "Moonlight (action, 5-turn cooldown): for the next 3 rounds, basic "
+        "attacks become magical waves that strike every enemy for 75% damage."
     ),
     "authors_pen": (
         "While in Wonderland: +4 to all stats. Rewrite (action, 5-turn "
@@ -81,8 +92,8 @@ UNIQUE_EFFECTS = {
     "prescript_ledger": (
         "Each round issues a Prescript: fulfil it for Grace (up to 9 stacks — "
         "+2% damage, +1.5% crit and 1.5% max-HP regen each, plus a skill clash "
-        "bonus at 3/6/9). Ignoring a feasible order adds Karma (+3% damage "
-        "taken per stack); at 6 stacks, Karmic Retribution strikes."
+        "bonus at 3/6/9). Ignoring a feasible order adds Prescript Debt (+3% "
+        "damage taken per stack); at 6 stacks, the debt is collected."
     ),
 
     # ── Event Horizon trophies ───────────────────────────────────────────
@@ -91,9 +102,9 @@ UNIQUE_EFFECTS = {
         "×1.75 damage. Averages out to exactly normal."
     ),
     "dopo_robe": (
-        "While the wearer wields a sword-family weapon: the wearer deals "
-        "×1.40 damage, +5% per sword-wielding ally (all recruited allies "
-        "count, even benched — uncapped); each sword-wielding ally deals ×1.15."
+        "While the wearer wields a blade: the wearer deals ×1.40 damage, +5% "
+        "per blade-wielding ally (all recruited allies count, even benched — "
+        "uncapped); each blade-wielding ally deals ×1.15."
     ),
     "piece_of_relationship": (
         "Tiers by bonded allies (200 affection, active or benched): 2–3 — MC "

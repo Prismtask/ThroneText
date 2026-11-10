@@ -77,10 +77,26 @@ RARITY_TIER = {"common": 0, "uncommon": 1, "rare": 2, "epic": 3, "legendary": 4}
 # Ignite (fire) uses its own tuned rarity curve instead of the generic
 # +1-per-rarity bonus — the curve advertised in the v0.1.6 burn rework:
 # Common=Burn, Uncommon=Blaze, Rare=Blaze, Epic=Inferno, Legendary=Conflagration.
-# Unknown rarities (e.g. "unique") fall back to the common tier; revisit if a
-# unique weapon is ever given a primary_element.
+# Unknown rarities (e.g. "unique") fall back to the common tier; unique
+# weapons carry an explicit trait_tier and bypass this rarity path.
 IGNITE_TIER_BY_RARITY = {
     "common": 2, "uncommon": 3, "rare": 3, "epic": 4, "legendary": 5,
+}
+
+# ── Infusion trait ladders (docs/rarity_grade_flower_audit.md §12.7) ────────
+# Tier index is 0-based: trait I / II / III from the flower infusion track.
+# Composed base-form weapons resolve traits from ``trait_tier`` on the instance;
+# uniques/legacy keep the old rarity curve as a fallback.
+INFUSION_LADDERS = {
+    "physical": {"on_hit_armor_pen": (0.15, 0.22, 0.30)},
+    "fire": {"on_hit_burn_tier": (2, 4, 5)},
+    "water": {"on_kill_cd_reduce": (1, 2, 3)},
+    "thunder": {"on_hit_chain_chance": (0.15, 0.25, 0.35)},
+    "wind": {"on_hit_init_bonus": (2, 4, 6)},
+    "earth": {"on_hit_def_bonus": (0.08, 0.12, 0.16)},
+    "light": {"on_kill_cleanse": (1, 2, 3)},
+    "dark": {"on_hit_leech_pct": (0.08, 0.12, 0.16)},
+    "magical": {"on_hit_res_ignore": (0.25, 0.35, 0.45)},
 }
 
 
@@ -109,6 +125,18 @@ def get_trait_for_weapon(weapon: dict, rarity: str) -> dict | None:
     trait = ELEMENTAL_TRAITS.get(element)
     if trait is None:
         return None
+
+    # Infused base-form weapons: the instance's trait tier owns the ladder.
+    # ``trait_tier`` present-but-None means the element is still dormant.
+    if "trait_tier" in weapon:
+        infusion_tier = weapon.get("trait_tier")
+        if not infusion_tier:
+            return None
+        resolved = dict(trait)
+        idx = max(0, min(2, int(infusion_tier) - 1))
+        for key, values in INFUSION_LADDERS.get(element, {}).items():
+            resolved[key] = values[idx]
+        return resolved
 
     tier = RARITY_TIER.get(rarity, 0)
     bonus = trait.get("rarity_bonus", 0)

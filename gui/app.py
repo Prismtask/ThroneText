@@ -174,4 +174,13 @@ class PandemoniumApp:
 def run_gui(player: dict = None):
     """Convenience entry point: create app and run it."""
     app = PandemoniumApp(player=player)
-    app.run()
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        # Ctrl+C in the terminal running the GUI: save settings, close the
+        # window, and let launcher.py print a clean exit message.
+        try:
+            app._on_close()
+        except Exception:
+            pass
+        raise

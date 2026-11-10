@@ -338,8 +338,9 @@ def combat_white_knight(player, floor=None, enemies=None):
                 break
             t = random.choice(living)
             dmg = random.randint(10, 16) + max(0, b.get("str_mod", 0) // 2)
+            from combat.elemental import resistance_multiplier
             res = t.get("elemental_res", {}).get("light", 1.0)
-            dmg = max(1, int(dmg * res))
+            dmg = max(1, int(dmg * resistance_multiplier(res)))
             t["current_hp"] = max(0, t.get("current_hp", 0) - dmg)
             c_print(f"  ✦ Light lance strikes {t.get('name', 'you')} — {dmg} dmg [LIGHT]")
             if t.get("current_hp", 0) <= 0:
@@ -371,12 +372,10 @@ def combat_white_knight(player, floor=None, enemies=None):
             c_print(f"  {line}")
 
     # ── Intro ──────────────────────────────────────────────────────────
-    c_print("\n" + "=" * 60)
-    c_print("A cold radiance fills the chamber. Armour of white porcelain")
+    c_print("\nA cold radiance fills the chamber. Armour of white porcelain")
     c_print("kneels before an empty throne, a rapier driven into the floor.")
     c_print("It rises. The oath it swore outlived the empire it served.")
     c_print(f"\n{BOSS_NAME} — HP: {boss['hp']}")
-    c_print("=" * 60)
     c_input("\nPress Enter to face the fallen oath...")
 
     result = superboss_combat_loop(
@@ -404,10 +403,8 @@ def combat_white_knight(player, floor=None, enemies=None):
 
     if result == "victory":
         if not player.get("boss_defeated_white_knight"):
-            c_print("\n" + "=" * 60)
-            c_print("The porcelain falls away. The oath is kept at last —")
+            c_print("\nThe porcelain falls away. The oath is kept at last —")
             c_print("what remains is a blade that never misses its promise.")
-            c_print("=" * 60)
             from resources.items import build_item
             from inventory_ui import prompt_acquire_item
             rapier = build_item("last_oath", "unique")

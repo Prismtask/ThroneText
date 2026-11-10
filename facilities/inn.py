@@ -3,11 +3,15 @@ from utils import advance_time, display_name
 from character import player_max_hp
 from resources.cities import CITIES
 from city_dialogue import service_dialogue   # changed
+import karma_dialogue
 from gui.terminal import term
 
 def inn_menu(player, city_id="solmere"):
     term.clear()
     service_dialogue(city_id, "inn", "enter")
+    inn_line = karma_dialogue.service_line(player, "inn", city_id)
+    if inn_line:
+        term.print(f'  "{inn_line}"')
     city = CITIES.get(city_id, CITIES["solmere"])
     inn_config = city["inn"]
 
@@ -19,34 +23,52 @@ def inn_menu(player, city_id="solmere"):
     term.print(f"=== THE WARM HEARTH INN - {city['name']} ===")
     while True:
         choice = term.menu([
-            "Rest (Full Heal - 30 min)",
+            "Rest (Full Heal - 1 block)",
             "Sleep (Full Heal) - Night only",
+            "Play tavern games...",
             "Back"
         ], prompt="What would you like to do?")
         if choice == 0:
-            player["current_hp"] = player_max_hp(player)
+            max_hp = player_max_hp(player)
+            healed = max_hp - player["current_hp"]
+            player["current_hp"] = max_hp
             # Heal allies too
             for ally in player.get("allies", []):
                 ally["current_hp"] = ally["max_hp"]
             service_dialogue(city_id, "inn", "rest")
             advance_time(player, 30)
+            if healed > 0:
+                term.print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
+            else:
+                term.print("  You were already at full health, but the rest feels nice.")
+            term.print("  (1 block passes.)")
             term.pause("You feel refreshed. Press Continue...")
             break
         elif choice == 1:
             import time_blocks
             if time_blocks.get_day_phase(player) == "night":
+                # Combat stress: settle falls, then let the party rest.
+                from combat.party_stress import on_party_sleep
+                for _stress_msg in on_party_sleep(player):
+                    term.print(_stress_msg)
                 player["current_hp"] = player_max_hp(player)
                 # Heal allies too
                 for ally in player.get("allies", []):
                     ally["current_hp"] = ally["max_hp"]
                 service_dialogue(city_id, "inn", "sleep")
                 time_blocks.end_day(player, slept=True)
+                # Dream events (docs/dream_events_design.md) — one roll per sleep.
+                from dreams import maybe_offer_dream
+                maybe_offer_dream(player, "inn", term)
                 term.pause("You wake up refreshed the next morning...")
                 break
             else:
                 service_dialogue(city_id, "inn", "early_sleep")
                 term.pause()
-        elif choice == 2 or choice == -1:
+        elif choice == 2:
+            from facilities.casino_ui import tavern_games_menu
+            tavern_games_menu(player, city_id)
+        elif choice == 3 or choice == -1:
             service_dialogue(city_id, "inn", "leave")
             break
         else:
@@ -62,6 +84,12 @@ _HEROINE_MENU_LABELS = {
     "alice":    "Talk to the girl in the blue dress (Alice)",
     "red_hood": "Talk to the huntress in the red hood (Red Hood)",
     "dorothy":  "Talk to the girl with the ruby slippers (Dorothy)",
+}
+
+_HEROINE_PERM_FLAGS = {
+    "alice":    "wonderland_heroine_alice_permanent",
+    "red_hood": "wonderland_heroine_redhood_permanent",
+    "dorothy":  "wonderland_heroine_dorothy_permanent",
 }
 
 _HEROINE_FULL_DIALOGUE = {
@@ -166,11 +194,12 @@ _HEROINE_FULL_DIALOGUE = {
 
 
 def _wonderland_inn_menu(player, city, inn_config):
-    """Mad Hatter's Tea Party — Wonderland inn with heroine interactions."""
+    """Mad Hatter's Tea Party — staged Wonderland guest room."""
     from combat.ally import (
-        create_heroine_ally, get_heroine_in_party,
-        get_heroine_state, set_heroine_state,
+        ensure_party_order, get_heroine_in_party,
+        set_heroine_state,
     )
+    import wonderland_guests as guests_mod
 
     city_id = "wonderland"
 
@@ -179,64 +208,48 @@ def _wonderland_inn_menu(player, city, inn_config):
     # without going through _enter_wonderland (which normally restores them).
     saved_temps = player.pop("wonderland_saved_temp_heroines", [])
     if saved_temps:
-        permanent_heroine_keys = {"alice": "wonderland_heroine_alice_permanent",
-                                   "red_hood": "wonderland_heroine_redhood_permanent",
-                                   "dorothy": "wonderland_heroine_dorothy_permanent"}
         for saved in saved_temps:
             hk = saved.get("_heroine_key")
             already_in_party = get_heroine_in_party(player, hk)
             if not already_in_party:
-                # Restore the saved heroine to the party
-                if hk in permanent_heroine_keys and player.get(permanent_heroine_keys[hk]):
+                if hk in _HEROINE_PERM_FLAGS and player.get(_HEROINE_PERM_FLAGS[hk]):
                     saved["_wonderland_temp"] = False
+                    guests_mod.set_guest_state(player, hk, "resolved")
                 else:
                     saved["_wonderland_temp"] = True
-                    # Ensure state is "temp" so the inn menu shows correctly
                     set_heroine_state(player, hk, "temp")
+                    if guests_mod.get_guest_state(player, hk) not in ("late", "resolved"):
+                        guests_mod.set_guest_state(player, hk, "accepted")
                 player.setdefault("allies", []).append(saved)
-                from combat.ally import ensure_party_order
                 ensure_party_order(player)
                 term.print(f"\n💫 {display_name(saved)} rematerializes beside you — your journey together resumes.")
         if saved_temps:
             term.pause()
 
+    # ── Guest arrivals (Floor 10 / 20 / 30 gates) ──────────────────────
+    scenes = guests_mod.on_inn_enter(player)
+    for scene in scenes:
+        _print_wonderland_guest_scene(scene, player)
+    if scenes:
+        term.pause()
+
     term.print(f"=== THE MAD HATTER'S TEA PARTY — {city['name']} ===")
-    term.print("The table is set for twenty-four. Only a few chairs are occupied.")
+    if guests_mod.menu_keys(player):
+        term.print("The table is set for twenty-four. A few guest chairs are occupied.")
+    else:
+        term.print("The table is set for twenty-four. Every guest chair is empty.")
+        term.print('"No guests for you yet," the Hatter says. "The Queen\'s chapter comes first."')
     term.print("")
 
     while True:
-        # Build menu dynamically based on heroine states
         menu_options = [
-            "Rest (Full Heal - 30 min)",
+            "Rest (Full Heal - no time passes here)",
             "Sleep (Full Heal) - Always teatime here...",
         ]
-
-        # Add heroine options
-        heroine_keys = []
-        for hk in ["alice", "red_hood", "dorothy"]:
-            state = get_heroine_state(player, hk)
-            existing = get_heroine_in_party(player, hk)
-            is_permanent = player.get(f"wonderland_heroine_{'alice' if hk == 'alice' else hk}_permanent" if hk == 'alice' else
-                           f"wonderland_heroine_{hk}_permanent", False)
-
-            if existing and existing.get("_wonderland_temp", True) is False:
-                # Already permanent
-                menu_options.append(_HEROINE_MENU_LABELS[hk] + " ✓ (Permanent)")
-            elif existing and existing.get("_wonderland_temp"):
-                # Temp ally
-                menu_options.append(_HEROINE_MENU_LABELS[hk] + " ✓ (Traveling with you)")
-            elif is_permanent and not existing:
-                # Permanent but not in party (left behind and came back)
-                menu_options.append(_HEROINE_MENU_LABELS[hk])
-            elif state == "unmet" or state == "intro" or state == "declined":
-                menu_options.append(_HEROINE_MENU_LABELS[hk])
-            # else: state is "temp" but not in party (they were benched somehow)
-            #   or "permanent" but something weird — show anyway
-            else:
-                menu_options.append(_HEROINE_MENU_LABELS[hk])
-
-            heroine_keys.append(hk)
-
+        guest_keys = guests_mod.menu_keys(player)
+        for hk in guest_keys:
+            menu_options.append(_wonderland_guest_label(player, hk))
+        menu_options.append("Ask the Hatter about the guests")
         menu_options.append("Back")
 
         choice = term.menu(menu_options, prompt="What would you like to do?")
@@ -247,11 +260,18 @@ def _wonderland_inn_menu(player, city, inn_config):
 
         if choice == 0:
             # Rest
-            player["current_hp"] = player_max_hp(player)
+            max_hp = player_max_hp(player)
+            healed = max_hp - player["current_hp"]
+            player["current_hp"] = max_hp
             for ally in player.get("allies", []):
                 ally["current_hp"] = ally["max_hp"]
             service_dialogue(city_id, "inn", "rest")
             advance_time(player, 30)
+            if healed > 0:
+                term.print(f"  Healed {healed} HP → {max_hp}/{max_hp}")
+            else:
+                term.print("  You were already at full health, but the tea is lovely.")
+            term.print("  (No time passes in the pocket.)")
             term.pause("The tea was excellent. Probably. Press Continue...")
             break
 
@@ -266,19 +286,106 @@ def _wonderland_inn_menu(player, city, inn_config):
             term.pause("You dream of riddles without answers. You wake... eventually...")
             break
 
-        elif 2 <= choice < 2 + len(heroine_keys):
-            hk_idx = choice - 2
-            hk = heroine_keys[hk_idx]
+        elif 2 <= choice < 2 + len(guest_keys):
+            hk = guest_keys[choice - 2]
             _heroine_interaction(player, hk, inn_config)
 
-        elif choice == 2 + len(heroine_keys):
-            # Back
+        elif choice == 2 + len(guest_keys):
+            for line in guests_mod.hatter_hint(player):
+                term.print(line)
+            term.pause()
+
+        elif choice == 3 + len(guest_keys):
             service_dialogue(city_id, "inn", "leave")
             break
 
         else:
             term.print("Invalid choice.")
             advance_time(player, 15)
+
+
+def _print_wonderland_guest_scene(scene, player):
+    """Print the one-time Hatter scenes for a guest arrival."""
+    if scene == "three_guests":
+        import wonderland_guests as guests_mod
+        red_state = guests_mod.get_guest_state(player, "red_hood")
+        term.print("The Hatter looks up as you enter. \"There you are.\"")
+        term.print("\"Three guests came asking for you while the Queen was losing her head.\"")
+        term.print("\"A huntress in red. A girl with silver shoes. A dreamer in blue.\"")
+        term.print("\"They left before I could pour. Said they'll be back when the next chapter turns.\"")
+        if red_state == "late":
+            term.print("\"The huntress came back after the Wolf fell. She's waiting by the fireplace.\"")
+        elif red_state == "resolved":
+            term.print("\"The huntress has already found her ending. The other two are still waiting.\"")
+        else:
+            term.print("\"The huntress, though — she's been pacing by the fireplace. Wouldn't sit down.\"")
+    elif scene == "red_hood_arrives":
+        term.print("Red Hood is waiting by the fireplace, axe across her knees.")
+    elif scene == "dorothy_arrives":
+        term.print("A girl with silver slippers sits by the window. A small black dog sleeps at her feet.")
+    elif scene == "alice_arrives":
+        term.print("Alice sits at the far end of the table, counting sugar cubes.")
+
+
+def _wonderland_guest_label(player, heroine_key):
+    """Menu label for the guest's current stage."""
+    import wonderland_guests as guests_mod
+    base = _HEROINE_MENU_LABELS[heroine_key]
+    state = guests_mod.get_guest_state(player, heroine_key)
+    if state == "late":
+        return base + " — unfinished story"
+    ally = next((a for a in player.get("allies", [])
+                 if a.get("_heroine_key") == heroine_key), None)
+    if ally is not None and not ally.get("_wonderland_temp", True):
+        return base + " ✓ (Permanent)"
+    if ally is not None:
+        return base + " ✓ (Traveling with you)"
+    if player.get(_HEROINE_PERM_FLAGS.get(heroine_key, "")):
+        return base
+    return base
+
+
+def _late_arc_interaction(player, heroine_key):
+    """Close a skipped heroine's arc without replaying her boss."""
+    import wonderland_guests as guests_mod
+
+    lines = {
+        "red_hood": [
+            "Red Hood is by the fireplace. The crimson hood is folded in her lap.",
+            '"I heard the Wolf fell. I wanted to be the one... but I\'m glad it\'s over."',
+            '"Grandmother\'s axe is still out there. I want to finish what she started."',
+        ],
+        "dorothy": [
+            "Dorothy sits by the window, turning the silver slippers over in her hands.",
+            '"The Witch is gone. The slippers are quiet."',
+            '"I could go home. But I think I want to see how your story ends first."',
+        ],
+        "alice": [
+            "Alice is at the far end of the table, a cold cup of tea in front of her.",
+            '"You wrote the ending without me. That\'s all right."',
+            '"I\'ve been writing my own. I think it\'s ready for a second chapter."',
+        ],
+    }
+    for line in lines.get(heroine_key, ["..."]):
+        term.print(line)
+    term.print("")
+    choice = term.menu([
+        f'"Finish her story." (Make {guests_mod.GUEST_NAMES[heroine_key]} permanent)',
+        '"Not yet."',
+    ], prompt="")
+    if choice == 0:
+        ok, msg = guests_mod.resolve_late_arc(player, heroine_key)
+        term.print(msg)
+        if ok:
+            _sync_heroine_quest(player, heroine_key, "heroine_permanent")
+    term.pause()
+
+
+def _sync_heroine_quest(player, heroine_key, obj_type):
+    """Start/advance a heroine's Journal arc after a tea-party state change."""
+    from quests import update_quests
+    for msg in update_quests(player, obj_type, heroine_key):
+        term.print(msg)
 
 
 def _heroine_interaction(player, heroine_key, inn_config):
@@ -293,6 +400,16 @@ def _heroine_interaction(player, heroine_key, inn_config):
     existing = get_heroine_in_party(player, heroine_key)
 
     term.clear()
+
+    import wonderland_guests as guests_mod
+    guest_state = guests_mod.get_guest_state(player, heroine_key)
+    if guest_state == "late":
+        _late_arc_interaction(player, heroine_key)
+        return
+    if guest_state == "away":
+        term.print("The chair is empty. The Hatter says she has not arrived yet.")
+        term.pause()
+        return
 
     # ── Already permanent and in party ──────────────────────────────────
     if existing and not existing.get("_wonderland_temp", True):
@@ -677,6 +794,7 @@ def _heroine_interaction(player, heroine_key, inn_config):
 
         # Transition to INTRO
         set_heroine_state(player, heroine_key, "intro")
+        _sync_heroine_quest(player, heroine_key, "heroine_met")
         term.print("")
         term.pause("Press Enter...")
 
@@ -716,12 +834,15 @@ def _heroine_interaction(player, heroine_key, inn_config):
                 from combat.ally import ensure_party_order
                 ensure_party_order(player)
                 set_heroine_state(player, heroine_key, "temp")
+                guests_mod.set_guest_state(player, heroine_key, "accepted")
+                _sync_heroine_quest(player, heroine_key, "heroine_recruited")
                 term.print(dialogue.get("joined", f"{heroine_key.title()} joins your party!"))
             else:
                 term.print("(Something went wrong... the page is blank.)")
             term.pause()
         elif sub == 3 or sub == -1:
             set_heroine_state(player, heroine_key, "declined")
+            _sync_heroine_quest(player, heroine_key, "heroine_met")
             term.print(dialogue.get("declined", "..."))
             term.pause()
 
@@ -748,6 +869,8 @@ def _heroine_interaction(player, heroine_key, inn_config):
                 from combat.ally import ensure_party_order
                 ensure_party_order(player)
                 set_heroine_state(player, heroine_key, "temp")
+                guests_mod.set_guest_state(player, heroine_key, "accepted")
+                _sync_heroine_quest(player, heroine_key, "heroine_recruited")
                 term.print(dialogue.get("joined", f"{heroine_key.title()} joins your party!"))
             else:
                 term.print("(Something went wrong... the page is blank.)")

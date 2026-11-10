@@ -58,6 +58,11 @@ goblin_girl:
       A little luck from me to you – don't waste it!'
     house_bond_kiss: The {name} stands on tiptoe and pecks your cheek, then hides
       her face. 'Ehehe... I've wanted to do that for so long.'
+    child_talk_low: She counts her coin collection and asks if you want to see the best one.
+    child_talk_mid: She shows you a shiny button and explains why it is lucky.
+    child_talk_high: She tells you a secret plan for the house and makes you swear not to tell.
+    child_gift_love: She adds it to her hoard and gives you the best piece in return.
+    child_gift_hate: She tries to trade it for something shinier.
     house_recruit_again: The {name} jumps up, grabbing your arm. 'You're back for
       me! I knew you'd come! Let's go!'
     engaged: You... you really want me to be yours forever? B-but I'm just a goblin...
@@ -136,6 +141,11 @@ harpy_scout:
       your journey. Use it well!'
     house_bond_kiss: She leans in, brushing her beak against your cheek. 'A kiss from
       the skies – now you're marked as mine.'
+    child_talk_low: She brings you a feather she found and waits for your verdict.
+    child_talk_mid: She curls a wing around your shoulders and listens to the house settle.
+    child_talk_high: She falls asleep under your chin, wings half-spread.
+    child_gift_love: She tucks it into her nest and curls around it.
+    child_gift_hate: She sniffs it once and loses interest.
     house_recruit_again: She spreads her wings, eyes gleaming. 'Ready for another
       adventure? I've been itching to fly!'
     engaged: A life-mate? You wish to soar the endless skies with me, bound as one?
@@ -516,7 +526,7 @@ moth_girl_flutterer:
     house_buff: She sprinkles silver dust over you. 'May your path always be lit,
       even in the darkest night.'
     house_bond_kiss: She flutters up and presses her lips to yours – gentle as a moth's
-      wing. 'Now you are my eternal flame.'
+      wing. 'nal flame.'
     house_recruit_again: She buzzes with excitement. 'I've been waiting for your light!
       Take me with you!'
     engaged: You are the flame I will circle forever. Yes, let me be yours, my eternal
@@ -1099,6 +1109,11 @@ vampire_seductress:
       embrace you and the night protect you.'
     house_bond_kiss: She pulls you into a deep, lingering kiss. 'Now you are mine,
       body and soul.'
+    child_talk_low: She drinks her juice from a cup with a lid and avoids your eyes.
+    child_talk_mid: She reads aloud from a book and does all the dramatic voices.
+    child_talk_high: She takes your hand and tells you she is not hungry when you are near.
+    child_gift_love: She keeps it in a velvet box under her bed.
+    child_gift_hate: She thanks you with a smile that does not reach her eyes.
     house_recruit_again: She extends her hand, a sly smile. 'Come, my pet. The night
       awaits us.'
     engaged: A mortal asking for an eternal bond? ... Darling, you are the first to
@@ -1631,6 +1646,11 @@ succubus_seductress:
       as I am.'
     house_bond_kiss: She kisses you deeply, her touch electric. 'Now you are mine,
       forever.'
+    child_talk_low: She practices her most scandalous joke and forgets the punchline.
+    child_talk_mid: She shows you a drawing of the two of you with tiny horns on you.
+    child_talk_high: She curls against you, all her fire banked to a safe warmth.
+    child_gift_love: She declares it the finest tribute she has ever received.
+    child_gift_hate: She calls it a mortal custom and hides it carefully.
     house_recruit_again: She crooks a finger, a sly smile. 'Ready for more, Master?
       Let's play.'
     engaged: Master~ You wish to bind yourself to me for eternity? How delightful.

@@ -16,6 +16,8 @@ from resources.cities import CITIES
 from resources.items import ITEMS
 from resources.wild_dungeon_themes import get_theme
 from utils import display_name
+from family import is_trueborn_minor
+from events import format_days_left, format_return_time, format_short_date
 
 REFRESH_DAYS = 3
 REPORT_CAP = 10
@@ -208,7 +210,7 @@ def mood_of(girl, day):
         return ("Inspired", 8, False)
     if stress >= 50:
         return ("Tired", -4, False)
-    if aff >= 60:
+    if aff >= 120:
         return ("Spirited", 5, False)
     return ("Steady", 0, False)
 
@@ -224,11 +226,11 @@ def affection_mod(girl):
     aff = int(girl.get("affection", 30))
     if girl.get("married"):
         return 8
-    if aff >= 80:
+    if aff >= 160:
         return 6
-    if aff >= 60:
+    if aff >= 120:
         return 4
-    if aff >= 30:
+    if aff >= 60:
         return 2
     return 0
 
@@ -279,38 +281,53 @@ def girl_status_line(girl, day):
     return line
 
 
+def return_time_text(player, inst):
+    """Relative return stamp for an active mission: 'tomorrow at 14:00'."""
+    return format_return_time(int(inst.get("return_abs", 0) or 0), _now_abs(player))
+
+
 def dispatch_return_text(player, girl):
-    """'Away — returns Day X, HH:MM' when the girl is on a mission, else None."""
+    """'Away — returns tomorrow at 14:00' when the girl is on a mission, else None."""
     mid = girl.get("dispatch_mission")
     if not mid:
         return None
     for inst in get_dispatch_state(player).get("active", []):
         if inst.get("instance_id") == mid:
-            day, mins = divmod(int(inst.get("return_abs", 0)), 1440)
-            return f"Away — returns Day {day}, {mins // 60:02d}:{mins % 60:02d}"
+            return f"Away — returns {return_time_text(player, inst)}"
     return "Away on a dispatch"
 
 
 def injured_text(girl, day):
     until = int(girl.get("injured_until", 0) or 0)
     if until > day:
-        return f"Injured — recovering until Day {until}"
+        return f"Injured — {format_days_left(until, day)} left to recover"
+    return None
+
+
+def dispatch_block_reason(girl, day):
+    """Return why a girl cannot be dispatched, or None when eligible."""
+    if girl.get("dispatch_mission"):
+        return f"{display_name(girl)} is already away on a dispatch."
+    if girl.get("pregnant"):
+        return f"{display_name(girl)} is expecting and can't go."
+    recovery = int(girl.get("recovery_until", 0) or 0)
+    if recovery > day:
+        return (f"{display_name(girl)} is recovering "
+                f"({format_days_left(recovery, day)} left) and can't go.")
+    if is_trueborn_minor(girl):
+        return f"{display_name(girl)} is too young for a dispatch."
+    if int(girl.get("injured_until", 0) or 0) > day:
+        return f"{display_name(girl)} is injured and can't go."
+    if int(girl.get("stress", 0)) >= 90:
+        return f"{display_name(girl)} is burned out and refuses to go."
     return None
 
 
 def eligible_girls(player, house):
     """Girls who can be sent out right now (home, healthy, not burned out)."""
     day = player.get("day", 1)
-    out = []
-    for g in house.get("monster_girls", []):
-        if g.get("dispatch_mission"):
-            continue
-        if int(g.get("injured_until", 0) or 0) > day:
-            continue
-        if int(g.get("stress", 0)) >= 90:
-            continue
-        out.append(g)
-    return out
+    return [g for g in house.get("monster_girls", [])
+            if dispatch_block_reason(g, day) is None]
 
 
 def _find_girl(player, uid):
@@ -549,12 +566,9 @@ def create_instance(player, home_city, house, offer, girls):
     if not (1 <= len(girls) <= team_cap(level)):
         return None, f"Pick between 1 and {team_cap(level)} girls for this mission."
     for g in girls:
-        if g.get("dispatch_mission"):
-            return None, f"{display_name(g)} is already away on a dispatch."
-        if int(g.get("injured_until", 0) or 0) > day:
-            return None, f"{display_name(g)} is injured and can't go."
-        if int(g.get("stress", 0)) >= 90:
-            return None, f"{display_name(g)} is burned out and refuses to go."
+        reason = dispatch_block_reason(g, day)
+        if reason:
+            return None, reason
 
     inst_id = f"{offer['id']}#{random.randint(1000, 9999)}"
     for g in girls:
@@ -596,8 +610,8 @@ def create_instance(player, home_city, house, offer, girls):
 
     ret_day, ret_mins = divmod(inst["return_abs"], 1440)
     _journal(player, f"Dispatch launched: {inst['name']}",
-             f"{', '.join(inst['girl_names'])} set out — expected back Day {ret_day}, "
-             f"{ret_mins // 60:02d}:{ret_mins % 60:02d}.")
+             f"{', '.join(inst['girl_names'])} set out — expected back "
+             f"{format_short_date(ret_day)} at {ret_mins // 60:02d}:{ret_mins % 60:02d}.")
     return inst, f"{', '.join(inst['girl_names'])} set out on \"{inst['name']}\"."
 
 
@@ -665,7 +679,6 @@ def _resolve(player, inst):
     mult = _REWARD_MULT[outcome]
 
     gold = int(random.randint(int(inst.get("gold_min", 0)), int(inst.get("gold_max", 0))) * mult)
-    favor = {"great": 2, "success": 1}.get(outcome, 0) if inst.get("kind") == "sweep" else 0
 
     item_ids = []
     rolls = _ITEM_ROLLS[outcome]
@@ -714,7 +727,8 @@ def _resolve(player, inst):
     lines = [f"{', '.join(inst.get('girl_names', []))} — {_OUTCOME_LINES[outcome]}"]
     for r in girl_results:
         if r["downed"]:
-            lines.append(f"{r['name']} was carried home — Downed, recovering until Day {day + 2}.")
+            lines.append(f"{r['name']} was carried home — Downed, "
+                         f"recovering for {format_days_left(day + 2, day)}.")
         elif r["hp_lost"] > 0:
             lines.append(f"{r['name']} is hurt (−{r['hp_lost']} HP).")
 
@@ -727,7 +741,6 @@ def _resolve(player, inst):
         "outcome": outcome,
         "day": day,
         "gold": gold,
-        "favor": favor,
         "items": item_ids,
         "exp": exp_entries,
         "girls": girl_results,
@@ -747,7 +760,7 @@ def _resolve(player, inst):
 # ── Collection (house UI) ───────────────────────────────────────────────────
 
 def collect_reports(player, home_city, house):
-    """Grant all report rewards: gold, favor, items, and per-girl EXP."""
+    """Grant all report rewards: gold, items, and per-girl EXP."""
     from gui.terminal import term
 
     d = get_dispatch_state(player)
@@ -767,13 +780,6 @@ def collect_reports(player, home_city, house):
         if gold:
             player["gold"] = player.get("gold", 0) + gold
             term.print(f"  +{gold} gold")
-
-        favor = int(rep.get("favor", 0))
-        if favor:
-            player.setdefault("favor", {})
-            player["favor"][home_city] = player["favor"].get(home_city, 0) + favor
-            city_name = CITIES.get(home_city, {}).get("name", home_city)
-            term.print(f"  +{favor} {city_name} Favor")
 
         for iid in rep.get("items", []):
             from resources.items import build_item

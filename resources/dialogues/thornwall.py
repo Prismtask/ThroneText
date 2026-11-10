@@ -63,7 +63,7 @@ THORNWALL_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deep. I'll keep the lantern lit.",
-        "Eight hours of dreamless rest. You'll need it.",
+        "A night of dreamless rest. You'll need it.",
         "The frontier is quiet tonight. Rest well.",
         "No monsters in here. The wall keeps them out.",
     ],

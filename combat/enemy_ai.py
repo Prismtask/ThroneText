@@ -19,26 +19,38 @@ from combat.weapon.wedding_specials import (
 from combat.helpers import _player_has_tarnished_jade
  
 
-def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0, temp_str_bonus=0, all_enemies=None, actual_player=None):
-    # Imported once here so the name is always bound. It used to be imported
-    # inside the confusion/friendly-fire branch only, which crashed with
-    # UnboundLocalError in the reflection-damage section when that branch
-    # hadn't run (e.g. the first attack that triggers reflection damage).
+def _get_fear_multiplier(enemy):
+    """Fear suppresses damage for the whole turn; read it before debuff ticks."""
+    for debuff in enemy.get("active_debuffs", []):
+        if debuff.get("type") == "fear":
+            return max(0.0, 1.0 - debuff.get("value", 0))
+    return 1.0
+
+
+def begin_enemy_turn(enemy, all_enemies=None):
+    """Run start-of-turn upkeep and action gates for an enemy.
+
+    Extracted from :func:`enemy_attack` so the generic enemy AI
+    (``combat/enemy_skills.py``) can resolve the status gates once and then
+    execute any action — basic attack, skill, AoE, heal — without ticking
+    debuffs once per target.
+
+    Returns ``(outcome, fear_mult)``. ``outcome`` is ``None`` when the enemy
+    can act, otherwise one of the historical enemy_attack return strings:
+    ``"died"``, ``"asleep"``, ``"paralyzed"``, ``"stunned"``, ``"missed"``,
+    ``"confused"``.
+    """
     from combat.helpers import format_damage_msg
 
     # --- Check fear BEFORE ticking (so it applies this full turn) ---
-    fear_mult = 1.0
-    for debuff in enemy.get("active_debuffs", []):
-        if debuff.get("type") == "fear":
-            fear_mult = max(0.0, 1.0 - debuff.get("value", 0))
-            break
+    fear_mult = _get_fear_multiplier(enemy)
 
     # Tick enemy debuffs (poison, burn, blind, fear, etc.)
     msgs, died = tick_enemy_debuffs(enemy)
     for m in msgs:
         c_print(m)
     if died:
-        return "died"
+        return "died", fear_mult
 
     # Event Horizon: Mending Roil — enemies regenerate on their turn
     _rift_regen = enemy.get("rift_regen_pct", 0.0)
@@ -49,20 +61,27 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
 
     if enemy.get("asleep"):
         c_print(f"The {enemy['name']} is fast asleep...")
-        return "asleep"
+        return "asleep", fear_mult
 
     if enemy.get("paralyzed"):
         c_print(f"The {enemy['name']} is paralyzed and cannot move!")
-        return "paralyzed"
+        return "paralyzed", fear_mult
 
     if enemy.get("stunned"):
         c_print(f"The {enemy['name']} is stunned and cannot act!")
         enemy["stunned"] = False
-        return "stunned"
+        # A stunned monster girl stays off-balance until her next turn, so
+        # the player still gets the +35% capture window when the net is
+        # thrown (combat/capture.py). Ticked in tick_enemy_debuffs.
+        if enemy.get("monster_girl"):
+            enemy["capture_stagger"] = max(
+                int(enemy.get("capture_stagger", 0) or 0), 1
+            )
+        return "stunned", fear_mult
 
     if enemy.get("frozen"):
         c_print(f"The {enemy['name']} is frozen solid and cannot act!")
-        return "stunned"
+        return "stunned", fear_mult
 
     # --- BLIND CHECK ---
     if enemy.get("blinded"):
@@ -73,7 +92,7 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
                 break
         if random.random() < blind_chance:
             c_print(f"The {enemy['name']} is blinded and flails wildly — it misses!")
-            return "missed"
+            return "missed", fear_mult
 
     # --- CONFUSION CHECK ---
     if enemy.get("confused"):
@@ -93,9 +112,85 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
                     c_print("  " + format_damage_msg(enemy['name'], victim['name'], raw_dmg, skill_name="Confused"))
                     if victim["hp"] <= 0:
                         c_print(f"  {victim['name']} is defeated by friendly fire!")
-                    return "confused"
+                    return "confused", fear_mult
             c_print(f"The {enemy['name']} is confused and stumbles — it misses!")
-            return "missed"
+            return "missed", fear_mult
+
+    return None, fear_mult
+
+
+def _try_enemy_attack_dodge(enemy, player, skill_name=None):
+    """Resolve the target's dodge roll and any on-dodge effects.
+
+    Returns True when the attack is dodged. Extracted so AoE abilities can
+    skip the roll without duplicating the wedding / Duskfall Veil logic.
+    """
+    from combat.helpers import format_damage_msg
+    from combat.stats import get_dodge_chance
+
+    dodge_chance = get_dodge_chance(player, enemy)
+    # Wedding dodge bonuses + enemy accuracy penalty (player only)
+    dodge_chance += apply_wedding_dodge_bonus(player)
+    dodge_chance += apply_wedding_enemy_accuracy_penalty(player)
+    # Cap dodge at 80% to prevent absolute immunity
+    dodge_chance = min(dodge_chance, 0.80)
+    if dodge_chance <= 0 or random.random() >= dodge_chance:
+        return False
+
+    if skill_name:
+        c_print(f"{player['name']} evades the {enemy['name']}'s {skill_name}!")
+    else:
+        c_print(f"The {enemy['name']} lunges at {player['name']} — but {player['name']} dodges out of the way!")
+    apply_wedding_on_dodge(player, enemy)
+    # Duskfall Veil: the veil answers every dodge with a counter-strike
+    for buff in player.get("active_buffs", []):
+        if buff.get("type") == "dodge_counter" and buff.get("remaining", 0) > 0:
+            if player.get("is_ally"):
+                from combat.ally import get_ally_effective_attribute
+                counter_stat = get_ally_effective_attribute(player, "Dexterity")
+            else:
+                from combat.stats import get_effective_attribute
+                counter_stat = get_effective_attribute(player, "Dexterity")
+            counter_dmg = max(1, int(counter_stat * buff.get("value", 0.5) / 2) + random.randint(1, 3))
+            enemy["hp"] -= counter_dmg
+            c_print("  " + format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Dusk Counter"))
+            if enemy["hp"] <= 0:
+                c_print(f"  The {enemy['name']} is cut down by the counter!")
+            break
+    return True
+
+
+def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1.0,
+                 temp_str_bonus=0, all_enemies=None, actual_player=None, *,
+                 power_mult=1.0, flat_bonus=0, skill_name=None,
+                 element_override=None, skip_turn_start=False, allow_dodge=True):
+    """Resolve one enemy strike against a single party member.
+
+    Keyword-only parameters are used by the regular-enemy ability kits
+    (``combat/enemy_skills.py``):
+
+    ``power_mult`` / ``flat_bonus`` — scale the raw strike (skills).
+    ``skill_name`` — shown in the damage log; also tags dodge messages.
+    ``element_override`` — force the strike's element (e.g. a fire breath).
+    ``skip_turn_start`` — caller already ran :func:`begin_enemy_turn`.
+    ``allow_dodge`` — False for AoE skills that should not be evaded.
+    """
+    # Imported once here so the name is always bound. It used to be imported
+    # inside the confusion/friendly-fire branch only, which crashed with
+    # UnboundLocalError in the reflection-damage section when that branch
+    # hadn't run (e.g. the first attack that triggers reflection damage).
+    from combat.helpers import format_damage_msg
+
+    # Reset the per-strike damage marker read by the ability AI. It is set
+    # once damage lands so on-hit statuses never proc on a fully blocked hit.
+    enemy["_last_attack_damage"] = 0
+
+    if skip_turn_start:
+        fear_mult = _get_fear_multiplier(enemy)
+    else:
+        turn_outcome, fear_mult = begin_enemy_turn(enemy, all_enemies=all_enemies)
+        if turn_outcome:
+            return turn_outcome
 
     # Event Horizon: Piece of Relationship (+7 tier) — mark attackers that
     # target an ally (regardless of whether the blow lands).
@@ -103,31 +198,7 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     maybe_mark_attacker(enemy, player, actual_player)
 
     # --- DODGE CHECK ---
-    from combat.stats import get_dodge_chance
-    dodge_chance = get_dodge_chance(player, enemy)
-    # Wedding dodge bonuses + enemy accuracy penalty (player only)
-    dodge_chance += apply_wedding_dodge_bonus(player)
-    dodge_chance += apply_wedding_enemy_accuracy_penalty(player)
-    # Cap dodge at 80% to prevent absolute immunity
-    dodge_chance = min(dodge_chance, 0.80)
-    if dodge_chance > 0 and random.random() < dodge_chance:
-        c_print(f"The {enemy['name']} lunges at {player['name']} — but {player['name']} dodges out of the way!")
-        apply_wedding_on_dodge(player, enemy)
-        # Duskfall Veil: the veil answers every dodge with a counter-strike
-        for buff in player.get("active_buffs", []):
-            if buff.get("type") == "dodge_counter" and buff.get("remaining", 0) > 0:
-                if player.get("is_ally"):
-                    from combat.ally import get_ally_effective_attribute
-                    counter_stat = get_ally_effective_attribute(player, "Dexterity")
-                else:
-                    from combat.stats import get_effective_attribute
-                    counter_stat = get_effective_attribute(player, "Dexterity")
-                counter_dmg = max(1, int(counter_stat * buff.get("value", 0.5) / 2) + random.randint(1, 3))
-                enemy["hp"] -= counter_dmg
-                c_print("  " + format_damage_msg(player['name'], enemy['name'], counter_dmg, skill_name="Dusk Counter"))
-                if enemy["hp"] <= 0:
-                    c_print(f"  The {enemy['name']} is cut down by the counter!")
-                break
+    if allow_dodge and _try_enemy_attack_dodge(enemy, player, skill_name):
         return "dodged"
 
     # --- PRE-DAMAGE WEDDING EFFECTS (foxfire trick, etc.) ---
@@ -172,15 +243,23 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     raw_dmg = apply_critical_damage(raw_dmg, is_crit)
     crit_tag = format_critical_tag(is_crit)
 
+    # Skill power (regular-enemy ability kits). Multiplied before armor so
+    # heavy CON still matters; flat_bonus lands after the multiplier.
+    if power_mult != 1.0:
+        raw_dmg = int(raw_dmg * max(0.0, power_mult))
+    if flat_bonus:
+        raw_dmg += int(flat_bonus)
+
     raw_dmg = int(raw_dmg * fear_mult)
     base_dmg = raw_dmg - block
     base_dmg = max(0, base_dmg)
 
-    # Apply the enemy's own damage_boost buffs (e.g. Big Bad Wolf enrage/
-    # howl, Wicked Witch power surges). Mirrors the ally post-armor path.
-    for buff in enemy.get("active_buffs", []):
-        if buff.get("type") == "damage_boost":
-            base_dmg = int(base_dmg * (1 + buff.get("value", 0)))
+    # Apply the enemy's own percentage damage buffs (e.g. Big Bad Wolf enrage/
+    # howl, Wicked Witch power surges). Sources stack additively.
+    from combat.status_effects import get_damage_buff_multiplier
+    _damage_buff_mult = get_damage_buff_multiplier(enemy)
+    if _damage_buff_mult != 1.0:
+        base_dmg = int(base_dmg * _damage_buff_mult)
 
     # --- VULNERABLE CHECK ---
     vulnerable_mult = 1.0
@@ -191,20 +270,12 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     base_dmg = int(base_dmg * vulnerable_mult)
 
     # Apply elemental damage based on enemy's elemental profile
-    from combat.elemental import calculate_elemental_damage, ELEMENTS
+    from combat.elemental import calculate_elemental_damage, get_damage_element
     enemy_dmg = base_dmg
     element = None
     if base_dmg > 0:
-        e_dmg_profile = enemy.get("elemental_dmg", {})
-        best_el = None
-        best_val = 1.0
-        for el in ELEMENTS:
-            val = e_dmg_profile.get(el, 1.0)
-            if val > best_val:
-                best_val = val
-                best_el = el
-        if best_el:
-            element = best_el
+        element = element_override or get_damage_element(enemy.get("elemental_dmg", {}))
+        if element:
             enemy_dmg = calculate_elemental_damage(base_dmg, enemy, player, element)
         else:
             enemy_dmg = base_dmg
@@ -259,6 +330,12 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         reduction = get_race_damage_reduction(player)
         if reduction > 0:
             enemy_dmg = int(enemy_dmg * (1 - reduction))
+
+    # Form tradition damage reduction (Guarded — every equipped slot)
+    from combat.form_perks import get_form_damage_reduction
+    form_dr = get_form_damage_reduction(player)
+    if form_dr > 0 and enemy_dmg > 0:
+        enemy_dmg = int(enemy_dmg * (1 - form_dr))
 
     # Palette's Brush: Umber aura damage reduction (player or ally wielder)
     from combat.weapon.palette_brush import get_brush_damage_reduction
@@ -349,6 +426,25 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         c_print(f"  Your barrier absorbs {barrier_absorbed} damage!")
 
     player["current_hp"] -= enemy_dmg
+    enemy["_last_attack_damage"] = int(enemy_dmg)
+
+    # --- MIRROR GUARD THORNS ---
+    # Sylvana's Mirror Guard turns the shield itself into a weapon. The
+    # attacker takes fixed pure damage whenever it connects with her (even
+    # if the barrier ate the whole blow).
+    if enemy_dmg > 0 or barrier_absorbed > 0:
+        for buff in player.get("active_buffs", []):
+            if buff.get("type") == "mirror_thorns" and buff.get("remaining", 0) > 0:
+                thorns = int(buff.get("value", 0) or 0)
+                if thorns > 0:
+                    enemy["hp"] -= thorns
+                    c_print(
+                        f"  [Mirror Guard] {enemy['name']} takes {thorns} "
+                        f"pure damage from the reflection!"
+                    )
+                    if enemy["hp"] <= 0:
+                        c_print(f"  The {enemy['name']} is shattered by the backlash!")
+                break
 
     # Track the last elemental source that struck this unit (Perfect Mimicry)
     if element and enemy_dmg > 0:
@@ -381,7 +477,8 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
     tag = elemental_tags.get(element, "")
 
     if enemy_dmg > 0:
-        c_print(format_damage_msg(enemy['name'], player['name'], enemy_dmg, element=element, crit=bool(crit_tag)))
+        c_print(format_damage_msg(enemy['name'], player['name'], enemy_dmg,
+                                  element=element, crit=bool(crit_tag), skill_name=skill_name))
         # Wedding retribution effects (pharaohs_curse, infernal_crown, keening_wail)
         apply_wedding_on_damage_taken(player, enemy, enemy_dmg, "hit")
         # Captain's Cutlass: Captain's Authority riposte (player or ally)
@@ -391,6 +488,8 @@ def enemy_attack(enemy, player, p_con, defending, extra_logic=None, armor_mult=1
         elif player is not actual_player and player is not None:
             # Target is an ally — check if ally has Cutlass
             trigger_captain_riposte(player, enemy, is_player=False)
+    elif skill_name:
+        c_print(f"The {enemy['name']}'s {skill_name} is fully blocked by {player['name']}!")
     else:
         c_print(f"The {enemy['name']} attacks but {player['name']} blocks all incoming damage!")
 

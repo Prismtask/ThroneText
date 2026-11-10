@@ -1,9 +1,21 @@
 import random
+
+import karma
 from resources.enemies import ENEMIES, BIOME_RACES
-from resources.items import build_item, ITEMS, ITEM_RARITY
+from resources.items import (
+    build_item, ITEMS, ITEM_RARITY, soften_rarity,
+    market_anchor_level, kill_gold_offset,
+)
+from resources.item_generation import (
+    pick_equipment_id, player_biome, dungeon_biome, biome_craft_hint,
+)
 from resources.cities import CITIES
 from combat.combat_engine import combat
+from combat.enemy_skills import (
+    ROLE_ATTACKER, ROLE_SUPPORTER, ROLE_VALUES, get_enemy_role,
+)
 from combat.stats import player_con_mod
+from combat.combat_ui import take_deferred_dialogue
 from combat.broodmother import combat_broodmother 
 from combat.slitcurrent import combat_slitcurrent
 from combat.sylvana import combat_sylvana
@@ -23,7 +35,8 @@ from combat.wl_floor_bosses import get_wl_floor_boss, is_wl_boss_floor
 from character import player_max_hp
 from save_load import save_game
 from utils import clear_screen, advance_time, format_time, _tprint, _tpause, _tclear, _tmenu, _term, display_name
-from leveling import gain_exp, gain_exp_ally
+from leveling import (gain_exp, gain_exp_ally, get_shared_biome_max_floor,
+                      sync_biome_dungeon_depth)
 from wild_dungeons import (get_wild_dungeon, complete_wild_dungeon,
                            record_completion_event)
 import dungeon_rooms
@@ -88,7 +101,7 @@ from wonderland_curses import (
 )
 
 def get_random_enemy_key(floor, boss=False, region=None, player=None,
-                         band_lo=None):
+                         band_lo=None, role=None):
     """Pick a random enemy suitable for the current floor.
     
     If player is provided and has active bounties, bounty-target enemies
@@ -98,6 +111,10 @@ def get_random_enemy_key(floor, boss=False, region=None, player=None,
     ``band_lo`` overrides the normal-branch band's lower edge (used by the
     Event Horizon to widen the pool at capped depth — enemy levels ≥
     ``band_lo`` stay eligible regardless of the floor-based formula).
+
+    ``role`` (``attacker`` / ``supporter``) narrows the pool to that combat
+    role when at least one eligible template exists. Used by
+    :func:`build_enemy_group` to avoid all-healer or all-damage rooms.
     """
     pool = []
     allowed_races = None
@@ -107,6 +124,9 @@ def get_random_enemy_key(floor, boss=False, region=None, player=None,
     for key, data in ENEMIES.items():
         # Skip minion-only enemies in regular rooms
         if data.get("minion_only", False):
+            continue
+        # City guards are gate-only actors
+        if data.get("city_only", False):
             continue
         # Skip shadow copies — internal combat helpers, not real enemies
         if data.get("_shadow", False):
@@ -156,6 +176,8 @@ def get_random_enemy_key(floor, boss=False, region=None, player=None,
         for key, data in ENEMIES.items():
             if data.get("minion_only", False):
                 continue
+            if data.get("city_only", False):
+                continue
             if data.get("_heroine"):
                 continue
             if data.get("_shadow", False):
@@ -182,6 +204,7 @@ def get_random_enemy_key(floor, boss=False, region=None, player=None,
         # Ultimate fallback – any enemy of the right boss type
         pool = [k for k, d in ENEMIES.items() if d.get("boss", False) == boss
                 and not d.get("minion_only", False)
+                and not d.get("city_only", False)
                 and not d.get("_heroine")
                 and not d.get("_shadow", False)
                 and not d.get("super_boss", False)
@@ -190,7 +213,8 @@ def get_random_enemy_key(floor, boss=False, region=None, player=None,
     if not pool:
         # Emergency fallback – any enemy at all (keep sensible filters to avoid
         # superbosses / Wonderland enemies / heroines leaking into wrong contexts)
-        pool = [k for k, d in ENEMIES.items() if not d.get("_heroine")
+        pool = [k for k, d in ENEMIES.items() if not d.get("city_only", False)
+                and not d.get("_heroine")
                 and not d.get("_shadow", False)
                 and not d.get("super_boss", False)
                 and not (d.get("secondary_race") == "Storybook" and region != "wonderland")]
@@ -201,6 +225,15 @@ def get_random_enemy_key(floor, boss=False, region=None, player=None,
             f"No enemies found! ENEMIES has {len(ENEMIES)} entries. "
             f"floor={floor}, boss={boss}, region={region}"
         )
+
+    # ── Role filter ─────────────────────────────────────────────────────
+    # Narrow to supporters/attackers when the level/region pool can supply
+    # them. If the pool has no such role (early flora, extreme bands), keep
+    # the unfiltered pool so spawning never dead-ends.
+    if role in ROLE_VALUES:
+        role_pool = [key for key in pool if get_enemy_role(ENEMIES[key]) == role]
+        if role_pool:
+            pool = role_pool
 
     # ── Bounty weighting ────────────────────────────────────────────────
     # When the player has active bounties, duplicate bounty-target enemies
@@ -215,6 +248,73 @@ def get_random_enemy_key(floor, boss=False, region=None, player=None,
                 pool.extend(bonus * 2)  # 2 extra copies = 3x base weight
 
     return random.choice(pool)
+
+
+# Supporter presence per encounter scales with floor level. Early rooms are
+# mostly attackers; support becomes common once enemy kits mature.
+_SUPPORTER_CHANCE_BANDS = (
+    (4, 0.06),
+    (9, 0.15),
+    (19, 0.25),
+    (34, 0.35),
+    (999, 0.45),
+)
+MAX_SUPPORTERS_PER_GROUP = 2
+
+
+def _supporter_chance_for_floor(floor, count):
+    """Chance that a group of *count* enemies includes a supporter."""
+    base = _SUPPORTER_CHANCE_BANDS[-1][1]
+    for max_floor, chance in _SUPPORTER_CHANCE_BANDS:
+        if floor <= max_floor:
+            base = chance
+            break
+    # Bigger rooms are more likely to have a support slot. Lone enemies are
+    # always attackers (handled in build_enemy_group), so no halving is needed.
+    chance = base + 0.03 * max(0, count - 1)
+    return min(0.55, chance)
+
+
+def build_enemy_group(floor, count, region=None, player=None, band_lo=None):
+    """Roll a role-balanced normal-enemy group.
+
+    At most two supporters per group, never more than half the room, and
+    always at least one attacker. Bounty weighting and region/level filters
+    still apply through :func:`get_random_enemy_key`.
+    """
+    try:
+        count = int(count)
+    except (TypeError, ValueError):
+        return []
+    if count <= 0:
+        return []
+
+    max_supporters = 0 if count == 1 else min(MAX_SUPPORTERS_PER_GROUP, count // 2)
+    supporters = 0
+    if max_supporters > 0 and random.random() < _supporter_chance_for_floor(floor, count):
+        supporters = 1
+        if count >= 4 and floor >= 20 and random.random() < 0.18:
+            supporters = min(2, max_supporters)
+    supporters = min(supporters, max_supporters)
+
+    keys = [
+        get_random_enemy_key(floor, boss=False, region=region, player=player,
+                             band_lo=band_lo, role=ROLE_SUPPORTER)
+        for _ in range(supporters)
+    ]
+    keys.extend(
+        get_random_enemy_key(floor, boss=False, region=region, player=player,
+                             band_lo=band_lo, role=ROLE_ATTACKER)
+        for _ in range(count - supporters)
+    )
+    # Final safety net: role-filter fallbacks should never create an
+    # all-supporter group (only possible if a pool has no attackers at all).
+    if count > 1 and all(get_enemy_role(ENEMIES[k]) == ROLE_SUPPORTER for k in keys):
+        keys[0] = get_random_enemy_key(floor, boss=False, region=region,
+                                       player=player, band_lo=band_lo,
+                                       role=ROLE_ATTACKER)
+    random.shuffle(keys)
+    return keys
 
 
 def generate_floor(floor, region=None, player=None):
@@ -246,6 +346,10 @@ def generate_floor(floor, region=None, player=None):
 
     # ── Select region-appropriate stat check events ──────────────────
     region_events = get_stat_check_events(region)
+    if not karma.is_enabled(player):
+        # Classic mode: hide Karma-only events (e.g. Forgotten Shrine).
+        region_events = {k: v for k, v in region_events.items()
+                         if not v.get("karma_only")}
 
     # Generate 9 rooms (index 0-8)
     for room_idx in range(9):
@@ -269,8 +373,8 @@ def generate_floor(floor, region=None, player=None):
             # Daily events: Monster Surge — dungeon enemies are more numerous
             if player and player.get("daily_effects", {}).get("monster_surge"):
                 num_enemies = min(5, num_enemies + 1)
-            enemy_keys = [get_random_enemy_key(floor, boss=False, region=region, player=player)
-                          for _ in range(num_enemies)]
+            enemy_keys = build_enemy_group(floor, num_enemies,
+                                           region=region, player=player)
             rooms.append({"type": "combat", "enemies": enemy_keys})
             consecutive_combat += 1
             non_combat_chance = min(0.10 + 0.05 * consecutive_combat, 0.80)
@@ -291,8 +395,8 @@ def generate_floor(floor, region=None, player=None):
         boss_room = [get_random_enemy_key(floor, boss=is_true_boss_floor, region=region, player=player)]
     
     num_minions = random.randint(0, min(4, floor - 1))
-    for _ in range(num_minions):
-        boss_room.append(get_random_enemy_key(floor, boss=False, region=region, player=player))
+    boss_room.extend(build_enemy_group(floor, num_minions,
+                                       region=region, player=player))
 
     # Same crowd cap as regular rooms — a reduced company shouldn't face a
     # full boss entourage (no-op for players at full command capacity).
@@ -335,10 +439,21 @@ _CONSUMABLE_TIERS = {
 }
 
 
-def roll_drop(enemy_level, pandemonium=False):
+def _enemy_attack_element(enemy_key):
+    """The single element an enemy attacks with (None when neutral)."""
+    if not enemy_key:
+        return None
+    from combat.elemental import compute_enemy_elemental, get_damage_element
+    _res, dmg = compute_enemy_elemental({"key": enemy_key})
+    return get_damage_element(dmg)
+
+
+def roll_drop(enemy_level, pandemonium=False, biome=None, enemy_element=None):
     """Roll for an item drop. Returns (item_id, rarity) or None.
 
     Split: 60% equipment (with rarity), 40% consumable (no rarity — always 'common').
+    A small share of rolls yields a tempering flower instead (60% the enemy's
+    attack element, 40% biome-weighted).
     """
     if pandemonium:
         if random.random() > 0.70:
@@ -347,43 +462,48 @@ def roll_drop(enemy_level, pandemonium=False):
         if random.random() > 0.50:
             return None
 
+    # Tempering flower (farming route for flower infusions)
+    if random.random() < 0.12:
+        from resources.item_generation import pick_flower_id
+        return (pick_flower_id(biome, enemy_element=enemy_element), "common")
+
     # 60% equipment, 40% consumable
     if random.random() < 0.60:
-        return _roll_equipment_drop(enemy_level, pandemonium)
+        return _roll_equipment_drop(enemy_level, pandemonium, biome)
     else:
         return _roll_consumable_drop(enemy_level)
 
 
-def _roll_equipment_drop(enemy_level, pandemonium):
-    """Roll for equipment with rarity using the new narrower weights."""
+def _roll_equipment_drop(enemy_level, pandemonium, biome=None):
+    """Roll for equipment with rarity using the tuned (flatter) weights."""
     rarities = ["common", "uncommon", "rare", "epic", "legendary"]
 
     if pandemonium:
         if enemy_level <= 5:
-            weights = [0.18, 0.28, 0.28, 0.16, 0.10]
+            weights = [0.18, 0.28, 0.30, 0.18, 0.06]
         elif enemy_level <= 10:
-            weights = [0.10, 0.18, 0.30, 0.26, 0.16]
+            weights = [0.12, 0.22, 0.30, 0.28, 0.08]
         elif enemy_level <= 20:
-            weights = [0.05, 0.14, 0.26, 0.32, 0.23]
+            weights = [0.07, 0.16, 0.29, 0.38, 0.10]
         elif enemy_level <= 30:
-            weights = [0.03, 0.10, 0.20, 0.35, 0.32]
+            weights = [0.04, 0.11, 0.25, 0.50, 0.10]
         else:
-            weights = [0.02, 0.06, 0.16, 0.36, 0.40]
+            weights = [0.03, 0.08, 0.21, 0.58, 0.10]
     else:
         if enemy_level <= 5:
-            weights = [0.48, 0.32, 0.15, 0.05, 0.00]
+            weights = [0.50, 0.34, 0.14, 0.02, 0.00]
         elif enemy_level <= 10:
-            weights = [0.34, 0.34, 0.20, 0.10, 0.02]
+            weights = [0.36, 0.36, 0.21, 0.06, 0.01]
         elif enemy_level <= 20:
-            weights = [0.22, 0.30, 0.28, 0.15, 0.05]
+            weights = [0.24, 0.31, 0.29, 0.13, 0.03]
         elif enemy_level <= 30:
-            weights = [0.12, 0.24, 0.30, 0.22, 0.12]
+            weights = [0.15, 0.25, 0.33, 0.21, 0.06]
         else:
-            weights = [0.06, 0.18, 0.28, 0.28, 0.20]
+            weights = [0.11, 0.22, 0.34, 0.28, 0.05]
 
+    item_id = pick_equipment_id(enemy_level, biome)
     rarity = random.choices(rarities, weights=weights)[0]
-    valid_ids = list(_EQUIP_POOL)
-    item_id = random.choice(valid_ids) if valid_ids else "iron_sword"
+    rarity = soften_rarity(item_id, rarity)
     return (item_id, rarity)
 
 
@@ -408,8 +528,13 @@ def _roll_consumable_drop(enemy_level):
     item_id = random.choice(pool)
     return (item_id, "common")
 
-def roll_gold_drop(enemy_key, is_boss=False, pandemonium=False):
-    """Roll gold drop from defeated enemy."""
+def roll_gold_drop(enemy_key, is_boss=False, pandemonium=False, player=None):
+    """Roll gold drop from defeated enemy.
+
+    The market-index offset is subtracted from the base roll only (not the
+    boss/Pandemonium multipliers), so the expected total per kill stays flat
+    while loot becomes a larger share (docs/gold_economy_pacing_design.md §3.1).
+    """
     enemy_level = ENEMIES[enemy_key]["level"]
     
     # Base gold
@@ -425,14 +550,21 @@ def roll_gold_drop(enemy_key, is_boss=False, pandemonium=False):
     # Bonus gold chance (25% chance for big bonus)
     if random.random() < 0.25:
         base_gold = int(base_gold * 1.6)
+
+    # Market-index offset: applied after every multiplier so the expected
+    # total stays flat (docs/gold_economy_pacing_design.md §3.1).
+    if player is not None:
+        offset = kill_gold_offset(market_anchor_level(player))
+        base_gold = max(8, base_gold - offset)
     
     gold = max(8, base_gold)  # Minimum gold
     
     return gold
 
 
-def add_drop_to_inventory(player, enemy_level, pandemonium=False):
-    drop = roll_drop(enemy_level, pandemonium=pandemonium)
+def add_drop_to_inventory(player, enemy_level, pandemonium=False, enemy_element=None):
+    drop = roll_drop(enemy_level, pandemonium=pandemonium,
+                     biome=dungeon_biome(player), enemy_element=enemy_element)
     if drop:
         item_id, rarity = drop
         item = build_item(item_id, rarity)
@@ -446,7 +578,8 @@ def add_drop_to_inventory(player, enemy_level, pandemonium=False):
 def add_gold_drop(player, enemy_key, pandemonium=False):
     """Add gold from enemy to player and print message."""
     is_boss = ENEMIES[enemy_key].get("boss", False)
-    gold = roll_gold_drop(enemy_key, is_boss, pandemonium=pandemonium)
+    gold = roll_gold_drop(enemy_key, is_boss, pandemonium=pandemonium,
+                          player=player)
     
     # Pandemonium: Corrupted Loot curse reduces gold
     gold = apply_gold_reduction(player, gold)
@@ -474,10 +607,16 @@ _WL_SUPERBOSS_MAP = {
 
 
 def _record_superboss_defeat(player, boss_id):
-    """Track distinct superboss kills (used by guild legacy rewards)."""
+    """Track distinct superboss kills (used by guild legacy rewards + bestiary)."""
     kills = player.setdefault("defeated_superbosses", [])
     if boss_id not in kills:
         kills.append(boss_id)
+    # The combat loop normally logs the boss on death; this covers paths where
+    # the kill happened outside the standard pruning points (and old saves).
+    from bestiary import record_defeat
+    record_defeat(player, boss_id, once=True)
+    from titles import check_unlock
+    check_unlock(player)
 
 
 # ── Awakening currency (docs/awakening_design.md Part C.2) ──────────────────
@@ -502,6 +641,32 @@ def _grant_awakening_sigil(player, source_id):
     sources.append(source_id)
     player["awakening_sigils"] = player.get("awakening_sigils", 0) + 1
     _tprint(f"  ✦ Awakening Sigil acquired! (Sigils: {player['awakening_sigils']})")
+
+
+def _play_deferred_dialogue(player):
+    """Play dialogue a combat module deferred to the dungeon screen.
+
+    Heroine endings used to print straight into the combat log, where the
+    GUI's 3-line ticker made long prose unreadable. Combat modules now keep
+    the mechanics (promotion, flags) in the fight and queue the prose here,
+    so it plays in the dungeon log once the player is back on this screen
+    (2026-11-10).
+    """
+    payload = take_deferred_dialogue(player)
+    if not payload:
+        return
+    lines = [str(line) for line in payload.get("lines", []) if str(line).strip()]
+    if not lines:
+        return
+    title = payload.get("title") or ""
+    if title:
+        _tprint(f"\n  {title}")
+        _tprint("  " + "-" * (len(title) + 2))
+    else:
+        _tprint("")
+    for line in lines:
+        _tprint(line)
+    _tpause("Press Enter to continue...")
 
 
 def _check_first_superboss_sigil(player):
@@ -547,6 +712,9 @@ def _wonderland_superboss_dispatch(player, floor, superboss_override):
 
     boss_name, combat_fn = entry
 
+    # Never replay a stale ending queued by an earlier interrupted fight.
+    take_deferred_dialogue(player)
+
     _tprint("\n" + "=" * 60)
     _tprint(f"  WONDERLAND SUPERBOSS — FLOOR {floor}")
     _tprint(f"  {boss_name}")
@@ -561,6 +729,10 @@ def _wonderland_superboss_dispatch(player, floor, superboss_override):
             result = combat_fn(player)
 
         if result == "victory":
+            # Heroine ending prose was queued by the combat module — play it
+            # here, in the dungeon log, before the reward summary.
+            _play_deferred_dialogue(player)
+
             # Set defeat flag
             flag_map = {
                 10: "wl_boss_defeated_queen_of_hearts",
@@ -572,6 +744,16 @@ def _wonderland_superboss_dispatch(player, floor, superboss_override):
             flag = flag_map.get(floor)
             if flag:
                 player[flag] = True
+
+            # Guest pacing: close the heroine chapter (or mark it late).
+            import wonderland_guests
+            wonderland_guests.on_boss_defeated(player, {
+                10: "queen_of_hearts",
+                20: "big_bad_wolf",
+                30: "wicked_witch",
+                40: "jabberwock",
+                50: "mary_sue",
+            }.get(floor, ""))
 
             _record_superboss_defeat(player, {
                 10: "wl_queen_of_hearts",
@@ -674,32 +856,102 @@ def _wonderland_superboss_dispatch(player, floor, superboss_override):
             continue
 
         elif result == "dead":
+            take_deferred_dialogue(player)  # never replay a stale ending
             return "dead"
 
         else:
             # error, timeout, or unknown — return safely without death penalty
+            take_deferred_dialogue(player)
             _tprint(f"\n  The fight was interrupted (result: {result}). Returning to safety...")
             _tpause("Press Enter to continue...")
             return "interrupted"
 
 
+CELESTIAL_CITY_ID = "celestia"
+CELESTIAL_START_FLOOR = 30
+
+
+def _city_start_floor(city_id):
+    """First floor offered when a city's dungeon is entered.
+
+    Data-driven (``dungeon_start_floor``) so Celestia can begin at Floor 30
+    without special-casing the rest of the dungeon loop.
+    """
+    city = CITIES.get(city_id, {})
+    try:
+        return max(1, int(city.get("dungeon_start_floor", 1) or 1))
+    except (TypeError, ValueError):
+        return 1
+
+
 def _ensure_city_floors(player, city_id):
-    """Guarantee city_floors[city_id] exists, migrating legacy saves if needed."""
+    """Guarantee city_floors[city_id] exists, migrating legacy saves.
+
+    Depth is shared per biome (2026-11-04): every city in a biome is an
+    entrance into the same dungeon, so the unlocked ``max_floor`` is the
+    biome group's deepest. Each city keeps its own ``floor`` cursor so
+    returning to a different entrance does not resume mid-floor.
+
+    Celestia is a mid-game dungeon: its ladder starts at Floor 30.
+    """
     if "city_floors" not in player:
         player["city_floors"] = {}
+    start_floor = _city_start_floor(city_id)
     if city_id not in player["city_floors"]:
         if player["city_floors"]:
-            # New city: dungeon is independent — always start at floor 1
-            # with only floor 1 unlocked.  Inheriting other cities'
-            # max_floor let players skip floors and instantly counted
-            # new biomes toward ascension/Pandemonium milestones.
-            player["city_floors"][city_id] = {"floor": 1, "max_floor": 1}
+            # New entrance: start its cursor at the city's first floor, but
+            # inherit the shared depth already unlocked in this biome.
+            shared = max(start_floor,
+                         get_shared_biome_max_floor(player, city_id))
+            player["city_floors"][city_id] = {"floor": start_floor,
+                                              "max_floor": shared}
         else:
             # Legacy save migration: no per-city data exists yet, so
             # preserve the global max_floor for the first city so old
             # saves don't lose their unlocked floors.
-            best_max = player.get("max_floor", 1)
-            player["city_floors"][city_id] = {"floor": 1, "max_floor": max(1, best_max)}
+            best_max = max(start_floor, player.get("max_floor", 1))
+            player["city_floors"][city_id] = {"floor": start_floor,
+                                              "max_floor": best_max}
+    else:
+        prog = player["city_floors"][city_id]
+        if not isinstance(prog, dict):
+            prog = player["city_floors"][city_id] = {"floor": start_floor,
+                                                     "max_floor": start_floor}
+        # Old saves may hold different depths per city in one biome:
+        # raise to the shared depth and clamp a corrupt cursor.
+        shared = get_shared_biome_max_floor(player, city_id)
+        try:
+            current_max = int(prog.get("max_floor", 1) or 1)
+        except (TypeError, ValueError):
+            current_max = 1
+        try:
+            current_floor = int(prog.get("floor", 1) or 1)
+        except (TypeError, ValueError):
+            current_floor = 1
+        prog["max_floor"] = max(current_max, shared, start_floor)
+        prog["floor"] = max(start_floor,
+                            min(current_floor, prog["max_floor"]))
+    sync_biome_dungeon_depth(player)
+
+
+def _advance_city_floor(player, city_id, city_prog, next_floor):
+    """Advance one city's cursor and share the new depth with its biome.
+
+    Returns the biome's previous deepest floor so callers can detect a new
+    milestone (level-cap ascension check).
+    """
+    try:
+        local_max = int(city_prog.get("max_floor", 1) or 1)
+    except (TypeError, ValueError):
+        local_max = 1
+    old_max = max(get_shared_biome_max_floor(player, city_id), local_max)
+    city_prog["floor"] = next_floor
+    city_prog["max_floor"] = max(local_max, next_floor)
+    player["floor"] = next_floor
+    sync_biome_dungeon_depth(player)
+    if old_max < CELESTIAL_START_FLOOR <= city_prog["max_floor"]:
+        _grant_celestial_sigil(player)
+    return old_max
 
 
 def _grant_glass_anchor(player):
@@ -727,7 +979,30 @@ def _grant_glass_anchor(player):
         _tpause("Press Enter to continue...")
 
 
-def _explore_wild_dungeon(player, combat_override=None, superboss_override=None):
+def _grant_celestial_sigil(player, announce=True):
+    """Grant the Celestial Sigil once the player has reached Floor 30."""
+    if any(item.get("id") == "celestial_sigil"
+           for item in player.get("inventory", [])):
+        return False
+
+    from resources.items import build_item
+    from inventory import add_item_to_inventory
+
+    sigil = build_item("celestial_sigil", rarity="epic")
+    if not add_item_to_inventory(player, sigil):
+        return False
+    if announce:
+        _tprint("\n" + "═" * 50)
+        _tprint("  ✦ KEY ITEM ACQUIRED: Celestial Sigil")
+        _tprint("  The silver rings turn, and their light points north —")
+        _tprint("  toward Celestia, the city beneath the aurora.")
+        _tprint("═" * 50)
+        _tpause("Press Enter to continue...")
+    return True
+
+
+def _explore_wild_dungeon(player, combat_override=None, superboss_override=None,
+                          floor_clear_override=None):
     """Wild dungeon run (docs/wild_dungeon_design.md §4).
 
     Runs the ruin's limited floors at its fixed level, reusing the same
@@ -769,6 +1044,9 @@ def _explore_wild_dungeon(player, combat_override=None, superboss_override=None)
     _tprint("\n" + "=" * 50)
     _tprint(f"  {name.upper()} — WILD DUNGEON (Lv {level})")
     _tprint(f"  {region.title()} region · {total_floors} floors")
+    _wild_hint = biome_craft_hint(region)
+    if _wild_hint:
+        _tprint(f"  Local crafts favour {_wild_hint}")
     _tprint("=" * 50)
     _tpause("Press Enter to descend...")
 
@@ -781,6 +1059,11 @@ def _explore_wild_dungeon(player, combat_override=None, superboss_override=None)
         floor_num = int(dungeon.get("highest_floor_cleared", 0)) + 1
         if floor_num > total_floors:
             break  # defensive — shouldn't happen
+
+        # Combat headers must show the floor index, not the ruin's level
+        # (combat() receives floor=level for scaling). Cleared on exit by
+        # _wild_restore_floor().
+        player["_combat_floor_label"] = f"{floor_num}/{total_floors}"
 
         # ── Room set (with per-floor resume support) ────────────────────
         saved_floor = player.get("saved_wild_floor")
@@ -812,13 +1095,14 @@ def _explore_wild_dungeon(player, combat_override=None, superboss_override=None)
         total_rooms = len(rooms)
         explored = set(range(start_room))
 
-        # Initial map render (terminal mode only — GUI panel handles it)
+        # Initial map render (GUI panel shows it; the hook returns "")
         map_str = dungeon_rooms.render_ascii_map(rooms, explored, -1,
                                                  floor_num, player=player)
-        if not _term():
+        if map_str:
             _tprint(map_str)
-            _tprint(dungeon_rooms.render_party_status(player))
-            _tpause()
+        party_str = dungeon_rooms.render_party_status(player)
+        if party_str:
+            _tprint(party_str)
 
         for i, room in enumerate(rooms[start_room:], start=start_room):
             room_type = room.get("type", "combat")
@@ -912,62 +1196,49 @@ def _explore_wild_dungeon(player, combat_override=None, superboss_override=None)
 
             # ── Post-room menu (Continue / Inventory / Save and quit) ─────
             while True:
-                t = _term()
-                if t:
-                    choice = t.menu(
-                        ["Continue", "Inventory / Stats", "Save and quit"],
-                        prompt="What would you like to do?",
-                        allow_cancel=False,
-                    )
-                    if choice == 0:
-                        break
-                    elif choice == 1:
+                choice = _tmenu(
+                    ["Continue", "Inventory / Stats", "Save and quit"],
+                    prompt="What would you like to do?",
+                    allow_cancel=False,
+                )
+                if choice == 1:
+                    t = _term()
+                    if t:
                         t.open_inventory()
-                        continue
-                    elif choice == 2:
-                        # Save-and-quit: suspend the run cleanly (floor cursor
-                        # restored; resume keys stay so re-entry resumes)
-                        _wild_restore_floor(player)
-                        save_game(player)
-                        _tprint("Game saved. Exiting to menu.")
-                        return "save_exit"
-                else:
-                    print("\n[Enter] to continue  [I]nventory/Stats  [S]ave and quit")
-                    cmd = input().strip().lower()
-                    if cmd == "":
-                        break
-                    elif cmd == "i":
-                        print("Inventory management is only available in GUI mode. "
-                              "Please use the launcher.")
-                        continue
-                    elif cmd == "s":
-                        _wild_restore_floor(player)
-                        save_game(player)
-                        print("Game saved. Exiting to menu.")
-                        return "save_exit"
+                    continue
+                if choice == 2:
+                    # Save-and-quit: suspend the run cleanly (floor cursor
+                    # restored; resume keys stay so re-entry resumes)
+                    _wild_restore_floor(player)
+                    save_game(player)
+                    _tprint("Game saved. Exiting to menu.")
+                    return "save_exit"
+                # choice 0 (or any invalid value) → continue
+                break
 
             explored.add(i)
             map_str = dungeon_rooms.render_ascii_map(rooms, explored, i,
                                                      floor_num, player=player)
-            if not _term():
+            if map_str:
                 _tprint(map_str)
-                _tprint(dungeon_rooms.render_party_status(player))
-                _tpause()
+            party_str = dungeon_rooms.render_party_status(player)
+            if party_str:
+                _tprint(party_str)
 
-            # Tick well_rested room buffs (parity with the city loop)
+            # Tick room-based sleep buffs (well_rested / shared_night / beloved)
             for buff in player.get("active_buffs", [])[:]:
-                if buff.get("type") == "well_rested":
+                if buff.get("type") in ("well_rested", "shared_night", "dream_blessed"):
                     buff["remaining"] -= 1
                     if buff["remaining"] <= 0:
                         player["active_buffs"].remove(buff)
-                        _tprint("\nYour well-rested buff wears off as you move deeper.")
+                        _tprint("\nYour sleep buff wears off as you move deeper.")
             for ally in player.get("allies", []):
                 for buff in ally.get("active_buffs", [])[:]:
-                    if buff.get("type") == "well_rested":
+                    if buff.get("type") in ("well_rested", "beloved", "dream_blessed"):
                         buff["remaining"] -= 1
                         if buff["remaining"] <= 0:
                             ally["active_buffs"].remove(buff)
-                            _tprint(f"  {display_name(ally)}'s well-rested buff wears off.")
+                            _tprint(f"  {display_name(ally)}'s sleep buff wears off.")
 
         # ── Floor cleared ────────────────────────────────────────────────
         dungeon = get_wild_dungeon(player, dungeon_id)
@@ -1016,7 +1287,27 @@ def _explore_wild_dungeon(player, combat_override=None, superboss_override=None)
 
         _tprint(f"\n  Floor {floor_num} cleared! Fully healed. "
                 f"{total_floors - floor_num} floor(s) remain...")
-        _tpause("Press Enter to descend to the next floor...")
+
+        # Floor-clear window (GUI) with Continue / Return to city / Save &
+        # quit. Without a GUI override (headless tests) the run simply continues.
+        if floor_clear_override is not None:
+            try:
+                choice = floor_clear_override(
+                    player, floor_num=floor_num,
+                    total_floors=total_floors, name=name) or "continue"
+            except Exception:
+                choice = "continue"  # a UI failure must never block the run
+            if choice == "city":
+                return _wild_exit_flee(
+                    player, dungeon_id,
+                    message="You leave the ruin and return to the nearest city.")
+            if choice == "save_exit":
+                _wild_restore_floor(player)
+                save_game(player)
+                _tprint("Game saved. Exiting to menu.")
+                return "save_exit"
+        else:
+            _tpause("Press Enter to descend to the next floor...")
 
 
 # ── Wild dungeon exit/victory helpers ────────────────────────────────────────
@@ -1038,7 +1329,11 @@ def _wild_restore_floor(player):
     return, or travel encounters / other floor-keyed systems would keep
     scaling to the ruin's level (and never to max_floor — that stays
     untouched by design; see docs/wild_dungeon_design.md §4).
+
+    Also drops the combat-header display label so no later fight renders
+    a stale wild floor index.
     """
+    player.pop("_combat_floor_label", None)
     prev = player.pop("_wild_prev_floor", None)
     if prev is not None:
         player["floor"] = prev
@@ -1067,7 +1362,8 @@ def _wild_room_victory_rewards(player, room):
         for ally in player.get("allies", []):
             if ally.get("current_hp", 0) > 0:
                 gain_exp_ally(ally, enemy_level * 12)
-        add_drop_to_inventory(player, enemy_level, pandemonium=False)
+        add_drop_to_inventory(player, enemy_level, pandemonium=False,
+                              enemy_element=_enemy_attack_element(enemy_key))
         add_gold_drop(player, enemy_key, pandemonium=False)
 
         # Bounty tracking
@@ -1094,11 +1390,9 @@ def _wild_room_victory_rewards(player, room):
     apply_wedding_combat_end(player, victory=True)
 
 
-def _wild_exit_flee(player, dungeon_id):
+def _wild_exit_flee(player, dungeon_id, message=None):
     """Flee exit: retryable — the ruin stays on the map until it expires."""
-    _tprint("You flee from the ruin and return to the nearest city.")
-    if not _term():
-        input("Press Enter to continue...")
+    _tprint(message or "You flee from the ruin and return to the nearest city.")
     _wild_mark_attempted(player, dungeon_id)
     _wild_reset_combat_state(player)
     _wild_restore_floor(player)
@@ -1123,8 +1417,6 @@ def _wild_exit_dead(player, dungeon_id):
 def _wild_exit_interrupted(player, dungeon_id, reason):
     """Combat overlay died/timed out — exit safely without a death penalty."""
     _tprint(f"\n[Combat ended unexpectedly ({reason}) — returning to safety.]")
-    if not _term():
-        input("Press Enter to continue...")
     _wild_mark_attempted(player, dungeon_id)
     _wild_reset_combat_state(player)
     _wild_restore_floor(player)
@@ -1163,6 +1455,8 @@ def _wild_victory(player, dungeon_id, dungeon):
     from events import get_daily_bonus_multiplier
     gold = int(level * total_floors * 25
                * get_daily_bonus_multiplier(player, "gold_bonus"))
+    from titles import apply_gold_find
+    gold = apply_gold_find(player, gold)
     exp = level * total_floors * 40
     player["gold"] = player.get("gold", 0) + gold
     gain_exp(player, exp)
@@ -1340,8 +1634,8 @@ def _eh_refresh_hud(player):
     """Push Party Status + rift status to the dungeon-screen side panels.
 
     Mirrors the city-loop pattern: the GUI hooks redirect these renders to
-    widgets (returning "" — nothing is written to the log); terminal mode
-    prints them like a map/party render would.
+    widgets (returning "" — nothing is written to the log); without a GUI
+    the text is printed like a map/party render would be.
     """
     import dungeon_rooms
     party_str = dungeon_rooms.render_party_status(player)
@@ -1450,15 +1744,15 @@ def _explore_event_horizon(player, combat_override=None, superboss_override=None
         state["current_room"] = None
         player["wedding_bark_shield_room_count"] = player.get("wedding_bark_shield_room_count", 0) + 1
 
-        # Room-based buffs (well_rested) tick after every room (parity)
+        # Room-based sleep buffs tick after every room (parity)
         for buff in player.get("active_buffs", [])[:]:
-            if buff.get("type") == "well_rested":
+            if buff.get("type") in ("well_rested", "shared_night", "dream_blessed"):
                 buff["remaining"] -= 1
                 if buff["remaining"] <= 0:
                     player["active_buffs"].remove(buff)
         for ally in player.get("allies", []):
             for buff in ally.get("active_buffs", [])[:]:
-                if buff.get("type") == "well_rested":
+                if buff.get("type") in ("well_rested", "beloved", "dream_blessed"):
                     buff["remaining"] -= 1
                     if buff["remaining"] <= 0:
                         ally["active_buffs"].remove(buff)
@@ -1477,7 +1771,8 @@ def _explore_event_horizon(player, combat_override=None, superboss_override=None
         # "continue" → next room
 
 
-def explore_dungeon(player, combat_override=None, superboss_override=None):
+def explore_dungeon(player, combat_override=None, superboss_override=None,
+                    floor_clear_override=None):
     """Main dungeon loop. Clears one floor. Returns False if player dies.
 
     Args:
@@ -1487,10 +1782,16 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
         superboss_override: Optional function(tier, floor) -> str
             If provided, called instead of direct superboss combat_*() calls.
             Allows the GUI to inject its own superboss combat screen.
+        floor_clear_override: Optional function(player, floor_num=,
+            total_floors=, name=) -> "continue" | "city" | "save_exit"
+            Wild runs only. If provided, called after each cleared floor
+            (except the last) so the GUI can show the floor-clear window.
+            Without it the loop falls back to the console prompt.
     """
     # ── Wild dungeons: dedicated loop (docs/wild_dungeon_design.md §4) ────
     if player.get("wild_dungeon_id"):
-        return _explore_wild_dungeon(player, combat_override, superboss_override)
+        return _explore_wild_dungeon(player, combat_override, superboss_override,
+                                     floor_clear_override)
 
     # ── Event Horizon: dedicated room loop (docs/event_horizon_design.md §2) ──
     if player.get("_eh_in_run") and (player.get("event_horizon") or {}).get("run_active"):
@@ -1529,13 +1830,9 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
             save_game(player)
             return True
         elif result == "victory":
-            # Advance floor progress
+            # Advance floor progress (depth is shared across the biome)
             next_floor = floor + 1
-            old_max = city_prog["max_floor"]
-            city_prog["floor"]     = next_floor
-            city_prog["max_floor"] = max(old_max, next_floor)
-            player["max_floor"]    = max(player.get("max_floor", 1), city_prog["max_floor"])
-            player["floor"]        = next_floor
+            old_max = _advance_city_floor(player, origin_city, city_prog, next_floor)
             if city_prog["max_floor"] > old_max:
                 from leveling import check_level_cap_milestone
                 check_level_cap_milestone(player, origin_city)
@@ -1582,11 +1879,8 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                             gain_exp_ally(ally, super_boss_exp)
 
                     next_floor = floor + 1
-                    old_max = city_prog["max_floor"]
-                    city_prog["floor"]     = next_floor
-                    city_prog["max_floor"] = max(old_max, next_floor)
-                    player["max_floor"]    = max(player.get("max_floor", 1), city_prog["max_floor"])
-                    player["floor"]        = next_floor
+                    old_max = _advance_city_floor(
+                        player, origin_city, city_prog, next_floor)
 
                     if city_prog["max_floor"] > old_max:
                         from leveling import check_level_cap_milestone
@@ -1645,11 +1939,8 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                             gain_exp_ally(ally, super_boss_exp)
 
                     next_floor = floor + 1
-                    old_max = city_prog["max_floor"]
-                    city_prog["floor"]     = next_floor
-                    city_prog["max_floor"] = max(old_max, next_floor)
-                    player["max_floor"]    = max(player.get("max_floor", 1), city_prog["max_floor"])
-                    player["floor"]        = next_floor
+                    old_max = _advance_city_floor(
+                        player, origin_city, city_prog, next_floor)
 
                     if city_prog["max_floor"] > old_max:
                         from leveling import check_level_cap_milestone
@@ -1781,13 +2072,10 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     if ally.get("current_hp", 0) > 0:
                         gain_exp_ally(ally, super_boss_exp)
 
-                # Sync per-city progress
+                # Sync progress (depth is shared across the biome)
                 next_floor = floor + 1
-                old_max = city_prog["max_floor"]
-                city_prog["floor"]     = next_floor
-                city_prog["max_floor"] = max(old_max, next_floor)
-                player["max_floor"]    = max(player.get("max_floor", 1), city_prog["max_floor"])
-                player["floor"]        = next_floor
+                old_max = _advance_city_floor(
+                    player, origin_city, city_prog, next_floor)
 
                 if city_prog["max_floor"] > old_max:
                     from leveling import check_level_cap_milestone
@@ -1853,6 +2141,9 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
             _tpause("Press Enter to continue...")
     else:
         _tprint(f"\n=== DESCENDING INTO {dungeon_display} DUNGEON – FLOOR {floor} ===")
+        _floor_hint = biome_craft_hint(region)
+        if _floor_hint:
+            _tprint(f"  Local crafts favour {_floor_hint}")
         _tpause("Press Enter to begin...")
         rooms = generate_floor(floor, region=region, player=player)
         start_room = 0
@@ -1943,12 +2234,11 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
 
     # ── Initial map render before the first room ─────────────────────────
     map_str = dungeon_rooms.render_ascii_map(rooms, explored, -1, floor, player=player)
-    if not _term():
+    if map_str:
         _tprint(map_str)
     party_str = dungeon_rooms.render_party_status(player)
-    if not _term():
+    if party_str:
         _tprint(party_str)
-        _tpause()
 
     for i, room in enumerate(rooms[start_room:], start=start_room):
         room_type = room.get("type", "combat")
@@ -2046,8 +2336,6 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                 return "dead"
             elif _hall_result in ("timeout", "error"):
                 _tprint("\n[ERROR: Combat was interrupted — returning to city.]")
-                if not _term():
-                    input("Press Enter to continue...")
                 origin = player.get("origin_city", "solmere")
                 player["location"] = origin
                 end_pandemonium_run(player)
@@ -2081,7 +2369,8 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                         for ally in player.get("allies", []):
                             if ally.get("current_hp", 0) > 0:
                                 gain_exp_ally(ally, enemy_level * 12)
-                        add_drop_to_inventory(player, enemy_level, pandemonium=pandemonium)
+                        add_drop_to_inventory(player, enemy_level, pandemonium=pandemonium,
+                                              enemy_element=_enemy_attack_element(enemy_key))
                         add_gold_drop(player, enemy_key, pandemonium=pandemonium)
                         
                         # BOUNTY TRACKING:
@@ -2136,9 +2425,6 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
 
                 elif result == "fled":
                     _tprint("You flee from the dungeon and return to the city.")
-                    # No input() wait in GUI mode; the flee message is auto-dismissed
-                    if not _term():
-                        input("Press Enter to continue...")
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
                     end_pandemonium_run(player)
@@ -2162,8 +2448,6 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                 elif result == "timeout":
                     _tprint("\n[ERROR: Combat was interrupted — returning to city.]")
                     # Same cleanup as fleeing
-                    if not _term():
-                        input("Press Enter to continue...")
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
                     end_pandemonium_run(player)
@@ -2177,8 +2461,6 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     # overlay) — don't re-trigger combat in a tight loop.
                     _tprint(f"\n[ERROR: Combat ended unexpectedly ({result}) — returning to city.]")
                     # Same cleanup as fleeing
-                    if not _term():
-                        input("Press Enter to continue...")
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
                     end_pandemonium_run(player)
@@ -2214,8 +2496,6 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
                     return "dead"
                 elif result == "fled":
                     _tprint("You flee from the dungeon and return to the city.")
-                    if not _term():
-                        input("Press Enter to continue...")
                     origin = player.get("origin_city", "solmere")
                     player["location"] = origin
                     end_pandemonium_run(player)
@@ -2237,87 +2517,62 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
 
         # Post-room menu (combat and non-combat both get this)
         while True:
-            t = _term()
-            if t:
-                # GUI mode: show buttons
-                choice = t.menu(
-                    ["Continue", "Inventory / Stats", "Save and quit"],
-                    prompt="What would you like to do?",
-                    allow_cancel=False,
-                )
-                if choice == 0:  # Continue
-                    break
-                elif choice == 1:  # Inventory/Stats
+            choice = _tmenu(
+                ["Continue", "Inventory / Stats", "Save and quit"],
+                prompt="What would you like to do?",
+                allow_cancel=False,
+            )
+            if choice == 1:  # Inventory/Stats
+                t = _term()
+                if t:
                     t.open_inventory()
-                    continue
-                elif choice == 2:  # Save and quit
-                    # Clear run-only flags BEFORE saving so they never persist
-                    # into the save file (they are re-set on dungeon entry).
-                    # NOTE: the floor curse is deliberately kept so a resumed
-                    # run keeps its roll — it is inert while the mode flag is off.
-                    player.pop("pandemonium_mode", None)
-                    player["cutlass_high_tide_stacks"] = 0
-                    player.pop("cutlass_high_tide_floor", None)
-                    save_game(player)
-                    _tprint("Game saved. Exiting to menu.")
-                    # Clear Wonderland state — preserved shadows will restore on reload via save
-                    clear_wonderland_quirk(player)
-                    return "save_exit"
-            else:
-                # Terminal mode
-                print("\n[Enter] to continue  [I]nventory/Stats  [S]ave and quit")
-                cmd = input().strip().lower()
-                if cmd == "":
-                    break
-                elif cmd == "i":
-                    print("Inventory management is only available in GUI mode. Please use the launcher.")
-                    continue
-                elif cmd == "s":
-                    # Clear run-only flags BEFORE saving so they never persist
-                    # into the save file (they are re-set on dungeon entry).
-                    # NOTE: the floor curse is deliberately kept so a resumed
-                    # run keeps its roll — it is inert while the mode flag is off.
-                    player.pop("pandemonium_mode", None)
-                    # Reset High Tide when leaving dungeon
-                    player["cutlass_high_tide_stacks"] = 0
-                    player.pop("cutlass_high_tide_floor", None)
-                    save_game(player)
-                    print("Game saved. Exiting to menu.")
-                    return "save_exit"
-                else:
-                    continue
+                continue
+            if choice == 2:  # Save and quit
+                # Clear run-only flags BEFORE saving so they never persist
+                # into the save file (they are re-set on dungeon entry).
+                # NOTE: the floor curse is deliberately kept so a resumed
+                # run keeps its roll — it is inert while the mode flag is off.
+                player.pop("pandemonium_mode", None)
+                player["cutlass_high_tide_stacks"] = 0
+                player.pop("cutlass_high_tide_floor", None)
+                save_game(player)
+                _tprint("Game saved. Exiting to menu.")
+                # Clear Wonderland state — preserved shadows will restore on reload via save
+                clear_wonderland_quirk(player)
+                return "save_exit"
+            # choice 0 (or any invalid value) → continue
+            break
 
         # Mark room explored and show ASCII map
         explored.add(i)
         # Use qualified module reference so GUI patching works
         map_str = dungeon_rooms.render_ascii_map(rooms, explored, i, floor, player=player)
-        if not _term():
+        if map_str:
             _tprint(map_str)
         party_str = dungeon_rooms.render_party_status(player)
-        if not _term():
+        if party_str:
             _tprint(party_str)
-            _tpause()
 
-        # ── Tick room-based buffs (well_rested) after every room ─────────────────
+        # ── Tick room-based sleep buffs after every room ──────────────────────
         if player.get("active_buffs"):
             expired = []
             for buff in player.get("active_buffs", [])[:]:
-                if buff.get("type") == "well_rested":
+                if buff.get("type") in ("well_rested", "shared_night", "dream_blessed"):
                     buff["remaining"] -= 1
                     if buff["remaining"] <= 0:
                         player["active_buffs"].remove(buff)
-                        expired.append("well-rested buff")
+                        expired.append("sleep buff")
             if expired:
                 _tprint(f"\nYour {', '.join(expired)} wears off as you move deeper.")
 
         for ally in player.get("allies", []):
             if ally.get("active_buffs"):
                 for buff in ally.get("active_buffs", [])[:]:
-                    if buff.get("type") == "well_rested":
+                    if buff.get("type") in ("well_rested", "beloved", "dream_blessed"):
                         buff["remaining"] -= 1
                         if buff["remaining"] <= 0:
                             ally["active_buffs"].remove(buff)
-                            _tprint(f"  {display_name(ally)}'s well-rested buff wears off.")
+                            _tprint(f"  {display_name(ally)}'s sleep buff wears off.")
 
     # Floor cleared (normal)
     # Wipe saved dungeon state so the next floor starts fresh
@@ -2362,16 +2617,13 @@ def explore_dungeon(player, combat_override=None, superboss_override=None):
             del player["training_buff"]
             _tprint("\nYour barracks training exhaustion catches up to you. The strength buff has worn off.")
 
-    # ── Sync per-city floor progress ────────────────────────────────────────
-    # Advance the city record to the next floor.  main.py will also do
+    # ── Sync biome-shared floor progress ────────────────────────────────────
+    # Advance the city record to the next floor and share the new depth with
+    # every other entrance of this biome. main.py will also do
     # player["floor"] += 1, but we mirror it here so city_prog stays in sync
     # whether control returns through main.py or any other path.
     next_floor = floor + 1
-    old_max = city_prog["max_floor"]
-    city_prog["floor"]     = next_floor
-    city_prog["max_floor"] = max(old_max, next_floor)
-    player["max_floor"]    = max(player.get("max_floor", 1), city_prog["max_floor"])
-    player["floor"]        = next_floor
+    old_max = _advance_city_floor(player, origin_city, city_prog, next_floor)
 
     if city_prog["max_floor"] > old_max:
         from leveling import check_level_cap_milestone

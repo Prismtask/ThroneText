@@ -1,3 +1,5 @@
+import re
+
 # combat/elemental.py – Elemental damage/resistance system
 """Dynamic elemental / type system. Every entity has elemental_res and elemental_dmg.
 
@@ -6,9 +8,11 @@ plus two damage-type axes:
   physical  – melee/weapon-based damage
   magical   – spell/arcane-based damage
 
-res  < 1.0 = resistant (take less damage)
+res  > 1.0 = resistant (takes less damage)   ← rating: higher = stronger
 res  = 1.0 = neutral
-res  > 1.0 = weak (take more damage)
+res  < 1.0 = weak (takes more damage)
+Damage-taken multiplier = 2.0 - res, clamped to [0.0, 2.0]
+(e.g. res 1.3 → ×0.7, res 0.7 → ×1.3).
 
 dmg  < 1.0 = weak output with that element/type
 dmg  = 1.0 = neutral
@@ -17,6 +21,39 @@ dmg  > 1.0 = strong output with that element/type
 
 ELEMENTS = ["fire", "water", "thunder", "wind", "earth", "light", "dark", "physical", "magical"]
 
+
+def resistance_multiplier(rating):
+    """Convert a resistance rating (higher = stronger) to a damage-taken multiplier.
+
+    Ratings are authored around 1.0 (neutral). The multiplier is ``2.0 - rating``
+    clamped to [0.0, 2.0]: 1.3 → ×0.7 (30% resistance), 0.7 → ×1.3 (30% weakness).
+    Rounded to 4 decimals to keep float noise (e.g. 2 - 1.8) from truncating damage.
+    """
+    mult = max(0.0, min(2.0, 2.0 - float(rating)))
+    return round(mult, 4)
+
+
+def get_damage_element(profile):
+    """Return the single element a creature attacks with, or None if neutral.
+
+    Every attack resolves against exactly ONE element — skills carry their own
+    YAML ``elemental`` and basic attacks read ``get_attack_element``; the
+    profile only supplies that element's multiplier. Extra >1.0 entries in a
+    damage profile therefore never contribute to damage. Enemy AI, the
+    elemental-debuff channel and the single-element enemy profile all use this
+    picker so they can never disagree. Ties resolve to ``ELEMENTS`` order
+    (fire → water → thunder → wind → earth → light → dark → physical → magical).
+    """
+    best_el = None
+    best_val = 1.0
+    for el in ELEMENTS:
+        val = profile.get(el, 1.0)
+        if val > best_val:
+            best_val = val
+            best_el = el
+    return best_el
+
+
 # ── Keyword-based elemental specialisation ─────────────────────────────────
 # When an enemy/ally name contains one of these keywords (case-insensitive),
 # the corresponding elemental_dmg and elemental_res overrides are applied on
@@ -24,7 +61,7 @@ ELEMENTS = ["fire", "water", "thunder", "wind", "earth", "light", "dark", "physi
 # even though its race (Elemental) is generic.
 #
 # Format: keyword_lowercase → {"elemental_dmg": {...}, "elemental_res": {...}}
-# Values follow the same convention: >1.0 = stronger, <1.0 = weaker.
+# Values follow the same convention: >1.0 = stronger resistance/output, <1.0 = weaker.
 
 ELEMENTAL_KEYWORDS = {
     # ── Thunder / Lightning ──
@@ -195,6 +232,34 @@ ELEMENTAL_KEYWORDS = {
 }
 
 
+# Name hints for neutral enemies (the Human race has no elemental profile):
+# caster-flavoured names attack magically, every other neutral enemy
+# attacks physically. Whole-word matches avoid "mage" inside other words.
+CASTER_NAME_HINTS = (
+    "mage", "wizard", "witch", "sorcerer", "sorceress", "warlock",
+    "cultist", "priest", "priestess", "cleric", "acolyte", "enchanter",
+    "enchantress", "necromancer", "summoner", "oracle", "seer", "diviner",
+    "mystic", "arcane", "runic", "spellcaster", "spell",
+)
+
+# Baseline multiplier for the fallback attack type. Kept low: this is a
+# natural damage-type trait, not a specialisation like race profiles (1.2-1.5).
+DEFAULT_ATTACK_MULTIPLIER = 1.2
+
+
+def _default_attack_element(name):
+    """Fallback damage type for an enemy with no elemental profile.
+
+    Human enemies use this: caster names (Novice Mage, Cultist, ...) attack
+    magically; martial names (Bandit, Elite Assassin, ...) attack physically.
+    """
+    lower = (name or "").lower()
+    for hint in CASTER_NAME_HINTS:
+        if re.search(r'\b' + re.escape(hint) + r'\b', lower):
+            return "magical"
+    return "physical"
+
+
 def _get_keyword_elemental(name):
     """Check an entity name for known elemental keywords (whole-word match).
     
@@ -203,7 +268,6 @@ def _get_keyword_elemental(name):
     """
     if not name:
         return {}, {}
-    import re
     lower = name.lower()
     dmg = {}
     res = {}
@@ -333,6 +397,18 @@ def compute_enemy_elemental(enemy):
     res = merge_profiles(res, template.get("elemental_res", {}))
     dmg = merge_profiles(dmg, template.get("elemental_dmg", {}))
     
+    # Enemies attack with exactly one element (AI + debuff proc both read the
+    # single highest entry), so report only that entry. Secondary >1.0 values
+    # never contributed to damage — they only made profiles advertise
+    # multi-element output. Resistances intentionally stay multi-element.
+    element = get_damage_element(dmg)
+    if element is None:
+        # Natural fallback: neutral races (Human) and custom enemies still
+        # get a physical/magical attack trait instead of a blank HUD tag.
+        element = _default_attack_element(enemy_name)
+        dmg[element] = DEFAULT_ATTACK_MULTIPLIER
+    dmg = {element: round(dmg[element], 4)} if element else {}
+
     return res, dmg
 
 
@@ -375,6 +451,13 @@ def compute_ally_elemental(ally):
             if res_v:
                 base_res[el] += res_v
 
+    # Father's Legacy (Tiefling fire/dark, Dragonborn all-element)
+    from family import father_legacy_elemental_bonus
+    for el in ELEMENTS:
+        legacy_bonus = father_legacy_elemental_bonus(ally, el)
+        if legacy_bonus:
+            base_dmg[el] += legacy_bonus
+
     # Add equipment
     equip_res = _get_equipment_elemental(ally, "elemental_res")
     equip_dmg = _get_equipment_elemental(ally, "elemental_dmg")
@@ -399,8 +482,8 @@ def get_attack_element(attacker, equipped_weapon=None):
     (Blaze Axe: physical 1.3 / fire 1.3), and dict order used to silently
     resolve those as [PHYSICAL] in the log while the HUD showed something
     else entirely (2026-10-08 bug report: Dorothy's Blaze Lute). Weapons
-    without a ``primary_element`` (uniques, Palette's Brush, Captain's
-    Cutlass, ...) keep the old highest-value pick.
+    without a ``primary_element`` (legacy/unsaved pieces) keep the old
+    highest-value pick.
 
     Returns an element string or None for neutral/physical attacks.
     """
@@ -451,15 +534,16 @@ def calculate_elemental_damage(base_dmg, attacker, target, element=None):
         if boost > 0:
             dmg_mult += boost
         
-        # Get target's resistance to this element
+        # Get target's resistance RATING to this element (higher = stronger).
+        # The damage-taken multiplier is 2.0 - rating (see resistance_multiplier).
         target_res = target.get("elemental_res", {})
-        res_mult = target_res.get(element, 1.0)
-        
-        # Apply elemental_weakness debuff (reduces all resistances)
+        res_rating = target_res.get(element, 1.0)
+
+        # Apply elemental_weakness debuff (lowers the resistance rating)
         for debuff in target.get("active_debuffs", []):
             if debuff.get("type") == "elemental_weakness":
                 weakness = debuff.get("value", 0)
-                res_mult -= weakness
+                res_rating -= weakness
                 break
 
         # Perfect Mimicry: adapted element → bonus damage / resistance
@@ -471,7 +555,7 @@ def calculate_elemental_damage(base_dmg, attacker, target, element=None):
         for buff in target.get("active_buffs", []):
             if (buff.get("type") == "elemental_adapt_res"
                     and buff.get("element") == element and buff.get("remaining", 0) > 0):
-                res_mult += buff.get("value", 0)
+                res_rating += buff.get("value", 0)
                 break
 
         # Event Horizon: flask/boon elemental damage (+% to all elements;
@@ -479,8 +563,27 @@ def calculate_elemental_damage(base_dmg, attacker, target, element=None):
         for buff in attacker.get("active_buffs", []):
             if buff.get("type") == "eh_ele_dmg":
                 dmg_mult += buff.get("value", 0)
-        
-        final_dmg = int(base_dmg * dmg_mult * res_mult)
+
+        # Elemental Focus (skill) — +% to all elements for a few turns
+        for buff in attacker.get("active_buffs", []):
+            if buff.get("type") == "elemental_dmg":
+                dmg_mult += buff.get("value", 0)
+
+        # Elemental damage for a specific element (Infernal Avatar)
+        for buff in attacker.get("active_buffs", []):
+            if buff.get("type") == "elemental_dmg_elem" and buff.get("element") == element:
+                dmg_mult += buff.get("value", 0)
+
+        # Profession passive elemental bonus (player only)
+        if not attacker.get("is_ally"):
+            from combat.skills import get_player_passive_elem_bonus
+            dmg_mult += get_player_passive_elem_bonus(attacker, element)
+
+        # Form tradition resistance (Steadfast — only the item's primary element)
+        from combat.form_perks import get_form_res_rating_bonus
+        res_rating += get_form_res_rating_bonus(target, element)
+
+        final_dmg = int(base_dmg * dmg_mult * resistance_multiplier(res_rating))
 
     # Event Horizon — The Magician's oath: attacks that do not strike the
     # target's weakness element are maimed to 25%. Targets with no weakness

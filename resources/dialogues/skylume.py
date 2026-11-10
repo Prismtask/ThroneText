@@ -63,7 +63,7 @@ SKYLUME_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep under star-light and ley-glow. You'll dream of wonders.",
-        "Eight hours in magic silence. Your mind will clear.",
+        "A night in magic silence. Your mind will clear.",
         "The astral realm visits kindly tonight. Rest well.",
         "No nightmares here. Only gentle floating dreams.",
     ],

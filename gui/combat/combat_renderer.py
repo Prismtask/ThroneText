@@ -347,8 +347,9 @@ class CombatRenderer(tk.Frame):
         else:
             w["active"].config(text="")
 
-        # Name — indent + dim back-row allies to distinguish from active front row
-        name = entity.get("name", "")
+        # Name — display_name is display-only (titles); entity_name above
+        # remains the matching key for flash_entity/damage tracking.
+        name = entity.get("display_name") or entity.get("name", "")
         if entity.get("is_back") and not entity.get("is_player"):
             name = f"  {name}"
             w["name"].config(fg=Theme.TEXT_DIM, font=(Theme.FONT_FAMILY, Theme.FONT_SIZE, "italic"))

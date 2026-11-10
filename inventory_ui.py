@@ -4,6 +4,21 @@ from resources.items import is_unique_item
 from utils import _tprint, _tpause, _tclear, _tmenu, _tinput
 
 
+# GUI hook: set by screens that can show the full-inventory dialog. When
+# present it replaces the legacy text prompt entirely.
+_acquire_handler = None
+
+
+def set_acquire_handler(handler):
+    """Register a GUI handler: handler(player, item) -> bool.
+
+    Pass None to clear. CombatScreen registers its dialog while a fight
+    runs so loot prompts are answered with GUI widgets, not console input.
+    """
+    global _acquire_handler
+    _acquire_handler = handler
+
+
 def _format_equipment_stat_line(item):
     """Format equipment mods for inventory display."""
     if item.get("type") != "equipment":
@@ -25,6 +40,9 @@ def prompt_acquire_item(player, item):
     """
     if add_item_to_inventory(player, item):
         return True
+
+    if _acquire_handler is not None:
+        return bool(_acquire_handler(player, item))
 
     equip_cap, other_cap = get_inventory_caps(player)
     equip_count, other_count = count_inventory(player)

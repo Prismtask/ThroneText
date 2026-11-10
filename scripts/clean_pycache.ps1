@@ -6,7 +6,8 @@
 #   powershell -ExecutionPolicy Bypass -File clean_pycache.ps1
 #   (or right-click -> Run with PowerShell)
 
-$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+# This script lives in scripts/, but it cleans the project root one level up.
+$scriptRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $scriptRoot
 
 Write-Host "Searching for __pycache__ folders (excluding .venv)..." -ForegroundColor Cyan

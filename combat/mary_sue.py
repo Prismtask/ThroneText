@@ -132,8 +132,9 @@ def _deal_damage(target, dmg, element=None, ctx=None, sue_ref=None):
     passive effects (Predator's Grin crit bonus, Wilting Presence debuff).
     """
     if element and element != "physical":
+        from combat.elemental import resistance_multiplier
         res = target.get("elemental_res", {}).get(element, 1.0)
-        dmg = max(1, int(dmg * res))
+        dmg = max(1, int(dmg * resistance_multiplier(res)))
 
     # ── Shadow: Predator's Grin (cheshire_absence) ──────────────────────
     is_crit = False
@@ -587,7 +588,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
 
     # ── Opening narration ────────────────────────────────────────────────
     c_clear()
-    c_print("=" * 60)
     c_print("The final page turns.")
     c_print("")
     c_print("You stand in a room that has no walls — only words. Sentences")
@@ -610,7 +610,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
     c_print("She sets down her pen. It keeps writing without her.")
     c_print("")
     c_print('"Tell me your story. I\'d love to read it."')
-    c_print("=" * 60)
     c_print(f"\nMary Sue — HP: {sue['hp']}  |  Plot Armor: {plot_armor['stacks']} stacks ({get_plot_armor_dr(plot_armor)*100:.0f}% DR)")
     c_input("\nPress Enter to face the Author...")
 
@@ -865,7 +864,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
             ctx["phase"] = 2
             _remove_authors_favor(ctx)
 
-            c_print("\n" + "-" * 50)
             c_print('Mary Sue frowns at her manuscript. "That\'s... not right. You\'re')
             c_print('not supposed to be winning. Let me check my outline."')
             c_print("")
@@ -877,7 +875,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
             c_print("She picks up her pen. It glows.")
             c_print("")
             c_print('"Let me write one in."')
-            c_print("-" * 50)
 
             if alice:
                 c_print('\n  Alice: "She\'s... critiquing us. Like we\'re first drafts. I\'ve')
@@ -908,14 +905,12 @@ def combat_mary_sue(player, floor=None, enemies=None):
         if hp_pct <= 0.66 and ctx["phase"] == 2:
             ctx["phase"] = 3
 
-            c_print("\n" + "-" * 50)
             c_print('Mary Sue flips to a new page. Her pen moves faster now —')
             c_print('more confident.')
             c_print("")
             c_print('"The Wolf was scarier. I was older when I wrote him — thirteen,')
             c_print('maybe. I\'d learned that the scariest monsters aren\'t the ones')
             c_print('that roar. They\'re the ones that smile and say \'grandmother.\'"')
-            c_print("-" * 50)
 
             if red_hood:
                 c_print('\n  Red Hood: "You wrote him. YOU wrote him. Do you have any idea')
@@ -941,7 +936,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
         if hp_pct <= 0.49 and ctx["phase"] == 3:
             ctx["phase"] = 4
 
-            c_print("\n" + "-" * 50)
             c_print('Mary Sue rubs her temples. "The Wolf... was practice. I was')
             c_print('learning how to write REAL fear."')
             c_print("")
@@ -953,7 +947,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
             c_print("")
             c_print('"Do you know what it\'s like, to create someone whose only')
             c_print('joy is watching you melt?"')
-            c_print("-" * 50)
 
             if dorothy:
                 c_print('\n  Dorothy: "She wrote YOU. She wrote the Witch who terrorized my')
@@ -980,7 +973,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
         if hp_pct <= 0.32 and ctx["phase"] == 4:
             ctx["phase"] = 5
 
-            c_print("\n" + "-" * 50)
             c_print('Mary Sue\'s hand trembles as she turns the page.')
             c_print("")
             c_print('"The Jabberwock... was different. I didn\'t mean to write it.')
@@ -990,7 +982,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
             c_print("")
             c_print('"I\'ve been afraid of it ever since. I think... I think it wrote')
             c_print('itself."')
-            c_print("-" * 50)
 
             if alice:
                 c_print('\n  Alice: "You wrote the Jabberwock? You... that thing has haunted')
@@ -1019,7 +1010,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
         if hp_pct <= 0.15 and ctx["phase"] == 5:
             ctx["phase"] = 6
 
-            c_print("\n" + "!" * 50)
             c_print('"NO. This isn\'t how it goes. I\'M the hero. I\'M the one who')
             c_print('saves the day. I\'M the one everyone loves. That\'s how I')
             c_print('WROTE it!"')
@@ -1031,7 +1021,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
             c_print("")
             c_print('"If you won\'t follow the story I wrote... then I\'ll write a')
             c_print('NEW one. One where YOU\'RE the villain!"')
-            c_print("!" * 50)
 
             # Phase 6: Plot Armor does NOT regenerate anymore
             c_print(f'\n  📖 Mary Sue\'s Plot Armor is permanently vulnerable!')
@@ -1259,8 +1248,7 @@ def combat_mary_sue(player, floor=None, enemies=None):
         """Handle Mary Sue death, heroine resolution, and victory."""
         if _is_mary_sue(target) and target.get("hp", 0) <= 0:
             # ── Victory narration ──────────────────────────────────────
-            c_print("\n" + "=" * 60)
-            c_print("Mary Sue falls to her knees. The pen rolls from her")
+            c_print("\nMary Sue falls to her knees. The pen rolls from her")
             c_print("fingers. For the first time, it stops glowing.")
             c_print("")
             c_print('"I... I lost? But I\'m the... the main character..."')
@@ -1292,7 +1280,6 @@ def combat_mary_sue(player, floor=None, enemies=None):
             c_print("The room of words dissolves. The pages settle. Wonderland")
             c_print("breathes — free, for the first time, from its author's")
             c_print("unconscious grip.")
-            c_print("=" * 60)
 
             # ── Heroine Resolution ─────────────────────────────────────
             _resolve_heroines(player, ctx)
@@ -1315,9 +1302,14 @@ def combat_mary_sue(player, floor=None, enemies=None):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _resolve_heroines(player, ctx):
-    """After Mary Sue is defeated, finalize heroine arcs."""
+    """After Mary Sue is defeated, finalize heroine arcs.
+
+    The ending prose is deferred to the dungeon screen (the combat ticker
+    only shows 3 lines) — see combat_ui.defer_dialogue (2026-11-10).
+    """
     from combat.ally import promote_heroine_to_permanent, set_heroine_state, get_heroine_in_party
-    resolved_any = False
+    from combat.combat_ui import defer_dialogue
+    ending_lines = []
 
     # Alice — permanent if Jabberwock was also defeated
     alice = _get_heroine(player, "alice")
@@ -1325,11 +1317,13 @@ def _resolve_heroines(player, ctx):
         join_level = alice.get("level", player.get("level", 1))
         promote_heroine_to_permanent(player, alice, join_level)
         set_heroine_state(player, "alice", "permanent")
-        resolved_any = True
-        c_print('\n  Alice closes her eyes. When she opens them, they\'re clearer.')
-        c_print('  "The Jabberwock. The Queen. Even the author herself."')
-        c_print('  "I think... I think my story is finally my own now."')
-        c_print('  Alice becomes a PERMANENT ally.')
+        ending_lines.extend([
+            '',
+            '  Alice closes her eyes. When she opens them, they\'re clearer.',
+            '  "The Jabberwock. The Queen. Even the author herself."',
+            '  "I think... I think my story is finally my own now."',
+            '  Alice becomes a PERMANENT ally.',
+        ])
 
     # Red Hood — permanent if Big Bad Wolf was also defeated
     red_hood = _get_heroine(player, "red_hood")
@@ -1337,11 +1331,13 @@ def _resolve_heroines(player, ctx):
         join_level = red_hood.get("level", player.get("level", 1))
         promote_heroine_to_permanent(player, red_hood, join_level)
         set_heroine_state(player, "red_hood", "permanent")
-        resolved_any = True
-        c_print('\n  Red Hood sheathes her axe. The crimson hood falls back.')
-        c_print('  "The Wolf. The one who wrote the Wolf. They\'re both gone."')
-        c_print('  "Grandmother can rest now. So can I."')
-        c_print('  Red Hood becomes a PERMANENT ally.')
+        ending_lines.extend([
+            '',
+            '  Red Hood sheathes her axe. The crimson hood falls back.',
+            '  "The Wolf. The one who wrote the Wolf. They\'re both gone."',
+            '  "Grandmother can rest now. So can I."',
+            '  Red Hood becomes a PERMANENT ally.',
+        ])
 
     # Dorothy — permanent if Wicked Witch was also defeated
     dorothy = _get_heroine(player, "dorothy")
@@ -1349,26 +1345,37 @@ def _resolve_heroines(player, ctx):
         join_level = dorothy.get("level", player.get("level", 1))
         promote_heroine_to_permanent(player, dorothy, join_level)
         set_heroine_state(player, "dorothy", "permanent")
-        resolved_any = True
-        c_print('\n  Dorothy looks at the ruby slippers on her feet. They\'re glowing')
-        c_print('  softly. "The Witch. The one who wrote her. They can\'t keep me')
-        c_print('  here anymore."')
-        c_print('  She clicks her heels once. The sound echoes — not in the room,')
-        c_print('  but somewhere far away.')
-        c_print('  "Kansas can wait. You still need me here."')
-        c_print('  Dorothy becomes a PERMANENT ally.')
-
-    if resolved_any:
-        c_input("\nPress Enter...")
+        ending_lines.extend([
+            '',
+            '  Dorothy looks at the ruby slippers on her feet. They\'re glowing',
+            '  softly. "The Witch. The one who wrote her. They can\'t keep me',
+            '  here anymore."',
+            '  She clicks her heels once. The sound echoes — not in the room,',
+            '  but somewhere far away.',
+            '  "Kansas can wait. You still need me here."',
+            '  Dorothy becomes a PERMANENT ally.',
+        ])
 
     # If any heroine is in party but their personal boss wasn't defeated,
     # they remain temporary — partial closure.
     if alice and not player.get("wl_boss_defeated_jabberwock"):
-        c_print('\n  Alice: "The author is gone, but my Jabberwock... it still waits.')
-        c_print('  Some stories need their own ending." She remains temporary.')
+        ending_lines.extend([
+            '',
+            '  Alice: "The author is gone, but my Jabberwock... it still waits.',
+            '  Some stories need their own ending." She remains temporary.',
+        ])
     if red_hood and not player.get("wl_boss_defeated_big_bad_wolf"):
-        c_print('\n  Red Hood: "She\'s gone. But the Wolf... the real Wolf... he\'s')
-        c_print('  still out there. I can feel it." She remains temporary.')
+        ending_lines.extend([
+            '',
+            '  Red Hood: "She\'s gone. But the Wolf... the real Wolf... he\'s',
+            '  still out there. I can feel it." She remains temporary.',
+        ])
     if dorothy and not player.get("wl_boss_defeated_wicked_witch"):
-        c_print('\n  Dorothy: "The author is free. But my Witch... she still cackles')
-        c_print('  somewhere in the dark. I can\'t leave yet." She remains temporary.')
+        ending_lines.extend([
+            '',
+            '  Dorothy: "The author is free. But my Witch... she still cackles',
+            '  somewhere in the dark. I can\'t leave yet." She remains temporary.',
+        ])
+
+    if ending_lines:
+        defer_dialogue(player, ending_lines, title="Happily Ever After")

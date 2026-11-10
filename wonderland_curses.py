@@ -35,7 +35,7 @@ Shadow effect types:
 
 import random
 
-from utils import display_name
+from utils import display_name, _tmenu, _tprint
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # WONDERLAND QUIRK DEFINITIONS
@@ -1101,7 +1101,8 @@ def trigger_shadow_choice(player, floor, term_func=None, count=1):
     Args:
         player: player dict
         floor: current floor number
-        term_func: optional function for getting terminal (for GUI mode)
+        term_func: deprecated — kept for call-site compatibility; the GUI
+                   bridge is resolved through utils._tmenu internally
         count: how many Shadows to pick (1 for floor 40, 2 for floor 46)
 
     Returns:
@@ -1125,32 +1126,15 @@ def trigger_shadow_choice(player, floor, term_func=None, count=1):
         else:
             prompt_text = "Choose Shadow {0} of {1} (1-{2}): ".format(pick_num + 1, count, len(available))
 
-        # Try GUI terminal first
-        if term_func:
-            t = term_func()
-            if t:
-                t.print(display)
-                choice = t.menu(
-                    [f"{s['icon']} {s['name']}" for s in available],
-                    prompt=prompt_text.strip(),
-                    allow_cancel=False,
-                )
-            else:
-                print(display)
-                try:
-                    choice = int(input(prompt_text).strip()) - 1
-                    if choice < 0 or choice >= len(available):
-                        choice = 0
-                except (ValueError, IndexError):
-                    choice = 0
-        else:
-            print(display)
-            try:
-                choice = int(input(prompt_text).strip()) - 1
-                if choice < 0 or choice >= len(available):
-                    choice = 0
-            except (ValueError, IndexError):
-                choice = 0
+        # GUI-aware menu (falls back to console menus only in headless tests)
+        _tprint(display)
+        choice = _tmenu(
+            [f"{s['icon']} {s['name']}" for s in available],
+            prompt=prompt_text.strip(),
+            allow_cancel=False,
+        )
+        if choice < 0 or choice >= len(available):
+            choice = 0
 
         chosen = available[choice]
         player.setdefault("wonderland_shadows", []).append(chosen["key"])
@@ -1158,6 +1142,12 @@ def trigger_shadow_choice(player, floor, term_func=None, count=1):
 
         # Remove chosen from available for next pick
         available = [s for s in available if s["key"] != chosen["key"]]
+
+    # Deed titles: lifetime count (the active Shadow list resets between
+    # cycles, so the title counter must not read `wonderland_shadows`).
+    if chosen_shadows:
+        from titles import note_deed as _note_title_deed
+        _note_title_deed(player, "wonderland_shadows_taken", len(chosen_shadows))
 
     # Build result message
     result.append("")

@@ -34,7 +34,7 @@ description: 'Iterative development helper for the Pandemonium Python text-based
 - Player & ally displays must match identically (headers, stats, rarity).
 - Combat HUD: fixed 68-char ASCII box. Party left (31 chars), enemies right (33 chars). 2 rows/entity.
 - Stat display: `Attribute: base + N(eq) + N(buff) = total`
-- Monster girls: ♀ symbol. Captured via nets → `./facilities/house.py`.
+- Monster girls: ♀ symbol. Captured via nets → `./facilities/house/` package. Heroine quests live in `./heroine_quests/`.
 
 ### Combat
 - Max 1 player + 3 allies vs 5 enemies. Player controls all ally actions.
@@ -86,6 +86,11 @@ Every unique item effect must work for the player AND allies unless it's a weddi
 - GUI runs facilities/combat in background threads.
 - Use `_tprint`/`_tpause`/`_tinput` (from `./utils.py`) or `c_print`/`c_input` (from `./combat/combat_io.py`).
 - **Never** raw `print()`/`input()`. **Never** tkinter from background thread → use `after()` or I/O queues.
+
+### Tests
+- `./tests/test_*.py` = pytest (config in `./pyproject.toml`); `./tests/_diag_*` and `./tests/_smoke_*` = manual scripts. Full convention: `./tests/README.md`.
+- Run: `.venv\Scripts\python.exe -m pytest` from the repo root.
+- GUI tests: `from _tk_test_utils import shared_tk_root` — never create/destroy your own `tk.Tk()` and never `sys.exit()` at module scope in `test_*.py`.
 
 ## Reference Files
 - [Architecture (key files and roles)](./references/architecture.md) — complete file/directory map

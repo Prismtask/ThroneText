@@ -55,7 +55,7 @@ SALTMARSH_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "The waves will rock you right to sleep, traveler.",
-        "Eight hours of salt-scented dreams. You'll wake ready.",
+        "A night of salt-scented dreams. You'll wake ready.",
         "The inn is safe. The sea keeps its distance tonight.",
     ],
     "leave": [

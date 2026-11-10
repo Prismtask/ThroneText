@@ -143,6 +143,13 @@ from .dialogues import (
     WONDERLAND_BLACK_MARKET_DIALOGUE,
     WONDERLAND_TEMPLE_DIALOGUE,
     WONDERLAND_GIFT_SHOP_DIALOGUE,
+
+    # Celestia (northern celestial city)
+    CELESTIA_RECEPTIONIST_DIALOGUE,
+    CELESTIA_SHOPKEEPER_DIALOGUE,
+    CELESTIA_INNKEEPER_DIALOGUE,
+    CELESTIA_TEMPLE_DIALOGUE,
+    CELESTIA_GIFT_SHOP_DIALOGUE,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -153,7 +160,7 @@ from .dialogues import (
 #  Coralhaven, Blackwake, and Isle of Glass are island/cove destinations:
 #  sea is the only way in or out.
 #
-#  NORTH REGION:   Stormhold — Thornwall — (Solmere)
+#  NORTH REGION:   Stormhold — Thornwall — Celestia — (Solmere)
 #  EAST REGION:    Irondeep — Skylume — Cinderpeak — Veilholt
 #  CENTRAL:        Solmere (hub) — Greyharbor — Elderfen
 #  SOUTH REGION:   Sunreach — Brinewatch — Mirefall — Ashkara — Dunemar — Saltmarsh
@@ -184,6 +191,7 @@ CITIES = {
                 {"dest": "thornwall", "type": "land", "travel_time": 90},
                 # Long southern road through the Ashfen marshes
                 {"dest": "mirefall",  "type": "land", "travel_time": 220},
+                {"dest": "celestia",  "type": "land", "travel_time": 120},
             ],
         },
         "shop": {"stock_size": 6, "base_price_consumable": 18, "base_price_other": 55, "rarity_bias": "higher"},
@@ -205,11 +213,47 @@ CITIES = {
             "connections": [
                 {"dest": "stormhold", "type": "land", "travel_time": 90},
                 {"dest": "solmere",   "type": "land", "travel_time": 100},
-                {"dest": "greyharbor","type": "land", "travel_time": 130},
+                {"dest": "celestia",  "type": "land", "travel_time": 90},
             ],
         },
         "shop": {"stock_size": 6, "base_price_consumable": 13, "base_price_other": 38, "rarity_bias": "normal"},
         "inn": {"rest_cost": 4, "sleep_after_hour": 19},
+    },
+
+    # ── NORTH: CELESTIAL ─────────────────────────────────────────────────────
+    # Mid-game destination: visible on the world map, but the road is sealed
+    # until the player owns the Celestial Sigil (earned at dungeon Floor 30).
+    "celestia": {
+        "name": "Celestia",
+        "biome": "celestial",
+        "description": (
+            "A sky-touched city of pale marble and hanging gardens, anchored "
+            "to the northern cliffs by chains of starlight. The aurora never "
+            "fades here, and the Celestial Stair descends into heaven-touched ruins."
+        ),
+        "services": ["shop", "inn", "temple", "gift_shop"],
+        "dialogues": {
+            "receptionist": CELESTIA_RECEPTIONIST_DIALOGUE,
+            "shop": CELESTIA_SHOPKEEPER_DIALOGUE,
+            "inn": CELESTIA_INNKEEPER_DIALOGUE,
+            "temple": CELESTIA_TEMPLE_DIALOGUE,
+            "gift_shop": CELESTIA_GIFT_SHOP_DIALOGUE,
+        },
+        "travel": {
+            "connections": [
+                {"dest": "stormhold", "type": "land", "travel_time": 120},
+                {"dest": "thornwall", "type": "land", "travel_time": 90},
+            ],
+        },
+        "entry_item": "celestial_sigil",
+        "dungeon_start_floor": 30,
+        "shop": {
+            "stock_size": 8,
+            "base_price_consumable": 24,
+            "base_price_other": 75,
+            "rarity_bias": "higher",
+        },
+        "inn": {"rest_cost": 12, "sleep_after_hour": 21},
     },
 
     # ── CENTRAL REGION ────────────────────────────────────────────────────────

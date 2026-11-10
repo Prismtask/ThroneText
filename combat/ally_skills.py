@@ -1,4 +1,4 @@
-from combat.combat_io import c_print, c_input
+from combat.combat_io import c_print, c_input, c_renders_menus
 # combat/ally_skills.py - Ally skill system: passive, innate, and learnable skills
 import os
 import random
@@ -674,8 +674,11 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         if len(live) == 1:
             return live[0]
         c_print(f"  Select target for {skill_def['name']}:")
-        for i, e in enumerate(live):
-            c_print(f"    {i+1}. {e['name']} (HP: {e['hp']}/{e['max_hp']})")
+        # Header kept for GUI context detection; the roster itself is
+        # duplicated by the enemy cards + target badges.
+        if not c_renders_menus():
+            for i, e in enumerate(live):
+                c_print(f"    {i+1}. {e['name']} (HP: {e['hp']}/{e['max_hp']})")
         try:
             choice = int(c_input("  Select target number: ")) - 1
             if 0 <= choice < len(live):
@@ -695,12 +698,13 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         if len(party) == 1:
             return party[0]
         c_print("  Select target:")
-        for i, m in enumerate(party):
-            name = m.get("name", "You") if m is player else m.get("name", "Ally")
-            hp = m.get("current_hp", 0)
-            max_hp = player_max_hp(m) if m is player else m.get("max_hp", 1)
-            status = " [FALLEN]" if m.get("current_hp", 1) <= 0 else ""
-            c_print(f"    {i+1}. {name} ({hp}/{max_hp}){status}")
+        if not c_renders_menus():
+            for i, m in enumerate(party):
+                name = m.get("name", "You") if m is player else m.get("name", "Ally")
+                hp = m.get("current_hp", 0)
+                max_hp = player_max_hp(m) if m is player else m.get("max_hp", 1)
+                status = " [FALLEN]" if m.get("current_hp", 1) <= 0 else ""
+                c_print(f"    {i+1}. {name} ({hp}/{max_hp}){status}")
         try:
             choice = int(c_input("  Choice: ")) - 1
             if 0 <= choice < len(party):
@@ -730,6 +734,10 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         ignore_armor_pct = skill_def.get("ignore_armor_pct", 0)
         if ignore_armor_pct > 0:
             armor = int(armor * (1 - ignore_armor_pct))
+        # Form tradition armour penetration (Sundering)
+        if armor > 0:
+            from combat.form_perks import get_armor_pen_multiplier
+            armor = int(armor * get_armor_pen_multiplier(ally))
         # Hunter's Mark: increased damage taken
         if target.get("hunters_mark"):
             mark_bonus = target.get("hunters_mark_bonus", 0.15)
@@ -756,10 +764,6 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         dt_mult = get_damage_taken_multiplier(target)
         if dt_mult != 1.0:
             power = int(power * dt_mult)
-        # Apply damage_boost buffs (multi-turn, non-consuming)
-        for buff in ally.get("active_buffs", []):
-            if buff.get("type") == "damage_boost":
-                power = int(power * (1 + buff.get("value", 0)))
         # Bonus vs specific races (e.g. Snicker-Snack vs Dragonkin/Storybook)
         bonus_vs = skill_def.get("bonus_vs_races", [])
         if bonus_vs and target.get("race") in bonus_vs:
@@ -802,6 +806,12 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
         dmg = int(dmg * get_robe_multiplier(ally, player))
         from combat.weapon.chance_and_choice import apply_chance_and_choice
         dmg = apply_chance_and_choice(ally, dmg, _cac_state)
+        # Form tradition (Cleaving / Focused)
+        from combat.form_perks import get_outgoing_damage_multiplier
+        dmg = int(dmg * get_outgoing_damage_multiplier(ally))
+        # Father's Legacy (Orc child): +7.5% damage below 50% HP
+        from family import father_legacy_damage_mult
+        dmg = int(dmg * father_legacy_damage_mult(ally))
         return dmg, did_crit
 
     # ── Determine Target ──
@@ -845,8 +855,13 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
 
         elif effect_type == "evasion":
             recipients = [target] if target else [ally]
+            if target_type == "all_allies":
+                recipients = [player] + allies
             ev_value = _scaled_mag(value)
-            dex_bonus = _scaled_mag(effect.get("dex_bonus", 0))
+            from combat.stats import scaled_stat_buff_value
+            raw_dex = effect.get("dex_bonus", 0)
+            dex_bonus = (_scaled_mag(scaled_stat_buff_value(raw_dex, ally))
+                         if raw_dex else 0)
             for r in recipients:
                 r.setdefault("active_buffs", []).append({
                     "type": "evasion", "value": ev_value, "remaining": duration
@@ -855,7 +870,12 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
                     r.setdefault("active_buffs", []).append({
                         "stat": "Dexterity", "value": dex_bonus, "remaining": duration
                     })
-            if dex_bonus:
+            if target_type == "all_allies":
+                if dex_bonus:
+                    msg_parts.append(f"The party gains evasion and +{dex_bonus} Dexterity for {duration} turns!")
+                else:
+                    msg_parts.append(f"The party gains evasion for {duration} turns!")
+            elif dex_bonus:
                 msg_parts.append(f"{display_name(ally)} gains evasion and +{dex_bonus} Dexterity for {duration} turns!")
             else:
                 msg_parts.append(f"{display_name(ally)} gains evasion for {duration} turns!")
@@ -878,6 +898,55 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
                 for e in live:
                     apply_slow_to_enemy(e, duration=duration)
                 msg_parts.append(f"{display_name(ally)} slows all enemies!")
+
+        elif effect_type == "dispel_buff":
+            from combat.status_effects import apply_silence, check_status_resisted
+            if target_type == "enemy" and target:
+                buffs = [b for b in target.get("active_buffs", [])
+                         if b.get("remaining", 1) > 0]
+                if buffs:
+                    removed = random.choice(buffs)
+                    target["active_buffs"].remove(removed)
+                    label = (removed.get("stat") or removed.get("type")
+                             or "buff")
+                    msg_parts.append(
+                        f"{display_name(ally)}'s Null shatters "
+                        f"{target['name']}'s {label}!"
+                    )
+                elif check_status_resisted(target):
+                    msg_parts.append(f"{target['name']} shrugs off the silence!")
+                else:
+                    result = apply_silence(target, duration)
+                    if result == "applied":
+                        msg_parts.append(
+                            f"Nothing to unmake — Null seals {target['name']}'s "
+                            f"voice for {duration} turns!"
+                        )
+                    else:
+                        msg_parts.append(
+                            f"{target['name']}'s silence is refreshed!"
+                        )
+
+        elif effect_type == "mirror_guard":
+            max_hp = max(1, int(ally.get("max_hp", 100) or 100))
+            shield_pct = float(effect.get("value", 0.18) or 0.0)
+            shield_val = max(1, int(max_hp * shield_pct * status_mult))
+            apply_barrier(ally, shield_val, duration, source="mirror_guard")
+            aggro_val = float(effect.get("aggro", 5.0) or 5.0)
+            thorns_val = int(_scaled_mag(effect.get("thorns", 8)))
+            ally.setdefault("active_buffs", []).append({
+                "type": "aggro", "value": aggro_val,
+                "remaining": duration, "source": "mirror_guard",
+            })
+            ally.setdefault("active_buffs", []).append({
+                "type": "mirror_thorns", "value": thorns_val,
+                "remaining": duration, "source": "mirror_guard",
+            })
+            msg_parts.append(
+                f"{display_name(ally)} raises Mirror Guard! "
+                f"({shield_val} absorb, enemies are drawn to her, "
+                f"attackers take {thorns_val} pure damage for {duration} turns)"
+            )
 
         elif effect_type == "blind":
             from combat.status_effects import check_status_resisted
@@ -965,7 +1034,11 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
 
         elif effect_type == "stat_buff":
             stat = effect.get("stat", "Strength")
-            buff_value = _scaled_mag(_scale_effect_value(effect, ally.get("level", 1)))
+            from combat.stats import scaled_stat_buff_value
+            buff_value = _scaled_mag(scaled_stat_buff_value(
+                effect.get("value", 0), ally,
+                per_level=effect.get("scale_per_level"),
+            ))
             recipients = [target] if target else [ally]
             if target_type == "all_allies":
                 recipients = [player] + allies
@@ -1036,17 +1109,25 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
                     "type": "reflection", "value": reflect_val, "remaining": duration
                 })
             pct_display = int(pct_val * 100)
-            msg_parts.append(f"{display_name(ally)} raises a perfect guard! ({pct_display}% less damage)")
+            if target_type == "all_allies":
+                msg_parts.append(
+                    f"{display_name(ally)} wraps the party in a hall of mirrors! "
+                    f"({pct_display}% less damage, {int(reflect_val * 100)}% reflected)"
+                )
+            else:
+                msg_parts.append(f"{display_name(ally)} raises a perfect guard! ({pct_display}% less damage)")
 
         elif effect_type == "phantom_dodge":
             recipients = [target] if target else [ally]
             ev_value = _scaled_mag(value)
+            from combat.stats import scaled_stat_buff_value
+            dex_bonus = _scaled_mag(scaled_stat_buff_value(effect.get("dex_bonus", 3), ally))
             for r in recipients:
                 r.setdefault("active_buffs", []).append({
                     "type": "evasion", "value": ev_value, "remaining": duration
                 })
                 r.setdefault("active_buffs", []).append({
-                    "stat": "Dexterity", "value": _scaled_mag(effect.get("dex_bonus", 3)), "remaining": duration
+                    "stat": "Dexterity", "value": dex_bonus, "remaining": duration
                 })
             msg_parts.append(f"{display_name(ally)} becomes a phantom!")
 
@@ -1263,9 +1344,14 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
                     msg_parts.append(f"{display_name(ally)} grants Fear immunity for {sub_duration} turns!")
                 elif sub_type == "stat_buff":
                     stat = sub.get("stat", "Strength")
+                    from combat.stats import scaled_stat_buff_value
+                    sub_value = _scaled_mag(scaled_stat_buff_value(
+                        sub_value, ally,
+                        per_level=sub.get("scale_per_level"),
+                    ))
                     for r in recipients:
                         r.setdefault("active_buffs", []).append({
-                            "stat": stat, "value": _scaled_mag(sub_value), "remaining": sub_duration
+                            "stat": stat, "value": sub_value, "remaining": sub_duration
                         })
                 elif sub_type == "evasion":
                     sub_recipients = recipients
@@ -1406,15 +1492,15 @@ def execute_ally_skill(ally, player, skill_id, skill_def, enemies, allies):
     # ── Damage / Heal Calculation ──
     power = int((base_power + scaling) * power_mult)
 
-    # Consume power_buff if present (empowers the next damaging action).
-    # Heal/support casts leave it in place for the next attack.
+    # Percentage damage buffs (power_buff + damage_boost) stack additively.
+    # Heal/support casts leave power_buff in place for the next attack.
     if target_type in ("enemy", "enemies"):
-        for buff in ally.get("active_buffs", [])[:]:
-            if buff.get("type") == "power_buff":
-                power = int(power * (1 + buff.get("value", 0)))
-                msg_parts.append(f"Empowered! Damage increased by {int(buff.get('value', 0) * 100)}%!")
-                ally["active_buffs"].remove(buff)
-                break
+        from combat.status_effects import get_damage_buff_multiplier
+        _damage_buff_mult = get_damage_buff_multiplier(
+            ally, consume_power_buff=True, messages=msg_parts
+        )
+        if _damage_buff_mult != 1.0:
+            power = int(power * _damage_buff_mult)
 
     guaranteed = skill_def.get("guaranteed_crit", False)
     if guaranteed:

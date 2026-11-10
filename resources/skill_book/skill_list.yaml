@@ -113,6 +113,45 @@ class_skills:
       base_power: 6
       hits: 3
       elemental: wind
+    war_reckless_charge:
+      name: Reckless Charge
+      description: Barrels into an enemy for heavy damage, leaving you open (+10% damage taken for 2 turns).
+      unlock_level: 20
+      cooldown: 4
+      target: enemy
+      power_type: str
+      base_power: 18
+      self_vulnerable: 0.10
+      self_vulnerable_duration: 2
+      elemental: physical
+    war_banner:
+      name: War Banner
+      description: Plant a banner — the whole party gains +2 Strength and 3% max HP regen for 3 turns.
+      unlock_level: 26
+      cooldown: 5
+      target: all_allies
+      elemental: physical
+    war_titan_swing:
+      name: Titan's Swing
+      description: A crushing overhead blow that ignores armor.
+      unlock_level: 32
+      cooldown: 4
+      target: enemy
+      power_type: str
+      base_power: 24
+      ignore_armor: true
+      elemental: physical
+    war_cap_onslaught:
+      name: Onslaught
+      description: Five blows rain across the field — the final blow executes any target left below 30% HP.
+      unlock_level: 40
+      cooldown: 9
+      target: enemies
+      power_type: str
+      base_power: 14
+      hits: 5
+      capstone: true
+      elemental: physical
   Mage:
     mage_fireball:
       name: Fireball
@@ -131,6 +170,7 @@ class_skills:
       target: enemies
       power_type: ler
       base_power: 10
+      apply_slow: true
       elemental: water
     mage_arcane:
       name: Arcane Barrage
@@ -153,11 +193,12 @@ class_skills:
       elemental: fire
     mage_timewarp:
       name: Time Warp
-      description: Bend time to reduce all your skill cooldowns by 2 turns.
-      unlock_level: 12
+      description: Bend time to reduce all your skill cooldowns by 2 turns, then act again immediately.
+      unlock_level: 20
       cooldown: 7
       target: self
       cooldown_reduction: 2
+      free_action: true
       elemental: magical
     mage_overload:
       name: Mana Overload
@@ -169,6 +210,52 @@ class_skills:
       base_power: 35
       recoil_percent: 0.1
       elemental: thunder
+    mage_elemental_focus:
+      name: Elemental Focus
+      description: Channel raw elements — +15% elemental damage for 3 turns.
+      unlock_level: 12
+      cooldown: 6
+      target: self
+      elemental: magical
+    mage_glacial_prison:
+      name: Glacial Prison
+      description: Encase an enemy in ice, dealing water damage with a 60% chance to stun.
+      unlock_level: 26
+      cooldown: 4
+      target: enemy
+      power_type: ler
+      base_power: 16
+      stun_chance: 0.6
+      elemental: water
+    mage_singularity:
+      name: Arcane Singularity
+      description: Tear open a singularity, damaging all enemies and slowing them.
+      unlock_level: 32
+      cooldown: 5
+      target: enemies
+      power_type: ler
+      base_power: 11
+      apply_slow: true
+      elemental: magical
+    mage_cap_cataclysm:
+      name: Cataclysm
+      description: Seven elemental catastrophes strike in sequence — Fire, Water, Thunder, Wind, Earth, Light and Dark. The Fire strike leaves its target in Inferno.
+      unlock_level: 40
+      cooldown: 9
+      target: enemies
+      power_type: ler
+      base_power: 8
+      elements:
+      - fire
+      - water
+      - thunder
+      - wind
+      - earth
+      - light
+      - dark
+      burn_damage: 18
+      burn_duration: 4
+      capstone: true
   Rogue:
     rog_backstab:
       name: Backstab
@@ -226,6 +313,46 @@ class_skills:
       base_power: 12
       hits: 3
       elemental: dark
+    rog_caltrops:
+      name: Caltrops
+      description: Scatter caltrops — all enemies are slowed and bleed for 4 damage per turn for 4 turns.
+      unlock_level: 20
+      cooldown: 4
+      target: enemies
+      power_type: dex
+      base_power: 8
+      apply_slow: true
+      bleed_damage: 4
+      bleed_duration: 4
+      elemental: physical
+    rog_nightshade:
+      name: Nightshade
+      description: A toxic strike that poisons the target for 8 damage per turn for 5 turns.
+      unlock_level: 26
+      cooldown: 4
+      target: enemy
+      power_type: dex
+      base_power: 14
+      poison_damage: 8
+      poison_duration: 5
+      elemental: water
+    rog_perfect_opening:
+      name: Perfect Opening
+      description: Read the fight — +12% crit chance and +25% crit damage for 3 turns.
+      unlock_level: 32
+      cooldown: 5
+      target: self
+      elemental: dark
+    rog_cap_deaths_embrace:
+      name: Death's Embrace
+      description: A killing art — execute a target below 35% HP outright. If the strike kills, the cooldown is refunded.
+      unlock_level: 40
+      cooldown: 9
+      target: enemy
+      power_type: dex
+      base_power: 30
+      capstone: true
+      elemental: dark
   Cleric:
     clr_heal:
       name: Heal
@@ -278,6 +405,41 @@ class_skills:
       power_type: wis
       base_power: 18
       party_heal: true
+      elemental: light
+    clr_prayer_mending:
+      name: Prayer of Mending
+      description: Wrap an ally in mending light, restoring 6% of their max HP each turn for 4 turns.
+      unlock_level: 20
+      cooldown: 4
+      target: ally_or_self
+      elemental: light
+    clr_blessed_aegis:
+      name: Blessed Aegis
+      description: A protective ward absorbs up to 25% of your max HP in damage for 3 turns.
+      unlock_level: 26
+      cooldown: 6
+      target: ally_or_self
+      elemental: light
+    clr_wrath_of_heaven:
+      name: Wrath of Heaven
+      description: Call down holy fire on all enemies.
+      unlock_level: 32
+      cooldown: 5
+      target: enemies
+      power_type: wis
+      base_power: 13
+      elemental: light
+    clr_cap_providence:
+      name: Providence
+      description: Divine intervention — heal the whole party and revive one fallen ally at 50% HP with a protective ward.
+      unlock_level: 40
+      cooldown: 9
+      target: all_allies
+      power_type: wis
+      base_power: 40
+      revive_percent: 0.5
+      revive_barrier_pct: 0.15
+      capstone: true
       elemental: light
   Ranger:
     rng_pierce:
@@ -337,6 +499,41 @@ class_skills:
       base_power: 12
       apply_slow: true
       elemental: earth
+    rng_camouflage:
+      name: Camouflage
+      description: Blend into the terrain — +25% evasion and +10% crit chance for 3 turns.
+      unlock_level: 20
+      cooldown: 5
+      target: self
+      elemental: wind
+    rng_blast_arrow:
+      name: Blast Arrow
+      description: Fire an explosive arrow that bursts on all enemies.
+      unlock_level: 26
+      cooldown: 4
+      target: enemies
+      power_type: dex
+      base_power: 12
+      elemental: fire
+    rng_hawks_eye:
+      name: Hawk's Eye
+      description: Steady your aim — +15% crit chance and +25% Hunter's Mark bonus for 3 turns.
+      unlock_level: 32
+      cooldown: 5
+      target: self
+      elemental: wind
+    rng_cap_skyfall_volley:
+      name: Skyfall Volley
+      description: The sky answers — two waves of arrows strike every enemy and pin them in place.
+      unlock_level: 40
+      cooldown: 9
+      target: enemies
+      power_type: dex
+      base_power: 13
+      hits: 2
+      apply_slow: true
+      capstone: true
+      elemental: wind
   Paladin:
     pal_strike:
       name: Holy Strike
@@ -393,6 +590,46 @@ class_skills:
       base_power: 16
       self_heal_damage: true
       elemental: light
+    pal_blessing:
+      name: Blessing of the Faithful
+      description: Heal an ally and shield them — damage taken reduced by 4 for 3 turns.
+      unlock_level: 20
+      cooldown: 5
+      target: ally_or_self
+      power_type: wis
+      base_power: 20
+      elemental: light
+    pal_censure:
+      name: Censure
+      description: A rebuking strike that damages an enemy and weakens it.
+      unlock_level: 26
+      cooldown: 4
+      target: enemy
+      power_type: str
+      base_power: 16
+      apply_weaken: true
+      elemental: light
+    pal_dawnbreaker:
+      name: Dawnbreaker
+      description: A searing flash of light — heavy holy damage with a 2-turn blind.
+      unlock_level: 32
+      cooldown: 5
+      target: enemy
+      power_type: str
+      base_power: 24
+      apply_blind: true
+      blind_duration: 2
+      elemental: light
+    pal_cap_heavens_sword:
+      name: Heaven's Sword
+      description: A colossal blade of light — devastating single-target damage that heals the whole party.
+      unlock_level: 40
+      cooldown: 9
+      target: enemy
+      power_type: str
+      base_power: 40
+      capstone: true
+      elemental: light
   Warlock:
     lck_drain:
       name: Drain Life
@@ -447,6 +684,45 @@ class_skills:
       burn_damage: 6
       burn_duration: 3
       elemental: fire
+    lck_grasp_void:
+      name: Grasp of the Void
+      description: Dark tendrils slow an enemy and leave it bleeding for 4 damage per turn for 4 turns.
+      unlock_level: 20
+      cooldown: 4
+      target: enemy
+      power_type: ler
+      base_power: 12
+      apply_slow: true
+      bleed_damage: 4
+      bleed_duration: 4
+      elemental: dark
+    lck_blood_pact:
+      name: Blood Pact
+      description: Sacrifice 15% of your max HP — Learning and Charisma +4 for 3 turns.
+      unlock_level: 26
+      cooldown: 5
+      target: self
+      hp_cost_percent: 0.15
+      elemental: dark
+    lck_siphon_soul:
+      name: Siphon Soul
+      description: Tear at an enemy's soul, healing yourself for the damage dealt.
+      unlock_level: 32
+      cooldown: 5
+      target: enemy
+      power_type: ler
+      base_power: 20
+      elemental: dark
+    lck_cap_dark_apotheosis:
+      name: Dark Apotheosis
+      description: Ascend for a moment — empower yourself and drain every enemy's essence to mend your wounds.
+      unlock_level: 40
+      cooldown: 9
+      target: enemies
+      power_type: ler
+      base_power: 20
+      capstone: true
+      elemental: dark
   Barbarian:
     bar_rage:
       name: Feral Rage
@@ -501,6 +777,696 @@ class_skills:
       base_power: 18
       stun_chance: 0.5
       elemental: earth
+    bar_battle_trance:
+      name: Battle Trance
+      description: Enter a trance — Strength +3 and +8% crit chance for 3 turns.
+      unlock_level: 20
+      cooldown: 5
+      target: self
+      elemental: physical
+    bar_reckless_abandon:
+      name: Reckless Abandon
+      description: Trade defense for devastation — +35% crit damage, but take +12% damage for 3 turns.
+      unlock_level: 26
+      cooldown: 6
+      target: self
+      elemental: fire
+    bar_skullbreaker:
+      name: Skullbreaker
+      description: A concussive blow with a 65% chance to stun.
+      unlock_level: 32
+      cooldown: 5
+      target: enemy
+      power_type: str
+      base_power: 22
+      stun_chance: 0.65
+      elemental: physical
+    bar_cap_wrath_incarnate:
+      name: Wrath Incarnate
+      description: Unchained fury — crush all enemies, stunning with 40% chance, and recover 25% max HP.
+      unlock_level: 40
+      cooldown: 9
+      target: enemies
+      power_type: str
+      base_power: 24
+      stun_chance: 0.4
+      self_heal_percent: 0.25
+      capstone: true
+      elemental: physical
+professions:
+  Warrior:
+    warlord:
+      name: Warlord
+      tagline: Command the field — the party fights harder under your banner.
+      passive:
+        id: war_passive_warlord
+        name: Commanding Presence
+        description: Your Strength and Constitution are permanently increased by 2.
+        effects:
+        - stat: Strength
+          value: 2
+        - stat: Constitution
+          value: 2
+      skills:
+        war_wl_iron_command:
+          name: Iron Command
+          description: The party deals +15% damage and stands immune to fear for 3 turns.
+          unlock_level: 40
+          cooldown: 6
+          target: all_allies
+          elemental: physical
+        war_wl_decimation:
+          name: Decimation
+          description: A ruinous sweep — heavy damage to all enemies, sundering their armor by 4.
+          unlock_level: 50
+          cooldown: 5
+          target: enemies
+          power_type: str
+          base_power: 16
+          apply_sunder: true
+          sunder_value: 4
+          sunder_duration: 3
+          elemental: physical
+        war_wl_reign:
+          name: Warlord's Reign
+          description: Mark every enemy — all of your party's attacks deal +30% damage to them for 4 turns.
+          unlock_level: 60
+          cooldown: 8
+          target: enemies
+          elemental: physical
+    sentinel:
+      name: Sentinel
+      tagline: Become the wall the party stands behind.
+      passive:
+        id: war_passive_sentinel
+        name: Living Bulwark
+        description: Your Constitution is permanently increased by 4, and you take 10% less damage.
+        effects:
+        - stat: Constitution
+          value: 4
+        - type: damage_reduction
+          value: 0.10
+      skills:
+        war_sent_guardian_stance:
+          name: Guardian Stance
+          description: Damage taken -6 and attackers suffer 25% backlash for 3 turns.
+          unlock_level: 40
+          cooldown: 6
+          target: self
+          elemental: physical
+        war_sent_living_fortress:
+          name: Living Fortress
+          description: The whole party takes 4 less damage per hit for 3 turns.
+          unlock_level: 50
+          cooldown: 6
+          target: all_allies
+          elemental: physical
+        war_sent_unbreakable:
+          name: Unbreakable
+          description: The next lethal blow leaves you standing at 1 HP.
+          unlock_level: 60
+          cooldown: 8
+          target: self
+          elemental: physical
+  Mage:
+    evoker:
+      name: Evoker
+      tagline: Raw destruction — every element answers your call.
+      passive:
+        id: mage_passive_evoker
+        name: Elemental Mastery
+        description: Your Learning is permanently increased by 3, and you deal +10% elemental damage.
+        effects:
+        - stat: Learning
+          value: 3
+        - type: elemental
+          value: 0.10
+      skills:
+        mage_evo_overchannel:
+          name: Overchannel
+          description: Take 10% max HP as recoil — deal +30% damage for 3 turns.
+          unlock_level: 40
+          cooldown: 7
+          target: self
+          recoil_percent: 0.10
+          elemental: magical
+        mage_evo_prismatic_ray:
+          name: Prismatic Ray
+          description: A lance of raw light strikes with a random element for massive damage.
+          unlock_level: 50
+          cooldown: 5
+          target: enemy
+          power_type: ler
+          base_power: 30
+          elemental: magical
+        mage_evo_ascension:
+          name: Arcane Ascension
+          description: Scour all enemies, then surge — +20% damage and +15% elemental power for 3 turns.
+          unlock_level: 60
+          cooldown: 8
+          target: enemies
+          power_type: ler
+          base_power: 18
+          elemental: magical
+    chronomancer:
+      name: Chronomancer
+      tagline: Time is a resource — spend it.
+      passive:
+        id: mage_passive_chronomancer
+        name: Temporal Insight
+        description: Your Learning is permanently increased by 2, and every combat begins with all cooldowns 1 turn shorter.
+        effects:
+        - stat: Learning
+          value: 2
+        - type: combat_start_cd
+          value: 1
+      skills:
+        mage_chr_temporal_acceleration:
+          name: Temporal Acceleration
+          description: Every party cooldown unwinds by 2 turns.
+          unlock_level: 40
+          cooldown: 7
+          target: self
+          elemental: magical
+        mage_chr_time_stop:
+          name: Time Stop
+          description: Freeze time — all enemies are stunned and slowed.
+          unlock_level: 50
+          cooldown: 8
+          target: enemies
+          elemental: magical
+        mage_chr_rewind:
+          name: Rewind
+          description: Restore 40% of your max HP and unwind your cooldowns by 4 turns.
+          unlock_level: 60
+          cooldown: 9
+          target: self
+          heal_percent: 0.40
+          elemental: magical
+  Rogue:
+    assassin:
+      name: Assassin
+      tagline: One opening is all you need.
+      passive:
+        id: rog_passive_assassin
+        name: Lethality
+        description: Deal +40% damage to slowed or stunned enemies, and +8% crit chance.
+        effects:
+        - type: vulnerable_bonus
+          value: 0.40
+        - type: crit_chance
+          value: 0.08
+      skills:
+        rog_asm_mark_for_death:
+          name: Mark for Death
+          description: Brand an enemy — it takes +30% damage from everything for 4 turns.
+          unlock_level: 40
+          cooldown: 5
+          target: enemy
+          elemental: dark
+        rog_asm_mortal_blow:
+          name: Mortal Blow
+          description: Execute a target below 25% HP outright; otherwise a heavy armor-piercing strike.
+          unlock_level: 50
+          cooldown: 5
+          target: enemy
+          power_type: dex
+          base_power: 26
+          elemental: dark
+        rog_asm_thousand_cuts:
+          name: Thousand Cuts
+          description: Four rapid strikes on a single target.
+          unlock_level: 60
+          cooldown: 7
+          target: enemy
+          power_type: dex
+          base_power: 10
+          hits: 4
+          elemental: dark
+    shadowdancer:
+      name: Shadowdancer
+      tagline: The battlefield never sees you coming.
+      passive:
+        id: rog_passive_shadowdancer
+        name: Umbral Step
+        description: Deal +25% damage to slowed or stunned enemies, and gain +8% evasion.
+        effects:
+        - type: vulnerable_bonus
+          value: 0.25
+        - type: evasion
+          value: 0.08
+      skills:
+        rog_shd_veil_of_shadows:
+          name: Veil of Shadows
+          description: The whole party gains +15% evasion for 3 turns.
+          unlock_level: 40
+          cooldown: 6
+          target: self
+          elemental: dark
+        rog_shd_nightmare_requiem:
+          name: Nightmare Requiem
+          description: Terrify all enemies (-25% damage) and leave them bleeding for 5 per turn.
+          unlock_level: 50
+          cooldown: 6
+          target: enemies
+          elemental: dark
+        rog_shd_shadowfall:
+          name: Shadowfall
+          description: Dark blades fall on all enemies, leaving them bleeding for 6 per turn.
+          unlock_level: 60
+          cooldown: 7
+          target: enemies
+          power_type: dex
+          base_power: 20
+          bleed_damage: 6
+          bleed_duration: 4
+          elemental: dark
+  Cleric:
+    hierophant:
+      name: Hierophant
+      tagline: A beacon of restoration — wounds close where you stand.
+      passive:
+        id: clr_passive_hierophant
+        name: Blessed Hands
+        description: All healing you perform is 30% more effective, and you regenerate 3% of your max HP each round.
+        effects:
+        - type: heal_bonus
+          value: 0.30
+        - type: regen_percent
+          value: 0.03
+      skills:
+        clr_hie_sanctuary:
+          name: Sanctuary
+          description: The party regenerates 5% max HP per round for 4 turns and all cleansable debuffs are removed.
+          unlock_level: 40
+          cooldown: 6
+          target: all_allies
+          elemental: light
+        clr_hie_greater_resurrection:
+          name: Greater Resurrection
+          description: Revive a fallen ally at 75% HP with a ward absorbing 20% of your max HP.
+          unlock_level: 50
+          cooldown: 9
+          target: dead_ally
+          revive_percent: 0.75
+          revive_barrier_pct: 0.20
+          elemental: light
+        clr_hie_eternal_light:
+          name: Eternal Light
+          description: Heal the whole party and ward every living member against the next lethal blow.
+          unlock_level: 60
+          cooldown: 9
+          target: all_allies
+          power_type: wis
+          base_power: 45
+          elemental: light
+    inquisitor:
+      name: Inquisitor
+      tagline: Judgment given form — light that burns the guilty.
+      passive:
+        id: clr_passive_inquisitor
+        name: Zealous Light
+        description: All healing you perform is 20% more effective, and you gain +8% crit chance.
+        effects:
+        - type: heal_bonus
+          value: 0.20
+        - type: crit_chance
+          value: 0.08
+      skills:
+        clr_inq_verdict:
+          name: Verdict
+          description: Heavy holy damage — the target is branded, taking +15% damage for 3 turns.
+          unlock_level: 40
+          cooldown: 5
+          target: enemy
+          power_type: wis
+          base_power: 22
+          apply_damage_taken_up: 0.15
+          damage_taken_up_duration: 3
+          elemental: light
+        clr_inq_chains_of_faith:
+          name: Chains of Faith
+          description: Bind an enemy — 85% stun chance and searing light for 6 per turn.
+          unlock_level: 50
+          cooldown: 6
+          target: enemy
+          power_type: wis
+          base_power: 15
+          stun_chance: 0.85
+          burn_damage: 6
+          burn_duration: 3
+          elemental: light
+        clr_inq_day_of_reckoning:
+          name: Day of Reckoning
+          description: Holy judgment on all enemies — +30% damage against debuffed foes.
+          unlock_level: 60
+          cooldown: 8
+          target: enemies
+          power_type: wis
+          base_power: 20
+          elemental: light
+  Ranger:
+    sharpshooter:
+      name: Sharpshooter
+      tagline: Every shot finds its mark.
+      passive:
+        id: rng_passive_sharpshooter
+        name: Deadeye
+        description: Your Dexterity is permanently increased by 3, and you gain +8% crit chance.
+        effects:
+        - stat: Dexterity
+          value: 3
+        - type: crit_chance
+          value: 0.08
+      skills:
+        rng_shp_steady_aim:
+          name: Steady Aim
+          description: +20% crit chance and +30% crit damage for 3 turns.
+          unlock_level: 40
+          cooldown: 6
+          target: self
+          elemental: wind
+        rng_shp_killshot:
+          name: Killshot
+          description: Execute a target below 20% HP outright; otherwise a heavy armor-piercing shot.
+          unlock_level: 50
+          cooldown: 5
+          target: enemy
+          power_type: dex
+          base_power: 28
+          elemental: wind
+        rng_shp_perfect_fusillade:
+          name: Perfect Fusillade
+          description: Three guaranteed critical shots spread across the enemy line.
+          unlock_level: 60
+          cooldown: 7
+          target: enemies
+          power_type: dex
+          base_power: 12
+          hits: 3
+          guaranteed_crit: true
+          elemental: wind
+    warden:
+      name: Warden
+      tagline: The wild itself fights beside you.
+      passive:
+        id: rng_passive_warden
+        name: Verdant Vigor
+        description: Your Dexterity is permanently increased by 2, and you regenerate 3% of your max HP each round.
+        effects:
+        - stat: Dexterity
+          value: 2
+        - type: regen_percent
+          value: 0.03
+      skills:
+        rng_wrd_bramble_grasp:
+          name: Bramble Grasp
+          description: Roots tear at all enemies — slowed and bleeding for 5 per turn.
+          unlock_level: 40
+          cooldown: 5
+          target: enemies
+          power_type: dex
+          base_power: 12
+          apply_slow: true
+          bleed_damage: 5
+          bleed_duration: 4
+          elemental: earth
+        rng_wrd_toxic_bloom:
+          name: Toxic Bloom
+          description: A cloud of spores poisons all enemies for 10 per turn.
+          unlock_level: 50
+          cooldown: 5
+          target: enemies
+          power_type: dex
+          base_power: 10
+          poison_damage: 10
+          poison_duration: 5
+          elemental: earth
+        rng_wrd_natures_wrath:
+          name: Nature's Wrath
+          description: The wild erupts — all enemies are slowed with a 50% chance to stun.
+          unlock_level: 60
+          cooldown: 7
+          target: enemies
+          power_type: wis
+          base_power: 18
+          stun_chance: 0.5
+          apply_slow: true
+          elemental: earth
+  Paladin:
+    crusader:
+      name: Crusader
+      tagline: Zeal sharpened into a blade.
+      passive:
+        id: pal_passive_crusader
+        name: Zeal of Battle
+        description: Your Strength is increased by 2 and Charisma by 1, and you gain +8% crit chance.
+        effects:
+        - stat: Strength
+          value: 2
+        - stat: Charisma
+          value: 1
+        - type: crit_chance
+          value: 0.08
+      skills:
+        pal_cru_condemn:
+          name: Condemn
+          description: Strike with holy force — 80% stun chance and +15% damage taken for 3 turns.
+          unlock_level: 40
+          cooldown: 5
+          target: enemy
+          power_type: str
+          base_power: 16
+          stun_chance: 0.8
+          apply_damage_taken_up: 0.15
+          damage_taken_up_duration: 3
+          elemental: light
+        pal_cru_avenging_crusade:
+          name: Avenging Crusade
+          description: A holy strike that grows stronger as your wounds deepen (up to +100%).
+          unlock_level: 50
+          cooldown: 5
+          target: enemy
+          power_type: str
+          base_power: 22
+          elemental: light
+        pal_cru_final_judgment:
+          name: Final Judgment
+          description: Colossal single-target holy damage that heals the whole party.
+          unlock_level: 60
+          cooldown: 8
+          target: enemy
+          power_type: str
+          base_power: 38
+          elemental: light
+    templar:
+      name: Templar
+      tagline: The shield that does not break.
+      passive:
+        id: pal_passive_templar
+        name: Aegis Aura
+        description: Your Strength is increased by 1 and Charisma by 2, and you take 10% less damage.
+        effects:
+        - stat: Strength
+          value: 1
+        - stat: Charisma
+          value: 2
+        - type: damage_reduction
+          value: 0.10
+      skills:
+        pal_tmp_aegis:
+          name: Aegis
+          description: The whole party is shielded, each absorbing up to 15% of your max HP.
+          unlock_level: 40
+          cooldown: 7
+          target: all_allies
+          barrier_percent: 0.15
+          elemental: light
+        pal_tmp_unbreakable_oath:
+          name: Unbreakable Oath
+          description: An ally cannot fall — the next lethal blow leaves them standing at 1 HP.
+          unlock_level: 50
+          cooldown: 8
+          target: ally_or_self
+          elemental: light
+        pal_tmp_bastion_eternal:
+          name: Bastion Eternal
+          description: Party damage taken -5 and 4% max-HP regen, for 4 turns.
+          unlock_level: 60
+          cooldown: 8
+          target: all_allies
+          elemental: light
+  Warlock:
+    nethermancer:
+      name: Nethermancer
+      tagline: Decay is a craft — perfect it.
+      passive:
+        id: lck_passive_nethermancer
+        name: Soul Feast
+        description: You heal for 15% of all damage you deal, and take 8% less damage.
+        effects:
+        - type: life_steal
+          value: 0.15
+        - type: damage_reduction
+          value: 0.08
+      skills:
+        lck_net_wither:
+          name: Wither
+          description: A wasting curse — the target rots for 12 damage per turn for 5 turns.
+          unlock_level: 40
+          cooldown: 5
+          target: enemy
+          power_type: ler
+          base_power: 10
+          poison_damage: 12
+          poison_duration: 5
+          elemental: dark
+        lck_net_feast_of_shadows:
+          name: Feast of Shadows
+          description: Tear at every enemy's shadow and heal for the total damage dealt.
+          unlock_level: 50
+          cooldown: 6
+          target: enemies
+          power_type: ler
+          base_power: 18
+          elemental: dark
+        lck_net_dominion_of_dread:
+          name: Dominion of Dread
+          description: All enemies cower (-30% damage), taking +15% damage and decaying for 6 per turn.
+          unlock_level: 60
+          cooldown: 8
+          target: enemies
+          elemental: dark
+    infernalist:
+      name: Infernalist
+      tagline: Feed the flame — it feeds you back.
+      passive:
+        id: lck_passive_infernalist
+        name: Infernal Vitality
+        description: You heal for 10% of all damage you deal, and deal +10% fire and dark damage.
+        effects:
+        - type: life_steal
+          value: 0.10
+        - type: elemental
+          value: 0.10
+          elements:
+          - fire
+          - dark
+      skills:
+        lck_inf_hellfire:
+          name: Hellfire
+          description: Engulf all enemies in flame and leave them burning for 10 per turn.
+          unlock_level: 40
+          cooldown: 5
+          target: enemies
+          power_type: ler
+          base_power: 16
+          burn_damage: 10
+          burn_duration: 4
+          elemental: fire
+        lck_inf_searing_chains:
+          name: Searing Chains
+          description: Bind an enemy in burning links — burning and slowed.
+          unlock_level: 50
+          cooldown: 5
+          target: enemy
+          power_type: ler
+          base_power: 20
+          burn_damage: 8
+          burn_duration: 4
+          apply_slow: true
+          elemental: fire
+        lck_inf_infernal_avatar:
+          name: Infernal Avatar
+          description: Ascend in flame — +25% fire damage for 3 turns and a nova on all enemies.
+          unlock_level: 60
+          cooldown: 8
+          target: enemies
+          power_type: ler
+          base_power: 16
+          elemental: fire
+  Barbarian:
+    berserker:
+      name: Berserker
+      tagline: Pain is the only teacher you need.
+      passive:
+        id: bar_passive_berserker
+        name: Pain Fury
+        description: You take 15% less damage, and deal +10% damage while below half HP.
+        effects:
+        - type: damage_reduction
+          value: 0.15
+        - type: low_hp_damage
+          value: 0.10
+          threshold: 0.50
+      skills:
+        bar_bsk_bloodrage:
+          name: Bloodrage
+          description: 50% lifesteal and +10% crit chance for 3 turns.
+          unlock_level: 40
+          cooldown: 6
+          target: self
+          elemental: physical
+        bar_bsk_rampage:
+          name: Rampage
+          description: Five wild blows across random enemies.
+          unlock_level: 50
+          cooldown: 6
+          target: enemies
+          power_type: str
+          base_power: 12
+          hits: 5
+          elemental: physical
+        bar_bsk_undying_rage:
+          name: Undying Rage
+          description: Strength +3, and the next lethal blow leaves you at 1 HP.
+          unlock_level: 60
+          cooldown: 9
+          target: self
+          elemental: fire
+    juggernaut:
+      name: Juggernaut
+      tagline: Slow, unstoppable, unbreakable.
+      passive:
+        id: bar_passive_juggernaut
+        name: Unstoppable Hide
+        description: You take 20% less damage, and your Constitution is increased by 2.
+        effects:
+        - type: damage_reduction
+          value: 0.20
+        - stat: Constitution
+          value: 2
+      skills:
+        bar_jug_unyielding:
+          name: Unyielding
+          description: Shake off every debuff and take 6 less damage for 3 turns.
+          unlock_level: 40
+          cooldown: 6
+          target: self
+          elemental: physical
+        bar_jug_seismic_roar:
+          name: Seismic Roar
+          description: A ground-shaking roar — all enemies may be stunned and their armor sundered.
+          unlock_level: 50
+          cooldown: 6
+          target: enemies
+          power_type: str
+          base_power: 14
+          stun_chance: 0.6
+          apply_sunder: true
+          sunder_value: 3
+          sunder_duration: 3
+          elemental: earth
+        bar_jug_mountain_breaker:
+          name: Mountain Breaker
+          description: A titanic single blow that mends 15% of your max HP.
+          unlock_level: 60
+          cooldown: 7
+          target: enemy
+          power_type: str
+          base_power: 34
+          self_heal_percent: 0.15
+          elemental: earth
 race_passives:
   Beast:
     id: beast_passive
@@ -773,6 +1739,14 @@ heroine_passives:
     effect:
       type: elemental_damage_bonus
       value: 0.10
+  mirror_queens_grace:
+    id: mirror_queens_grace
+    name: Queen's Grace
+    description: Sylvana's reflections shelter the party — all allies gain +5% evasion. (Permanent unlock)
+    effect:
+      type: evasion
+      value: 0.05
+      target: party
 learnable_skills:
   offensive:
     slash:
@@ -1098,7 +2072,7 @@ learnable_skills:
       - 50
     dodge:
       name: Dodge
-      description: Gain +2 Dexterity and evade 50% of attacks for 2 turns.
+      description: Gain +3 Dexterity and evade 50% of attacks for 2 turns.
       tier: 1
       exp_cost: 300
       required_level: 1
@@ -1192,7 +2166,7 @@ learnable_skills:
       - 100
     phantom_dodge:
       name: Phantom Dodge
-      description: Become a phantom. Evade 75% of attacks and gain +3 Dexterity for 2 turns.
+      description: Become a phantom. Evade 75% of attacks and gain +4 Dexterity for 2 turns.
       tier: 4
       exp_cost: 5000
       required_level: 25
@@ -1323,7 +2297,7 @@ learnable_skills:
       - 60
     strength_buff:
       name: Strength Buff
-      description: Increase an ally's Strength for 3 turns. The bonus starts at +2 and grows with the caster's level.
+      description: Increase an ally's Strength for 3 turns. The bonus starts at +3 and grows with the caster's level.
       tier: 1
       exp_cost: 300
       required_level: 1
@@ -1414,7 +2388,7 @@ learnable_skills:
       - 60
     wisdom_buff:
       name: Wisdom Buff
-      description: Increase an ally's Wisdom for 3 turns. The bonus starts at +2 and grows with the caster's level.
+      description: Increase an ally's Wisdom for 3 turns. The bonus starts at +3 and grows with the caster's level.
       tier: 3
       exp_cost: 2000
       required_level: 16
@@ -1492,7 +2466,7 @@ learnable_skills:
       - 100
     heroic_onslaught:
       name: Heroic Onslaught
-      description: Raise the party's Strength for 3 turns. The bonus starts at +3 and grows with the caster's level.
+      description: Raise the party's Strength for 3 turns. The bonus starts at +4 and grows with the caster's level.
       tier: 4
       exp_cost: 5000
       required_level: 25

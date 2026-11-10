@@ -11,7 +11,7 @@ This file is the PyInstaller entry point.
 import sys
 import threading
 import traceback
-
+from gui.app import run_gui
 
 def _setup_thread_excepthook():
     """Register a global handler for unhandled exceptions in background threads."""
@@ -35,10 +35,13 @@ def _setup_thread_excepthook():
 
 def main():
     _setup_thread_excepthook()
-    from gui.app import run_gui
+    
     run_gui()
     
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nInterrupted - exiting.", file=sys.stderr)

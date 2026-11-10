@@ -58,7 +58,7 @@ MIREFALL_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Locks are sturdy enough. Sleep light.",
-        "Eight hours of damp dreams. You'll wake... moist.",
+        "A night of damp dreams. You'll wake... moist.",
         "The walls are thick. Keeps out the swamp-things. Mostly.",
     ],
     "leave": [

@@ -31,11 +31,14 @@ You start as a fresh adventurer in the city of **Solmere** and gradually unlock 
 - [Stat Milestones](#stat-milestones)
 - [Monster Girl & Ally System](#monster-girl--ally-system)
 - [Engagement & Marriage](#engagement--marriage)
+- [Family & Children](#family--children)
+- [Dreams](#dreams)
 - [Heroine Quest System](#heroine-quest-system)
 - [Quests & The Journal](#quests--the-journal)
 - [Player Housing](#player-housing)
 - [Companion Dispatch & Errands](#companion-dispatch--errands)
 - [Progression & Leveling](#progression--leveling)
+- [Time, Sleep & Stress](#time-sleep--stress)
 - [Travel & Exploration](#travel--exploration)
 - [Your First Adventure](#your-first-adventure)
 - [Skill System](#skill-system)
@@ -65,8 +68,8 @@ You begin in **Solmere**, the central hub city. The city menu lists all availabl
 
 1. **Open your Inventory** (`[V]iew Stats / Inventory`) — check your starting weapon and armor. Equip anything that isn't already equipped.
 2. **Visit the Shop** — spend your starting gold on **3–5 Healing Potions** and optionally a capture net. Don't blow all your gold on equipment yet; dungeon drops will outclass shop gear quickly.
-3. **Visit the Guild** (optional) — grab a bounty if one is available. Bounties give bonus gold and city favor for killing specific enemies in that city's dungeon.
-4. **Check the Skill Book** — see what skills your class unlocks at Levels 3, 5, 8, 10, and 15 so you know what to look forward to.
+3. **Visit the Guild** (optional) — grab a bounty if one is available. Bounties give bonus gold for killing specific enemies in that city's dungeon.
+4. **Check the Skill Book** — see what skills your class unlocks at Levels 3, 5, 8, 10, 12, and 15, then a second wave at 20, 26, and 32, and a capstone at 40 — so you know what to look forward to.
 
 ### Step 3 — Enter the Dungeon
 
@@ -91,11 +94,11 @@ After clearing Floor 1 (or if your HP gets dangerously low), head back to the ci
 
 - **Keep pushing deeper** — Floor 5 has your first true boss. Floor 20 has your first superboss.
 - **Travel to new cities** — once you have some levels and gold, head to **Greyharbor** or **Elderfen** to see different biomes and services.
-- **Buy a house** — save up 300g and visit a Trade Hall (Greyharbor has one) to buy a Hovel deed. Houses give passive income and storage.
+- **Buy a house** — save up 500g and visit a Trade Hall (Greyharbor has one) to buy a Hovel deed. Houses give passive income and storage.
 - **Raise your level cap** — once you hit Level 10, clear Floor 10 in a second biome's dungeon, then Ascend at any Guild.
 - **Discover Wonderland** — visit Veilholt's Arcane Tower once you're strong enough. A 50-floor storybook dungeon awaits with unique superbosses, heroine companions, and Vorpal weapons.
 - **Challenge Pandemonium** — after clearing Floor 40 in 4 biomes, the ultimate 50-floor endgame dungeon unlocks beneath the Isle of Glass.
-- **Cross the Event Horizon** — once your deepest floor reaches 20, a watcher with a black hole for a head marks a tear in the sky east of Veilholt. An endless room-based rift: flasks grant run-long buffs to one chosen girl, Entropy raises both danger and payout, and death or abandon wipes the run — so know when to step out.
+- **Cross the Event Horizon** — once you **clear Floor 20**, a watcher with a black hole for a head marks a tear in the sky east of Veilholt. An endless room-based rift: flasks grant run-long buffs to one chosen girl, Entropy raises both danger and payout, and death or abandon wipes the run — so know when to step out.
 
 ---
 
@@ -146,13 +149,14 @@ When starting a new game, you will:
 
 ## World & Cities
 
-The world is divided into **five regions** with **20 unique cities** (including a hidden 20th), each with its own biome, services, dialogue NPCs, and dungeon theme.
+The world is divided into **five regions** with **21 unique cities** (including a hidden final city), each with its own biome, services, dialogue NPCs, and dungeon theme.
 
 ### North Region
 | City | Biome | Notable Features |
 |------|-------|------------------|
 | **Stormhold** | Tundra | Fortress city; Barracks, Gift Shop |
 | **Thornwall** | Temperate | Garrison town; Barracks training |
+| **Celestia** | Celestial | *Sigil-gated mid-game city*; Shop, Inn, Temple, Gift Shop; dungeon starts at Floor 30 |
 
 ### Central Region
 | City | Biome | Notable Features |
@@ -186,11 +190,13 @@ The world is divided into **five regions** with **20 unique cities** (including 
 | **Coralhaven** | Tropical | Island paradise; Port, Temple, Herbalist, Guild, Gift Shop |
 | **Blackwake** | Coastal | *Hidden pirate cove*; sea-only, Inn, Port, Black Market |
 | **Isle of Glass** | Magical | *Hidden island*; sea-only; Arcane Tower, Port |
-| **Wonderland** 🌟 | Wonderland | *Secret 20th city*; book-only via Veilholt Arcane Tower; 50-floor dungeon, unique superbosses, heroine quests |
+| **Wonderland** 🌟 | Wonderland | *Hidden city*; book-only via Veilholt Arcane Tower; 50-floor dungeon, unique superbosses, heroine quests |
 
 > **Sea-only cities** (Coralhaven, Blackwake, Isle of Glass) can only be reached by ship from port cities. Blackwake and Isle of Glass lack regular shops.
 > 
 > 🌟 **Wonderland** is a hidden city with no map connections — discover it through the Arcane Tower in Veilholt. See the [Wonderland System](#wonderland-system) section.
+> 
+> ✦ **Celestia** sits in the northern reach and is visible on the world map, but its road stays sealed until you carry the **Celestial Sigil** — earned by clearing **Floor 30** of any dungeon. The Celestial Stair begins at Floor 30.
 
 ---
 
@@ -200,18 +206,18 @@ Each city offers a subset of the following services:
 
 | Service | What It Does |
 |---------|-------------|
-| **Shop** | Buy consumables, equipment, and supplies. Stock size and prices vary by city. |
+| **Shop** | Buy consumables, equipment, and supplies. Stock size and prices vary by city and scale with your highest level or cleared floor. |
 | **Inn** | Rest to restore HP. Cost varies by city; free after a certain hour in some places. |
-| **Blacksmith** | Enhance equipment (+1 to +N) using gold, or **fuse Scrolls** onto equipment to set its rarity. Prices scale with enhancement level. Charisma and city favor reduce costs. |
+| **Blacksmith** | Enhance equipment (+1 to +N) using gold, **reforge an elemental infusion** (re-roll the element, keep its value/tier), or **fuse Scrolls** onto equipment to set its rarity. Prices scale with the item. Charisma and Karma reduce costs. |
 | **Temple** | Receive blessings that buff all attributes (+1 to +3) for 2–5 floors depending on donation tier. Cures curses. |
-| **Guild** | Pick up **bounties** (hunt contracts) and **Ascend** to raise your level cap. Bounties scale with your level and city **favor**. Higher favor = harder contracts, better rewards. Ranked Bronze → Silver → Gold → Platinum, with a 1–5 star difficulty. View floor-by-floor enemy intelligence for any city's dungeon. |
+| **Guild** | Pick up **bounties** (hunt contracts) and **Ascend** to raise your level cap. Bounties scale with your level and **Karma**. Higher Karma = harder contracts, better rewards. Ranked Bronze → Silver → Gold → Platinum, with a 1–5 star difficulty. Defeat or capture a creature to fill the **Bestiary** — an entry records name, race, level, dungeon, enemy type, full stats, elemental damage/resistances, and a short description. |
 | **Trade Hall** | Buy a **House Deed** (one per player), buy and sell goods, and acquire **mounts** that reduce travel time and encounter danger. |
 | **Port** | Pay for sea voyages to distant destinations. Requires a port city. If you own a ship, voyages are faster and free. |
 | **Shipyard** | Purchase ships (Merchant Sloop or War Frigate) that unlock sea routes and grant travel bonuses. |
 | **Barracks** | Train to gain temporary attribute buffs for your next dungeon run. |
 | **Herbalist** | Buy natural remedies, antidotes, and unique potions. |
 | **Arcane Tower** | Magical services: identify items, arcane training. In Veilholt, also the gateway to **Wonderland**. |
-| **Black Market** | Rare and dangerous goods. Sells items not found in normal shops. Higher prices, unique stock. |
+| **Black Market** | Rare and dangerous goods. Sells items not found in normal shops. Higher prices, unique stock; prices scale with your progress. |
 | **Gift Shop** | Buy affection gifts and **engagement rings** (Ruby, Sapphire, Emerald, Topaz, Amethyst, Diamond) for monster girls. |
 | **Skill Book** | View and manage your unlocked class skills and their mastery levels. |
 | **Your House** | *(Only if you own one)* Manage storage, collect passive income, rest with bed buffs, and house monster girls. |
@@ -222,10 +228,18 @@ Each city offers a subset of the following services:
 
 > 🔮 **Secret Facility — Godmother**: Hidden in Wonderland's Temple, the Fairy Godmother upgrades heroine weapons after you defeat their linked superboss. See [Heroine Quest System](#heroine-quest-system).
 
-### City Favor
-- Each city tracks a **favor** score that increases by completing bounties and clearing dungeon floors.
-- Higher favor unlocks harder (better-paying) bounties, increases bounty rewards, and grants shop/blacksmith discounts.
-- Favor also affects bounty deadlines and the number of bounties available.
+### Karma
+
+**Karma** is a global moral score from **−100 to +100**, chosen in the Game Rules step when creating a character. It is the **single standing score**: there is no separate per-city favor, so the same reputation follows you to every shop, guild hall, gate, and port.
+
+- **Choices matter.** Helping, burying the dead, calming beasts, releasing captures, and offering at shrines raise Karma. Robbing, looting, ambushing, stealing from shrines, and selling captured girls to slavers lower it. Positive Karma from repeatable deeds is capped at **+8 per day**; negative Karma is uncapped.
+- **Nine tiers** run from Outlaw to Paragon. High Karma lowers shop/blacksmith prices, cuts monthly bills, and waives the Tax Day surcharge. Low Karma raises prices and bills, but unlocks the Black Market discount and the slaver's higher payout.
+- **Guild contracts.** Bounties scale with Karma: high Karma draws harder contracts with richer gold rewards, while low Karma keeps the board at its minimum and pays less. The weekly **Atonement contract** remains available at −25 Karma or lower.
+- **City gates.** At −25 or lower, lawful cities react. The first entry is a warning; after that, **Suspect** entries demand a fee, while **Wanted** and **Outlaw** entries offer pay, talk-down, submission, or a non-lethal guard fight.
+- **Jail is never a death screen.** Defeat or submission costs a clamped fine, advances to the next morning, heals the party to 50%, and marks you watched. Serving time grants **+3 Karma** once every 3 days, sharing the daily cap.
+- **Atonement.** Temples offer an **Act of Contrition** (50 gold per Karma point), and guilds offer a weekly **Atonement contract** worth +5 Karma. Good deeds and time served are the other paths.
+- **Blackwake** is lawless: no gate, no guards, no jail. Low Karma is respected there through Black Market discounts and a smuggler's ferry fare; high Karma gets “saint tax” dialogue and forgoes the outlaw discount.
+- **Wonderland** keeps its own rules for now; Karma gates, new Karma dialogue, and the Karma hallucination shift do not apply there.
 
 ### Global Events
 - Random **world events** occur each day: bounty bonuses, shop sales, festival discounts, dangerous nights, and more.
@@ -366,7 +380,7 @@ The clock doesn't change Pandemonium's difficulty. Time-of-day scaling is switch
 
 ## Event Horizon (Endless Rift)
 
-Once your deepest dungeon floor reaches **20**, the Horizon Watcher — **Vesper Erebus**, a robed man with a black hole for a head and a voice that echoes from somewhere further away — finds you in any city and marks **The Event Horizon** on your world map, east of Veilholt.
+Once you **clear Floor 20** (reaching it and losing to the floor-20 superboss does not count), the Horizon Watcher — **Vesper Erebus**, a robed man with a black hole for a head and a voice that echoes from somewhere further away — finds you in any city and marks **The Event Horizon** on your world map, east of Veilholt.
 
 ### The Rules of the Rift
 - **Room-based and endless** — no floors, no superbosses, no curses. Roughly 70% battles, plus **rift merchants** (spending **Horizon Motes**), mote storms, and still pools.
@@ -426,7 +440,7 @@ The rift's trophies are **unique** and come from run milestones. The death penal
 | Room | Trophy | Slot | Effect |
 |------|--------|------|--------|
 | 50 | **Chance and Choice** | Accessory (any actor) | Every strike flips a coin — ×0.25 or ×1.75 damage |
-| 75 | **Old Dopo Robe** | Armor (any actor) | Sword pilgrim's armor — stronger with every blade in your company |
+| 75 | **Old Dopo Robe** | Armor (any actor) | Blade pilgrim's armor — stronger with every blade in your company |
 | 100 | **Piece of Relationship** | Accessory (player only) | Grows with the number of monster girls who truly love you (200 affection) |
 | 125+ | **Beating Root** | Consumable trophy | Every 25 rooms past 100 — permanently opens a third accessory slot for one actor |
 
@@ -434,9 +448,9 @@ The rift's trophies are **unique** and come from run milestones. The death penal
 A coin, simple in one's eye: **once per damaging action**, a 50/50 flip scales that action (all of its hits) to **×0.25** (disaster) or **×1.75** (fortune). The expected value is exactly ×1.0 — pure volatility, no expected-power change. Applies to direct damaging actions only (not damage-over-time, heals, or traps), and any actor can wear it. Base: +5 DEX, +3 CHA.
 
 #### Old Dopo Robe — room 75
-Sword-synergy armor. The effect requires the **wearer** to wield a sword-family weapon (`sword`, `blade`, `greatsword`, `rapier`, or `cutlass`):
+Blade-synergy armor. The effect requires the **wearer** to wield a `blade` weapon:
 - Wearer damage **×1.40**.
-- Each **other** sword-wielding ally — active or bench — grants the wearer **+5% damage, uncapped**, and each of those allies deals **×1.15** damage when they act.
+- Each **other** blade-wielding ally — active or bench — grants the wearer **+5% damage, uncapped**, and each of those allies deals **×1.15** damage when they act.
 
 Base: +8 CON, +4 DEX.
 
@@ -458,10 +472,11 @@ A consumable trophy: give one to a **single actor** (your character or one ally)
 
 ## Wonderland System
 
-Hidden beyond the veil of reality, **Wonderland** is a secret 20th city and the game's most ambitious dungeon — a 50-floor storybook nightmare with its own superboss cadence, whimsical quirks, and a six-phase final boss.
+Hidden beyond the veil of reality, **Wonderland** is a secret hidden city and the game's most ambitious dungeon — a 50-floor storybook nightmare with its own superboss cadence, whimsical quirks, and a six-phase final boss.
 
 ### Discovery
 - Wonderland is only accessible through the **Arcane Tower in Veilholt** — look for a mysterious book.
+- The book appears after you **clear Floor 20 in two different biomes**. Opening it also requires a **Looking Glass Shard**, sold in **Veilholt's Black Market** for 5,000g once that floor milestone is met.
 - It has no land or sea connections. Entry and exit are via the book alone.
 - Wonderland features its own unique NPCs: the White Rabbit, Caterpillar, Mad Hatter, Rose Gardener, Cheshire Cat, Captain Hook, the Fairy Godmother, and Tweedledee & Tweedledum.
 - Services include: shop, inn, herbalist, arcane tower, black market, temple, and gift shop.
@@ -518,8 +533,10 @@ Skills are the core of combat progression. Every class has its own skill tree, a
 
 ### How Skills Work
 
-- **Class skills** unlock automatically at specific levels (3, 5, 8, 10, 12, 15).
-- Each class has **6 active skills** and **1 passive skill**. Passives are always active once unlocked.
+- **Class skills** unlock automatically at specific levels — 3, 5, 8, 10, 12, 15, then a **second wave** at 20, 26, and 32, and a **capstone ultimate** at 40.
+- Each class has **10 active skills** and **1 passive skill** — plus **3 exclusive skills** and an **upgraded passive** from your chosen profession. Passives are always active once unlocked.
+- The **Battle Loadout** limits you to **9 equipped skills** in combat — unlocked skills you leave out stay visible in the Skill Book and keep their mastery. Manage the loadout from the Skill Book ("Manage Battle Loadout").
+- After your **capstone** at Level 40, choose one of two **professions** at any Guild — a **permanent** choice that upgrades your class passive, grants a **signature skill** immediately, and unlocks two more skills at Levels 50 and 60. The other branch is locked out for that save.
 - Skills have **cooldowns** measured in combat rounds. After using a skill, you must wait the listed number of rounds before using it again. Cooldowns tick down by 1 at the end of each round.
 - Skills scale with your **primary attribute + Learning**, making them stronger than basic attacks as you invest in those stats.
 - **Silence** status prevents all skill usage — keep an eye out for enemies that can silence you.
@@ -532,6 +549,9 @@ Accessible from any city menu, the **Skill Book** shows:
 - Every **active skill** in your class tree, sorted by tier:
   - **Tier 1 (Level 3–8):** Your first 3 skills.
   - **Tier 2 (Level 10–15):** Your advanced 3 skills.
+  - **Tier 3 (Level 20–32):** Your second-wave skills, unlocked after the first ascensions.
+  - **Tier 4 (Level 40):** Your class capstone ultimate.
+- Your **Battle Loadout** — which skills are equipped (up to 9) — shown at the top.
 - Each skill's **unlock level**, **cooldown**, and description.
 - Locked skills show `[LOCKED]`; skills on cooldown show `[CD: N]`.
 - **Ally skills** — every recruited monster girl's passive, innate skills, and learnable skills are also displayed.
@@ -602,6 +622,16 @@ Combat is **turn-based** with an **initiative roll** each round.
 - Allies can attack, use innate skills, use items, or defend. They cannot capture or wield the Abyss.
 - Allies have their own **equipment slots** (weapon, armor, accessory1, accessory2) and can be geared up independently.
 
+### Enemy Actions
+- Regular enemies (everything below superboss rank) choose a turn from **basic attack**, **single-target skills**, **AoE skills**, **heals**, and **AoE heals**.
+- Kits are driven by **race and level** — low-level enemies (1–4) stick to basic attacks and heals; single-target skills unlock at level 5, AoE skills at level 10, and Tactical / Calculating enemies (level 20+) use their kits more often and heal earlier.
+- Enemies never hand-pick the weakest party member. The AI only decides **what** to do; target choice stays with the normal weighted targeting, so it cannot focus-fire low-HP actors.
+- **Support enemies** are recognised by role names: Shamans, Priests, Witches, Oracles, Alchemists and similar healers mend themselves or their wounded allies; high priests and shamans can heal the whole enemy group. Low-level healers pick a random wounded ally, while veteran healers triage the most hurt.
+- Encounters now mix **attacker** and **supporter** roles. Early rooms are mostly attackers; from the mid-game onward more groups include a healer or support caster. Groups never exceed two supporters, always keep at least one attacker, and a lone enemy is always an attacker — so healer-only stalls cannot happen. Bounty weighting still applies to the role pool.
+- **Supporters** prioritise healing and only occasionally use damaging skills (single-target ×0.55, AoE ×0.25 chance); attackers never spend turns healing. Enemies can force a role with `role: attacker` / `role: supporter` in their data.
+- Skills have cooldowns and can be resisted normally. AoE skills cannot be dodged, but hit for less per target. Monster girls never use AoE, keeping capture nets viable.
+- Superbosses and scripted floor bosses keep their hand-authored behaviours and are not affected.
+
 ### Status Effects
 - **Poison** — Damage over time
 - **Burn** — Damage over time, reduced by fire resistance
@@ -616,7 +646,7 @@ Combat is **turn-based** with an **initiative roll** each round.
 ### Elemental System
 - Seven elements: **Fire, Water, Thunder, Wind, Earth, Light, Dark**
 - Two damage types: **Physical** (melee/weapon-based) and **Magical** (spell/arcane-based)
-- Every entity has **elemental/type resistance** (`<1.0` = resistant, `>1.0` = weak) and **elemental/type damage** modifiers.
+- Every entity has **elemental/type resistance** (`>1.0` = resistant, `<1.0` = weak) and **elemental/type damage** modifiers.
 - Race, class, and equipment all contribute to your elemental/type profile.
 - **Keyword-based specialization**: enemy names containing keywords (e.g., "Lightning", "Frost", "Abyssal", "Arcane", "Brute") automatically gain elemental/type damage and resistance overrides on top of their racial profile.
 - Equipment can have elemental/type damage bonuses (weapons) or resistances (armor).
@@ -713,7 +743,7 @@ Every **5 points** in a base attribute grants a permanent passive bonus. These a
 - Captured monster girls are stored in your **House**.
 - Raise their **affection** by giving gifts (from Gift Shops) or through dungeon victories.
 - Each girl has a preferred gift type that grants bonus affection.
-- Daily interaction limits apply: you can talk to and gift each girl once per day, encouraging you to spread attention across your roster.
+- Daily interaction limits apply: you can talk to each girl up to three times per day and give one gift per day, encouraging you to spread attention across your roster.
 
 ### Recruitment
 - Once a monster girl's affection reaches **50+**, you can **recruit** her as an active **ally**.
@@ -724,12 +754,12 @@ Every **5 points** in a base attribute grants a permanent passive bonus. These a
 - **Race Passive**: Each ally inherits a passive skill based on their monster girl race — every race's full kit (dodge, regeneration, elemental affinity, immunities, and more) is live in combat.
 - **2 Innate Skills**: Every monster girl has two unique innate combat skills.
 - **Late-Bloomer Growth**: Girls captured at a low base gain bonus attributes as they level in your party — a fully-raised Goblin Girl ends even with a Lich Queen in raw stats. Her Growth band (High / Medium / Low) is shown in the House Lounge and Skill Book.
-- **Awakening**: Twelve girls can be Awakened at the House Lounge (Lv 40 · cap 40 · affection 150 · 1 Awakening Sigil) — both innate skills upgraded, a new name, and a one-time scene. Sigils are scarce: 5 per save (first superboss, Mary Sue, or forged at the Arcane Tower from 4 Sigil Shards + 25,000g).
+- **Awakening**: Twelve girls can be Awakened at the House Lounge (Lv 40 · cap 40 · affection **200** · 1 Awakening Sigil) — both innate skills upgraded, a new name, and a one-time scene. Sigils are scarce: 5 per save (first superboss, Mary Sue, or forged at the Arcane Tower from 4 Sigil Shards + 25,000g).
 - **Learnable Skills**: Allies can learn additional skills from three categories — Offensive, Defensive, and Support. One skill can be studied at a time; learning progresses via combat EXP.
 - **Skill Mastery**: As allies use their skills, their mastery improves, increasing effectiveness.
 - **Ally Equipment**: Allies have full equipment slots (weapon, armor, accessory1, accessory2) and benefit from enhancement and elemental bonuses.
 
-> 💍 **Marriage**: Once a girl reaches 100 affection, you can propose with an engagement ring. At 200 affection, she gifts you a unique Wedding Accessory. See the full [Engagement & Marriage](#engagement--marriage) section.
+> 💍 **Marriage**: Once a girl reaches 100 affection, you can propose with an engagement ring. At **300** affection, she gifts you a unique Wedding Accessory. See the full [Engagement & Marriage](#engagement--marriage) section.
 
 ### Ally Management
 - Allies have their own stats, equipment slots, HP, and level cap.
@@ -747,10 +777,10 @@ Once a monster girl's affection reaches **100**, you can propose with an engagem
 ### Engagement
 - **6 ring types**: Ruby, Sapphire, Emerald, Topaz, Amethyst, and Diamond — purchased from Gift Shops.
 - Proposal requires 100 affection. Upon acceptance, the girl becomes **engaged**.
-- Affection cap rises to **200** after engagement.
+- Affection cap rises to **300** after engagement.
 
 ### Wedding Accessories
-- At **200 affection**, the married girl gifts you a **Unique Wedding Accessory** — a soulbound item with powerful combat effects.
+- At **300 affection**, the married girl gifts you a **Unique Wedding Accessory** — a soulbound item with powerful combat effects.
 - Each monster girl has a **distinct accessory** with its own special ability. Over 40 unique wedding accessories exist.
 - **Bonded Mechanic**: If the married girl is in your active combat party, the accessory's effects are **amplified**.
 
@@ -773,9 +803,62 @@ Once a monster girl's affection reaches **100**, you can propose with an engagem
 
 ---
 
+## Family & Children
+
+The family system is **optional and per-save**. It adds a repeatable Shared Night event, pregnancy, birth, and true-born children who grow up and can join your party. It is designed for players who want that layer of the story; it never activates unless you opt in.
+
+### Turning it on
+- **`Family content` (Game Rules)** — chosen when creating a character and final for that save. It gates pregnancy, birth, and child growth. Existing saves default to **off**.
+- **`Content level` (Settings)** — `off`, `fade-to-black` (default), or `written`. Turning it `off` disables Shared Night entirely; the family toggle can still be on for a later save. `written` adds a more intimate prose layer to the same scenes; it remains non-graphic and closes before explicit detail.
+- The family system is separate from marriage: you can use Shared Night without enabling pregnancy, and children are always **bond-only** (no romance, no marriage, no bed events).
+
+### Shared Night
+- Available at home, during the **Night** phase. A girl needs **140 affection** for you to initiate; at **160** she may initiate herself.
+- The event is a three-round **Attunement** scene. Her mood is visible each round; choose the response that fits (hold her close, play along, take the lead, or whisper). Exact matches score **+2**, the same energy family **+1**, and a clash **+0**.
+- Endings are **Together**, **Warm**, **Quiet**, or **Rest** (if you stop early). Better endings grant more affection, reduce stress, and can grant the `shared_night` and `beloved` buffs: the MC gets **+1 to all attributes for 2 dungeon rooms**, and the girl gets **+2 to her primary attribute for 2 dungeon rooms**. The HUD shows **SHR** for the merged shared-night buff, **BLV** for beloved, and **RST** for ordinary bed rest.
+- If pregnancy is enabled, an intimate ending rolls conception with a pity safety net. No raw odds are shown; the morning narration tells you when it happens.
+
+### Pregnancy & birth
+- Pregnancy lasts **30 days** in three 10-day periods. She can fight in the first two; at the start of the third period she returns to the house lounge and cannot be recruited until after birth.
+- Birth happens on day rollover, followed by a **7-day recovery** and a **30-day conception cooldown**. The house gets a small nesting stress bonus while someone is expecting.
+- You name the child at birth. Pregnancy and growth pause while you are in **Event Horizon** or **Wonderland** time pockets.
+
+### True-born children
+- Children grow through three milestones by **total age**: infant → child at **15 days**, child → adult at **40 days**, and prime at **60 days** (aging stops there).
+- They inherit their mother's race, innate skills, and race passive, plus a weakened **Father's Legacy** from your race (max HP, dodge, crit, low-HP damage, item effectiveness, or elemental damage).
+- Daughters use a **Bond** meter (max 100), not romance affection. The lounge shows them as **Daughter**; kiss, proposal, marriage, and Shared Night are blocked.
+- Adult children count toward the **house monster-girl cap**, join the party through the normal recruitment flow, and use normal Command Resonance limits. There is no separate child party slot.
+- True-born adults can ascend and awaken normally; Awakening uses the mother's upgraded innate kit.
+
+### Voss & Lumen
+After **Grand Resonance** and the **“A Moth at the Window”** house arc are both complete, entering **Skylume** delivers the Star Tower epilogue **“The First Page.”** It reveals the Archive's first true-born entry and grants a keepsake with no combat power. The scene is one-time and does not gate your own family system.
+
+---
+
+## Dreams
+
+Sleep is a scene, not a button. Every night at your **house**, at an **inn**, or at **camp** has a **20% chance** to bring a dream — short, atmospheric, occasionally useful, occasionally unsettling. A run of dreamless nights slowly raises the chance (soft pity).
+
+| Kind | What it does |
+|------|--------------|
+| **Boon** | XP, a small gift, steadier hands, **Dream-Blessed** (+1 all attributes for 2 rooms), affection or calm |
+| **Burden** | A little gold (never more than **5% or 50g**), companion stress, or a warning you cannot quite remember |
+| **Choice** | A legible trade-off — power or XP at the cost of **stress**, versus the safe road's buffs and affection |
+| **Story** | One-time beats that queue themselves and arrive on their own — the first night you do not sleep alone, an expected child, Voss & Lumen's Archive, a vampire's hunger |
+
+- **Burdens never take items, stats, levels or progression**, and two burdens never land back to back.
+- A choice dream you have already had offers **Wake up** — let it go and lose nothing.
+- **Dream-Blessed** merges with Well-Rested and Shared Night instead of stacking; the HUD tags it `DRM`.
+- No dreams in **Wonderland** or **Event Horizon** — time is frozen there.
+- Every dream writes a `[DREAM]` entry to the Journal, and **Inventory → Journal → Dreams** keeps a re-readable collection of every dream you have seen (with how often it found you).
+
+Some nights dream of what happened that day: a Nightmare can leave you **Rattled**, and a rattled mind sees things in the dark. See [Time, Sleep & Stress](#time-sleep--stress).
+
+---
+
 ## Heroine Quest System
 
-Three story-linked heroines await in Wonderland, each with a weapon upgrade questline:
+Three story-linked heroines arrive in stages at the Mad Hatter's tea party, each with a weapon upgrade questline:
 
 | Heroine | Rusted Weapon | Upgraded Weapon | Special Ability |
 |---------|--------------|-----------------|-----------------|
@@ -784,13 +867,13 @@ Three story-linked heroines await in Wonderland, each with a weapon upgrade ques
 | **Dorothy** | Silver Slippers | **Ruby Slippers** | Emerald City's Light — party-wide heal & buff |
 
 ### Quest Flow
-1. **Meet the Heroine** — encountered during your Wonderland journey.
-2. **Defeat their nemesis** — each heroine is linked to a specific Wonderland superboss:
-   - Alice → The Jabberwock (Floor 40)
-   - Red Hood → Big Bad Wolf (Floor 20)
-   - Dorothy → Wicked Witch of the West (Floor 30)
-3. **Visit the Godmother** — a hidden NPC in Wonderland's Temple who upgrades the rusted weapon into its restored form.
-4. Each upgrade requires a **crafting material** dropped by the corresponding superboss (Vorpal Blade Fragment, Crimson Hood Scrap, or Emerald Flame Crystal).
+1. **After the Queen of Hearts (Floor 10)** — enter the Wonderland inn. The Hatter reveals that three guests came asking for you; Red Hood is waiting by the fireplace.
+2. **Accept Red Hood before Floor 20** — she travels with you and arms the **Huntress's Oath** variant of the Big Bad Wolf fight. Without her, the base Wolf fight is unchanged.
+3. **After the Wolf** — Dorothy arrives. Accept her before Floor 30 to arm the **Emerald Road** variant of the Wicked Witch fight.
+4. **After the Witch** — Alice arrives last. Accept her before Floor 40 to arm the **Vorpal Opening** variant of the Jabberwock fight.
+5. **Skipped a heroine?** She returns to the inn with a short **late arc**; she can still become permanent and still keeps her full weapon-upgrade path.
+6. **Ask the Hatter about the guests** at any time for the next trigger.
+7. **Visit the Godmother / Woodcutter / Wizard** — the hidden NPCs who upgrade each heroine's rusted weapon into its restored form. The Woodcutter offers Red Hood's axe at **Floor 15+**, the Wizard offers Dorothy's slippers at **Floor 25+**, and the Godmother offers Alice's ??? Blade at **Floor 35+**. Each upgrade also needs a crafting material dropped by the corresponding superboss.
 
 ---
 
@@ -800,6 +883,8 @@ Pandemonium's quest system lives in your **Journal** (Inventory → Journal tab,
 
 - **Main Quests come to you** — story beats arrive on their own. The first, *The Stellar Summons*, finds you right after the tutorial: an Archivist in Skylume has questions about the bonds between handlers and monster girls.
 - **Side Quests are offered by NPCs** — talk to people; accept or decline as you like.
+- **Wonderland writes its own side quests** — opening the mysterious book starts *Down the Rabbit Hole*; *The Storybook Road* and *The Author's Last Page* track the dungeon's floors and five bosses. Alice, Red Hood and Dorothy each get a Journal arc that follows their tea-party introduction through their personal superboss to permanent recruitment.
+- **The way in is tracked, not guessed** — *The Looking-Glass Road* lists the requirements: clear Floor 20 in two different biomes, buy a Looking Glass Shard from **Veilholt's Black Market (5,000g)**, then open the mysterious book in **Veilholt's Arcane Tower**.
 - **Bounties** keep their own Journal tab, with their own deadlines.
 - Every entry tracks objectives with ✓/☐ marks and a status (ACTIVE / READY / COMPLETE); finished quests stay in the Journal as a paper trail.
 - Story beats (letters, summons) play as conversation windows when you **enter a city** — never mid-dungeon.
@@ -807,6 +892,49 @@ Pandemonium's quest system lives in your **Journal** (Inventory → Journal tab,
 The Archivist's **Field Studies** continue the story across the game. His **Command Resonance** grades — Pitch, Timbre, Cadence, Chord, Crescendo — are the Archive's measure of a handler's growing command.
 
 The Archivist's parting gift, the **resonance blank**, lives in your bag under Key Items: a shattered glass orb that records your grade, growing whole as your household does — **Shattered → Cracked → Mending → Whole → Radiant → Resonant**. Examine it any time to see your current grade and what the Star Tower wants next.
+
+### Deed Titles
+
+Deeds leave a name behind. Thirty-one titles are implemented, permanent per save, and **one may be equipped at a time** from **Inventory → Journal → Titles**. The tab also tracks collection milestones at 5, 10, and 15 titles.
+
+- **Locked titles show as `???`** with a hint and, where countable, progress. Unlocking reveals the name and effect, and writes a `[TITLE]` entry to the Journal's Event tab.
+- **Swap freely at any safe point** — city, house, camp, or a dungeon / Event Horizon post-room menu. Titles are locked during combat.
+- **Small, capped effects, never stacked.** Only the equipped title counts.
+- The equipped title appears after your character's name (e.g. *Aria the Roadwarden*). Settings → Gameplay can hide the honourific.
+
+| Title | Deed | Effect |
+|-------|------|--------|
+| **First Blood** | Defeat 10 enemies | +1% XP |
+| **Trailblazer** | Complete 10 travel segments | −2% travel time |
+| **Bargain Hunter** | Spend 2,500 gold in shops | +2% shop discount |
+| **Pathfinder** | Clear 5 dungeon floors | +2% dungeon gold |
+| **Delver** | Clear 25 dungeon floors | +3% dungeon gold |
+| **Roadwarden** | Complete 25 travel segments | −3% travel time |
+| **Haggler** | Spend 10,000 gold in shops | +3% shop discount |
+| **Beast-Tamer** | Capture 25 monster girls | +3% capture chance |
+| **The Hundred** | Defeat 100 enemies | +3% XP |
+| **Dragon-Slayer** | Defeat 10 Dragonkin | +1 Strength |
+| **Contracted** | Complete 50 guild bounties | +5% bounty gold |
+| **Hearthkeeper** | House level 3 + a child (Family on) | −5% monthly bills |
+| **Honest** | Reach Paragon Karma (Karma on) | +5% shop discount |
+| **Unrepentant** | Reach −75 Karma (Karma on) | +5% Black Market discount |
+| **Stormbreaker** | Defeat 3 superbosses | +2 Strength |
+| **Abyss Walker** | Reach Event Horizon room 50 | +6% XP |
+| **Collector** | Record 80% of the Bestiary | +2 Learning, +5% XP |
+| **Worldbreaker** | 9 superbosses + Event Horizon room 50 | +2 all attributes; drawback: −10% shop discount |
+| **First Page** | See the Voss epilogue | +10% rest healing |
+| **The Gambler** | Win 100 casino hands or a 4,000g biggest win | +1% casino payouts |
+| **Sleight-Hand** | 10 casino cheats never caught | +3% Black Market discount |
+| **Marked** | 3 casino cheats caught | +5% Black Market discount; drawback: −5% shop discount |
+| **Curiouser** | Enter Wonderland | +1% XP |
+| **Tea-Party Guest** | See the Hatter's three-guest scene after Floor 10 | +3% rest healing |
+| **Shadow-Touched** | Accept a Wonderland Shadow (Floor 41+) | +2% damage |
+| **Heartsbane** | Defeat the Queen of Hearts (Floor 10) | +3% dungeon gold |
+| **Wolf-Hunter** | Defeat the Big Bad Wolf (Floor 20) | +1 Strength |
+| **Witch-Breaker** | Defeat the Wicked Witch (Floor 30) | +6% XP |
+| **Vorpal Hand** | Defeat the Jabberwock (Floor 40) | +4% damage |
+| **Author's Bane** | Defeat Mary Sue (Floor 50) | +2 Learning, +4% XP |
+| **Happily Ever After** | Resolve all three Wonderland heroine arcs | +1 all attributes |
 
 ---
 
@@ -819,15 +947,15 @@ Owning a house gives you:
 | Feature | Benefit |
 |---------|---------|
 | **Storage** | Store items outside your inventory (10 / 20 / 35 slots). |
-| **Passive Income** | Collect daily gold based on house level and city wealth (capped at 10 days). |
+| **Passive Income** | Collect daily gold based on house level, city wealth, and dungeon progress. Income is banked for at most 5 days. |
 | **Rest Buff** | Sleep in your own bed for a blessing that lasts 1–3 floors (+1 / +2 / +3 all attributes). |
 | **Monster Girl Housing** | Store captured girls (2 → 4 → 8 → 14 → 24 → 50 → 75 → 100 capacity based on house level). |
 | **Faster Rest** | Rest time is shorter than inns (90 / 70 / 50 minutes). |
 
 ### House Levels
-| Level | Name | Upgrade Cost | Storage | Income/Day | Girl Cap | Bed Buff | Rest Time |
+| Level | Name | Upgrade Cost | Storage | Base Income/Day | Girl Cap | Bed Buff | Rest Time |
 |-------|------|-------------|---------|------------|----------|----------|-----------|
-| 1 | Hovel | 300g | 10 | 8g | 2 | — | 30 min |
+| 1 | Hovel | 500g deed | 10 | 8g | 2 | — | 30 min |
 | 2 | Cottage | 600g | 20 | 18g | 4 | — | 25 min |
 | 3 | Manor | 1,500g | 35 | 35g | 8 | +1 all, 3 floors | 20 min |
 | 4 | Villa | 3,000g | 55 | 65g | 14 | +1 all, 4 floors | 15 min |
@@ -836,9 +964,19 @@ Owning a house gives you:
 | 7 | Citadel | 25,000g | 170 | 320g | 75 | +2 all, 7 floors | 5 min |
 | 8 | Sanctuary | 50,000g | 230 | 480g | 100 | +3 all, 8 floors | 5 min |
 
-> Passive income also scales with your highest dungeon floor cleared globally, keeping it relevant in late game. Income is capped at 10 accumulated days.
+> Base income is multiplied by your highest dungeon floor cleared globally (`1 + min(3, floor/15)`, max 4×) and by city wealth. The displayed daily rate is the amount collected; income is capped at **5 accumulated days**.
 
-> Wealthier cities (Skylume, Tidebreak, Isle of Glass) yield higher passive income. You can move your house by buying a new deed, but you can only ever have one.
+> Wealthier cities (Skylume, Tidebreak, Coralhaven) yield higher passive income. You can move your house by buying a new deed, but you can only ever have one.
+
+### Fireside Tales
+
+Your house menu also holds a **storybook**. Fireside Tales are multi-part side stories about the household — romance, lore, and quiet nights in.
+
+- **Unlocked by your household** — each arc shows its requirements up front: a number of girls at a minimum affection, a featured girl or designated allies, a married companion, a house level, or a quest flag. Locked entries tell you exactly what is missing.
+- **Eight arcs ship now** — *The Lucky Coin* (Goblin Girl), *Wind at the Window* (Harpy Scout), *Hoof and Wing* (Harpy + Centaur pair), *A Shape of Her Own* (Slime Girl), *Small Hours* (ensemble household), *A Moth at the Window* (Archive lore), *The Eighth Color* (Palette) and *The Last Oath* (the White Knight). Parts are read in order and can be re-read once complete.
+- **Some stories wait for a kill, not a key** — defeating **Palette, the Chromatic Artisan** unlocks *The Eighth Color*; defeating the **White Knight** unlocks *The Last Oath*. Designated-girl arcs also require that specific companion to be in your household.
+- **Some stories find you while travelling** — *A Moth at the Window* begins when you enter **Skylume** after meeting Voss, instead of waiting at home.
+- **Small, social rewards** — parts grant affection, relieve stress, and occasionally XP or gold. Read parts are recorded as `[STORY]` entries in the Journal's Event tab.
 
 ---
 
@@ -848,8 +986,9 @@ Your house isn't just a home — it's a base of operations. The **Dispatch Board
 
 - **Sweeps** farm dungeon floors you've already cleared, scaled to bands around your deepest progress.
 - **Errands** — foraging, courier runs, caravan escorts, scouting, surveys — are the safe options, and they scale with your progress too.
-- Missions resolve on their own as game time passes. Rewards (gold, items, EXP, a little city Favor) wait in a **report** at the board.
+- Missions resolve on their own as game time passes. Rewards (gold, items, EXP) wait in a **report** at the board.
 - **Stress & Mood:** every companion carries 0–100 Stress. Rested, high-affection girls are *Spirited*; worn ones turn *Tired* and *Weary*, and at 90+ a girl is *Burned Out* and refuses work. Stress raises injury odds. Recover via nightly rest, Talk / Gifts / Kisses at the lounge, **Herbal Bath Salts** (Herbalist), and the Temple's **Day of Respite**.
+- **Stress in combat:** a companion falling in a fight is the big source — the fallen girl **+34**, everyone who saw it **+20**, and you **+34** per fall. Banded penalties apply in battle: **Weary (50+) −1**, **Frayed (75+) −2**, **Burned Out (90+) −3** to all attributes (`WEA` / `FRY` / `EXH` HUD tags), and a Burned Out girl in the front row **refuses that fight**. A real sleep takes **10 stress off each companion**.
 - **Injuries:** girls can come home hurt — and a disaster can leave one **Downed** (1 HP, recovering for 2 days). Downed girls can't be dispatched or recruited until healed; housed girls regain 25% HP per night at home.
 - **Scale:** your house level sets concurrent dispatches (1 → 2 → 2 → 3), team size (up to 4), the difficulty cap (up to ★6), and the board size (4–7 offers every 3 days).
 
@@ -896,7 +1035,7 @@ Each race also has a unique passive skill (separate from class passives) that un
 - **Weapons** scale with STR, DEX, Learning, Wisdom, Charisma, or Constitution depending on type. Over 30 weapon types available.
 - **Armor** provides CON and elemental resistances.
 - **Accessories** — you have **2 slots** (`accessory1` and `accessory2`), allowing you to equip two accessories simultaneously. Wedding accessories, Vileheart Pendant, Perception-Blocking Mask, and The Author's Pen all compete for these slots.
-- **Enhancement**: Blacksmiths can upgrade equipment up to +10. Cost scales with enhancement level × rarity multiplier. Charisma and city favor reduce prices.
+- **Enhancement**: Blacksmiths can upgrade equipment up to +10. Cost scales with enhancement level × rarity multiplier. Charisma and Karma reduce prices.
 - **Scroll Fusion**: Use Fusion Scrolls at the blacksmith to force an item's rarity to a specific tier (Common through Legendary).
 - **Unique items** (Abyss Fang, Captain's Cutlass, Black Silence Gloves, wedding accessories, Vorpal weapons) cannot be obtained from random drops.
 - **Crafting Materials**: Superbosses drop materials (Wolf's Tooth, Crimson Hood Scrap, Vorpal Blade Fragment, Emerald Flame Crystal, Monkey Wing, Mary Sue's Teardrop) used in heroine weapon upgrades.
@@ -907,6 +1046,33 @@ Each race also has a unique passive skill (separate from class passives) that un
 - Base inventory size can be expanded with upgrades.
 - Manage items from any city menu or after combat rooms.
 - Equip, use, discard, or move items to house storage.
+
+---
+
+## Time, Sleep & Stress
+
+### The Day in Blocks
+A day is **24 blocks** across three phases — **Morning**, **Noon** and **Night** (8 blocks each). Time only moves when you act: short actions are free, longer ones cost a block or two, and every top bar shows the current phase, the day, and your fatigue. **Wonderland** is a time pocket (costs are nullified, the outside day never moves); **Event Horizon** freezes the clock entirely.
+
+### Fatigue
+- Fatigue comes from real exhaustion: it costs **−1 to every attribute per stack** (3 stacks maximum) and shows as `FATIGUE I/II/III` in every top bar.
+- At **stack II during the night**, exhaustion starts producing **hallucinations** in the dark — solo fights against things that are not there. Winning one at stack II relieves a stack; at stack III only real sleep helps.
+- Pandemonium accrues fatigue; Event Horizon never does.
+
+### Player Stress
+Your own **stress meter (0–100)** sits in front of fatigue:
+
+| Source | Stress |
+|--------|--------|
+| A night without sleep | **+50** |
+| Nightmare dream | +34 |
+| A companion falling in combat | +34 per fall |
+| A real sleep | **cleared entirely** |
+
+- Every full **100 stress becomes one fatigue stack** — two skipped nights cost a stack, not one per night.
+- At **67+ you are Rattled** (the top bar shows an eye marker): hallucinations gain a tier and can find you even without exhaustion.
+- Only real sleep (house bed, inn Sleep, or camp) clears stress — an inn **Rest** for a block does not.
+- Wonderland and Event Horizon accrue nothing.
 
 ---
 
@@ -973,17 +1139,20 @@ s     Swap party member (when an ally has fallen)
 
 ## Technical Info
 
-- **Language:** Python 3 (no external dependencies; the GUI uses tkinter, which is bundled with Python).
+- **Language:** Python 3 (developed on 3.14). One runtime dependency: **PyYAML**; the GUI uses tkinter, which is bundled with Python.
 - **Entry Point:** `launcher.py` (GUI; the PyInstaller target). Build to `.exe` with `make_exe.py`.
 - **Saves:** Stored in the `savefile/` folder as JSON. Multiple save slots supported; delete option available from main menu.
-- **Data:** Enemy and skill data are loaded from YAML files in `resources/` for easy modding.
+- **Data:** Enemy and skill data are loaded from YAML files in `resources/` for easy modding. Family scene dialogue lives in `resources/family_scenes.yaml`.
 - **Modular Design:** Easy to extend with new cities, enemies, items, superbosses, skills, or facilities.
 - **Save Compatibility:** New fields are automatically added to old save files when loaded with `character.py` migration.
+- **Tests:** `tests/` holds the pytest suite plus manual `_diag_*` / `_smoke_*` scripts — naming rules in `tests/README.md`.
 - **Project Structure:**
   - `combat/` — Combat engine, AI, player actions, UI, stats, allies, superbosses (15 total), unique weapons
   - `facilities/` — All city services (shop, inn, guild, blacksmith, temple, Godmother, etc.)
   - `gui/` — tkinter GUI with screens (15), widgets (8), theme, terminal emulation
   - `resources/` — Game data (enemies, items, skills, cities, dialogues)
+  - `tests/` — pytest suite and manual diagnostic scripts (see `tests/README.md`)
+  - `scripts/` — dev tooling (`clean_pycache.ps1`)
   - `wonderland_curses.py` — Wonderland quirk & shadow system
   - `savefile/` — JSON save files (multiple slots)
 
@@ -1031,13 +1200,13 @@ Superbosses are drawn from a shuffled pool of 8 — you'll face each one eventua
 Clear **Floor 40** in dungeons across at least **4 unique biomes** (e.g., Temperate, Swamp, Desert, Mountain). Once unlocked, travel to the **Isle of Glass** and enter Pandemonium from there.
 
 ### "How do I find Wonderland?"
-Visit the **Arcane Tower in Veilholt** and look for a mysterious book. Wonderland is a hidden 20th city with its own 50-floor dungeon, unique superbosses, heroine quests, and the game's hardest boss — Mary Sue. See the [Wonderland System](#wonderland-system) section.
+Clear **Floor 20 in two different biomes**, buy a **Looking Glass Shard** from Veilholt's Black Market (5,000g), then visit the **Arcane Tower in Veilholt** and choose **"Investigate mysterious book."** The Journal side quest **The Looking-Glass Road** tracks these steps. Wonderland is a hidden city with its own 50-floor dungeon, unique superbosses, heroine quests, and the game's hardest boss — Mary Sue. See the [Wonderland System](#wonderland-system) section.
 
 ### "How do I marry a monster girl?"
 1. Raise a monster girl's affection to **100** through gifts and dungeon victories.
 2. Buy an **engagement ring** from any Gift Shop (Ruby, Sapphire, Emerald, Topaz, Amethyst, or Diamond).
 3. Propose! Once engaged, raise affection to **200**.
-4. At 200 affection, she gifts you a **Unique Wedding Accessory** with powerful combat effects that are amplified when she's in your party.
+4. At **300** affection, she gifts you a **Unique Wedding Accessory** with powerful combat effects that are amplified when she's in your party.
 See [Engagement & Marriage](#engagement--marriage) for full details.
 
 ### "What do the Black Silence Gloves do?"

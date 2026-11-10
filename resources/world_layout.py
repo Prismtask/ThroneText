@@ -14,6 +14,7 @@ This module is pure data + tiny helpers — no game-system imports.
 CITY_POSITIONS = {
     "stormhold": (80, 60),
     "thornwall": (230, 80),
+    "celestia":  (250, 30),
     "solmere":    (200, 160),
     "greyharbor": (120, 220),
     "elderfen":   (310, 230),
@@ -34,7 +35,7 @@ CITY_POSITIONS = {
 }
 
 REGIONS = {
-    "North":       ("stormhold", "thornwall"),
+    "North":       ("stormhold", "thornwall", "celestia"),
     "Central":     ("solmere", "greyharbor", "elderfen"),
     "East":        ("irondeep", "skylume", "cinderpeak", "veilholt"),
     "South":       ("sunreach", "brinewatch", "mirefall", "ashkara",

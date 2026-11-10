@@ -1,8 +1,8 @@
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input, c_clear, c_renders_menus
 from combat.helpers import ACTION_CANCELLED_MSG
 import random
 from character import player_max_hp
-from combat.status_effects import cure_curse, apply_poison, apply_healing, is_silenced, is_dreaded, format_player_status_line
+from combat.status_effects import cure_curse, apply_poison, apply_healing, is_silenced, is_dreaded, format_player_status_line, consume_stun
 from combat.combat_ui import print_combat_hud, format_enemy_status_line
 from combat.weapon.abyss_fang import wield_abyss_fang
 from combat.weapon.wedding_specials import (
@@ -11,13 +11,27 @@ from combat.weapon.wedding_specials import (
     apply_wedding_on_kill,
 )
 from combat.action_menu import get_action_menu
-from combat.capture import is_monster_girl, is_capturable, attempt_capture
+from combat.capture import (
+    is_monster_girl, is_capturable, attempt_capture,
+    net_can_capture, net_level_gate_message, get_capture_chance,
+)
 from combat.stat_milestones import get_strength_bonus, get_wisdom_bonus, get_dexterity_damage_bonus
 from combat.skills import get_available_skills, execute_skill, set_skill_cooldown, format_mastery_label, get_passive_skill, get_passive_life_steal
 from inventory import remove_item_by_reference
 
 
 def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha, on_kill=None, on_hit=None, _action_override=None):
+    # Free-action skills (Time Warp) must never leak past their own action.
+    player.pop("_skill_free_action", None)
+
+    # ── Stun: lose this action (parity with enemy_ai) ──
+    if consume_stun(player):
+        print_combat_hud(player, enemies)
+        _name = player.get("name")
+        c_print(f"  {_name} is stunned and cannot act!" if _name
+                else "  You are stunned and cannot act!")
+        return "continue", False
+
     # Palette's Brush: reset the once-per-turn stance flag
     from combat.weapon.palette_brush import begin_actor_turn
     begin_actor_turn(player)
@@ -202,14 +216,37 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         cd_msg = set_skill_cooldown(player, skill_id)
         if cd_msg:
             c_print(cd_msg)
+        # A free-action skill (e.g. Time Warp) must be on cooldown before the
+        # menu reopens — clamp to 1 so stacked reductions or a cooldown-skip
+        # proc can never loop it.
+        if skill_def.get("free_action"):
+            cooldowns = player.setdefault("skill_cooldowns", {})
+            cooldowns[skill_id] = max(1, cooldowns.get(skill_id, 0))
         from combat.weapon.prescript_ledger import report_skill as report_prescript_skill
         report_prescript_skill(player)
+        free_action = player.pop("_skill_free_action", False)
         if victory:
             return "victory", False
+        if free_action:
+            # Fractured Hourglass pattern: the turn continues, menu reopens.
+            return "retry", False
         return "continue", False
 
     # ----- ATTACK -----
     if action == "a":
+        # Moonlight Greatsword: while empowered, basics become a magical wave
+        # that strikes every enemy (no target selection).
+        from combat.weapon.moonlight_greatsword import (
+            is_moonlight_active, execute_moonlight_aoe_attack,
+        )
+        if is_moonlight_active(player):
+            execute_moonlight_aoe_attack(
+                player, player, enemies,
+                (p_str, p_con, p_dex, p_ler, p_wis, p_cha),
+                is_player=True, on_kill=on_kill, on_hit=on_hit,
+            )
+            return "continue", False
+
         if len(enemies) > 1:
             try:
                 choice = int(c_input("Select target number: ")) - 1
@@ -277,40 +314,46 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if equipped_weapon and equipped_weapon.get("scaling_mult"):
             scaling_val = int(scaling_val * equipped_weapon["scaling_mult"])
 
-        # ── Sunder (Physical trait): armor penetration ──
+        # ── Armour penetration: Sunder trait + form tradition (Sundering) ──
+        from combat.form_perks import get_armor_pen_multiplier
+        pen_mult = get_armor_pen_multiplier(player, pre_dmg)
         effective_con_mod = target["con_mod"]
-        if pre_dmg and pre_dmg.get("armor_pen", 1.0) < 1.0:
-            pen_pct = int((1.0 - pre_dmg["armor_pen"]) * 100)
-            effective_con_mod = int(target["con_mod"] * pre_dmg["armor_pen"])
+        if pen_mult < 1.0:
+            pen_pct = int((1.0 - pen_mult) * 100)
+            effective_con_mod = int(target["con_mod"] * pen_mult)
             if target["con_mod"] > 0:
-                c_print(f"  ⚔️ Sunder! {pen_pct}% armor penetration — {target['name']}'s armor: {target['con_mod']}→{effective_con_mod}.")
+                c_print(f"  ⚔️ {pen_pct}% armor penetration — {target['name']}'s armor: {target['con_mod']}→{effective_con_mod}.")
             else:
-                c_print(f"  ⚔️ Sunder! {pen_pct}% armor penetration.")
+                c_print(f"  ⚔️ {pen_pct}% armor penetration.")
         dmg = random.randint(4, 10) + scaling_val + get_strength_bonus(player) - effective_con_mod
         dmg = max(0, dmg)
 
-        # Consume power_buff (ally support — Overclock, Tinker Enhancement):
-        # empowers this attack
-        for buff in player.get("active_buffs", [])[:]:
-            if buff.get("type") == "power_buff":
-                val = buff.get("value", 0)
-                dmg = int(dmg * (1 + val))
-                player["active_buffs"].remove(buff)
-                c_print(f"  ⚡ Empowered! Damage increased by {int(val * 100)}%!")
-                break
+        # Percentage damage buffs (power_buff + damage_boost) stack additively.
+        # power_buff is consumed here and empowers this attack.
+        from combat.status_effects import get_damage_buff_multiplier
+        _buff_msgs = []
+        _damage_buff_mult = get_damage_buff_multiplier(
+            player, consume_power_buff=True, messages=_buff_msgs
+        )
+        for _buff_msg in _buff_msgs:
+            c_print(f"  ⚡ {_buff_msg}")
+        if _damage_buff_mult != 1.0:
+            dmg = int(dmg * _damage_buff_mult)
 
-        # Rogue sneak attack bonus vs slowed/stunned enemies
-        passive = get_passive_skill(player)
-        if passive and passive.get("effect", {}).get("type") == "vulnerable_bonus":
-            if target.get("slowed") or target.get("stunned"):
-                bonus = passive["effect"]["value"]
+        # Sneak attack bonus vs slowed/stunned enemies (class or profession passive)
+        if target.get("slowed") or target.get("stunned"):
+            from combat.skills import get_player_passive_effects
+            bonus = sum(e.get("value", 0) for e in get_player_passive_effects(player)
+                        if e.get("type") == "vulnerable_bonus")
+            if bonus:
                 dmg = int(dmg * (1 + bonus))
                 c_print(f"Sneak Attack! +{int(bonus*100)}% damage to the vulnerable target!")
 
-        # Apply damage_boost buffs (multi-turn, non-consuming — e.g. Frabjous Day)
-        for buff in player.get("active_buffs", []):
-            if buff.get("type") == "damage_boost":
-                dmg = int(dmg * (1 + buff.get("value", 0)))
+        # Profession passive: bonus damage below a HP threshold (Berserker)
+        from combat.skills import get_player_passive_low_hp_mult
+        lp_mult = get_player_passive_low_hp_mult(player)
+        if lp_mult != 1.0:
+            dmg = int(dmg * lp_mult)
 
         # Event Horizon: The Hierophant — basic attacks ×0.75
         from event_horizon import joker_damage_multiplier
@@ -325,6 +368,12 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         # Event Horizon: The Sun — crits +30%, non-crits ×0.85
         from event_horizon import joker_crit_modifier
         dmg = joker_crit_modifier(player, is_crit, dmg)
+
+        # Deed titles: small player-only outgoing-damage bonus.
+        from titles import mod as _title_mod
+        _title_dmg = _title_mod(player, "damage_pct")
+        if _title_dmg:
+            dmg = int(dmg * (1.0 + _title_dmg))
 
         # Wedding accessory attack bonuses
         is_first = not player.get("wedding_first_attack_done")
@@ -346,18 +395,21 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if pre_dmg and pre_dmg.get("res_ignore", 0) > 0 and element:
             ignore_pct = int(pre_dmg["res_ignore"] * 100)
             target_res = target.get("elemental_res", {}).get(element, 1.0)
-            if target_res < 1.0:  # enemy resists this element
+            if target_res > 1.0:  # enemy resists this element (rating > 1 = resistance)
                 attacker_dmg_mult = player.get("elemental_dmg", {}).get(element, 1.0)
                 mitigated_res = 1.0 + (target_res - 1.0) * (1.0 - pre_dmg["res_ignore"])
-                final_dmg = int(dmg * attacker_dmg_mult * mitigated_res)
+                final_dmg = int(dmg * attacker_dmg_mult * (2.0 - mitigated_res))
                 final_dmg = max(0, final_dmg)
                 c_print(f"  🔮 Pierce! {target['name']}'s {element} resistance bypassed ({ignore_pct}%).")
             else:
                 c_print(f"  🔮 Pierce! {ignore_pct}% resistance penetration active.")
 
-        # Apply Hunter's Mark damage bonus
+        # Apply Hunter's Mark damage bonus (Hawk's Eye buff boosts the mark)
         if target.get("hunters_mark"):
             bonus = target.get("hunters_mark_bonus", 0.50)
+            for buff in player.get("active_buffs", []):
+                if buff.get("type") == "mark_damage_bonus":
+                    bonus += buff.get("value", 0)
             final_dmg = int(final_dmg * (1 + bonus))
 
         # Damage-taken amplification (e.g. Aura of Despair)
@@ -392,6 +444,10 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         final_dmg = int(final_dmg * get_robe_multiplier(player, player))
         from combat.weapon.chance_and_choice import apply_chance_and_choice
         final_dmg = apply_chance_and_choice(player, final_dmg)
+
+        # Form tradition (Cleaving / Focused)
+        from combat.form_perks import get_outgoing_damage_multiplier
+        final_dmg = int(final_dmg * get_outgoing_damage_multiplier(player))
 
         if on_hit:
             on_hit(target, enemies)
@@ -507,17 +563,22 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             c_print("You have no items usable in combat.")
             return "retry", False
 
-        c_print("\nYour Battle Inventory:")
-        for display_idx, (_, itm) in enumerate(combat_inventory):
-            qty = itm.get("count", 1)
-            qty_str = f" x{qty}" if qty > 1 else ""
-            c_print(f"{display_idx+1}. {itm['name']}{qty_str} ({itm['type']})")
+        # GUI mode renders the item panel from the inventory directly; the
+        # legacy numbered list would just dump the whole bag into the log.
+        if not c_renders_menus():
+            c_print("\nYour Battle Inventory:")
+            for display_idx, (_, itm) in enumerate(combat_inventory):
+                qty = itm.get("count", 1)
+                qty_str = f" x{qty}" if qty > 1 else ""
+                c_print(f"{display_idx+1}. {itm['name']}{qty_str} ({itm['type']})")
         try:
             choice = int(c_input("Use which item? (0 to cancel): ")) - 1
             if choice < 0 or choice >= len(combat_inventory):
                 return "retry", False
             true_idx, item = combat_inventory[choice]
-            msg = ""
+            # Lead with the item name: effect-only lines ("The stun attempt
+            # fails.") made it impossible to tell WHAT was used.
+            msg = f"You use {item['name']}. "
             target = None
 
             # ── Fractured Hourglass: reusable free-action cooldown reduction ──
@@ -573,7 +634,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 if len(mg_targets) > 1:
                     c_print("Select target to capture:")
                     for i, e in enumerate(mg_targets):
-                        c_print(f"{i+1}. {e['name']}")
+                        chance = get_capture_chance(player, e, item)
+                        c_print(f"{i+1}. {e['name']} - {chance:.0f}% capture")
                     try:
                         idx = int(c_input("Choice: ")) - 1
                     except ValueError:
@@ -583,9 +645,14 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                     target = mg_targets[idx]
                 else:
                     target = mg_targets[0]
-                remove_item_by_reference(player, item)
+                # Level-gated nets (Stellar Field Kit) refuse out-of-range
+                # girls without being spent — let the player pick again.
+                if not net_can_capture(item, target):
+                    c_print(net_level_gate_message(item, target))
+                    return "retry", False
                 from combat.weapon.prescript_ledger import report_item as report_prescript_item
                 report_prescript_item(player)
+                # attempt_capture() consumes the net itself.
                 if attempt_capture(player, target, net=item):
                     enemies.remove(target)
                 return "continue", False
@@ -596,7 +663,7 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
                 new_hp = min(old_hp + heal, player_max_hp(player))
                 healed_amount = new_hp - old_hp
                 player["current_hp"] = new_hp
-                msg += f"{player['name']} recover {healed_amount} HP. "
+                msg += f"You recover {healed_amount} HP. "
             if "heal_over_time" in item:
                 player.setdefault("active_buffs", []).append({
                     "type": "hot",
@@ -838,6 +905,11 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
     elif action == "w":
         return wield_abyss_fang(player)
 
+    # ----- MOONLIGHT (Moonlight Greatsword weapon special) -----
+    elif action == "m":
+        from combat.weapon.moonlight_greatsword import use_moonlight
+        return use_moonlight(player)
+
     # ----- CREW RALLY -----
     elif action == "r":
         from combat.weapon.captain_cutlass import use_crew_rally
@@ -883,10 +955,15 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
             if eff_enemy_dex > max_enemy_dex:
                 max_enemy_dex = eff_enemy_dex
 
-        roll = random.randint(1, 20) + effective_player_dex
+        d20 = random.randint(1, 20)
+        roll = d20 + effective_player_dex
         difficulty = 10 + max_enemy_dex
         if is_dreaded(player):
             difficulty += 4
+        # Natural 20 always escapes, no matter how fast the enemies are.
+        if d20 == 20:
+            c_print("🎲 Natural 20 — you slip away before anyone can react!")
+            return "fled", False
         if roll >= difficulty:
             return "fled", False
         else:
@@ -909,12 +986,19 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if len(nets) == 1:
             chosen_net = nets[0]
         else:
-            c_print("Select capture net to use:")
-            for i, net in enumerate(nets):
-                name = net.get("name", "Capture Net")
-                bonus = net.get("rarity_mult_bonus", 25)
-                count = net.get("count", 1)
-                c_print(f"{i+1}. {name} (+{bonus} catch) x{count}")
+            # The GUI builds this net list itself (same entries, plus the
+            # capture bonus tags) — printing it again only pollutes the log.
+            if not c_renders_menus():
+                c_print("Select capture net to use:")
+                for i, net in enumerate(nets):
+                    name = net.get("name", "Capture Net")
+                    if net.get("guaranteed_capture"):
+                        cap = net.get("capture_level_cap", 8)
+                        tag = f"(guaranteed · below lvl {cap})"
+                    else:
+                        tag = f"(+{net.get('rarity_mult_bonus', 25)} catch)"
+                    count = net.get("count", 1)
+                    c_print(f"{i+1}. {name} {tag} x{count}")
             try:
                 idx = int(c_input("Net choice (0 to cancel): ")) - 1
                 if idx < 0 or idx >= len(nets):
@@ -928,7 +1012,8 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         if len(mg_targets) > 1:
             c_print("Select target to capture:")
             for i, e in enumerate(mg_targets):
-                c_print(f"{i+1}. {e['name']}")
+                chance = get_capture_chance(player, e, chosen_net)
+                c_print(f"{i+1}. {e['name']} - {chance:.0f}% capture")
             try:
                 idx = int(c_input("Choice: ")) - 1
             except ValueError:
@@ -939,8 +1024,13 @@ def handle_player_turn(player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p_cha
         else:
             target = mg_targets[0]
 
-        # Consume the chosen net before attempting capture
-        remove_item_by_reference(player, chosen_net)
+        # Level-gated nets (Stellar Field Kit) refuse out-of-range girls
+        # without being spent — let the player pick again.
+        if not net_can_capture(chosen_net, target):
+            c_print(net_level_gate_message(chosen_net, target))
+            return "retry", False
+
+        # attempt_capture() consumes the net itself.
         if attempt_capture(player, target, net=chosen_net):
             enemies.remove(target)  # remove from combat
             return "continue", False

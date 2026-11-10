@@ -57,10 +57,8 @@ def combat_slitcurrent(player, floor=None, enemies=None):
             boss["max_hp"] = boss["hp"]
             enemies.append(boss)
 
-    c_print("\n" + "=" * 60)
-    c_print("Reality frays at the edges. Whispers that are not your own...")
+    c_print("\nReality frays at the edges. Whispers that are not your own...")
     c_print(f"\nDream-Devouring Slitcurrent — HP: {boss['hp']}")
-    c_print("=" * 60)
     c_input("\nPress Enter to face the Dream-Devourer...")
 
     context = {
@@ -78,10 +76,10 @@ def combat_slitcurrent(player, floor=None, enemies=None):
     def on_kill_hook(target, elist, ctx):
         if target.get("key") == "dream_floatsam":
             ctx["devour_focus_stacks"] += 1
-            c_print(f"[GIMMICK] Slitcurrent devours the remains! Devour Focus +1 ({ctx['devour_focus_stacks']}/3)")
+            c_print(f"⚙ [GIMMICK] Slitcurrent devours the remains! Devour Focus +1 ({ctx['devour_focus_stacks']}/3)")
             ctx["failure_timer"] = 0 
             if ctx["devour_focus_stacks"] >= 3:
-                c_print("\n[GIMMICK] NIGHTMARE OVERLOAD! Slitcurrent is stunned for 3 turns and takes +40% damage!")
+                c_print("\n⚙ [GIMMICK] NIGHTMARE OVERLOAD! Slitcurrent is stunned for 3 turns and takes +40% damage!")
                 ctx["boss_stun_turns"] = 3
                 b = next((e for e in elist if e.get("key") == boss_key), None)
                 if b:
@@ -95,7 +93,7 @@ def combat_slitcurrent(player, floor=None, enemies=None):
         
         # Floatsam Spawn
         if b and not ctx["floatsam_spawned"] and b["hp"] <= b["max_hp"] * 0.8:
-            c_print("\n[GIMMICK] Slitcurrent shrieks and spawns 3 Dream Floatsam from the abyss!")
+            c_print("\n⚙ [GIMMICK] Slitcurrent shrieks and spawns 3 Dream Floatsam from the abyss!")
             for _ in range(3):
                 m_stats = enemy_stats("dream_floatsam", player)
                 m_stats["key"] = "dream_floatsam"
@@ -110,7 +108,7 @@ def combat_slitcurrent(player, floor=None, enemies=None):
         if floatsam_alive and not ctx["massive_attack_triggered"] and ctx["devour_focus_stacks"] < 3:
             ctx["failure_timer"] += 1
             if ctx["failure_timer"] >= 5:
-                c_print("\n[GIMMICK] The Floatsam fester too long! Slitcurrent explodes in rage!")
+                c_print("\n⚙ [GIMMICK] The Floatsam fester too long! Slitcurrent explodes in rage!")
                 massive_dmg = max(5, random.randint(15, 25) + b["str_mod"] - player.get("attributes", {}).get("Constitution", 0))
                 player["current_hp"] -= massive_dmg
                 from combat.helpers import format_damage_msg
@@ -216,13 +214,11 @@ def combat_slitcurrent(player, floor=None, enemies=None):
     if result == "victory":
         # Guard: only award loot once per save
         if not player.get("boss_defeated_slitcurrent"):
-            c_print("\n" + "~" * 55)
-            c_print("As the Dream-Devourer dissolves, a blade crystallises")
+            c_print("\nAs the Dream-Devourer dissolves, a blade crystallises")
             c_print("from the void where its heart once beat. It hums with")
             c_print("an eerie, hungry resonance — as if the abyss itself")
             c_print("has been shaped into an edge.")
             c_print("\n  ✦ You obtained: ABYSS FANG (Unique) ✦")
-            c_print("~" * 55)
             abyss_fang = build_item("abyss_fang", "unique")
             from inventory_ui import prompt_acquire_item
             prompt_acquire_item(player, abyss_fang)

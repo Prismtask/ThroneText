@@ -4,9 +4,9 @@ Design doc: docs/prescript_ledger_design.md
 
 Each combat round a Prescript is issued to every wearing party member. Fulfilling
 it grants Grace of the Prescript — stacking damage / crit / regen (cap 9; no
-further gain at cap). Ignoring a feasible Prescript adds Karmic Consequence
-(+3% damage taken per stack); at 6 stacks the debt is collected as Karmic
-Retribution (sure-hit blow; Defend halves).
+further gain at cap). Ignoring a feasible Prescript adds Prescript Debt
+(+3% damage taken per stack); at 6 stacks the debt is collected (sure-hit
+blow; Defend halves).
 
 Actor-based: works for the player and any ally who has it equipped.
 All combat state is ephemeral — reset at combat start and end.
@@ -25,8 +25,8 @@ GRACE_DMG_PER = 0.02        # damage_boost per Grace stack
 GRACE_CRIT_PER = 0.015      # crit_chance per Grace stack
 GRACE_REGEN_PCT = 0.015     # max-HP regen per Grace stack, per round
 CLASH_TIERS = ((9, 0.30), (6, 0.20), (3, 0.10))  # (min Grace, skill damage bonus)
-KARMA_DT_PER = 0.03         # +damage taken per Karma stack
-KARMA_BURST_AT = 6          # Karmic Retribution threshold
+KARMA_DT_PER = 0.03         # +damage taken per Prescript Debt stack
+KARMA_BURST_AT = 6          # Debt collection threshold
 KARMA_BURST_PCT = 0.08      # burst = 8% max HP ...
 KARMA_BURST_FLAT = 20       # ... + 20, sure-hit (Defend halves)
 
@@ -137,7 +137,7 @@ def _refresh_grace_buffs(actor):
 
 
 def _refresh_karma_debuff(actor):
-    """Refresh (or clear) the Karma damage-taken debuff."""
+    """Refresh (or clear) the Prescript Debt damage-taken debuff."""
     stacks = actor.get("prescript_karma_stacks", 0)
     debuffs = actor.setdefault("active_debuffs", [])
     debuffs[:] = [d for d in debuffs if d.get("source") != _KARMA_SOURCE]
@@ -167,9 +167,9 @@ def _prescript_text(p):
 
 
 def _atonement(actor):
-    """Cleanse 1 Karma via a fulfilled Prescript — works at any Grace level.
+    """Cleanse 1 Prescript Debt via a fulfilled Prescript — any Grace level.
 
-    Returns True if a Karma stack was removed.
+    Returns True if a Debt stack was removed.
     """
     if actor.get("prescript_karma_stacks", 0) > 0:
         actor["prescript_karma_stacks"] -= 1
@@ -187,10 +187,10 @@ def _fulfill(actor):
     name = _label(actor)
     stacks = actor.get("prescript_grace_stacks", 0)
     if stacks >= GRACE_CAP:
-        # Cap rule: no further Grace — but atonement still cleanses Karma.
+        # Cap rule: no further Grace — but atonement still cleanses Debt.
         msg = f"  📜 {name} fulfils the prescript — the ledger is already full (Grace ×{GRACE_CAP})."
         if _atonement(actor):
-            msg += " Atonement eases the karmic debt (−1)."
+            msg += " Atonement eases the debt (−1)."
         c_print(msg)
         return
     stacks += 1
@@ -198,23 +198,23 @@ def _fulfill(actor):
     _refresh_grace_buffs(actor)
     msg = f"  📜 {name} fulfils the prescript — Grace of the Prescript ×{stacks}."
     if _atonement(actor):
-        msg += " Atonement eases the karmic debt (−1)."
+        msg += " Atonement eases the debt (−1)."
     c_print(msg)
 
 
 def _punish(actor):
-    """Ignored-but-feasible Prescript: +1 Karma (and Retribution at the cap)."""
+    """Ignored-but-feasible Prescript: +1 Debt (and collection at the cap)."""
     stacks = actor.get("prescript_karma_stacks", 0) + 1
     actor["prescript_karma_stacks"] = stacks
     _refresh_karma_debuff(actor)
-    c_print(f"  📜 {_label(actor)} lets the prescript slip — Karmic Consequence ×{stacks} "
+    c_print(f"  📜 {_label(actor)} lets the prescript slip — Prescript Debt ×{stacks} "
             f"(+{int(KARMA_DT_PER * stacks * 100)}% damage taken).")
     if stacks >= KARMA_BURST_AT:
         _retribution(actor)
 
 
 def _retribution(actor):
-    """Karmic Retribution: consume all Karma and collect the debt."""
+    """Debt Collected: consume all Prescript Debt."""
     actor["prescript_karma_stacks"] = 0
     _refresh_karma_debuff(actor)
     dmg = int(_actor_max_hp(actor) * KARMA_BURST_PCT) + KARMA_BURST_FLAT
@@ -223,7 +223,7 @@ def _retribution(actor):
         dmg = max(1, dmg // 2)
     actor["current_hp"] = max(0, actor.get("current_hp", 0) - dmg)
     suffix = " (halved by their guard)" if halved else ""
-    c_print(f"  📜 KARMIC RETRIBUTION — the ledger collects its due! "
+    c_print(f"  📜 DEBT COLLECTED — the ledger collects its due! "
             f"{_label(actor)} takes {dmg} damage{suffix}.")
     if actor.get("current_hp", 0) <= 0:
         from combat.status_effects import try_consume_death_ward
@@ -231,7 +231,7 @@ def _retribution(actor):
             if not actor.pop("_eh_emperor_saved", False):
                 c_print(f"  {_label(actor)}'s Undying Vow flares — survival at 1 HP!")
         else:
-            c_print(f"  {_label(actor)} collapses under the karmic weight!")
+            c_print(f"  {_label(actor)} collapses under the weight of the debt!")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -367,7 +367,7 @@ def issue_prescripts(player, enemies):
 def evaluate_round(player, enemies):
     """Round end: resolve Prescripts, apply Grace regen, clear round state.
 
-    Returns "dead" if the player died to Karmic Retribution, else None.
+    Returns "dead" if the player died to Debt Collected, else None.
     Evaluation must only run from the round-end block of a combat loop —
     never from `_tick_all_state` (which also runs at combat end).
     """

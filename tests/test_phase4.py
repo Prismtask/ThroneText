@@ -85,10 +85,6 @@ class TestPhase4DeathPenalty(unittest.TestCase):
             if os.path.exists(save_file):
                 os.unlink(save_file)
 
-    def test_terminal_handler_still_works(self):
-        from utils import handle_player_death
-        self.assertTrue(callable(handle_player_death))
-
 
 class TestPhase4Imports(unittest.TestCase):
     """Verify all Phase 4 modules import cleanly."""
@@ -212,10 +208,6 @@ class TestPhase4Utils(unittest.TestCase):
     def test_apply_death_penalty_exists(self):
         from utils import apply_death_penalty
         self.assertTrue(callable(apply_death_penalty))
-
-    def test_handle_player_death_still_exists(self):
-        from utils import handle_player_death
-        self.assertTrue(callable(handle_player_death))
 
     def test_set_font_size_exists(self):
         from gui.theme import set_font_size

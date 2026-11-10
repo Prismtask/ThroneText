@@ -63,7 +63,7 @@ TIDEBREAK_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deep. The walls are thick.",
-        "Eight hours of quiet. The storm will howl outside.",
+        "A night of quiet. The storm will howl outside.",
         "Dream of calm seas. You won't find them here.",
         "The inn is safe. The sea can't reach you.",
     ],

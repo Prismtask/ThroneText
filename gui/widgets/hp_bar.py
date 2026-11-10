@@ -108,6 +108,12 @@ class HPBar(tk.Canvas):
         self._maximum = max(1, maximum)
         self._draw()
 
+    def set_width(self, width: int):
+        """Resize the bar (used when a party card shrinks to an equal slot)."""
+        self._width = max(20, int(width))
+        self.configure(width=self._width)
+        self._draw()
+
     def get_percentage(self) -> float:
         """Return the fill percentage (0.0–100.0)."""
         return (self._current / self._maximum) * 100.0

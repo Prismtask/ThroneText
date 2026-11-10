@@ -191,6 +191,173 @@ def _owned_races(owned_keys):
     return races
 
 
+# ── Wonderland progress helpers ───────────────────────────────────────────────
+# Heroine state keys mirror combat/ally.py's private maps. They are duplicated
+# here so the quest runtime stays import-light and usable from headless tests.
+_WL_HEROINE_STATE_KEYS = {
+    "alice":    "wl_alice_state",
+    "red_hood": "wl_redhood_state",
+    "dorothy":  "wl_dorothy_state",
+}
+_WL_HEROINE_PERM_FLAGS = {
+    "alice":    "wonderland_heroine_alice_permanent",
+    "red_hood": "wonderland_heroine_redhood_permanent",
+    "dorothy":  "wonderland_heroine_dorothy_permanent",
+}
+_WL_HEROINE_QUEST_IDS = {
+    "alice":    "sq_wonderland_alice",
+    "red_hood": "sq_wonderland_red_hood",
+    "dorothy":  "sq_wonderland_dorothy",
+}
+# Reaching floor N+1 proves the floor-N boss was beaten (the dungeon cannot
+# advance past a living Wonderland superboss). Used only as an old-save
+# fallback when the explicit flag predates the current save format.
+_WL_BOSS_FLOOR_FALLBACK = {
+    "queen_of_hearts": 11,
+    "big_bad_wolf":    21,
+    "wicked_witch":    31,
+    "jabberwock":      41,
+    "mary_sue":        51,
+}
+
+
+def _wonderland_max_floor(player):
+    """Highest floor reached in Wonderland (1 before the first run)."""
+    prog = (player.get("city_floors") or {}).get("wonderland") or {}
+    try:
+        return int(prog.get("max_floor", 1))
+    except (TypeError, ValueError):
+        return 1
+
+
+def _wonderland_entered(player):
+    """True once the player has actually stepped through the book.
+
+    Kept separate from ``wonderland_unlocked`` so a future unlock event or a
+    legacy save cannot pre-check the entry objective.
+    """
+    if player.get("wonderland_visited") or player.get("wonderland_active"):
+        return True
+    # Old-save backfill: any Wonderland progress proves a past visit.
+    if "wonderland" in (player.get("city_floors") or {}):
+        return True
+    if any(player.get(f"wl_boss_defeated_{boss}")
+           for boss in _WL_BOSS_FLOOR_FALLBACK):
+        return True
+    if any(player.get(key) for key in _WL_HEROINE_STATE_KEYS.values()):
+        return True
+    if player.get("wonderland_saved_temp_heroines"):
+        return True
+    return False
+
+
+def _wonderland_floor_at_least(player, target):
+    try:
+        return _wonderland_max_floor(player) >= int(target)
+    except (TypeError, ValueError):
+        return False
+
+
+def _wonderland_biomes_f20(player):
+    """Distinct non-Wonderland biomes with Floor 20 cleared.
+
+    Matches the Arcane Tower's book gate exactly: same-biome cities share a
+    dungeon depth, so two city records in one biome must not count twice.
+    """
+    from leveling import get_biomes_cleared_to_cap
+    return len(get_biomes_cleared_to_cap(player, 20))
+
+
+def _wonderland_gate_met(player, target):
+    try:
+        need = int(target)
+    except (TypeError, ValueError):
+        need = 2
+    return _wonderland_biomes_f20(player) >= need
+
+
+def _holds_looking_glass_shard(player, target="looking_glass_shard"):
+    return any(item.get("id") == "looking_glass_shard"
+               for item in player.get("inventory", []))
+
+
+def _wonderland_guide_visible(player):
+    """Show the way-in quest once Wonderland is plausible for this save.
+
+    Waiting for ``wonderland_unlocked`` is too late — that flag is set by the
+    book itself. The guide appears once the player has a shard, has cleared a
+    Floor-20 biome, or already has Wonderland progress.
+    """
+    if (player.get("wonderland_unlocked") or player.get("wonderland_active")
+            or _wonderland_entered(player)):
+        return True
+    if _holds_looking_glass_shard(player):
+        return True
+    return _wonderland_biomes_f20(player) >= 1
+
+
+def _wonderland_boss_defeated(player, target):
+    """True when a Wonderland superboss is down (flag, with floor fallback)."""
+    if player.get(f"wl_boss_defeated_{target}"):
+        return True
+    need = _WL_BOSS_FLOOR_FALLBACK.get(target)
+    return bool(need and _wonderland_max_floor(player) >= need)
+
+
+def _heroine_in_party(player, heroine_key):
+    return any(a.get("_heroine_key") == heroine_key
+               for a in player.get("allies", []))
+
+
+def _guest_state(player, heroine_key):
+    from wonderland_guests import get_guest_state
+    return get_guest_state(player, heroine_key)
+
+
+def _heroine_met(player, heroine_key):
+    """True once the heroine has been spoken to (or recruited by an old save)."""
+    state = player.get(_WL_HEROINE_STATE_KEYS.get(heroine_key, ""), "unmet")
+    if state not in ("", "unmet", None):
+        return True
+    # Arriving at the inn is not the same as meeting her: the Journal arc
+    # starts after the first conversation. Late/resolved arcs count as met.
+    if _guest_state(player, heroine_key) in ("accepted", "late", "resolved"):
+        return True
+    if player.get(_WL_HEROINE_PERM_FLAGS.get(heroine_key, "")):
+        return True
+    if _heroine_in_party(player, heroine_key):
+        return True
+    return any(a.get("_heroine_key") == heroine_key
+               for a in player.get("wonderland_saved_temp_heroines", []))
+
+
+def _heroine_recruited(player, heroine_key):
+    """True once the heroine has joined the party (temp or permanent)."""
+    if _guest_state(player, heroine_key) in ("accepted", "resolved"):
+        return True
+    if player.get(_WL_HEROINE_PERM_FLAGS.get(heroine_key, "")):
+        return True
+    if player.get(_WL_HEROINE_STATE_KEYS.get(heroine_key, "")) == "temp":
+        return True
+    if _heroine_in_party(player, heroine_key):
+        return True
+    return any(a.get("_heroine_key") == heroine_key
+               for a in player.get("wonderland_saved_temp_heroines", []))
+
+
+def _heroine_permanent(player, heroine_key):
+    """True once the heroine's arc has resolved her into a permanent ally."""
+    if _guest_state(player, heroine_key) == "resolved":
+        return True
+    if player.get(_WL_HEROINE_PERM_FLAGS.get(heroine_key, "")):
+        return True
+    if player.get(_WL_HEROINE_STATE_KEYS.get(heroine_key, "")) == "permanent":
+        return True
+    return any(a.get("_heroine_key") == heroine_key
+               and not a.get("_wonderland_temp", True)
+               for a in player.get("allies", []))
+
+
 def sync_resonance_tier(player):
     """Monotonic backfill: keep the tier in step with the household.
 
@@ -311,6 +478,36 @@ def notify_objective(player, obj_type, target):
     return update_quests(player, obj_type, target)
 
 
+def _sync_wonderland_quests(player):
+    """Auto-start the Wonderland side-quest chain.
+
+    Wonderland has no offer board: the book, the tea party and the Storybook
+    Dungeon are the givers. Running this on every update means old saves pick
+    the chain up on their next city entry, and any milestone reached out of
+    order still resolves through the state checks.
+    """
+    messages = []
+    if _wonderland_guide_visible(player):
+        messages.extend(start_quest(player, "sq_wonderland_00"))
+
+    if not (player.get("wonderland_unlocked") or player.get("wonderland_active")):
+        return messages
+
+    messages.extend(start_quest(player, "sq_wonderland_01"))
+
+    for heroine_key, quest_id in _WL_HEROINE_QUEST_IDS.items():
+        if _heroine_met(player, heroine_key):
+            messages.extend(start_quest(player, quest_id))
+
+    # The road opens once the Queen's chapter closes (or an old save is
+    # already deep enough that the intro objectively catches up).
+    state = ensure_quest_state(player)
+    if ("sq_wonderland_01" in state["completed"]
+            or _wonderland_max_floor(player) >= 20):
+        messages.extend(start_quest(player, "sq_wonderland_02"))
+    return messages
+
+
 def update_quests(player, obj_type=None, target=None):
     """Single entry point for quest hooks. Fire-and-forget safe.
 
@@ -320,7 +517,7 @@ def update_quests(player, obj_type=None, target=None):
     Returns display messages.
     """
     state = ensure_quest_state(player)
-    messages = []
+    messages = list(_sync_wonderland_quests(player))
 
     if obj_type == "visit_service" and target:
         if target not in state["seen_services"]:
@@ -436,7 +633,11 @@ def _complete_ready_quests(player):
         quest = QUESTS.get(quest_id)
         if not quest or quest.get("turn_in"):
             continue
-        entry = state["active"][quest_id]
+        # Completing one quest can start (and immediately complete) its
+        # successor, which may remove another quest from this snapshot.
+        entry = state["active"].get(quest_id)
+        if entry is None:
+            continue
         if all(entry["objectives"].values()):
             messages.extend(complete_quest(player, quest_id))
     return messages
@@ -464,6 +665,21 @@ _STATE_CHECKS = {
     "collection_count": lambda player, target: len(_owned_girl_keys(player)) >= int(target),
     "race_count":       lambda player, target: len(_owned_races(_owned_girl_keys(player))) >= int(target),
     "married":          lambda player, target: len(player.get("married_girls", [])) >= int(target),
+    # Wonderland side quests — all state-based so old saves catch up.
+    # The guide's prerequisite objectives also pass once the player has
+    # entered, so a save from before the guide existed never leaves an
+    # uncompletable "hold the shard" objective behind.
+    "wonderland_enter":    lambda player, target: _wonderland_entered(player),
+    "wonderland_guest_scene": lambda player, target: bool(player.get("wl_hatter_three_guests_seen")),
+    "wonderland_gate":     lambda player, target: (_wonderland_entered(player)
+                                                   or _wonderland_gate_met(player, target)),
+    "wonderland_shard":    lambda player, target: (_wonderland_entered(player)
+                                                   or _holds_looking_glass_shard(player, target)),
+    "wonderland_floor":    _wonderland_floor_at_least,
+    "wonderland_boss":     _wonderland_boss_defeated,
+    "heroine_met":         _heroine_met,
+    "heroine_recruited":   _heroine_recruited,
+    "heroine_permanent":   _heroine_permanent,
 }
 
 

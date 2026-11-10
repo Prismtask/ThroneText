@@ -57,6 +57,11 @@ def get_action_menu(player, enemies):
     if is_abyss_fang_available(player):
         actions.append(('w', 'Wield the Abyss'))
 
+    # Moonlight Greatsword – weapon skill (magical AoE basics for 3 turns)
+    from combat.weapon.moonlight_greatsword import is_moonlight_available
+    if is_moonlight_available(player):
+        actions.append(('m', 'Moonlight'))
+
     # Captain's Cutlass – Crew Rally
     if is_captain_cutlass_available(player):
         actions.append(('r', 'Crew Rally'))

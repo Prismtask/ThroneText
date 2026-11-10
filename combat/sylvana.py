@@ -52,6 +52,27 @@ def _make_fake_copy(boss):
 def _is_sylvana(e):
     return e.get("key") == "queen_of_mirrors_sylvana"
 
+
+def _grant_cracked_mirror(player):
+    """Grant the Cracked Mirror key item once, on the Queen's defeat.
+
+    The mirror is the recruitment hook for the house restoration arc. Key
+    items bypass bag capacity, and the unique id makes this idempotent.
+    """
+    if player.get("sylvana_mirror_fixed") or player.get("sylvana_recruited"):
+        return
+    if any(i.get("id") == "cracked_mirror"
+           for i in player.get("inventory", [])):
+        return
+    from resources.items import build_item
+    from inventory import add_item_to_inventory
+    mirror = build_item("cracked_mirror", rarity="unique")
+    if add_item_to_inventory(player, mirror):
+        player["sylvana_mirror_obtained"] = True
+        c_print("\n  [KEY ITEM ACQUIRED] Cracked Mirror")
+        c_print("  One shard of the Queen's glass survives, warm to the touch.")
+        c_print("  Perhaps it can be mended somewhere safe - at home.")
+
 def _nullify_player_buff(player):
     """
     Null ability – remove one random active buff from the player.
@@ -116,11 +137,9 @@ def combat_sylvana(player, floor=None, enemies=None):
             boss["max_hp"] = boss["hp"]
             enemies.append(boss)
 
-    c_print("\n" + "=" * 55)
-    c_print("A thousand reflections shatter apart and reassemble —")
+    c_print("\nA thousand reflections shatter apart and reassemble —")
     c_print("Queen of Mirrors Sylvana steps forward, smiling coldly.")
     c_print(f"{boss['name']} — HP: {boss['hp']}")
-    c_print("=" * 55)
     c_input("Press Enter to face the Queen of Mirrors...")
 
     context = {
@@ -162,11 +181,9 @@ def combat_sylvana(player, floor=None, enemies=None):
 
         if not ctx["final_form"] and b["hp"] <= int(b["max_hp"] * 0.30):
             ctx["final_form"] = True
-            c_print("\n" + "!" * 55)
             c_print("[FINAL FORM] Sylvana screams. Every surface erupts into mirrors!")
             c_print("Her reflection multiplies endlessly — she is EVERYWHERE NOW.")
             c_print("Double actions become permanent. Reflections spawn every 3 turns.")
-            c_print("!" * 55)
             c_input("Press Enter...")
 
         should_spawn = False
@@ -268,5 +285,6 @@ def combat_sylvana(player, floor=None, enemies=None):
 
     if result == "victory":
         c_print("\n✨ The mirrors all shatter at once. Sylvana dissipates into shards of light.")
-        
+        _grant_cracked_mirror(player)
+
     return result

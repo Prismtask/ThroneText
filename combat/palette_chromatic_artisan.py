@@ -410,13 +410,11 @@ def _attack_fixative(ctx, boss, party):
 def _start_signature(ctx, boss):
     ctx["signature_charging"] = SIGNATURE_CHARGE_TURNS
     ctx["signature_dmg"] = 0
-    c_print("\n" + "=" * 50)
-    c_print("  🖋️  Palette steps back. The brush stills.")
+    c_print("\n  🖋️  Palette steps back. The brush stills.")
     c_print("      In the corner of the canvas, a name begins to form —")
     c_print("      YOUR name.")
     c_print("      Signature is being painted! Deal " + str(SIGNATURE_INTERRUPT_DMG) +
             "+ damage to interrupt it!")
-    c_print("=" * 50)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -573,11 +571,9 @@ def _blank_canvas_transition(ctx, boss, player):
     heal = int(boss.get("max_hp", 900) * 0.05)
     boss["hp"] = min(boss["hp"] + heal, boss.get("max_hp", boss["hp"]))
 
-    c_print("\n" + "-" * 50)
-    c_print("  Palette sweeps the canvas clean. Begin again.")
+    c_print("\n  Palette sweeps the canvas clean. Begin again.")
     c_print("  All Paint, debuffs, and afflictions — yours and theirs — are gone.")
     c_print(f"  The pristine surface restores Palette for {heal} HP.")
-    c_print("-" * 50)
     c_input("\nPress Enter...")
 
 
@@ -590,12 +586,10 @@ def _final_canvas_transition(ctx, boss, player):
     _apply_stance(boss, ctx)
 
     sec = COLOR_DATA[ctx["secondary_color"]]
-    c_print("\n" + "-" * 50)
-    c_print("  Palette smiles — the first true smile of the evening.")
+    c_print("\n  Palette smiles — the first true smile of the evening.")
     c_print('  "Now," they whisper, "the masterpiece."')
     c_print(f"  DUAL PALETTE: {sec['emoji']} {COLOR_NAMES[ctx['secondary_color']]} joins the canvas!")
     c_print("  Both colors' passives, resistances, and weaknesses are active.")
-    c_print("-" * 50)
     c_input("\nPress Enter...")
 
 
@@ -647,8 +641,7 @@ def combat_palette(player, floor=None, enemies=None):
     boss["_player_ref"] = player
 
     # Opening narration
-    c_print("\n" + "=" * 60)
-    c_print("The walls here are not walls. They are canvas — stretched over nothing,")
+    c_print("\nThe walls here are not walls. They are canvas — stretched over nothing,")
     c_print("stapled to the air itself. Half-finished landscapes bleed into each other:")
     c_print("a burning forest drowning in a frozen sea, a lightning-struck desert.")
     c_print("")
@@ -658,7 +651,6 @@ def combat_palette(player, floor=None, enemies=None):
     c_print("They turn. Their eyes are blank, wet canvases.")
     c_print("")
     c_print('"Be still," they say, "or do not. A smear is still a mark."')
-    c_print("=" * 60)
     c_print(f"\n  Palette, the Chromatic Artisan — HP: {boss['hp']}")
     c_input("\nPress Enter to face the Chromatic Artisan...")
 
@@ -736,11 +728,9 @@ def combat_palette(player, floor=None, enemies=None):
                 ctx["signature_cooldown"] = SIGNATURE_COOLDOWN
                 return 0, True, None, 1.0, 0
 
-            c_print("\n" + "=" * 50)
             c_print(f"  🖋️  The name is finished. {pl['name']}.")
             c_print("      Palette flicks the brush once — and the canvas decides.")
             c_print("      SIGNATURE — instant defeat. It cannot be defended.")
-            c_print("=" * 50)
 
             # Route the instant KO through death-prevention effects.
             # Surviving is the rarest mark — "You held the canvas."
@@ -860,8 +850,7 @@ def combat_palette(player, floor=None, enemies=None):
 
     if result == "victory":
         if not player.get("boss_defeated_palette"):
-            c_print("\n" + "=" * 60)
-            c_print("Palette's brush falls. It rolls once, leaving a single perfect")
+            c_print("\nPalette's brush falls. It rolls once, leaving a single perfect")
             c_print("line of white across the floor.")
             c_print("")
             c_print("The living canvas shudders — and goes still. The landscapes")
@@ -870,7 +859,6 @@ def combat_palette(player, floor=None, enemies=None):
             c_print("")
             c_print("Palette sinks to their knees, staring at their hands.")
             c_print('"...you finished it," they whisper. "The painting is done."')
-            c_print("=" * 60)
 
             # Grant loot
             from resources.items import build_item
@@ -890,7 +878,6 @@ def combat_palette(player, floor=None, enemies=None):
         held_canvas = context.get("player_held_the_canvas")
         let_it_dry = context.get("player_survived_burst")
         if (held_canvas or let_it_dry) and not player.get("palette_recruited") and not player.get("palette_recruit_declined"):
-            c_print("\n" + "-" * 50)
             if held_canvas:
                 c_print("As you turn to leave, Palette speaks — and this time the")
                 c_print("hollow Artisan voice cracks into something small and shaken.")
@@ -919,7 +906,6 @@ def combat_palette(player, floor=None, enemies=None):
                 c_print('"If... if there is room on your canvas — I mean, in your')
                 c_print('company — I would very much like to... to paint alongside')
                 c_print('you. Not as the Artisan. Just as... Palette."')
-            c_print("-" * 50)
 
             choice = c_input("\nLet Palette join your party? (y/n): ").strip().lower()
             if choice == "y":

@@ -74,12 +74,10 @@ def trigger_divine_lament(actor, enemies, source, is_player=True):
     from combat.weapon.chance_and_choice import apply_chance_and_choice
     dmg = apply_chance_and_choice(actor, dmg)   # one flip for the burst
 
-    c_print("\n" + "✦" * 55)
-    c_print("  ☁ DIVINE LAMENT ☁")
+    c_print("\n  ☁ DIVINE LAMENT ☁")
     c_print("  The Tarnished Jade PINS shatter in unison!")
     c_print("  Heaven's sorrow erupts through the wounds —")
     c_print("  all enemies feel the dragon's grief!")
-    c_print("✦" * 55)
 
     for enemy in enemies:
         if enemy.get("hp", 0) > 0:
@@ -160,6 +158,17 @@ def check_tarnished_jade_trigger(actor, incoming_damage, enemies, attacker=None,
     current_hp = actor["current_hp"]
     pins = actor.get("tarnished_jade_pins", 0)
 
+    # The shatter guards the moment the wearer is brought DOWN to the line.
+    # It must be paid for with pins (no pins, no absorb), and it only fires
+    # while the wearer still stands at 20% or above. Two loops used to live
+    # here: with pins == 0 the Wedge branch still repelled every blow while
+    # consuming nothing, and with a rebuilt single pin a full repulse
+    # re-armed every second hit at low HP — "it triggers every round" /
+    # "i cant seem to die here" (2026-10-15 bug report). Under the line the
+    # Jade is spent: blows land, and the pins' own toll keeps digging.
+    if pins <= 0 or current_hp < threshold:
+        return True, None
+
     # Check if damage would bring HP to <= 20% (Divine Lament) or < 20% (Wedge Backlash)
     projected_hp = current_hp - incoming_damage
 
@@ -199,15 +208,20 @@ def apply_tarnished_jade_turn_start(actor, enemies, is_player=True):
     projected_hp = actor["current_hp"] - pin_damage
     name = "Your" if is_player else f"{actor.get('name', 'The wielder')}'s"
 
+    # Same arrival rule as the attack path: the pins shatter when their own
+    # toll brings the wearer DOWN to the line from at/above it. Already
+    # under the line, there is no second save — the pins only dig deeper.
+    arriving = actor["current_hp"] >= threshold
+
     # Check Divine Lament trigger (projected HP <= 20% AND pins >= 6)
-    if projected_hp <= threshold and pins >= 6:
+    if arriving and projected_hp <= threshold and pins >= 6:
         c_print(f"\n  ⚡ {name} Tarnished Jade's {pins} pins pulse with divine agony...")
         c_print(f"  {name} body buckles under the weight of heaven — but the pins SHATTER!")
         trigger_divine_lament(actor, enemies, "turn_start", is_player)
         return True
 
     # Check Wedge Backlash trigger (projected HP < 20% AND pins < 6)
-    if projected_hp < threshold and pins < 6:
+    if arriving and projected_hp < threshold and pins < 6:
         c_print(f"\n  ⚡ {name} Tarnished Jade's {pins} pins pulse weakly...")
         c_print(f"  {name} body buckles — the pins shatter too soon!")
         trigger_wedge_backlash(actor, enemies, None, "turn_start", is_player)

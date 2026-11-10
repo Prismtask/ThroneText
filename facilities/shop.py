@@ -1,9 +1,19 @@
 # facilities/shop.py
 import random
-from resources.items import ITEMS, build_item, ITEM_RARITY, is_unique_item
+
+import karma
+from karma_dialogue import service_line
+from resources.items import (
+    ITEMS, build_item, ITEM_RARITY, is_unique_item,
+    market_value, market_anchor_level, clamp_rarity, soften_rarity,
+)
+from resources.item_generation import pick_weapon_id, pick_family_id, roll_shop_grade
 from resources.cities import CITIES
 from utils import advance_time
-from inventory import add_item_to_inventory, get_inventory_caps, count_inventory, get_sorted_equipment, get_sorted_items
+from inventory import (
+    add_item_to_inventory, get_inventory_caps, count_inventory,
+    get_sorted_equipment, get_sorted_items, is_sellable_item,
+)
 from combat.stats import get_effective_attribute
 from city_dialogue import service_dialogue   # changed import
 from facilities.travel_events import _item_stat_line
@@ -12,30 +22,87 @@ from gui.terminal import term
 def get_effective_charisma(player):
     return get_effective_attribute(player, "Charisma")
 
+
+# ── Shop rarity gating (economy tuning — docs/item_economy_tuning_design.md) ──
+SHOP_RARITIES = ["common", "uncommon", "rare", "epic", "legendary"]
+SHOP_TIER_WEIGHTS = {
+    "early": [70, 26, 4, 0, 0],
+    "mid":   [45, 33, 18, 4, 0],
+    "late":  [25, 30, 28, 13, 4],
+}
+SHOP_LATE_HIGH_WEIGHTS = [12, 24, 30, 23, 11]
+# Shops never stock legendary below grade 3 (audit P2 / D-O): legendary
+# fodder must stay a drop-side resource for the scroll sacrifice economy.
+SHOP_LEGENDARY_MIN_GRADE = 3
+
+
+def _shop_tier(shop_config):
+    """City shop tier, explicit or derived from the city's base prices."""
+    explicit = shop_config.get("shop_tier")
+    if explicit in SHOP_TIER_WEIGHTS:
+        return explicit
+    other = shop_config.get("base_price_other", 45)
+    if other <= 45:
+        return "early"
+    if other <= 60:
+        return "mid"
+    return "late"
+
+
+def _player_rarity_cap(player):
+    """Soft progression clamp: epic at level 12+, legendary at 20+."""
+    level = player.get("level", 1)
+    if level >= 20:
+        return "legendary"
+    if level >= 12:
+        return "epic"
+    return "rare"
+
+
+def _gate_legendary(item_id, rarity):
+    """Shops never stock legendary — legendary stays drop/scroll-only (D-O)."""
+    return "epic" if rarity == "legendary" else rarity
+
 def get_discounted_price(base_price, player, city_id):
     charisma = get_effective_charisma(player)
-    favor = player.get("favor", {}).get(city_id, 0)
-    
-    # Max 40% from Charisma, Max 30% from Favor, Max Total 70%
     discount_percent = min(40, max(0, (charisma - 8) * 0.5))
-    favor_discount = min(30, favor * 0.5) 
-    total_discount = min(70, discount_percent + favor_discount)
+    # Deed titles: small additive discount (capped at 10% in titles.mod).
+    from titles import mod as _title_mod
+    title_bonus = int(round(_title_mod(player, "shop_discount_pct") * 100))
+
+    if karma.is_enabled(player):
+        # Karma is the only standing score; there is no per-city favor.
+        karma_bonus = karma.get_shop_karma_pct(player)
+        total_discount = max(-20, min(70, discount_percent + karma_bonus + title_bonus))
+    else:
+        # Karma-off: Charisma and title deeds set the shop price.
+        total_discount = min(70, discount_percent + title_bonus)
     
     discounted = int(base_price * (100 - total_discount) / 100)
     # Daily events: Month-End Festival — extra 20% off everything
     event_discount = player.get("daily_effects", {}).get("shop_discount", 0.0)
     if event_discount:
         discounted = int(round(discounted * (1.0 - event_discount)))
-    # Daily events: Tax Day — the crown takes its cut on all goods
+    # Daily events: Tax Day — the crown takes its cut on all goods.
+    # High Karma is exempt; low Karma pays double.
     surcharge = player.get("daily_effects", {}).get("shop_surcharge", 0.0)
+    if surcharge and karma.is_enabled(player):
+        karma_value = karma.get_karma(player)
+        if karma_value >= 50:
+            surcharge = 0.0
+        elif karma_value <= -50:
+            surcharge *= 2
     if surcharge:
         discounted = int(round(discounted * (1.0 + surcharge)))
     return max(1, discounted)
 
 
 def _sell_price(item, player):
-    rarity_mult = ITEM_RARITY.get(item.get("rarity", "common"), {}).get("price_mult", 1.0)
-    base = int(12 * rarity_mult)
+    if item.get("type") == "equipment":
+        anchor = market_anchor_level(player)
+        base = int(round(2.5 * market_value(item, anchor)))
+    else:
+        base = 12  # legacy flat rate for consumables / utility / scrolls
     charisma = get_effective_charisma(player)
     return int(base * (1 + (charisma - 8) / 100))
 
@@ -137,7 +204,7 @@ def sell_items(player):
     sorted_items = get_sorted_items(player)
     all_items = sorted_equip + sorted_items
     # Filter out key items and crafting materials (cannot be sold)
-    all_items = [i for i in all_items if i.get("type") not in ("key_item", "crafting_material")]
+    all_items = [i for i in all_items if is_sellable_item(i)]
     if not all_items:
         term.print("No sellable items.")
         return
@@ -278,6 +345,8 @@ def _cargo_market(player, city_id):
             if add_item_to_inventory(player, item):
                 stock[buy_choice][1] -= 1
                 weight += g["weight"]
+                from titles import note_deed
+                note_deed(player, "gold_spent_shops", price)
                 term.print(f"You load {g['name']} ({g['weight']} wt) for {price}g.")
                 advance_time(player, 15)
             else:
@@ -334,6 +403,8 @@ def upgrade_backpack(player):
         term.print("Not enough gold.")
         return
     player["gold"] -= cost
+    from titles import note_deed
+    note_deed(player, "gold_spent_shops", cost)
     player["inventory_upgrade"] = upgrade + 1
     term.print(f"Backpack upgraded to level {upgrade + 1}!")
 
@@ -343,38 +414,60 @@ def city_shop(player, city_id="solmere"):
     service_dialogue(city_id, "shop", "enter")   # changed
     city = CITIES.get(city_id, CITIES["solmere"])
     shop_config = city["shop"]
-    stock_key = f"shop_stock_{city_id}"
+    stock_key = f"shop_stock5_{city_id}"
     day_key = f"last_shop_day_{city_id}"
     if stock_key not in player or player.get(day_key) != player.get("day", 1):
         player[stock_key] = []
         stock_size = shop_config.get("stock_size", 8)
+        anchor = market_anchor_level(player)
         
-        # Filter out unique items, ascension stones (temple-only), and wonderland-only items
-        available_item_ids = [k for k, v in ITEMS.items() if not v.get("unique") and v.get("type") != "ascension" and not v.get("wonderland_only") and not v.get("black_market_only") and not v.get("no_random_stock")]
+        # Filter out unique items, ascension stones (temple-only), key/quest items,
+        # and wonderland-/black-market-only items
+        available_item_ids = [
+            k for k, v in ITEMS.items()
+            if not v.get("unique")
+            and v.get("type") not in ("ascension", "key_item")
+            and not v.get("wonderland_only")
+            and not v.get("black_market_only")
+            and not v.get("no_random_stock")
+        ]
+        tier = _shop_tier(shop_config)
+        other_item_ids = [k for k in available_item_ids if ITEMS[k].get("type") != "equipment"]
         
         for _ in range(stock_size):
-            item_id = random.choice(available_item_ids)
-            base_def = ITEMS[item_id]
-            is_equipment = base_def.get("type") == "equipment"
+            family = random.choices(
+                ["weapon", "armor", "accessory", "other"],
+                weights=[28, 12, 18, 42])[0]
+            if family == "weapon":
+                item_id = pick_weapon_id(roll_shop_grade(tier), city.get("biome"))
+                is_equipment = True
+            elif family in ("armor", "accessory"):
+                item_id = pick_family_id(family, roll_shop_grade(tier), city.get("biome"))
+                is_equipment = True
+            else:
+                item_id = random.choice(other_item_ids)
+                is_equipment = False
             
             if is_equipment:
-                # Equipment: roll rarity with new narrower weights (includes legendary now)
-                if shop_config.get("rarity_bias") == "higher":
-                    rarity = random.choices(
-                        ["common", "uncommon", "rare", "epic", "legendary"],
-                        weights=[15, 25, 28, 20, 12])[0]
-                else:
-                    rarity = random.choices(
-                        ["common", "uncommon", "rare", "epic", "legendary"],
-                        weights=[30, 32, 22, 12, 4])[0]
+                # Equipment: city-tier weights + progression clamp + soft ceiling
+                weights = SHOP_TIER_WEIGHTS[tier]
+                if tier == "late" and shop_config.get("rarity_bias") == "higher":
+                    weights = SHOP_LATE_HIGH_WEIGHTS
+                rarity = random.choices(SHOP_RARITIES, weights=weights)[0]
+                rarity = clamp_rarity(rarity, _player_rarity_cap(player))
+                rarity = soften_rarity(item_id, rarity)
+                rarity = _gate_legendary(item_id, rarity)
             else:
                 # Consumables/utilities/scrolls: always common — no rarity scaling
                 rarity = "common"
             
             item = build_item(item_id, rarity)
             if is_equipment:
-                base_price = shop_config.get("base_price_other", 45)
-                base_price = int(base_price * ITEM_RARITY[rarity]["price_mult"])
+                base_price = int(round(
+                    shop_config.get("base_price_other", 45)
+                    * market_value(item, anchor) / 4
+                ))
+                base_price = max(1, base_price)
             else:
                 # Consumables/utility/scroll: flat price, no rarity multiplier
                 base_price = shop_config.get("base_price_consumable", 45)
@@ -388,19 +481,28 @@ def city_shop(player, city_id="solmere"):
     def show_shop():
         term.clear()
         service_dialogue(city_id, "shop", "enter")
+        shop_line = service_line(player, "shop", city_id)
+        if shop_line:
+            term.print(f'  "{shop_line}"')
         equip_cap, other_cap = get_inventory_caps(player)
         equip_count, other_count = count_inventory(player)
         term.print(f"=== {city['name'].upper()} MARKET ===")
         term.print(f"Gold: {player.get('gold', 0)}")
         term.print(f"Inventory: {equip_count}/{equip_cap} equipment | {other_count}/{other_cap} items")
         
-        # Display favor and total discount
-        favor = player.get('favor', {}).get(city_id, 0)
+        # Display the shared standing score and total discount.
         c_disc = min(40, max(0, (get_effective_charisma(player) - 8) * 0.5))
-        f_disc = min(30, favor * 0.5)
-        total_disc = min(70, c_disc + f_disc)
-        
-        term.print(f"Charisma & Favor ({favor}): → {100 - total_disc:.0f}% of base price (max 70%)\n")
+        if karma.is_enabled(player):
+            tier = karma.get_karma_tier(player)
+            k_disc = tier["buy_pct"]
+            total_disc = max(-20, min(70, c_disc + k_disc))
+            term.print(f"Charisma {c_disc:.0f}% | Karma {tier['label']} "
+                       f"({karma.get_karma(player):+d}) {k_disc:+d}% → "
+                       f"{100 - total_disc:.0f}% of base price (max 70%)\n")
+        else:
+            total_disc = min(70, c_disc)
+            term.print(f"Charisma {c_disc:.0f}% → "
+                       f"{100 - total_disc:.0f}% of base price (max 70%)\n")
         if player.get("daily_effects", {}).get("shop_discount"):
             term.print("🏮 Month-End Festival: all shops offer 20% off today!\n")
         if player.get("daily_effects", {}).get("shop_surcharge"):
@@ -456,6 +558,8 @@ def city_shop(player, city_id="solmere"):
                 player["gold"] -= final_price
                 if add_item_to_inventory(player, item.copy()):
                     del shop_stock[buy_choice]
+                    from titles import note_deed
+                    note_deed(player, "gold_spent_shops", final_price)
                     service_dialogue(city_id, "shop", "success")
                     advance_time(player, 15)
                     term.pause()

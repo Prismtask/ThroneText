@@ -1,0 +1,22 @@
+# pyproject.toml — lives at the PROJECT ROOT, next to launcher.py
+#
+# Tooling config only (no [project]/[build-system] yet). That keeps `python
+# launcher.py` and the PyInstaller build byte-for-byte unchanged while giving
+# pytest a rootdir, which is what removes the sys.path hacks from tests/.
+#
+# A [project] table (name/version/dependencies) is added later, in the same
+# commit that creates the `pandemonium/` package — a flat layout with 27
+# top-level modules has nothing sane for setuptools to auto-discover today.
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+# Put the repo root on sys.path for tests, so `import utils` works today and
+# `import pandemonium.core.utils` works after the move — no per-file
+# sys.path.insert() needed.
+pythonpath = ["."]
+norecursedirs = [
+    ".git", ".venv", ".idea", ".pytest_cache", "__pycache__",
+    "build", "dist",
+    "docs", "wiki", "resources", "savefile", "scripts",
+]

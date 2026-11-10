@@ -157,7 +157,8 @@ def use_blank_canvas(actor, is_player, player):
     # ── The cost: a true blank canvas wipes the wearer's own buffs too ──
     actor["active_buffs"] = [
         b for b in actor.get("active_buffs", [])
-        if b.get("type") in ("blessing", "well_rested", "floor_buff")
+        if b.get("type") in ("blessing", "well_rested", "floor_buff",
+                             "shared_night", "beloved")
     ]
     msgs.append("⚪ The canvas takes its price — all of your own buffs are wiped away.")
 

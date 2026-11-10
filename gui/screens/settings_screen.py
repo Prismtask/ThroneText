@@ -131,6 +131,20 @@ class SettingsScreen(BaseScreen):
             font=Theme.FONT,
         ).pack(anchor=tk.W, padx=10, pady=4)
 
+        self.title_name_var = tk.BooleanVar(
+            value=self.sm.settings.get("show_title_beside_name", True)
+        )
+        tk.Checkbutton(
+            game,
+            text="Show equipped title beside player name",
+            variable=self.title_name_var,
+            bg=Theme.BG_DARK,
+            fg=Theme.TEXT,
+            selectcolor=Theme.BG_MID,
+            activebackground=Theme.BG_DARK,
+            font=Theme.FONT,
+        ).pack(anchor=tk.W, padx=10, pady=4)
+
         # Combat pacing — beat length between combat actions (doc §7).
         cp_frame = tk.Frame(game, bg=Theme.BG_DARK)
         cp_frame.pack(fill=tk.X, padx=10, pady=4)
@@ -156,6 +170,37 @@ class SettingsScreen(BaseScreen):
         tk.Label(
             cp_frame,
             text="(pause between combat actions — instant = original pace)",
+            bg=Theme.BG_DARK,
+            fg=Theme.TEXT_DIM,
+            font=Theme.FONT_SMALL,
+        ).pack(side=tk.LEFT)
+
+        # Content level — mature scene rendering (family design §3.1).
+        cl_frame = tk.Frame(game, bg=Theme.BG_DARK)
+        cl_frame.pack(fill=tk.X, padx=10, pady=4)
+
+        tk.Label(
+            cl_frame,
+            text="Content level:",
+            bg=Theme.BG_DARK,
+            fg=Theme.TEXT,
+            font=Theme.FONT,
+            anchor=tk.W,
+        ).pack(side=tk.LEFT)
+
+        self.content_var = tk.StringVar(
+            value=self.sm.settings.get("content_level", "fade-to-black"))
+        ttk.Combobox(
+            cl_frame,
+            textvariable=self.content_var,
+            values=["off", "fade-to-black", "written"],
+            state="readonly",
+            width=14,
+        ).pack(side=tk.LEFT, padx=8)
+
+        tk.Label(
+            cl_frame,
+            text="(mature scenes — off / fade to black / written)",
             bg=Theme.BG_DARK,
             fg=Theme.TEXT_DIM,
             font=Theme.FONT_SMALL,
@@ -209,8 +254,10 @@ class SettingsScreen(BaseScreen):
         self.sm.settings["window_size"] = self.window_var.get()
         self.sm.settings["keyboard_mode"] = self.keyboard_var.get()
         self.sm.settings["show_splash"] = self.splash_var.get()
+        self.sm.settings["show_title_beside_name"] = self.title_name_var.get()
         self.sm.settings["sound_enabled"] = self.sound_var.get()
         self.sm.settings["combat_pacing"] = self.pacing_var.get()
+        self.sm.settings["content_level"] = self.content_var.get()
         save_settings(self.sm.settings)
 
         # Apply font size immediately
@@ -238,7 +285,9 @@ class SettingsScreen(BaseScreen):
         self.window_var.set(self.sm.settings["window_size"])
         self.keyboard_var.set(self.sm.settings["keyboard_mode"])
         self.splash_var.set(self.sm.settings["show_splash"])
+        self.title_name_var.set(self.sm.settings.get("show_title_beside_name", True))
         self.sound_var.set(self.sm.settings["sound_enabled"])
         self.pacing_var.set(self.sm.settings["combat_pacing"])
+        self.content_var.set(self.sm.settings["content_level"])
         save_settings(self.sm.settings)
         self.sm.log("Settings reset to defaults.")

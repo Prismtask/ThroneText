@@ -52,6 +52,11 @@ class SkillLoader:
         """Return the learnable skills dictionary (offensive, defensive, support)."""
         return self._skill_data.get("learnable_skills", {})
 
+    @property
+    def professions(self) -> dict:
+        """Return the profession definitions keyed by class name, then profession id."""
+        return self._skill_data.get("professions", {})
+
     def get_class_skill_map(self, class_name: str) -> dict:
         """Return the skill definition dict for a given class name."""
         return self._skill_data["class_skills"].get(class_name, {})
@@ -80,6 +85,7 @@ PASSIVE_SKILLS = _LOADER.passive_skills
 CLASS_SKILLS = _LOADER.class_skills
 RACE_PASSIVES = _LOADER.race_passives
 LEARNABLE_SKILLS = _LOADER.learnable_skills
+PROFESSIONS = _LOADER.professions
 
 
 def get_class_skill_map(class_name: str) -> dict:

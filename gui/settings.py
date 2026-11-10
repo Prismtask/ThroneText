@@ -25,8 +25,10 @@ DEFAULT_SETTINGS = {
     "sound_enabled": False,            # Reserved for future sound system
     "keyboard_mode": True,            # Enable keyboard shortcuts globally
     "show_splash": True,
+    "show_title_beside_name": True,   # Deed titles (docs/titles_design.md)
     "log_max_lines": 1000,             # Combat/dungeon log scrollback
     "combat_pacing": "normal",         # instant | fast | normal | slow (combat beat pacing, doc §7)
+    "content_level": "fade-to-black",  # off | fade-to-black | written (mature scenes, family design §3.1)
 }
 
 

@@ -1,9 +1,10 @@
 """Vesper Erebus, the Horizon Watcher — first contact scene (docs §6.1).
 
-Plays ONCE after the party exits a dungeon with ``max_floor >= 20``
-(``eh_intro_seen`` unset). Uses the same NPC UI as Archivist Voss's Star
-Tower scene (``gui.terminal`` bridge: paced lines + button/text menus),
-launched from CityScreen as a FacilityScreen.
+Plays ONCE after Floor 20 has been **cleared** (``max_floor > 20``,
+``eh_intro_seen`` unset) — reaching floor 20 and failing its superboss does
+not count. Uses the same NPC UI as Archivist Voss's Star Tower scene
+(``gui.terminal`` bridge: paced lines + button/text menus), launched from
+CityScreen as a FacilityScreen.
 
 The site **arrival scene** (:func:`event_horizon_arrival_service`) also lives
 here; its greeting is context-aware — first arrival, rotating idle lines for

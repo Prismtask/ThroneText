@@ -101,9 +101,13 @@ def _is_main_thread():
 def choose_level_up_attribute(entity_name: str,
                               level: int,
                               attributes: Dict[str, int],
-                              parent=None) -> Optional[str]:
+                              parent=None,
+                              note: Optional[str] = None) -> Optional[str]:
     """
     Show a modal dialog for choosing which attribute to increase on level-up.
+
+    `note` replaces the default "Choose an attribute to increase by 1:"
+    instruction — used for bonus points (e.g. Late Bloomer growth).
 
     Blocks until the user clicks an attribute button or closes the dialog.
     Safe to call from any thread.
@@ -116,7 +120,8 @@ def choose_level_up_attribute(entity_name: str,
 
     if _is_main_thread():
         # Main thread: build and run dialog synchronously
-        dlg = _AttrChoiceDialog(entity_name, level, attributes, parent)
+        dlg = _AttrChoiceDialog(entity_name, level, attributes, parent,
+                                note=note)
         dlg.dialog.wait_window()  # Processes tkinter events
         return dlg._result
     else:
@@ -125,7 +130,8 @@ def choose_level_up_attribute(entity_name: str,
 
         def _build():
             try:
-                dlg = _AttrChoiceDialog(entity_name, level, attributes, parent)
+                dlg = _AttrChoiceDialog(entity_name, level, attributes, parent,
+                                        note=note)
                 dlg._result_queue = result_queue
             except Exception:
                 result_queue.put(("__ERROR__", traceback.format_exc()))
@@ -215,7 +221,7 @@ def show_level_up_results(entity_name: str,
 class _AttrChoiceDialog:
     """Modal Toplevel for picking an attribute to increase."""
 
-    def __init__(self, entity_name, level, attributes, parent=None):
+    def __init__(self, entity_name, level, attributes, parent=None, note=None):
         self._result = None
         self._result_queue = None  # Set externally for cross-thread use
 
@@ -251,9 +257,11 @@ class _AttrChoiceDialog:
         ).pack(pady=(2, 0))
 
         # ── Instruction ───────────────────────────────────────────────
+        instruction = (f"{note} — choose an attribute to increase by 1:"
+                       if note else "Choose an attribute to increase by 1:")
         tk.Label(
             self.dialog,
-            text="Choose an attribute to increase by 1:",
+            text=instruction,
             bg=Theme.BG_DARK,
             fg=Theme.TEXT,
             font=Theme.FONT,

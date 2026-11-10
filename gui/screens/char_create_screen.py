@@ -16,7 +16,9 @@ from gui.theme import Theme
 from gui.widgets.confirm_dialog import ok_dialog
 
 from resources.races_classes import RACES, CLASSES, ATTRIBUTES, TOTAL_POINTS
-from character import build_character, player_max_hp
+from character import (
+    GAME_RULES, build_character, default_game_rules, player_max_hp,
+)
 from save_load import save_game, list_saves, get_next_free_slot
 
 
@@ -84,6 +86,8 @@ class CharCreateScreen(BaseScreen):
         self.allocated = {attr: 0 for attr in ATTRIBUTES}
         self.name_var = tk.StringVar()
         self.slot_var = tk.IntVar()
+        self.game_rules = default_game_rules()
+        self.rule_vars = {}
 
         # ── Main layout ────────────────────────────────────────────────────────
         self.content = self.styled_frame(self)
@@ -92,7 +96,7 @@ class CharCreateScreen(BaseScreen):
         # Step header
         self.header = tk.Label(
             self.content,
-            text="Step 1/4: Choose Race",
+            text="Step 1/5: Choose Race",
             bg=Theme.BG_DARK,
             fg=Theme.ACCENT,
             font=Theme.FONT_LARGE,
@@ -133,16 +137,19 @@ class CharCreateScreen(BaseScreen):
             w.destroy()
 
         if self.step == 1:
-            self.header.config(text="Step 1/4: Choose Race")
+            self.header.config(text="Step 1/5: Choose Race")
             self._build_race_selection()
         elif self.step == 2:
-            self.header.config(text="Step 2/4: Choose Class")
+            self.header.config(text="Step 2/5: Choose Class")
             self._build_class_selection()
         elif self.step == 3:
-            self.header.config(text="Step 3/4: Allocate Points")
+            self.header.config(text="Step 3/5: Allocate Points")
             self._build_stat_allocation()
         elif self.step == 4:
-            self.header.config(text="Step 4/4: Name & Save Slot")
+            self.header.config(text="Step 4/5: Game Rules")
+            self._build_game_rules()
+        elif self.step == 5:
+            self.header.config(text="Step 5/5: Name & Save Slot")
             self._build_name_slot()
 
         # Update nav buttons
@@ -151,7 +158,7 @@ class CharCreateScreen(BaseScreen):
             self.back_btn.config(text="Main Menu")
         else:
             self.back_btn.config(text="Back")
-        if self.step == 4:
+        if self.step == 5:
             self.next_btn.config(text="Create Character", command=self._create_character)
         else:
             self.next_btn.config(text="Next", command=self._next_step)
@@ -380,7 +387,98 @@ class CharCreateScreen(BaseScreen):
         new_total = self.base_attrs[attr] + new_alloc
         self.attr_total_labels[attr].config(text=f"= {new_total}")
 
-    # ── Step 4: Name & Slot ───────────────────────────────────────────────────
+    # ── Step 4: Game Rules ───────────────────────────────────────────────────
+
+    def _build_game_rules(self):
+        intro = (
+            "Choose the rules for this save. These choices last for the "
+            "whole save."
+        )
+        tk.Label(
+            self.step_frame,
+            text=intro,
+            bg=Theme.BG_DARK,
+            fg=Theme.TEXT_DIM,
+            font=Theme.FONT,
+            wraplength=720,
+            justify=tk.CENTER,
+        ).pack(pady=(0, 14))
+
+        rules_by_id = {r["id"]: r for r in GAME_RULES}
+
+        for rule_id in ("karma_enabled", "family_enabled"):
+            rule = rules_by_id[rule_id]
+            card = tk.Frame(
+                self.step_frame,
+                bg=Theme.BG_CARD,
+                highlightthickness=1,
+                highlightbackground=Theme.BORDER,
+            )
+            card.pack(fill=tk.X, padx=30, pady=6)
+
+            var = tk.BooleanVar(value=bool(self.game_rules.get(rule_id, rule["default_new"])))
+            self.rule_vars[rule_id] = var
+            label = f"{rule['label']} (recommended)" if rule_id == "karma_enabled" else rule["label"]
+            tk.Checkbutton(
+                card,
+                text=label,
+                variable=var,
+                command=lambda rid=rule_id, v=var: self._set_game_rule(rid, v.get()),
+                bg=Theme.BG_CARD,
+                fg=Theme.TEXT_HEADER,
+                activebackground=Theme.BG_CARD,
+                activeforeground=Theme.TEXT_HEADER,
+                selectcolor=Theme.BG_MID,
+                font=Theme.FONT_BOLD,
+                anchor="w",
+                justify=tk.LEFT,
+                wraplength=680,
+                cursor="hand2",
+            ).pack(fill=tk.X, padx=10, pady=(8, 0))
+
+            tk.Label(
+                card,
+                text=rule["description"],
+                bg=Theme.BG_CARD,
+                fg=Theme.TEXT_DIM,
+                font=Theme.FONT_SMALL,
+                wraplength=680,
+                justify=tk.LEFT,
+            ).pack(fill=tk.X, padx=16, pady=(0, 8))
+
+        # Difficulty is part of the shared framework but has no effects yet.
+        diff_card = tk.Frame(
+            self.step_frame,
+            bg=Theme.BG_CARD,
+            highlightthickness=1,
+            highlightbackground=Theme.BORDER,
+        )
+        diff_card.pack(fill=tk.X, padx=30, pady=6)
+        tk.Label(
+            diff_card,
+            text="Difficulty: Normal",
+            bg=Theme.BG_CARD,
+            fg=Theme.TEXT_DIM,
+            font=Theme.FONT_BOLD,
+            anchor="w",
+        ).pack(fill=tk.X, padx=16, pady=(8, 0))
+        tk.Label(
+            diff_card,
+            text=(
+                "Story/Hard options arrive with the difficulty system. "
+                "The choice is reserved here so the framework is ready."
+            ),
+            bg=Theme.BG_CARD,
+            fg=Theme.TEXT_DIM,
+            font=Theme.FONT_SMALL,
+            wraplength=680,
+            justify=tk.LEFT,
+        ).pack(fill=tk.X, padx=16, pady=(0, 8))
+
+    def _set_game_rule(self, rule_id, value):
+        self.game_rules[rule_id] = value
+
+    # ── Step 5: Name & Slot ───────────────────────────────────────────────────
 
     def _build_name_slot(self):
         # Name
@@ -451,7 +549,10 @@ class CharCreateScreen(BaseScreen):
             f"HP: {player_max_hp(final_attrs)}  |  "
             f"STR {final_attrs['Strength']}  CON {final_attrs['Constitution']}  "
             f"DEX {final_attrs['Dexterity']}  WIS {final_attrs['Wisdom']}  "
-            f"LRN {final_attrs['Learning']}  CHA {final_attrs['Charisma']}"
+            f"LRN {final_attrs['Learning']}  CHA {final_attrs['Charisma']}\n"
+            f"Karma: {'On' if self.game_rules.get('karma_enabled') else 'Off'}  |  "
+            f"Family: {'On' if self.game_rules.get('family_enabled') else 'Off'}  |  "
+            f"Difficulty: {self.game_rules.get('difficulty', 'normal').title()}"
         )
         tk.Label(
             self.step_frame,
@@ -510,7 +611,10 @@ class CharCreateScreen(BaseScreen):
         slot = self.slot_var.get()
         final_attrs = {attr: self.base_attrs[attr] + self.allocated[attr] for attr in ATTRIBUTES}
 
-        player = build_character(self.race_key, self.class_key, final_attrs, name, slot)
+        player = build_character(
+            self.race_key, self.class_key, final_attrs, name, slot,
+            game_rules=self.game_rules,
+        )
         save_game(player)
         self.sm.player = player
         self.sm.log(f"Character '{name}' created and saved to slot {slot}.")

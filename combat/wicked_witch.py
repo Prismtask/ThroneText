@@ -26,9 +26,11 @@
 #   Permanent unlock trigger set via context flag on water-finisher kill.
 
 import random
+import wonderland_guests
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_ui import (format_enemy_status_line, print_superboss_header,
+                              defer_dialogue)
 from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_bleed
 from combat.combat_io import c_print, c_input, c_clear
@@ -47,6 +49,25 @@ def _is_witch(e):
 
 def _is_monkey(e):
     return e.get("key") == MONKEY_KEY
+
+
+def _variant_cleanse_party(player):
+    """Dorothy's Emerald Road: clear party debuffs."""
+    members = [player] + [a for a in player.get("allies", [])
+                          if a.get("current_hp", 0) > 0]
+    for member in members:
+        member["active_debuffs"] = []
+
+
+def _variant_heal_party(player):
+    """Dorothy's Emerald Road: restore 10% max HP to the living party."""
+    from character import player_max_hp
+    pmax = player_max_hp(player)
+    player["current_hp"] = min(pmax, player.get("current_hp", 0) + max(1, int(pmax * 0.10)))
+    for ally in player.get("allies", []):
+        if ally.get("current_hp", 0) > 0:
+            amax = ally.get("max_hp", 50)
+            ally["current_hp"] = min(amax, ally["current_hp"] + max(1, int(amax * 0.10)))
 
 
 def _count_live_monkeys(enemies):
@@ -84,7 +105,7 @@ def _get_living_targets(player):
 
 
 def _find_lowest_fire_res(player):
-    """Find the party member with the lowest fire resistance (highest res value = weakest)."""
+    """Find the party member with the lowest fire resistance rating (lowest = weakest)."""
     targets = _get_living_targets(player)
     if not targets:
         return None
@@ -92,7 +113,7 @@ def _find_lowest_fire_res(player):
     best_res = best.get("elemental_res", {}).get("fire", 1.0)
     for t in targets[1:]:
         res = t.get("elemental_res", {}).get("fire", 1.0)
-        if res > best_res:
+        if res < best_res:
             best_res = res
             best = t
     return best
@@ -101,8 +122,9 @@ def _find_lowest_fire_res(player):
 def _deal_damage(target, dmg, element=None):
     """Apply damage to a target, respecting elemental resistances."""
     if element:
+        from combat.elemental import resistance_multiplier
         res = target.get("elemental_res", {}).get(element, 1.0)
-        dmg = max(1, int(dmg * res))
+        dmg = max(1, int(dmg * resistance_multiplier(res)))
     target["current_hp"] = max(0, target.get("current_hp", 0) - dmg)
 
 
@@ -485,10 +507,10 @@ def combat_wicked_witch(player, floor=None, enemies=None):
     dorothy = next((a for a in player.get("allies", [])
                     if a.get("_heroine_key") == "dorothy"
                     and a.get("current_hp", 0) > 0), None)
+    dorothy_variant = bool(dorothy and wonderland_guests.is_variant_active(player, "dorothy"))
 
     # ── Opening narration ────────────────────────────────────────────────
     c_clear()
-    c_print("=" * 60)
     c_print("The corridor opens into a vast chamber. The walls are green —")
     c_print("not painted, but glowing faintly, as though the stone itself")
     c_print("is sick with envy.")
@@ -503,10 +525,13 @@ def combat_wicked_witch(player, floor=None, enemies=None):
         c_print('Dorothy stiffens beside you. "She\'s been waiting for me."')
     else:
         c_print('"I smell... an intruder. How... predictable."')
+    if dorothy_variant:
+        c_print("")
+        c_print("Dorothy steps forward, silver slippers catching the emerald light.")
+        c_print('"You\'ve had this story long enough. It\'s time someone else wrote the ending."')
     c_print("")
     c_print('She turns. The emerald flame gutters and flares.')
     c_print('"Let\'s not rush. Let\'s... savour it."')
-    c_print("=" * 60)
     c_print(f"\nWicked Witch of the West — HP: {witch['hp']}")
     c_input("\nPress Enter to face the Witch...")
 
@@ -528,6 +553,7 @@ def combat_wicked_witch(player, floor=None, enemies=None):
 
         # Dorothy integration
         "dorothy_in_party": dorothy is not None,
+        "dorothy_variant": dorothy_variant,
         "dorothy_hint_given": False,
     }
 
@@ -551,8 +577,7 @@ def combat_wicked_witch(player, floor=None, enemies=None):
             spawned = _spawn_monkeys(player, elist, 3)
             ctx["monkeys_summoned"] = True
 
-            c_print("\n" + "-" * 50)
-            c_print("The Witch stumbles. Her emerald flame gutters. For a")
+            c_print("\nThe Witch stumbles. Her emerald flame gutters. For a")
             c_print("moment — just a moment — she looks afraid.")
             c_print("")
             c_print("Then she laughs. It's not a cackle this time. It's cold.")
@@ -562,9 +587,12 @@ def combat_wicked_witch(player, floor=None, enemies=None):
             c_print("the chamber begin to writhe. Wings. Dozens of wings.")
             c_print("")
             c_print('"FLY, MY PRETTIES! FLY!"')
-            c_print("-" * 50)
             for m in spawned:
                 c_print(f"  {m['name']} swoops in! HP: {m['hp']}")
+            if ctx.get("dorothy_variant"):
+                _variant_cleanse_party(player)
+                c_print("\n  👠 Dorothy clicks her heels — a clean wind scours the party.")
+                c_print("  ↠ Emerald Road: all party debuffs are washed away!")
             c_input("Press Enter...")
 
         # ── Phase 2 → 3 (30% HP) ─────────────────────────────────────
@@ -578,8 +606,7 @@ def combat_wicked_witch(player, floor=None, enemies=None):
             _remove_broomstick_evasion(witch_obj)
             ctx["broomstick_evasion_active"] = False
 
-            c_print("\n" + "!" * 50)
-            c_print("A strike catches the Witch mid-cackle. She shrieks — not")
+            c_print("\nA strike catches the Witch mid-cackle. She shrieks — not")
             c_print("in anger. In pain. Real, genuine pain.")
             c_print("")
             c_print("Her broomstick lurches. She crashes to the ground, robes")
@@ -593,7 +620,10 @@ def combat_wicked_witch(player, floor=None, enemies=None):
             c_print("")
             c_print('"What have you DONE?! Do you know what water DOES to me?!"')
             c_print('"I\'LL TAKE YOU ALL WITH ME!"')
-            c_print("!" * 50)
+            if ctx.get("dorothy_variant"):
+                _variant_heal_party(player)
+                c_print("\n  👠 The silver slippers flare. A warm wind circles the party.")
+                c_print("  ↠ Emerald Road: the party recovers 10% max HP!")
             c_input("Press Enter...")
 
         # ── Dorothy Phase 2 hint ──────────────────────────────────────
@@ -668,15 +698,13 @@ def combat_wicked_witch(player, floor=None, enemies=None):
         if _is_witch(target) and target.get("hp", 0) <= 0:
             from combat.ally import promote_heroine_to_permanent, set_heroine_state, get_heroine_in_party
 
-            c_print("\n" + "=" * 60)
-            c_print("The Witch dissolves into a puddle of ink and emerald")
+            c_print("\nThe Witch dissolves into a puddle of ink and emerald")
             c_print("smoke. Her hat floats for a moment, then sinks.")
             c_print("")
             c_print("The green glow fades. The walls return to stone.")
             c_print("The chamber is just a chamber again — no magic,")
             c_print("no menace. Just silence and the faint smell of")
             c_print("ozone, like after a thunderstorm.")
-            c_print("=" * 60)
 
             # ── Dorothy permanent unlock ──────────────────────────────
             if dorothy:
@@ -685,24 +713,28 @@ def combat_wicked_witch(player, floor=None, enemies=None):
                 set_heroine_state(player, "dorothy", "permanent")
                 player["wl_boss_defeated_wicked_witch"] = True
 
-                c_print(f'\n  Dorothy stands over the puddle, ruby slippers')
-                c_print('  gleaming — no longer on the table, but on her feet.')
-                c_print('')
-                c_print('  "She\'s gone. She\'s really gone."')
-                c_print('  (She clicks her heels once. Nothing happens.)')
-                c_print('  (She clicks them twice. A warm breeze stirs.)')
-                c_print('  (She doesn\'t click them a third time.)')
-                c_print('')
-                c_print('  "I could go home now. I can feel it — Kansas is')
-                c_print('  right there, three clicks away. But..."')
-                c_print('')
-                c_print('  She looks at you. Toto barks.')
-                c_print('')
-                c_print('  "You\'re not from Kansas. And you\'re still fighting.')
-                c_print('  Maybe... maybe home can wait. Just a little longer."')
-                c_print('')
-                c_print('  Dorothy becomes a PERMANENT ally.')
-                c_input("Press Enter...")
+                # Ending prose plays on the dungeon screen after the fight
+                # (the combat ticker only shows 3 lines).
+                defer_dialogue(player, [
+                    "",
+                    "  Dorothy stands over the puddle, ruby slippers",
+                    "  gleaming — no longer on the table, but on her feet.",
+                    "",
+                    '  "She\'s gone. She\'s really gone."',
+                    "  (She clicks her heels once. Nothing happens.)",
+                    "  (She clicks them twice. A warm breeze stirs.)",
+                    "  (She doesn\'t click them a third time.)",
+                    "",
+                    '  "I could go home now. I can feel it — Kansas is',
+                    '  right there, three clicks away. But..."',
+                    "",
+                    "  She looks at you. Toto barks.",
+                    "",
+                    '  "You\'re not from Kansas. And you\'re still fighting.',
+                    '  Maybe... maybe home can wait. Just a little longer."',
+                    "",
+                    "  Dorothy becomes a PERMANENT ally.",
+                ], title="Dorothy")
 
     # ── Run the combat loop ──────────────────────────────────────────────
     return superboss_combat_loop(

@@ -30,8 +30,19 @@ def camp_event(player, city_id=None):
         allow_cancel=False,
     )
 
+    # Combat stress: settle outstanding falls, then let the party rest it off
+    # (docs/stress_system_design.md).
+    from combat.party_stress import on_party_sleep
+    _stress_msgs = on_party_sleep(player)
+    for _msg in _stress_msgs:
+        term.print(_msg)
+    if _stress_msgs:
+        term.print("")
+
     if choice == 1:
         # ── Watch in shifts: half heal, small all-stats buff for 3 rooms ──
+        from titles import mod as _title_mod
+        rest_bonus = _title_mod(player, "rest_heal_pct")
         targets = [player] + [a for a in player.get("allies", [])
                               if a.get("current_hp", 0) > 0]
         for target in targets:
@@ -41,7 +52,11 @@ def camp_event(player, city_id=None):
                 max_hp = target.get("max_hp", target.get("current_hp", 1))
             hp = target.get("current_hp", 0)
             if hp > 0:
-                target["current_hp"] = min(max_hp, hp + max(1, (max_hp - hp) // 2))
+                missing = max(0, max_hp - hp)
+                heal = max(1, missing // 2)
+                if rest_bonus and missing > 0:
+                    heal += max(1, int(missing * rest_bonus))
+                target["current_hp"] = min(max_hp, hp + heal)
             target.setdefault("active_buffs", [])
             target["active_buffs"] = [b for b in target["active_buffs"]
                                       if b.get("type") != "camp_watch"]
@@ -65,5 +80,8 @@ def camp_event(player, city_id=None):
         term.print("The whole party is back to full health.")
 
     term.print("")
+    # Dream events (docs/dream_events_design.md) — one roll per sleep.
+    from dreams import maybe_offer_dream
+    maybe_offer_dream(player, "camp", term)
     term.print("You break camp at first light.")
     term.pause("Press Continue to take to the road...")

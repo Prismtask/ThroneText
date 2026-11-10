@@ -15,8 +15,8 @@ Bump procedure:
   3. Run tests/_diag_version_consistency.py — expect "version consistency OK".
 """
 
-GAME_VERSION = "0.1.8.1"
-VERSION_NAME = "The Distant Journey"
+GAME_VERSION = "0.1.9.0"
+VERSION_NAME = "The Family We Choose"
 
 # Pre-1.0 beta: features, balance, and save formats may change between builds.
 # Flip to False only when declaring the first stable release (1.0.0).

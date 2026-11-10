@@ -63,7 +63,7 @@ IRONDEEP_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deep as the mountain. I'll keep watch.",
-        "Eight hours in stone silence. You'll wake renewed.",
+        "A night in stone silence. You'll wake renewed.",
         "The deep dreams are peaceful. Rest well.",
         "No monsters here. Only good, hard stone.",
     ],

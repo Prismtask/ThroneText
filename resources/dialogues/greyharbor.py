@@ -63,7 +63,7 @@ GREYHARBOR_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep deep. The fog outside muffles all sound.",
-        "Eight hours of quiet. You'll wake... rested?",
+        "A night of quiet. You'll wake... rested?",
         "Dream of clear skies, traveler.",
         "The inn is safe. The mist can't enter.",
     ],

@@ -32,9 +32,11 @@
 #     Defending guarantees survival at 1 HP.  Jabberwock then defenseless.
 
 import random
+import wonderland_guests
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_ui import (format_enemy_status_line, print_superboss_header,
+                              defer_dialogue)
 from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_bleed
 from combat.combat_io import c_print, c_input, c_clear
@@ -297,10 +299,11 @@ def _jabberwock_vorpal_beam_fire(jabber, player, ctx):
     else:
         # Beam fires!
         c_print('\n  💀 "VORPAL BEAM!" — A line of blinding light tears through the party!')
+        from combat.elemental import resistance_multiplier
         for target in _get_living_targets(player):
             dmg = random.randint(60, 90)
             res = target.get("elemental_res", {}).get("thunder", 1.0)
-            final_dmg = max(1, int(dmg * res))
+            final_dmg = max(1, int(dmg * resistance_multiplier(res)))
             target["current_hp"] = max(0, target.get("current_hp", 0) - final_dmg)
             c_print(f"    {target.get('name', 'You')} takes {final_dmg} damage [THUNDER]!")
             if target.get("current_hp", 0) <= 0:
@@ -492,10 +495,10 @@ def combat_jabberwock(player, floor=None, enemies=None):
 
     # ── Check for Alice ──────────────────────────────────────────────────
     alice = _get_alice(player)
+    alice_variant = bool(alice and wonderland_guests.is_variant_active(player, "alice"))
 
     # ── Opening narration ────────────────────────────────────────────────
     c_clear()
-    c_print("=" * 60)
     c_print("The tulgey wood closes around you. Trees with bark like")
     c_print("bookbindings. Leaves that rustle in reverse — from brown")
     c_print("to green, from death to birth.")
@@ -517,6 +520,10 @@ def combat_jabberwock(player, floor=None, enemies=None):
         c_print("")
         c_print('"Or maybe you\'re the plot twist," you reply.')
         c_print('She manages a small smile. "I\'ve always wanted to be one of those."')
+        if alice_variant:
+            c_print("")
+            c_print("Alice steps in front of you. The Vorpal Blade is already in her hand.")
+            c_print('"I know how this one ends," she says. "I wrote it first."')
     else:
         c_print('It opens its jaws. Words spill out — nonsense words, puns')
         c_print('so bad they physically hurt, plot holes that bend the air.')
@@ -524,7 +531,6 @@ def combat_jabberwock(player, floor=None, enemies=None):
         c_print('"Beware," it doesn\'t quite say. "The jaws that bite..."')
     c_print("")
     c_print("The Jabberwock has noticed you.")
-    c_print("=" * 60)
     c_print(f"\nThe Jabberwock — HP: {jabber['hp']}")
     c_input("\nPress Enter to face the Jabberwock...")
 
@@ -554,6 +560,8 @@ def combat_jabberwock(player, floor=None, enemies=None):
 
         # Alice integration
         "_alice_in_party": alice is not None,
+        "_alice_variant": alice_variant,
+        "_alice_page_storm_block": False,
         "_alice_whiffle_hint_given": False,
         "_alice_vorpal_bonus": False,
 
@@ -582,8 +590,7 @@ def combat_jabberwock(player, floor=None, enemies=None):
             ctx["phase"] = 2
             ctx["_vorpal_wound_cooldown"] = 1   # First Jaws That Bite soon
 
-            c_print("\n" + "-" * 50)
-            c_print("The Jabberwock roars — and the nonsense condenses.")
+            c_print("\nThe Jabberwock roars — and the nonsense condenses.")
             c_print("The bewildering shapes solidify into something you")
             c_print("can finally see clearly.")
             c_print("")
@@ -594,20 +601,23 @@ def combat_jabberwock(player, floor=None, enemies=None):
             c_print("fixed on you.")
             c_print("")
             c_print("The Jabberwock has stopped playing with its food.")
-            c_print("-" * 50)
 
             if alice:
                 c_print(f'\n  Alice: "It\'s real now. Fully real. Be careful —')
                 c_print('  when it whiffles, don\'t attack. Wait for it to')
                 c_print('  catch its breath. That\'s when you strike."')
+            if ctx.get("_alice_variant"):
+                vorpal_dmg = max(1, int(j["max_hp"] * 0.06))
+                j["hp"] = max(1, j["hp"] - vorpal_dmg)
+                c_print("\n  ⚔️ Alice moves before the ink can settle — the Vorpal Blade")
+                c_print(f"  finds the seam in the story. {vorpal_dmg} damage!")
             c_input("Press Enter...")
 
         # ── Phase 2 → 3 (45% HP) ─────────────────────────────────────
         elif hp_pct <= 0.45 and ctx["phase"] == 2:
             ctx["phase"] = 3
 
-            c_print("\n" + "!" * 50)
-            c_print("The Jabberwock's wings unfurl — not outward, but upward.")
+            c_print("\nThe Jabberwock's wings unfurl — not outward, but upward.")
             c_print("They spread across the arena like pages torn from a book")
             c_print("and thrown into a storm.")
             c_print("")
@@ -617,12 +627,15 @@ def combat_jabberwock(player, floor=None, enemies=None):
             c_print("")
             c_print('"Callooh! Callay!" it chortles. The sound is the opposite')
             c_print("of joy.")
-            c_print("!" * 50)
 
             if alice:
                 c_print(f'\n  Alice: "It\'s writing the fight! It\'s rewriting it as')
                 c_print('  we go! When its eyes glow — aim for them! That\'s where')
                 c_print('  it keeps its plot holes!"')
+            if ctx.get("_alice_variant"):
+                ctx["_alice_page_storm_block"] = True
+                c_print("\n  ⚔️ Alice raises the Vorpal Blade. \"The first storm is mine.\"")
+                c_print("  ↠ The next Page Storm will be cut apart.")
             c_input("Press Enter...")
 
         # ── Phase 3 → 4 (20% HP) ─────────────────────────────────────
@@ -631,8 +644,7 @@ def combat_jabberwock(player, floor=None, enemies=None):
             ctx["_vorpal_beam_charging"] = False
             ctx["_alice_vorpal_bonus"] = False
 
-            c_print("\n" + "!" * 50)
-            c_print("The Jabberwock screams. The vortex begins to collapse —")
+            c_print("\nThe Jabberwock screams. The vortex begins to collapse —")
             c_print("not upward, but inward. Pages are flying in reverse,")
             c_print("words unscrambling, ink flowing back into its wounds.")
             c_print("")
@@ -641,7 +653,6 @@ def combat_jabberwock(player, floor=None, enemies=None):
             c_print("The arena CRUMBLES. Every round, the collapsing")
             c_print("narrative deals 15 unavoidable damage to your party.")
             c_print("FINISH IT — before the story finishes you.")
-            c_print("!" * 50)
             c_input("Press Enter...")
 
         # ── Phase 4: Death Throes ─────────────────────────────────────
@@ -702,7 +713,11 @@ def combat_jabberwock(player, floor=None, enemies=None):
 
         # ── Phase 3: Page Storm (passive, every round) ──────────────────
         if ctx["phase"] == 3 and j and j["hp"] > 0:
-            _jabberwock_page_storm(player)
+            if ctx.get("_alice_page_storm_block"):
+                ctx["_alice_page_storm_block"] = False
+                c_print("\n  ⚔️ Alice cuts the Page Storm apart — no damage this round.")
+            else:
+                _jabberwock_page_storm(player)
 
         # ── Tick Jabberwock buffs ───────────────────────────────────────
         if j:
@@ -730,8 +745,7 @@ def combat_jabberwock(player, floor=None, enemies=None):
     def on_kill_hook(target, elist, ctx):
         """Handle Jabberwock death, Alice permanent unlock, and drops."""
         if _is_jabberwock(target) and target.get("hp", 0) <= 0:
-            c_print("\n" + "=" * 60)
-            c_print("The Jabberwock's body dissolves into ink. The vortex")
+            c_print("\nThe Jabberwock's body dissolves into ink. The vortex")
             c_print("calms.")
             c_print("")
             c_print("Pages drift down around you like snow. Each one has a")
@@ -747,7 +761,6 @@ def combat_jabberwock(player, floor=None, enemies=None):
             c_print("")
             c_print("Silence. Real silence. The kind that comes after a")
             c_print("story ends.")
-            c_print("=" * 60)
 
             # ── Alice permanent unlock ──────────────────────────────────
             if alice:
@@ -757,20 +770,24 @@ def combat_jabberwock(player, floor=None, enemies=None):
                 set_heroine_state(player, "alice", "permanent")
                 player["wl_boss_defeated_jabberwock"] = True
 
-                c_print(f'\n  Alice stands very still. The teacup she\'s been')
-                c_print('  holding this entire time has a crack in it.')
-                c_print('')
-                c_print('  "It\'s over. It\'s really over."')
-                c_print('')
-                c_print('  She reads the vanishing ink on the floor. Her')
-                c_print('  expression flickers.')
-                c_print('')
-                c_print('  "It says... \'To be continued.\'"')
-                c_print('  She looks at you.')
-                c_print('  "That\'s not ominous at all."')
-                c_print('')
-                c_print('  Alice becomes a permanent ally.')
-                c_input("Press Enter...")
+                # Ending prose plays on the dungeon screen after the fight
+                # (the combat ticker only shows 3 lines).
+                defer_dialogue(player, [
+                    "",
+                    "  Alice stands very still. The teacup she\'s been",
+                    "  holding this entire time has a crack in it.",
+                    "",
+                    '  "It\'s over. It\'s really over."',
+                    "",
+                    "  She reads the vanishing ink on the floor. Her",
+                    "  expression flickers.",
+                    "",
+                    '  "It says... \'To be continued.\'"',
+                    "  She looks at you.",
+                    '  "That\'s not ominous at all."',
+                    "",
+                    "  Alice becomes a permanent ally.",
+                ], title="Alice")
 
         # ── Bandersnatch killed? No special effect ─────────────────────
 

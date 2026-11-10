@@ -240,6 +240,8 @@ class MainMenuScreen(BaseScreen):
                     return
                 _close()
                 ensure_player_fields(player)
+                import karma
+                karma.mark_city_arrival(player)
                 self.sm.player = player
                 self.sm.log(f"Loaded {player['name']} — {player['race']} {player['class']}")
                 self.sm.switch_to(CityScreen)

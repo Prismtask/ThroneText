@@ -63,7 +63,7 @@ SUNREACH_INNKEEPER_DIALOGUE = {
     ],
     "sleep": [
         "Sleep under cool linens. The desert night is cold.",
-        "Eight hours of quiet. The stars watch over you.",
+        "A night of quiet. The stars watch over you.",
         "Dream of oases and full waterskins.",
         "The inn is safe. The sun won't find you here.",
     ],

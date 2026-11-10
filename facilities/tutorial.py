@@ -144,7 +144,7 @@ def _section_allies():
         "",
         "Captured girls move into Your House, where you can raise",
         "their affection with daily gifts and conversation. At 100",
-        "affection you can propose with a ring; at 200 you receive a",
+        "affection you can propose with a ring; at 300 you receive a",
         "legendary soulbound accessory.",
         "",
         "Allies fight beside you in dungeons, level up, and can learn",

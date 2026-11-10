@@ -18,7 +18,7 @@ class InventoryScreen(BaseScreen):
     Tabbed inventory interface.
 
     Tabs:
-        1. Stats & Equipment
+        1. Character (personal info, title, karma, stats, equipment)
         2. Bag
         3. Skills
         4. Allies
@@ -35,6 +35,7 @@ class InventoryScreen(BaseScreen):
         self.is_overlay = is_overlay
         self._equip_target_ally = None   # If set, bag "Equip" goes to this ally dict
         self._equip_target_slot = None   # Desired slot hint (weapon/armor/accessory1/accessory2)
+        self._ally_tab_index = 0         # Last-selected ally sub-tab (survives refreshes)
         super().__init__(parent, screen_manager, **kwargs)
 
     def build_ui(self):
@@ -101,6 +102,10 @@ class InventoryScreen(BaseScreen):
         if self._eh_tab_visible():
             self._build_eh_tab()
 
+        # Loot lands in the bag while this screen is hidden — rebuild the Bag
+        # whenever the player switches to it (flowers were the visible miss).
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_main_tab_changed)
+
         # ── Bottom action bar ────────────────────────────────────────────────
         action_frame = tk.Frame(container, bg=Theme.BG_DARK)
         action_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=(0, 5))
@@ -122,12 +127,12 @@ class InventoryScreen(BaseScreen):
         refresh_btn.pack(side=tk.RIGHT)
 
     # ═══════════════════════════════════════════════════════════════════════
-    #  TAB 1 — Stats & Equipment
+    #  TAB 1 — Character  (personal info, stats, equipment, milestones)
     # ═══════════════════════════════════════════════════════════════════════
 
     def _build_stats_tab(self):
         self.stats_frame = tk.Frame(self.notebook, bg=Theme.BG_DARK)
-        self.notebook.add(self.stats_frame, text=" Stats & Equip ")
+        self.notebook.add(self.stats_frame, text=" Character ")
         self.stats_frame.grid_columnconfigure(0, weight=1)
         self._refresh_stats_tab()
 
@@ -157,20 +162,14 @@ class InventoryScreen(BaseScreen):
         inner.bind("<Configure>", lambda e: canvas.config(scrollregion=canvas.bbox("all")))
         self.stats_frame.bind("<Configure>", _on_configure)
 
-        # ── Header ───────────────────────────────────────────────────────────
+        # ── Personal information (identity, title, karma) ───────────────────
+        self._render_personal_box(inner)
+
+        # ── Vitals ───────────────────────────────────────────────────────────
         from character import player_max_hp
         hp = f"{self.player.get('current_hp', 0)}/{player_max_hp(self.player)}"
-        header = (
-            f"=== {self.player.get('name', 'Unknown')} "
-            f"(Level {self.player.get('level', 1)}) ==="
-        )
-        tk.Label(
-            inner, text=header, bg=Theme.BG_DARK, fg=Theme.ACCENT,
-            font=Theme.FONT_LARGE,
-        ).pack(anchor=tk.W, pady=(0, 4))
-
         info = f"HP: {hp}  |  Gold: {self.player.get('gold', 0)}"
-        self.styled_label(inner, text=info).pack(anchor=tk.W, pady=(0, 8))
+        self.styled_label(inner, text=info).pack(anchor=tk.W, padx=4, pady=(0, 8))
 
         # ── Attributes ───────────────────────────────────────────────────────
         from inventory import get_total_equipment_mods
@@ -178,6 +177,7 @@ class InventoryScreen(BaseScreen):
 
         equip_mods = get_total_equipment_mods(self.player)
         buff_mods = self._compute_buff_mods(self.player)
+        from titles import combat_stat_bonus as _title_stat_bonus
 
         attr_frame = tk.LabelFrame(
             inner, text=" Attributes ", bg=Theme.BG_DARK, fg=Theme.TEXT,
@@ -190,10 +190,13 @@ class InventoryScreen(BaseScreen):
             base = self.player["attributes"][attr]
             eq = equip_mods.get(attr, 0)
             bf = buff_mods.get(attr, 0)
-            total = base + eq + bf
+            tb = _title_stat_bonus(self.player, attr)
+            total = base + eq + bf + tb
             short = attr[:3].upper()
 
-            if bf > 0:
+            if tb:
+                line = f"{short}: {base} + {eq}(eq) + {bf}(buff) + {tb}(title) = {total}"
+            elif bf > 0:
                 line = f"{short}: {base} + {eq}(eq) + {bf}(buff) = {total}"
             else:
                 line = f"{short}: {base} + {eq} = {total}"
@@ -257,12 +260,12 @@ class InventoryScreen(BaseScreen):
                     row, text="Unequip", width=8,
                     command=lambda s=slot: self._unequip_slot(s),
                 ).pack(side=tk.RIGHT)
-                # Unique gear stays examinable while it is worn.
-                if self._is_unique_item(item):
-                    self.styled_button(
-                        row, text="Examine", width=9,
-                        command=lambda it=item: self._examine_item(it),
-                    ).pack(side=tk.RIGHT, padx=2)
+                # Every worn piece is examinable — affinity and effect without
+                # a trip to the blacksmith.
+                self.styled_button(
+                    row, text="Examine", width=9,
+                    command=lambda it=item: self._examine_item(it),
+                ).pack(side=tk.RIGHT, padx=2)
             else:
                 self.styled_label(row, text=f"{slot_name}: (empty)").pack(side=tk.LEFT)
                 # Allow quick jump to Bag to equip an item into this empty slot
@@ -270,22 +273,6 @@ class InventoryScreen(BaseScreen):
                     row, text="Equip", width=6,
                     command=lambda s=slot: self._jump_to_bag_and_hint(s),
                 ).pack(side=tk.RIGHT)
-
-        # ── Passive skill ────────────────────────────────────────────────────
-        from combat.skills import get_passive_skill
-        passive = get_passive_skill(self.player)
-        if passive:
-            ps_frame = tk.LabelFrame(
-                inner, text=" Passive Skill ", bg=Theme.BG_DARK, fg=Theme.TEXT,
-                font=Theme.FONT_BOLD, highlightthickness=1,
-                highlightbackground=Theme.BORDER,
-            )
-            ps_frame.pack(fill=tk.X, pady=4, padx=4)
-            tk.Label(
-                ps_frame, text=f"{passive['name']}: {passive['description']}",
-                bg=Theme.BG_DARK, fg=Theme.TEXT, font=Theme.FONT,
-                wraplength=600, justify=tk.LEFT,
-            ).pack(anchor=tk.W, padx=6, pady=4)
 
         # ── Milestones ───────────────────────────────────────────────────────
         from combat.stat_milestones import format_milestone_bonuses
@@ -343,6 +330,7 @@ class InventoryScreen(BaseScreen):
         from inventory import (
             get_inventory_caps, count_inventory,
             get_sorted_equipment, get_sorted_items, get_key_items, get_cargo_items,
+            get_flower_items,
         )
         from resources.trade_goods import cargo_total_weight, cargo_capacity
         eq_cap, other_cap = get_inventory_caps(self.player)
@@ -356,6 +344,15 @@ class InventoryScreen(BaseScreen):
             cap_text += f"/{cap} wt" if cap > 0 else " wt (no mount)"
         self.styled_label(self.bag_frame, text=cap_text).pack(anchor=tk.W, pady=(4, 8))
 
+        # ── Flowers: their own tab with live counts ──────────────────────
+        # They used to be buried among Key Items, which made it impossible to
+        # tell how many of each element you actually had.
+        flowers = get_flower_items(self.player)
+        flower_total = sum(int(i.get("count", 1) or 1) for i in flowers)
+        from resources.item_generation import is_flower_item
+        key_items = [i for i in get_key_items(self.player)
+                     if not is_flower_item(i)]
+
         # ── Sub-tabs dividing the bag by item type ──────────────────────────
         self.bag_sub = ttk.Notebook(self.bag_frame, style="Ally.TNotebook")
         self.bag_sub.pack(fill=tk.BOTH, expand=True)
@@ -364,7 +361,8 @@ class InventoryScreen(BaseScreen):
             (" Equipment ", get_sorted_equipment(self.player), True, False),
             (" Items ", get_sorted_items(self.player), False, False),
             (" Cargo ", get_cargo_items(self.player), False, False),
-            (" Key Items ", get_key_items(self.player), False, True),
+            (f" Flowers ({flower_total}) ", flowers, False, True),
+            (" Key Items ", key_items, False, True),
         ]
         for label, items, is_equip, is_key in sections:
             self._build_bag_subtab(label, items, is_equip, is_key)
@@ -422,7 +420,12 @@ class InventoryScreen(BaseScreen):
             if mod_txt:
                 text += f"  ({mod_txt})"
         else:
-            if item_type in ("key_item", "crafting_material"):
+            from resources.item_generation import is_flower_item
+            if is_flower_item(item):
+                type_label = "Flower"
+            elif item_type == "crafting_material":
+                type_label = "Material"
+            elif item_type == "key_item":
                 type_label = "Key Item"
             elif item_type == "cargo":
                 type_label = "Cargo"
@@ -473,12 +476,12 @@ class InventoryScreen(BaseScreen):
                 row, text="Equip", width=6,
                 command=lambda it=item: self._equip_item(it),
             ).pack(side=tk.RIGHT, padx=2)
-            # Unique equipment carries lore + an equip effect — always examinable.
-            if self._is_unique_item(item):
-                self.styled_button(
-                    row, text="Examine", width=9,
-                    command=lambda it=item: self._examine_item(it),
-                ).pack(side=tk.RIGHT, padx=2)
+            # Every piece of equipment explains its affinity and effect —
+            # uniques additionally carry lore in the same popup.
+            self.styled_button(
+                row, text="Examine", width=9,
+                command=lambda it=item: self._examine_item(it),
+            ).pack(side=tk.RIGHT, padx=2)
 
         if item.get("type") in ("consumable", "utility"):
             self.styled_button(
@@ -514,7 +517,7 @@ class InventoryScreen(BaseScreen):
             return
 
         from combat.skills import get_class_skill_map, format_mastery_label
-        from combat.skills import get_skill_mastery_level
+        from combat.skills import get_skill_mastery_level, get_equipped_skill_ids, MAX_SKILL_LOADOUT
 
         skill_map = get_class_skill_map(self.player)
         if not skill_map:
@@ -522,6 +525,7 @@ class InventoryScreen(BaseScreen):
             return
 
         unlocked = set(self.player.get("skills", []))
+        equipped = set(get_equipped_skill_ids(self.player))
         level = self.player.get("level", 1)
         cooldowns = self.player.get("skill_cooldowns", {})
 
@@ -535,6 +539,39 @@ class InventoryScreen(BaseScreen):
         inner = tk.Frame(canvas, bg=Theme.BG_DARK)
         canvas.create_window((0, 0), window=inner, anchor="nw")
         inner.bind("<Configure>", lambda e: canvas.config(scrollregion=canvas.bbox("all")))
+
+        loadout_label = self.styled_label(
+            inner,
+            text=f"Battle Loadout: {len(equipped)}/{MAX_SKILL_LOADOUT} equipped "
+                 "(manage it at any Skill Book)",
+            fg=Theme.ACCENT,
+        )
+        loadout_label.pack(anchor=tk.W, padx=6, pady=(6, 0))
+
+        from resources.skill_loader import PROFESSIONS
+        profs = PROFESSIONS.get(self.player.get("class"), {})
+        if profs:
+            prof = self.player.get("profession")
+            prof_text = (f"Profession: {profs[prof]['name']}" if prof in profs
+                         else "Profession: none — choose at the Guild after the Lv-40 capstone")
+            prof_label = self.styled_label(inner, text=prof_text, fg=Theme.TEXT_DIM)
+            prof_label.pack(anchor=tk.W, padx=6, pady=(2, 0))
+
+        # ── Passive skill (class passive, upgraded by the chosen profession) ─
+        from combat.skills import get_passive_skill
+        passive = get_passive_skill(self.player)
+        if passive:
+            passive_frame = tk.LabelFrame(
+                inner, text=" Passive ", bg=Theme.BG_DARK, fg=Theme.TEXT,
+                font=Theme.FONT_BOLD, highlightthickness=1,
+                highlightbackground=Theme.BORDER,
+            )
+            passive_frame.pack(fill=tk.X, pady=4, padx=4)
+            tk.Label(
+                passive_frame, text=f"{passive['name']}: {passive['description']}",
+                bg=Theme.BG_DARK, fg=Theme.TEXT, font=Theme.FONT,
+                wraplength=600, justify=tk.LEFT,
+            ).pack(anchor=tk.W, padx=6, pady=4)
 
         unlocked_frame = tk.LabelFrame(
             inner, text=" Unlocked ", bg=Theme.BG_DARK, fg=Theme.BUFF_POSITIVE,
@@ -559,7 +596,13 @@ class InventoryScreen(BaseScreen):
             label = f"{sdef['name']}{cd_str}  {mastery}  — Lv.{ul}"
 
             if is_unlocked:
-                self.styled_label(unlocked_frame, text=label, fg=Theme.BUFF_POSITIVE).pack(
+                if sid in equipped:
+                    entry = f"✓ {label}"
+                    fg = Theme.BUFF_POSITIVE
+                else:
+                    entry = f"– {label}  [not equipped]"
+                    fg = Theme.TEXT_DIM
+                self.styled_label(unlocked_frame, text=entry, fg=fg).pack(
                     anchor=tk.W, padx=6, pady=1
                 )
             else:
@@ -579,6 +622,18 @@ class InventoryScreen(BaseScreen):
         self._refresh_allies_tab()
 
     def _refresh_allies_tab(self):
+        # Remember which ally page is open — an equip/unequip refresh must not
+        # bounce the view back to the first ally.
+        prev_index = self._ally_tab_index
+        if getattr(self, "ally_notebook", None) is not None:
+            try:
+                selected = self.ally_notebook.select()
+                if selected:
+                    prev_index = self.ally_notebook.index(selected)
+            except (tk.TclError, ValueError):
+                pass
+        self._ally_tab_index = max(0, prev_index)
+
         for w in self.allies_frame.winfo_children():
             w.destroy()
 
@@ -601,8 +656,11 @@ class InventoryScreen(BaseScreen):
             self.ally_notebook.add(ally_tab, text=tab_label)
             self._render_ally_page(ally_tab, ally)
 
+        # Restore the previously selected ally (clamped if the party shrank).
+        self.ally_notebook.select(min(self._ally_tab_index, len(allies) - 1))
+
     def _render_ally_page(self, parent, ally):
-        """Render a full dedicated page for an ally — mirrors the player Stats & Equip tab."""
+        """Render a full dedicated page for an ally — mirrors the player Character tab."""
         from inventory import get_total_equipment_mods
         from resources.races_classes import ATTRIBUTES
 
@@ -737,12 +795,12 @@ class InventoryScreen(BaseScreen):
                     row, text="Unequip", width=8,
                     command=lambda a=ally, s=slot: self._unequip_ally_slot(a, s),
                 ).pack(side=tk.RIGHT)
-                # Unique gear stays examinable while it is worn.
-                if self._is_unique_item(item):
-                    self.styled_button(
-                        row, text="Examine", width=9,
-                        command=lambda it=item: self._examine_item(it),
-                    ).pack(side=tk.RIGHT, padx=2)
+                # Every worn piece is examinable — affinity and effect without
+                # a trip to the blacksmith.
+                self.styled_button(
+                    row, text="Examine", width=9,
+                    command=lambda it=item: self._examine_item(it),
+                ).pack(side=tk.RIGHT, padx=2)
             else:
                 self.styled_label(row, text=f"{slot_name}: (empty)").pack(side=tk.LEFT)
                 self.styled_button(
@@ -842,6 +900,104 @@ class InventoryScreen(BaseScreen):
             ).pack(anchor=tk.W, padx=6, pady=4)
 
     # ═══════════════════════════════════════════════════════════════════════
+    #  Personal Information box (rendered inside the Character tab)
+    # ═══════════════════════════════════════════════════════════════════════
+
+    def _render_personal_box(self, parent):
+        """Draw the non-stat personal block into `parent`.
+
+        Holds name/level, race/class/profession, the active deed title and
+        the Karma summary. Stats, equipment and milestones keep their own
+        boxes below it.
+        """
+        if not self.player:
+            return
+        p = self.player
+
+        personal = tk.LabelFrame(
+            parent, text=" Personal Information ", bg=Theme.BG_DARK, fg=Theme.TEXT,
+            font=Theme.FONT_BOLD, highlightthickness=1,
+            highlightbackground=Theme.BORDER,
+        )
+        personal.pack(fill=tk.X, pady=4, padx=4)
+
+        # ── Identity ─────────────────────────────────────────────────────────
+        self.styled_label(
+            personal,
+            text=f"Name: {p.get('name', 'Adventurer')}   "
+                 f"Level: {p.get('level', 1)}",
+            fg=Theme.ACCENT, font=Theme.FONT_BOLD,
+        ).pack(anchor=tk.W, padx=6, pady=(4, 1))
+
+        race = p.get("race") or "Unknown"
+        klass = p.get("class") or "Unknown"
+        self.styled_label(
+            personal, text=f"Race: {race}   Class: {klass}",
+        ).pack(anchor=tk.W, padx=6, pady=1)
+
+        from resources.skill_loader import PROFESSIONS
+        profs = PROFESSIONS.get(klass, {})
+        prof = p.get("profession")
+        if prof in profs:
+            prof_text = profs[prof]["name"]
+        elif profs:
+            prof_text = "none — choose at the Guild after the Lv-40 capstone"
+        else:
+            prof_text = "none"
+        self.styled_label(
+            personal, text=f"Profession: {prof_text}",
+        ).pack(anchor=tk.W, padx=6, pady=(1, 3))
+
+        # ── Deed title (docs/titles_design.md) ──────────────────────────────
+        import titles as _titles
+        active_title = _titles.get_active(p)
+        if active_title:
+            title_line = (f"Title: {active_title['name']} — "
+                          f"{_titles.format_effect_line(active_title)}")
+            title_fg = Theme.ACCENT
+        else:
+            title_line = "Title: none — choose one in Journal → Titles."
+            title_fg = Theme.TEXT_DIM
+        self.styled_label(
+            personal, text=title_line, fg=title_fg,
+            wraplength=620, justify=tk.LEFT,
+        ).pack(anchor=tk.W, padx=6, pady=1)
+
+        # ── Karma summary (hidden when the save has the rule off) ───────────
+        import karma
+        if karma.is_enabled(p):
+            karma_value = karma.get_karma(p)
+            tier = karma.get_karma_tier(p)
+            color = (Theme.BUFF_POSITIVE if karma_value > 0
+                     else Theme.BUFF_NEGATIVE if karma_value < 0
+                     else Theme.TEXT)
+            self.styled_label(
+                personal, text=f"Karma: {tier['label']} ({karma_value:+d})",
+                fg=color, font=Theme.FONT_BOLD,
+            ).pack(anchor=tk.W, padx=6, pady=(3, 1))
+
+            shop_pct = int(tier["buy_pct"])
+            if shop_pct > 0:
+                shop_text = f"+{shop_pct}% shop/forge discount"
+            elif shop_pct < 0:
+                shop_text = f"{abs(shop_pct)}% shop/forge surcharge"
+            else:
+                shop_text = "no price shift"
+            bills_mult = karma.get_bills_mult(p)
+            self.styled_label(
+                personal,
+                text=f"   {shop_text}  |  Bills ×{bills_mult:.2f}",
+                fg=Theme.TEXT_DIM, font=Theme.FONT_SMALL,
+            ).pack(anchor=tk.W, padx=6, pady=(0, 2))
+        else:
+            self.styled_label(
+                personal, text="Karma rules are off for this save.",
+                fg=Theme.TEXT_DIM,
+            ).pack(anchor=tk.W, padx=6, pady=(1, 4))
+
+        tk.Frame(personal, height=4, bg=Theme.BG_DARK).pack()
+
+    # ═══════════════════════════════════════════════════════════════════════
     #  TAB 5 — Journal  (sub-notebook: Bounty, Main Quest, Side Quest, Event)
     # ═══════════════════════════════════════════════════════════════════════
 
@@ -884,6 +1040,202 @@ class InventoryScreen(BaseScreen):
         self.journal_notebook.add(event_tab, text=" Event ")
         self._render_event_subtab(event_tab)
 
+        # Dreams sub-tab (Dream Journal — docs/dream_events_design.md §5.3)
+        dream_tab = tk.Frame(self.journal_notebook, bg=Theme.BG_DARK)
+        self.journal_notebook.add(dream_tab, text=" Dreams ")
+        self._render_dream_subtab(dream_tab)
+
+        # Titles sub-tab (docs/titles_design.md)
+        titles_tab = tk.Frame(self.journal_notebook, bg=Theme.BG_DARK)
+        self.journal_notebook.add(titles_tab, text=" Titles ")
+        self._render_titles_subtab(titles_tab)
+
+    def _render_dream_subtab(self, parent):
+        """Render the Dream Journal — every dream seen so far, re-readable."""
+        import dreams as dream_mod
+
+        entries = dream_mod.journal_entries(self.player)
+        if not entries:
+            self.styled_label(
+                parent, text="No dreams yet — sleep at home, at an inn, or at camp.",
+                fg=Theme.TEXT_DIM,
+            ).pack(anchor=tk.CENTER, expand=True)
+            return
+
+        scroll = tk.Scrollbar(parent)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas = tk.Canvas(parent, bg=Theme.BG_DARK, highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.config(command=canvas.yview)
+        canvas.config(yscrollcommand=scroll.set)
+
+        inner = tk.Frame(canvas, bg=Theme.BG_DARK)
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>",
+                   lambda e: canvas.config(scrollregion=canvas.bbox("all")))
+
+        total = sum(e["count"] for e in entries)
+        self.styled_label(
+            inner,
+            text=f"Dream Journal — {len(entries)} of {len(dream_mod.DREAMS)} dreams "
+                 f"seen ({total} night{'s' if total != 1 else ''} of dreams).",
+            fg=Theme.TEXT_DIM,
+        ).pack(anchor=tk.W, padx=6, pady=(4, 6))
+
+        category_color = {
+            "boon": Theme.BUFF_POSITIVE,
+            "burden": Theme.BUFF_NEGATIVE,
+            "choice": Theme.ACCENT,
+            "story": Theme.TEXT,
+        }
+
+        for entry in entries:
+            title = f" {entry['name']} "
+            if entry["count"] > 1:
+                title = f" {entry['name']} (seen ×{entry['count']}) "
+            frame = tk.LabelFrame(
+                inner, text=title, bg=Theme.BG_DARK,
+                fg=category_color.get(entry["category"], Theme.TEXT),
+                font=Theme.FONT_BOLD, highlightthickness=1,
+                highlightbackground=Theme.BORDER,
+            )
+            frame.pack(fill=tk.X, pady=4, padx=4)
+            self.styled_label(
+                frame, text=entry["category"].title(), fg=Theme.TEXT_DIM,
+            ).pack(anchor=tk.W, padx=6, pady=(2, 0))
+            if entry["lines"]:
+                tk.Label(
+                    frame, text=entry["lines"], bg=Theme.BG_DARK,
+                    fg=Theme.TEXT, font=Theme.FONT, wraplength=620,
+                    justify=tk.LEFT,
+                ).pack(anchor=tk.W, padx=6, pady=2)
+            if entry["journal"]:
+                self.styled_label(
+                    frame, text=entry["journal"], fg=Theme.TEXT_DIM,
+                ).pack(anchor=tk.W, padx=6, pady=(0, 4))
+
+    def _render_titles_subtab(self, parent):
+        """Render the deed-title collection (docs/titles_design.md)."""
+        import titles as title_mod
+
+        rows = title_mod.list_titles(self.player)
+        unlocked = sum(1 for r in rows if r["unlocked"])
+
+        scroll = tk.Scrollbar(parent)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas = tk.Canvas(parent, bg=Theme.BG_DARK, highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.config(command=canvas.yview)
+        canvas.config(yscrollcommand=scroll.set)
+
+        inner = tk.Frame(canvas, bg=Theme.BG_DARK)
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>",
+                   lambda e: canvas.config(scrollregion=canvas.bbox("all")))
+
+        self.styled_label(
+            inner,
+            text=f"Titles — {unlocked} of {len(rows)} earned. One may be equipped.",
+            fg=Theme.TEXT_DIM,
+        ).pack(anchor=tk.W, padx=6, pady=(4, 2))
+        self.styled_label(
+            inner,
+            text=title_mod.collection_summary(self.player),
+            fg=Theme.TEXT_DIM,
+        ).pack(anchor=tk.W, padx=6, pady=(0, 6))
+
+        rows.sort(key=lambda r: (not r["active"], not r["unlocked"],
+                                 r["tier"], r["name"]))
+
+        for row in rows:
+            if row["unlocked"]:
+                frame_title = f" {row['name']} "
+                if row["active"]:
+                    frame_title = f" {row['name']} — EQUIPPED "
+                color = Theme.ACCENT if row["active"] else Theme.TEXT
+            else:
+                frame_title = " ??? "
+                color = Theme.TEXT_DIM
+
+            frame = tk.LabelFrame(
+                inner, text=frame_title, bg=Theme.BG_DARK, fg=color,
+                font=Theme.FONT_BOLD, highlightthickness=1,
+                highlightbackground=Theme.ACCENT if row["active"] else Theme.BORDER,
+            )
+            frame.pack(fill=tk.X, pady=4, padx=4)
+
+            meta = f"Tier {row['tier']} · {str(row['category']).title()}"
+            self.styled_label(frame, text=meta, fg=Theme.TEXT_DIM).pack(
+                anchor=tk.W, padx=6, pady=(2, 0)
+            )
+
+            if row["unlocked"]:
+                self.styled_label(
+                    frame, text=row["effect_line"], fg=Theme.BUFF_POSITIVE,
+                ).pack(anchor=tk.W, padx=6, pady=1)
+                if row["description"]:
+                    self.styled_label(
+                        frame, text=row["description"], fg=Theme.TEXT_DIM,
+                    ).pack(anchor=tk.W, padx=6, pady=(0, 2))
+            else:
+                self.styled_label(
+                    frame, text=f"Hint: {row['hint']}", fg=Theme.TEXT,
+                ).pack(anchor=tk.W, padx=6, pady=1)
+                if not row["available"]:
+                    self.styled_label(
+                        frame,
+                        text="Unavailable — this save's game rule is disabled.",
+                        fg=Theme.BUFF_NEGATIVE,
+                    ).pack(anchor=tk.W, padx=6, pady=1)
+                progress = row.get("progress")
+                if progress:
+                    label, current, target = progress
+                    self.styled_label(
+                        frame, text=f"{str(label).title()}: {current} / {target}",
+                        fg=Theme.TEXT_DIM,
+                    ).pack(anchor=tk.W, padx=6, pady=(0, 2))
+
+            # Gambling titles share the same lifetime casino record line,
+            # shown whether the title is locked or unlocked.
+            if row.get("record_line"):
+                self.styled_label(
+                    frame, text=row["record_line"], fg=Theme.TEXT_DIM,
+                    wraplength=620, justify=tk.LEFT,
+                ).pack(anchor=tk.W, padx=6, pady=(0, 2))
+
+            btn_row = tk.Frame(frame, bg=Theme.BG_DARK)
+            btn_row.pack(anchor=tk.W, padx=6, pady=(2, 4))
+            if row["active"]:
+                self.styled_button(
+                    btn_row, text="Unequip", width=12,
+                    command=lambda: self._title_action(None),
+                ).pack(side=tk.LEFT)
+            elif row["unlocked"] and row["available"]:
+                self.styled_button(
+                    btn_row, text="Equip", width=12,
+                    command=lambda tid=row["id"]: self._title_action(tid),
+                ).pack(side=tk.LEFT)
+
+    def _title_action(self, title_id):
+        """Equip (title_id) or unequip (None) from the Journal UI."""
+        import titles as title_mod
+        if title_id:
+            ok, msg = title_mod.equip_title(self.player, title_id)
+        else:
+            ok, msg = title_mod.unequip_title(self.player)
+        self.sm.log(msg)
+        if ok:
+            self._refresh_journal_tab()
+            # Keep the player on the Titles sub-tab after a swap.
+            try:
+                self.journal_notebook.select(
+                    len(self.journal_notebook.tabs()) - 1
+                )
+            except Exception:
+                pass
+            # Title bonuses feed the attribute lines and the personal box.
+            self._refresh_stats_tab()
+
     def _render_bounty_subtab(self, parent):
         """Render the Bounty sub-tab showing active bounties."""
         bounties = self.player.get("active_bounties", [])
@@ -906,18 +1258,26 @@ class InventoryScreen(BaseScreen):
         inner.bind("<Configure>", lambda e: canvas.config(scrollregion=canvas.bbox("all")))
 
         current_day = self.player.get("day", 1)
+        from events import format_day_delta
 
         for b in bounties:
             current = b.get("current", 0)
             required = b["required"]
-            days_left = b.get("deadline", 0) - current_day
+            days_left = b.get("deadline", current_day) - current_day
             ready = current >= required
-            expired = days_left <= 0 and not ready
+            # Matches guild.check_bounty_expiry: the deadline day is still valid.
+            expired = days_left < 0
 
             frame_color = Theme.BORDER
-            title_color = Theme.BUFF_POSITIVE if ready else (Theme.BUFF_NEGATIVE if expired else Theme.TEXT)
-            status_text = "✓ READY TO CLAIM" if ready else ("✗ EXPIRED" if expired else f"{current}/{required}")
-            status_color = Theme.BUFF_POSITIVE if ready else (Theme.BUFF_NEGATIVE if expired else Theme.TEXT)
+            if expired:
+                title_color = status_color = Theme.BUFF_NEGATIVE
+                status_text = "✗ EXPIRED"
+            elif ready:
+                title_color = status_color = Theme.BUFF_POSITIVE
+                status_text = "✓ READY TO CLAIM"
+            else:
+                title_color = status_color = Theme.TEXT
+                status_text = f"{current}/{required}"
 
             frame = tk.LabelFrame(
                 inner,
@@ -938,12 +1298,12 @@ class InventoryScreen(BaseScreen):
                 frame, text=f"Difficulty: {b.get('difficulty', '?')}",
             ).pack(anchor=tk.W, padx=6, pady=1)
             self.styled_label(
-                frame, text=f"Reward: {b.get('reward_gold', 0)} gold, {b.get('reward_favor', 0)} favor",
+                frame, text=f"Reward: {b.get('reward_gold', 0)} gold",
             ).pack(anchor=tk.W, padx=6, pady=1)
-            days_text = f"Expires in {days_left} days" if days_left > 0 else "EXPIRED"
+            days_text = f"Expires {format_day_delta(b.get('deadline', current_day), current_day)}"
             self.styled_label(
                 frame, text=days_text,
-                fg=Theme.BUFF_NEGATIVE if days_left <= 0 else Theme.TEXT_DIM,
+                fg=Theme.BUFF_NEGATIVE if days_left <= 1 else Theme.TEXT_DIM,
             ).pack(anchor=tk.W, padx=6, pady=2)
 
     def _render_quest_subtab(self, parent, quest_key, empty_text):
@@ -1018,9 +1378,10 @@ class InventoryScreen(BaseScreen):
                 ).pack(anchor=tk.W, padx=6, pady=0)
 
             if q.get("day"):
-                self.styled_label(frame, text=f"Day {q['day']}", fg=Theme.TEXT_DIM).pack(
-                    anchor=tk.W, padx=6, pady=(2, 2)
-                )
+                from events import format_short_date
+                self.styled_label(
+                    frame, text=format_short_date(q["day"]), fg=Theme.TEXT_DIM,
+                ).pack(anchor=tk.W, padx=6, pady=(2, 2))
 
     def _render_event_subtab(self, parent):
         """Render the Event sub-tab showing all recorded events."""
@@ -1067,7 +1428,7 @@ class InventoryScreen(BaseScreen):
                 # Create a temp dict with the day for format_date
                 day_info = {"day": evt["day"]}
                 self.styled_label(
-                    frame, text=f"Day {evt['day']} ({format_date(day_info)})",
+                    frame, text=format_date(day_info),
                     fg=Theme.TEXT_DIM,
                 ).pack(anchor=tk.W, padx=6, pady=1)
 
@@ -1109,7 +1470,7 @@ class InventoryScreen(BaseScreen):
             from combat.ally import equip_ally_item
             result = equip_ally_item(ally, item, self.player, target_slot=slot_hint)
             self.sm.log(result if isinstance(result, str) else f"Equipped {item['name']} on {display_name(ally)}.")
-            self._refresh_all()
+            self._show_ally_page(ally)
             return
 
         # ── Player path (original) ───────────────────────────────────────
@@ -1393,6 +1754,149 @@ class InventoryScreen(BaseScreen):
             fg=Theme.TEXT_DIM,
         ).pack(anchor=tk.W, padx=6, pady=(6, 10))
 
+    @staticmethod
+    def _weapon_element_line(item):
+        """Examine line naming the element a weapon actually strikes with.
+
+        Unique weapons keep their hand-authored names (no flower-tier word) —
+        the element and its trait tier live here instead, so a player can see
+        that, say, Abyss Fang causes Dark damage with Leech II.
+        """
+        if item.get("type") != "equipment" or item.get("slot") != "weapon":
+            return ""
+        dmg = item.get("elemental_dmg") or {}
+        if not dmg:
+            return ""
+        primary = item.get("primary_element")
+        if not primary or dmg.get(primary, 0.0) <= 1.0:
+            primary = max(dmg, key=lambda el: dmg.get(el, 1.0))
+        value = dmg.get(primary, 1.0)
+        if value <= 1.0:
+            return ""
+        detail = f"\u00d7{value:.2f}"
+        trait_name = ""
+        try:
+            from combat.elemental_traits import get_trait_for_weapon
+            trait_name = (get_trait_for_weapon(item, item.get("rarity", "unique")) or {}).get("name", "")
+        except Exception:
+            trait_name = ""
+        if trait_name:
+            roman = {1: "I", 2: "II", 3: "III"}.get(item.get("trait_tier"))
+            detail += f" | {trait_name}" + (f" {roman}" if roman else "")
+        return (f"This weapon causes {primary.title()} damage ({detail}) "
+                f"and powers {primary.title()} skills.")
+
+    @staticmethod
+    def _equipment_resistance_text(item):
+        """'Resists Fire ×1.15 … · weak to Water ×0.85' ('' when neutral)."""
+        res = item.get("elemental_res") or {}
+        strong, weak = [], []
+        for element, value in res.items():
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                continue
+            if value > 1.0:
+                strong.append(f"{element.title()} ×{value:.2f}")
+            elif value < 1.0:
+                weak.append(f"{element.title()} ×{value:.2f}")
+        parts = []
+        if strong:
+            parts.append("Resists " + ", ".join(strong))
+        if weak:
+            parts.append("weak to " + ", ".join(weak))
+        return " · ".join(parts)
+
+    @staticmethod
+    def _weapon_skill_boost_line(item):
+        """Line for secondary/tertiary weapon elements (skills only).
+
+        Weapon slots after the primary never proc traits or basic attacks —
+        they only strengthen off-element skills. The Examine popup names them
+        so a multi-element weapon's skill profile is visible.
+        """
+        if item.get("type") != "equipment" or item.get("slot") != "weapon":
+            return ""
+        dmg = item.get("elemental_dmg") or {}
+        infusions = item.get("infusions") or []
+        entries = []
+        if item.get("unique"):
+            # A unique's primary is locked; every infusion is an extra slot.
+            extras = infusions
+        elif len(infusions) > 1:
+            extras = infusions[1:]
+        else:
+            extras = None
+        if extras is not None:
+            for inf in extras:
+                element = inf.get("element")
+                value = float(dmg.get(element, inf.get("value", 1.0)) or 1.0)
+                if element and value > 1.0:
+                    entries.append((element, value))
+        else:
+            # Legacy multi-element profiles without infusion slots.
+            primary = item.get("primary_element")
+            for element, value in dmg.items():
+                if element != primary and float(value) > 1.0:
+                    entries.append((element, float(value)))
+        if not entries:
+            return ""
+        parts = [f"{element.title()} (\u00d7{value:.2f})" for element, value in entries]
+        if len(parts) == 1:
+            joined = parts[0]
+        else:
+            joined = ", ".join(parts[:-1]) + " and " + parts[-1]
+        return f"This weapon boosts skills with {joined}."
+
+    def _equipment_examine_body(self, item):
+        """Affinity + Effect summary for a non-unique equipment piece.
+
+        No lore: just the stats the piece grants (its affinity) and what it
+        actually does, so players can compare gear without the blacksmith.
+        """
+        from combat.form_perks import describe_item_perk
+        from resources.items import ITEMS
+        from resources.unique_effects import unique_effect_text
+
+        template = ITEMS.get(item.get("id"), {}) or {}
+        mods = item.get("mods") or {}
+        stat_txt = ", ".join(
+            f"{stat} {'+' if value >= 0 else ''}{value}"
+            for stat, value in mods.items()
+        ) or "None"
+
+        effects = []
+        scale_txt = format_scaling_stat(item)
+        if scale_txt:
+            effects.append(scale_txt.lstrip("▸ ").strip())
+        if item.get("slot") == "weapon":
+            element_line = self._weapon_element_line(item)
+            if element_line:
+                effects.append(element_line)
+            skill_line = self._weapon_skill_boost_line(item)
+            if skill_line:
+                effects.append(skill_line)
+        else:
+            effects.append(
+                self._equipment_resistance_text(item)
+                or "No elemental resistance — infuse a flower"
+            )
+        perk_line = describe_item_perk(item) or describe_item_perk(template)
+        if perk_line:
+            effects.append(f"Tradition — {perk_line}")
+        special = item.get("special") or template.get("special")
+        if special:
+            effect_txt = unique_effect_text(special)
+            if effect_txt:
+                effects.append(effect_txt)
+
+        body = f"Affinity: {stat_txt}"
+        if effects:
+            body += "\n\nEffect: " + " · ".join(effects)
+        else:
+            body += "\n\nEffect: None."
+        return body
+
     def _examine_item(self, item):
         """Popup showing an item's name, rarity, lore, and equip effect.
 
@@ -1401,12 +1905,20 @@ class InventoryScreen(BaseScreen):
         trophies via `resources.unique_effects.py`, wedding accessories via
         their combat blurbs (base + bonded variant), and flavour-only uniques
         say so instead of staying silent.
+
+        Ordinary equipment gets the compact form: its display name (rarity +
+        element + form + enhancement) with Affinity and Effect lines, no lore.
         """
         from gui.widgets.confirm_dialog import ok_dialog
         from resources.items import ITEMS
         from resources.unique_effects import unique_effect_text
 
         name = item.get("name", "Key Item")
+        if item.get("type") == "equipment" and not self._is_unique_item(item):
+            ok_dialog(self, name,
+                      f"{name}\n\n{self._equipment_examine_body(item)}")
+            return
+
         template = ITEMS.get(item.get("id"), {}) or {}
         desc = item.get("description")
         if not desc:
@@ -1432,13 +1944,27 @@ class InventoryScreen(BaseScreen):
                   or template.get("rarity") or "")
         rarity = rarity.capitalize()
         body = f"{name}  ({rarity})" if rarity else name
+        element_line = self._weapon_element_line(item)
+        if element_line:
+            body += f"\n\n{element_line}"
+        skill_line = self._weapon_skill_boost_line(item)
+        if skill_line:
+            body += f"\n{skill_line}"
+        if item.get("slot") != "weapon":
+            res_line = self._equipment_resistance_text(item)
+            if res_line:
+                body += f"\n\n{res_line}"
         if desc:
             body += f"\n\n{desc}"
         if effect:
             body += f"\n\nEquip Effect: {effect}"
+        from combat.form_perks import describe_item_perk
+        perk_line = describe_item_perk(item) or describe_item_perk(template)
+        if perk_line:
+            body += f"\n\nForm tradition — {perk_line}"
         if bonded_note:
             body += f"\n\n{bonded_note}"
-        elif not desc and not effect:
+        elif not desc and not effect and not perk_line:
             body += "\n\nNo description recorded for this keepsake."
         ok_dialog(self, name, body)
 
@@ -1525,9 +2051,10 @@ class InventoryScreen(BaseScreen):
         self._refresh_all()
 
     def _unequip_ally_slot(self, ally, slot):
-        """Unequip a slot on an ally."""
+        """Unequip a slot on an ally, staying on that ally's page."""
         from combat.ally import unequip_ally_slot
         result = unequip_ally_slot(ally, slot, self.player)
+        self._remember_ally_index(ally)
         self._handle_unequip_result(result)
         self._refresh_all()
 
@@ -1563,7 +2090,6 @@ class InventoryScreen(BaseScreen):
         dlg = tk.Toplevel(self)
         dlg.title("Choose Accessory Slot")
         dlg.configure(bg=Theme.BG_DARK)
-        dlg.geometry("400x240" if unlocked3 else "400x200")
         dlg.transient(self)
         dlg.grab_set()
 
@@ -1595,7 +2121,10 @@ class InventoryScreen(BaseScreen):
                 self.sm.log(result if isinstance(result, str) else f"Equipped {item['name']} on {display_name(ally)}.")
 
             dlg.destroy()
-            self._refresh_all()
+            if target == "player":
+                self._refresh_all()
+            else:
+                self._show_ally_page(ally)
 
         btn1_text = f"Replace {acc1['name']}" if acc1 else "Accessory 1"
         btn2_text = f"Replace {acc2['name']}" if acc2 else "Accessory 2"
@@ -1607,9 +2136,70 @@ class InventoryScreen(BaseScreen):
             self.styled_button(dlg, text=btn3_text, command=lambda: choose("accessory3")).pack(pady=4)
         self.styled_button(dlg, text="Cancel", command=dlg.destroy).pack(pady=4)
 
+        # Center over the app window — without explicit coordinates the window
+        # manager drops this dialog in the top-left corner.
+        dlg.update_idletasks()
+        width, height = 400, 240 if unlocked3 else 200
+        try:
+            parent = self.winfo_toplevel()
+            px, py = parent.winfo_rootx(), parent.winfo_rooty()
+            pw, ph = parent.winfo_width(), parent.winfo_height()
+        except tk.TclError:
+            px, py, pw, ph = 100, 100, 800, 600
+        dlg.geometry(
+            f"{width}x{height}"
+            f"+{px + (pw - width) // 2}+{py + (ph - height) // 2}"
+        )
+
     # ═══════════════════════════════════════════════════════════════════════
     #  Navigation / Refresh
     # ═══════════════════════════════════════════════════════════════════════
+
+    def _on_main_tab_changed(self, _event=None):
+        """Rebuild the Bag whenever it becomes the visible tab.
+
+        Dungeon loot (flowers especially) is added while this screen sits
+        hidden, so a bag built once at login went stale and looked empty.
+        """
+        try:
+            if self.notebook.select() == str(self.bag_frame):
+                self._refresh_bag_tab()
+        except tk.TclError:
+            pass
+
+    def _remember_ally_index(self, ally):
+        """Store *ally*'s party position as the sub-tab to keep selected."""
+        allies = (self.player or {}).get("allies", [])
+        index = None
+        for idx, candidate in enumerate(allies):
+            if candidate is ally:
+                index = idx
+                break
+        if index is None:
+            try:
+                index = allies.index(ally)
+            except ValueError:
+                return
+        self._ally_tab_index = index
+        # Mirror the choice onto the live notebook so a concurrent refresh
+        # cannot fall back to the previously displayed ally.
+        try:
+            if getattr(self, "ally_notebook", None) is not None:
+                self.ally_notebook.select(index)
+        except (tk.TclError, ValueError):
+            pass
+
+    def _show_ally_page(self, ally):
+        """Refresh the screen, then return to *ally*'s page."""
+        self._remember_ally_index(ally)
+        self._refresh_all()
+        try:
+            self.notebook.select(self.allies_frame)
+            count = len((self.player or {}).get("allies", []))
+            if count and getattr(self, "ally_notebook", None) is not None:
+                self.ally_notebook.select(min(self._ally_tab_index, count - 1))
+        except (tk.TclError, ValueError):
+            pass
 
     def _refresh_all(self):
         self._refresh_stats_tab()

@@ -6,6 +6,27 @@ from utils import get_difficulty_multiplier_from_time
 from combat.status_effects import get_weaken_pct
 
 
+# ===========================================================================
+# FLAT STAT BUFF SCALING
+# ===========================================================================
+# Flat attribute buffs grow with the holder's level so they stay relevant
+# next to percentage damage buffs (which scale with total power).
+STAT_BUFF_FLAT_BONUS = 1          # small baseline buff on every flat stat buff
+STAT_BUFF_SCALE_PER_LEVEL = 0.15  # +0.15 per level above 1
+
+
+def scaled_stat_buff_value(base, entity, per_level=None, flat_bonus=STAT_BUFF_FLAT_BONUS):
+    """Return a flat stat buff magnitude scaled to the holder's level.
+
+    ``per_level=None`` uses STAT_BUFF_SCALE_PER_LEVEL. A base +2 buff becomes
+    +3 at Lv1, +5 at Lv15 and +8 at Lv40 (before mastery multipliers).
+    """
+    if per_level is None:
+        per_level = STAT_BUFF_SCALE_PER_LEVEL
+    level = max(1, int(entity.get("level", 1) or 1))
+    return int(base + flat_bonus + (level - 1) * per_level + 0.5)
+
+
 def compute_enemy_attributes(enemy_key):
     template = ENEMIES[enemy_key]
     race_name = template["race"]
@@ -56,6 +77,7 @@ def enemy_stats(enemy_key, player=None):
     result = {
         "key": enemy_key,
         "name": template["name"],
+        "race": template.get("race", ""),
         "hp": scaled_hp,
         "max_hp": scaled_hp,
         "str_mod": scaled_str,
@@ -64,8 +86,15 @@ def enemy_stats(enemy_key, player=None):
         "level": template["level"],
         "multiplier": round(multiplier, 2),
         "monster_girl": template.get("monster_girl", False),
+        "boss": template.get("boss", False),
+        "super_boss": template.get("super_boss", False),
+        "role": template.get("role"),
         "dialogue": template.get("dialogue", {}),
         "status_res": template.get("status_res", 0.0),
+        # Regular-enemy ability kit overrides (combat/enemy_skills.py).
+        # Absent keys mean "derive from race + name keywords".
+        "abilities": template.get("abilities"),
+        "ai_disabled": template.get("ai_disabled", False),
     }
 
     # Add elemental stats
@@ -87,17 +116,15 @@ def get_effective_attribute(player, attr_name):
     equip_mods = get_total_equipment_mods(player)
     total = base + equip_mods.get(attr_name, 0)
 
-    # Apply passive skill bonuses
-    from combat.skills import get_passive_skill
-    passive = get_passive_skill(player)
-    if passive and player.get("passive_unlocked", True):
-        effect = passive.get("effect", {})
-        if effect.get("stat") == "all":
-            affected = effect.get("stats", [])
-            if attr_name in affected:
+    # Apply passive skill bonuses (class passive, or the upgraded profession passive)
+    from combat.skills import get_player_passive_effects
+    if player.get("passive_unlocked", True):
+        for effect in get_player_passive_effects(player):
+            if effect.get("stat") == "all":
+                if attr_name in effect.get("stats", []):
+                    total += effect.get("value", 0)
+            elif effect.get("stat") == attr_name:
                 total += effect.get("value", 0)
-        elif effect.get("stat") == attr_name:
-            total += effect.get("value", 0)
 
     for debuff in player.get("active_debuffs", []):
         if debuff.get("type") == "curse":
@@ -110,7 +137,7 @@ def get_effective_attribute(player, attr_name):
             total = int(total * (1.0 - weaken_pct))
 
     for buff in player.get("active_buffs", []):
-        if buff.get("type") in ("blessing", "well_rested") or buff.get("stat") == "all":
+        if buff.get("type") in ("blessing", "well_rested", "dream_blessed") or buff.get("stat") == "all":
             total += buff.get("value", 0)
         elif buff.get("stat") == attr_name:
             total += buff.get("value", 0)
@@ -147,6 +174,10 @@ def get_effective_attribute(player, attr_name):
     fatigue = int(player.get("fatigue_stacks", 0) or 0)
     if fatigue and not player.get("_eh_in_run"):
         total -= fatigue
+
+    # Deed titles: flat attribute bonus (player-only — allies carry no title).
+    from titles import combat_stat_bonus
+    total += combat_stat_bonus(player, attr_name)
 
     return total
 
@@ -236,6 +267,18 @@ def get_raw_critical_chance(entity, entity_type="player", dex=None, lrn=None, bo
         if debuff.get("type") == "crit_chance_down":
             crit_chance -= debuff.get("value", 0)
 
+    # Profession passive crit chance (player only; allies have no class passives)
+    if entity_type != "enemy":
+        from combat.skills import get_player_passive_crit_bonus
+        crit_chance += get_player_passive_crit_bonus(entity)
+        # Form tradition (Keen)
+        from combat.form_perks import get_form_crit_chance_bonus
+        crit_chance += get_form_crit_chance_bonus(entity)
+        # Father's Legacy (Halfling child): +5% crit
+        if entity.get("is_ally"):
+            from family import father_legacy_crit_chance
+            crit_chance += father_legacy_crit_chance(entity)
+
     return crit_chance + bonus
 
 
@@ -252,8 +295,18 @@ def resolve_critical_chance(entity, entity_type="player", dex=None, lrn=None, bo
         cap = entity.get("_eh_crit_cap", ENEMY_CRIT_CHANCE_CAP)
         return max(0.0, min(raw, cap)), 0.0
     overflow = max(0.0, raw - CRIT_CHANCE_CAP)
+    # Crit-damage buffs (Perfect Opening, Reckless Abandon) add straight to
+    # the crit multiplier — they cannot overflow into the chance cap.
+    crit_dmg_bonus = 0.0
+    for buff in entity.get("active_buffs", []):
+        if buff.get("type") == "crit_damage":
+            crit_dmg_bonus += buff.get("value", 0)
+    # Form tradition (Brutal)
+    if entity_type != "enemy":
+        from combat.form_perks import get_form_crit_damage_bonus
+        crit_dmg_bonus += get_form_crit_damage_bonus(entity)
     chance = max(0.0, min(raw, CRIT_CHANCE_CAP))
-    return chance, overflow * CRIT_OVERFLOW_TO_DAMAGE
+    return chance, overflow * CRIT_OVERFLOW_TO_DAMAGE + crit_dmg_bonus
 
 
 def get_critical_chance(entity, entity_type="player", dex=None, lrn=None, bonus=0.0):
@@ -361,10 +414,26 @@ def get_dodge_chance(defender, attacker):
         if buff.get("type") == "evasion":
             base += buff.get("value", 0)
 
+    # Sylvana's Queen's Grace — party +5% evasion while she lives
+    if defender.get("_mirror_grace"):
+        base += 0.05
+
     # Race passive evasion (Goblin dodge, Shadow evade — allies only)
     if defender.get("is_ally"):
         from combat.ally_skills import get_race_evasion
         base += get_race_evasion(defender)
+        # Father's Legacy (Elf child): +5% dodge
+        from family import father_legacy_evasion
+        base += father_legacy_evasion(defender)
+
+    # Profession passive evasion (player only)
+    if not defender.get("is_ally"):
+        from combat.skills import get_player_passive_evasion
+        base += get_player_passive_evasion(defender)
+
+    # Form tradition evasion (Nimble)
+    from combat.form_perks import get_form_evasion
+    base += get_form_evasion(defender)
 
     # Black Silence Gloves: +8% dodge when equipped
     from combat.weapon.black_silence_gloves import get_gloves_dodge_bonus

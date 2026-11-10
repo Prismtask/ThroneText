@@ -1,6 +1,6 @@
 # combat/ally.py
 """Ally system - companions recruited from house monster girls."""
-from combat.combat_io import c_print, c_input, c_clear
+from combat.combat_io import c_print, c_input, c_clear, c_renders_menus
 import random
 from combat.stats import compute_enemy_attributes
 from resources.enemies import ENEMIES, ENEMY_RACES
@@ -8,6 +8,7 @@ from resources.races_classes import ATTRIBUTES
 from inventory import get_total_equipment_mods, remove_item_by_reference
 from resources.quests import get_resonance_grade
 from utils import display_name
+from events import format_days_left
 from combat.helpers import ACTION_CANCELLED_MSG
 
 ALLY_STAT_MULTIPLIER = 0.85   # Allies are slightly stronger at base
@@ -54,6 +55,17 @@ def get_bench_limit(player):
     return get_party_capacity(player)[1]
 
 
+def get_ally_capacity(player):
+    """Max allies the roster may hold at the current Resonance grade.
+
+    Front + bench slots (the player is not counted), capped by MAX_ALLIES.
+    Every "party is full" prompt must use this instead of MAX_ALLIES so a
+    new ally is only accepted when a deployable slot exists — otherwise the
+    player is asked who makes room.
+    """
+    return min(MAX_ALLIES, get_active_limit(player) + get_bench_limit(player))
+
+
 # ── Party order management ───────────────────────────────────────────────────
 
 def ensure_party_order(player):
@@ -91,7 +103,8 @@ def get_active_allies(player):
     for idx in order[:get_active_limit(player)]:
         if idx < len(allies):
             ally = allies[idx]
-            if not ally.get("defeated") and ally.get("current_hp", 0) > 0:
+            if (not ally.get("defeated") and ally.get("current_hp", 0) > 0
+                    and not ally.get("_stress_sit_out")):
                 result.append(ally)
     return result
 
@@ -107,7 +120,8 @@ def get_reserve_allies(player):
     for idx in order[active_limit:active_limit + bench_limit]:
         if idx < len(allies):
             ally = allies[idx]
-            if not ally.get("defeated") and ally.get("current_hp", 0) > 0:
+            if (not ally.get("defeated") and ally.get("current_hp", 0) > 0
+                    and not ally.get("_stress_sit_out")):
                 result.append(ally)
     return result
 
@@ -119,8 +133,13 @@ def get_all_active_allies_including_defeated(player):
     order = player.get("party_order", [])
     result = []
     for idx in order[:get_active_limit(player)]:
-        if idx < len(allies):
-            result.append(allies[idx])
+        if idx < len(allies) and not allies[idx].get("_stress_sit_out"):
+            ally = allies[idx]
+            # SWALLOWED (Big Bad Wolf) — the ally is inside the Wolf, not on
+            # the field; they must vanish from party panels until spat out.
+            if ally.get("_swallowed"):
+                continue
+            result.append(ally)
     return result
 
 
@@ -133,8 +152,11 @@ def get_all_reserve_allies_including_defeated(player):
     bench_limit = get_bench_limit(player)
     result = []
     for idx in order[active_limit:active_limit + bench_limit]:
-        if idx < len(allies):
-            result.append(allies[idx])
+        if idx < len(allies) and not allies[idx].get("_stress_sit_out"):
+            ally = allies[idx]
+            if ally.get("_swallowed"):
+                continue
+            result.append(ally)
     return result
 
 
@@ -340,7 +362,9 @@ def ally_max_hp(ally):
     """Compute ally max HP based on Constitution and level-up bonuses (same formula as player)."""
     con = ally["attributes"]["Constitution"]
     bonus = ally.get("level_hp_bonus", 0)
-    return int(15 + con * 3 + bonus)
+    base = int(15 + con * 3 + bonus)
+    from family import father_legacy_max_hp_mult
+    return int(base * father_legacy_max_hp_mult(ally))
 
 
 def compute_girl_attributes(girl):
@@ -411,14 +435,17 @@ def get_growth_label(entity):
     return "Low"
 
 
-def apply_ally_growth(ally):
+def apply_ally_growth(ally, choose_attr=None):
     """Apply late-bloomer growth points owed at the ally's current level.
 
     `growth_applied` (persisted on ally + house records) tracks points already
-    granted, making this idempotent. New points go to the girl's highest
-    current attribute (tie-break: ATTRIBUTES order). Returns display lines for
-    anything granted. Call after the manual level-up point and before the HP
-    recalculation so Constitution growth counts toward max HP.
+    granted, making this idempotent. Each new point is a level-up bonus: when
+    `choose_attr` is supplied the player picks the attribute for it (the same
+    picker as the manual level-up point); otherwise the point falls back to
+    the girl's highest current attribute (tie-break: ATTRIBUTES order).
+    Returns display lines for anything granted. Call after the manual
+    level-up point and before the HP recalculation so Constitution growth
+    counts toward max HP.
     """
     if not ally.get("attributes"):
         return []
@@ -437,9 +464,16 @@ def apply_ally_growth(ally):
     attrs = ally["attributes"]
     counts = {}
     for _ in range(gain):
-        best = max(ATTRIBUTES, key=lambda a: (attrs.get(a, 0), -ATTRIBUTES.index(a)))
-        attrs[best] = attrs.get(best, 0) + 1
-        counts[best] = counts.get(best, 0) + 1
+        chosen = None
+        if choose_attr is not None:
+            try:
+                chosen = choose_attr(attrs)
+            except Exception:
+                chosen = None
+        if chosen not in ATTRIBUTES:
+            chosen = max(ATTRIBUTES, key=lambda a: (attrs.get(a, 0), -ATTRIBUTES.index(a)))
+        attrs[chosen] = attrs.get(chosen, 0) + 1
+        counts[chosen] = counts.get(chosen, 0) + 1
     ally["growth_applied"] = max(applied, target)
     parts = ", ".join(f"+{n} {attr}" for attr, n in counts.items())
     return [f"[Late Bloomer] {display_name(ally)}: {parts} (growth)"]
@@ -454,19 +488,28 @@ def create_ally_from_girl(girl):
     enemy_key = girl.get("key")
     template = ENEMIES.get(enemy_key)
     if not template:
-        # Fallback for missing template — still preserves stored HP/stress.
+        # Fallback for missing templates — true-born children use synthetic
+        # keys, so use their stored attributes/skills to keep them playable.
         from combat.elemental import neutral_profile
         level = girl.get("level", 1)
-        stored_hp = girl.get("current_hp")
-        fallback_hp = 30 if stored_hp is None else max(1, min(int(stored_hp), 30))
         fallback = {
             "name": girl.get("name", "Companion"),
             "nickname": girl.get("nickname", ""),
             "key": enemy_key or "unknown",
+            "mother_key": girl.get("mother_key"),
             "level": level,
-            "attributes": {attr: 1 for attr in ATTRIBUTES},
-            "current_hp": fallback_hp,
-            "max_hp": 30,
+            "attributes": compute_girl_attributes(girl),
+            "race": girl.get("race"),
+            "innate_skills": list(girl.get("innate_skills", []) or []),
+            "passive_skill": girl.get("passive_skill"),
+            "learned_skills": list(girl.get("learned_skills", []) or []),
+            "upgrade_skills": list(girl.get("upgrade_skills", []) or []),
+            "awakened": girl.get("awakened", False),
+            "awakened_name": girl.get("awakened_name", ""),
+            "awakened_skills": list(girl.get("awakened_skills", []) or []),
+            "learning": girl.get("learning"),
+            "skill_cooldowns": dict(girl.get("skill_cooldowns") or {}),
+            "skill_mastery": dict(girl.get("skill_mastery") or {}),
             "equipped": {"weapon": None, "armor": None, "accessory1": None, "accessory2": None},
             "active_buffs": [],
             "active_debuffs": [],
@@ -478,11 +521,28 @@ def create_ally_from_girl(girl):
             "dreaded": False,
             "silenced": False,
             "is_ally": True,
+            "monster_girl": girl.get("monster_girl", True),
             "affection": girl.get("affection", 20),
+            "affection_cap": girl.get("affection_cap", 200),
+            "is_trueborn": girl.get("is_trueborn", False),
+            "no_romance": girl.get("no_romance", False),
+            "stage": girl.get("stage") or ("adult" if girl.get("is_trueborn") else None),
+            "prime": bool(girl.get("prime", False)),
+            "pregnant": girl.get("pregnant", False),
+            "conceived_day": girl.get("conceived_day", 0),
+            "due_day": girl.get("due_day", 0),
+            "next_conception_day": girl.get("next_conception_day", 0),
+            "recovery_until": girl.get("recovery_until", 0),
+            "pregnancy_pity": girl.get("pregnancy_pity", 0),
+            "preferred_tones": list(girl.get("preferred_tones", []) or []),
+            "father_legacy": dict(girl.get("father_legacy") or {}),
+            "beloved_until_day": girl.get("beloved_until_day", 0),
             "ring_stat_bonus": dict(girl.get("ring_stat_bonus") or {}),
             "exp": girl.get("exp", 0),
             "level_hp_bonus": _fix_level_hp_bonus(girl),
+            "level_cap": girl.get("level_cap", 10),
             "growth_applied": int(girl.get("growth_applied", 0) or 0),
+            "defeated": False,
             "stress": int(girl.get("stress", 0)),
             "consecutive_dispatch": int(girl.get("consecutive_dispatch", 0)),
             "last_dispatch": girl.get("last_dispatch"),
@@ -491,6 +551,12 @@ def create_ally_from_girl(girl):
             "elemental_res": neutral_profile(),
             "elemental_dmg": neutral_profile(),
         }
+        fallback["max_hp"] = ally_max_hp(fallback)
+        stored_hp = girl.get("current_hp")
+        fallback["current_hp"] = (
+            fallback["max_hp"] if stored_hp is None
+            else max(1, min(int(stored_hp), fallback["max_hp"]))
+        )
         if girl.get("acc3_unlocked"):
             fallback["acc3_unlocked"] = True
             fallback["equipped"]["accessory3"] = None
@@ -505,6 +571,7 @@ def create_ally_from_girl(girl):
         "name": girl.get("name", template["name"]),
         "nickname": girl.get("nickname", ""),
         "key": enemy_key,
+        "mother_key": girl.get("mother_key"),
         "level": girl.get("level", template["level"]),
         "attributes": scaled_attrs,
         "equipped": {"weapon": None, "armor": None, "accessory1": None, "accessory2": None},
@@ -519,9 +586,23 @@ def create_ally_from_girl(girl):
         "silenced": False,
         "is_ally": True,
         "affection": girl.get("affection", 30),
-        "affection_cap": girl.get("affection_cap", 100),
+        "affection_cap": girl.get("affection_cap", 200),
         "engaged": girl.get("engaged", False),
         "married": girl.get("married", False),
+        # Family system state survives the house round-trip (Phase 1 scaffold)
+        "pregnant": girl.get("pregnant", False),
+        "conceived_day": girl.get("conceived_day", 0),
+        "due_day": girl.get("due_day", 0),
+        "next_conception_day": girl.get("next_conception_day", 0),
+        "recovery_until": girl.get("recovery_until", 0),
+        "pregnancy_pity": girl.get("pregnancy_pity", 0),
+        "beloved_until_day": girl.get("beloved_until_day", 0),
+        "is_trueborn": girl.get("is_trueborn", False),
+        "no_romance": girl.get("no_romance", False),
+        "stage": girl.get("stage") or ("adult" if girl.get("is_trueborn") else None),
+        "prime": bool(girl.get("prime", False)),
+        "preferred_tones": list(girl.get("preferred_tones", []) or []),
+        "father_legacy": dict(girl.get("father_legacy") or {}),
         "ring_stat_bonus": dict(girl.get("ring_stat_bonus") or {}),
         "monster_girl": template.get("monster_girl", True),
         "exp": girl.get("exp", 0),
@@ -619,7 +700,7 @@ def get_ally_effective_attribute(ally, attr_name):
             total = int(total * (1.0 - weaken_pct))
 
     for buff in ally.get("active_buffs", []):
-        if buff.get("type") in ("blessing", "well_rested") or buff.get("stat") == "all":
+        if buff.get("type") in ("blessing", "well_rested", "dream_blessed") or buff.get("stat") == "all":
             total += buff.get("value", 0)
         elif buff.get("stat") == attr_name:
             total += buff.get("value", 0)
@@ -656,6 +737,11 @@ def get_ally_effective_attribute(ally, attr_name):
         if debuff.get("type") == "eh_entropy":
             total = int(total * (1.0 - min(0.95, debuff.get("value", 0))))
             break
+
+    # Companion stress — the ally-side counterpart of the player's fatigue:
+    # Weary −1 / Frayed −2 / Burned Out −3 to every attribute.
+    from combat.party_stress import stress_penalty
+    total -= stress_penalty(ally)
 
     return total
 
@@ -716,7 +802,9 @@ def _hp_bar(current, max_hp, width=10):
 
 def get_alive_allies(player):
     """Return list of alive (non-defeated) allies from player."""
-    return [a for a in player.get("allies", []) if not a.get("defeated") and a.get("current_hp", 0) > 0]
+    return [a for a in player.get("allies", [])
+            if not a.get("defeated") and a.get("current_hp", 0) > 0
+            and not a.get("_stress_sit_out")]
 
 
 def get_all_party_members(player):
@@ -876,13 +964,31 @@ def _ally_to_house_record(ally, stashed_equipment):
         ally["stress"] = min(100, int(ally.get("stress", 0)) + 10)
     record = {
         "key": ally.get("key"),
+        "mother_key": ally.get("mother_key"),
         "name": ally["name"],
         "nickname": ally.get("nickname", ""),
         "level": ally["level"],
         "affection": ally.get("affection", 30),
-        "affection_cap": ally.get("affection_cap", 100),
+        "affection_cap": ally.get("affection_cap", 200),
         "engaged": ally.get("engaged", False),
         "married": ally.get("married", False),
+        # Family system state (pregnancy/true-born) survives going home
+        "pregnant": ally.get("pregnant", False),
+        "conceived_day": ally.get("conceived_day", 0),
+        "due_day": ally.get("due_day", 0),
+        "next_conception_day": ally.get("next_conception_day", 0),
+        "recovery_until": ally.get("recovery_until", 0),
+        "pregnancy_pity": ally.get("pregnancy_pity", 0),
+        "beloved_until_day": ally.get("beloved_until_day", 0),
+        "is_trueborn": ally.get("is_trueborn", False),
+        "no_romance": ally.get("no_romance", False),
+        "stage": ally.get("stage") or ("adult" if ally.get("is_trueborn") else None),
+        "prime": bool(ally.get("prime", False)),
+        "race": ally.get("race"),
+        "innate_skills": list(ally.get("innate_skills", []) or []),
+        "passive_skill": ally.get("passive_skill"),
+        "preferred_tones": list(ally.get("preferred_tones", []) or []),
+        "father_legacy": dict(ally.get("father_legacy") or {}),
         "ring_stat_bonus": dict(ally.get("ring_stat_bonus") or {}),
         "exp": ally.get("exp", 0),
         "level_hp_bonus": ally.get("level_hp_bonus", 0),
@@ -901,6 +1007,10 @@ def _ally_to_house_record(ally, stashed_equipment):
         "awakened_skills": list(ally.get("awakened_skills", []) or []),
         # Heroine facility upgrade skills (own category — not learned skills)
         "upgrade_skills": list(ally.get("upgrade_skills", []) or []),
+        # Heroine identity/passives survive the house round-trip.
+        "_heroine_key": ally.get("_heroine_key"),
+        "_heroine_passive": ally.get("_heroine_passive"),
+        "_heroine_permanent_passive": ally.get("_heroine_permanent_passive"),
         # Beating Root — the third accessory slot persists on the house record
         "acc3_unlocked": bool(ally.get("acc3_unlocked", False)),
     }
@@ -976,16 +1086,29 @@ def _return_ally_to_house(player, ally, house):
 
 
 def recruit_ally_from_house(player, girl, house):
-    """Recruit a monster girl from house to active party (max 7 allies, 8 total party)."""
+    """Recruit a monster girl from house to the active party.
+
+    Capacity is the current Command Resonance front + bench slots (capped at
+    MAX_ALLIES); the player is asked who makes room when it is reached.
+    """
+    from family import is_trueborn_minor
     day = player.get("day", 1)
+    if is_trueborn_minor(girl):
+        return None, f"{display_name(girl)} is still a child and can't join the party yet."
     if girl.get("dispatch_mission"):
         return None, f"{display_name(girl)} is away on a dispatch and can't join the party right now."
+    if int(girl.get("recovery_until", 0) or 0) > day:
+        return None, (f"{display_name(girl)} is still recovering after childbirth "
+                      f"({format_days_left(girl.get('recovery_until'), day)} left) — "
+                      f"she can't join the party yet.")
     if int(girl.get("injured_until", 0) or 0) > day:
-        return None, (f"{display_name(girl)} is injured and recovering until Day "
-                      f"{int(girl.get('injured_until', 0))} — she can't join the party yet.")
+        return None, (f"{display_name(girl)} is injured and recovering "
+                      f"({format_days_left(girl.get('injured_until'), day)} left) — "
+                      f"she can't join the party yet.")
     allies = player.get("allies", [])
-    if len(allies) >= MAX_ALLIES:
-        # Party is full — ask who to replace
+    capacity = get_ally_capacity(player)
+    if len(allies) >= capacity:
+        # Party is full for this Resonance grade — ask who to replace
         ally_names = []
         for i, a in enumerate(allies):
             if a.get("defeated") or a.get("current_hp", 0) <= 0:
@@ -995,7 +1118,7 @@ def recruit_ally_from_house(player, girl, house):
             ally_names.append(f"{display_name(a)} — {status}")
         ally_names.append("Cancel")
         from gui.terminal import term
-        choice = term.menu(ally_names, prompt=f"Your party is full ({MAX_ALLIES}/{MAX_ALLIES}). Replace which ally?")
+        choice = term.menu(ally_names, prompt=f"Your party is full ({len(allies)}/{capacity}). Replace which ally?")
         if choice < 0 or choice >= len(allies):
             return None, "Recruitment cancelled."
         replaced = allies[choice]
@@ -1048,6 +1171,11 @@ def _ally_action_menu(ally, player, enemies):
     from combat.weapon.abyss_fang import is_abyss_fang_available
     if is_abyss_fang_available(ally):
         actions.append(('w', 'Wield the Abyss'))
+
+    # Moonlight Greatsword – weapon skill (magical AoE basics for 3 turns)
+    from combat.weapon.moonlight_greatsword import is_moonlight_available
+    if is_moonlight_available(ally):
+        actions.append(('m', 'Moonlight'))
 
     # Captain's Cutlass – Crew Rally
     from combat.weapon.captain_cutlass import is_captain_cutlass_available
@@ -1140,11 +1268,17 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     Returns: "continue", "victory", "dead", or "retry"
     """
     from combat.combat_ui import print_combat_hud
-    from combat.status_effects import is_silenced
+    from combat.status_effects import is_silenced, consume_stun
     from character import player_max_hp
 
     # Reset defending flag each turn so it only applies if they choose Defend THIS turn
     ally["defending_this_turn"] = False
+
+    # ── Stun: lose this action (parity with enemy_ai) ──
+    if consume_stun(ally):
+        print_combat_hud(player, enemies, active_ally=ally)
+        c_print(f"  {display_name(ally)} is stunned and cannot act!")
+        return "continue"
 
     # Per-action status markers (White Knight skill dodge / accuracy penalty)
     for _e in enemies:
@@ -1199,10 +1333,13 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         player["_ally_switch_front"] = ally["name"]
         try:
             c_print(f"\n  {display_name(ally)} prepares to swap with a reserve ally...")
-            c_print("\n  --- BACKUP PARTY (Back Row) ---")
-            for i, r_ally in enumerate(reserve):
-                c_print(f"  [{i+1}] {display_name(r_ally)} — HP: {r_ally['current_hp']}/{r_ally['max_hp']}")
-            c_print("  [0] Cancel")
+            # GUI mode shows the reserve party as switchable cards in the enemy
+            # column (badge numbers + HP), so skip the legacy text roster.
+            if not c_renders_menus():
+                c_print("\n  --- BACKUP PARTY (Back Row) ---")
+                for i, r_ally in enumerate(reserve):
+                    c_print(f"  [{i+1}] {display_name(r_ally)} — HP: {r_ally['current_hp']}/{r_ally['max_hp']}")
+                c_print("  [0] Cancel")
 
             try:
                 choice = c_input(f"  Pick an ally to swap {display_name(ally)} with: ").strip()
@@ -1234,6 +1371,12 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
     if action == "w":
         from combat.weapon.abyss_fang import _wield_abyss_fang_actor
         result, _def = _wield_abyss_fang_actor(ally, is_player=False)
+        return result
+
+    # ----- MOONLIGHT (Moonlight Greatsword weapon special) -----
+    if action == "m":
+        from combat.weapon.moonlight_greatsword import _use_moonlight_actor
+        result, _def = _use_moonlight_actor(ally, is_player=False)
         return result
 
     # ----- CREW RALLY (Captain's Cutlass weapon special) -----
@@ -1405,6 +1548,19 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
 
     # ----- ATTACK -----
     if action == "a":
+        # Moonlight Greatsword: while empowered, basics become a magical wave
+        # that strikes every enemy (no target selection).
+        from combat.weapon.moonlight_greatsword import (
+            is_moonlight_active, execute_moonlight_aoe_attack,
+        )
+        if is_moonlight_active(ally):
+            execute_moonlight_aoe_attack(
+                ally, player, enemies,
+                (a_str, a_con, a_dex, a_ler, a_wis, a_cha),
+                is_player=False, on_kill=on_kill,
+            )
+            return "continue"
+
         if len(enemies) > 1:
             try:
                 choice = int(c_input("  Select target number: ")) - 1
@@ -1469,23 +1625,28 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         pre_dmg = apply_trait_pre_damage(trait, target) if trait else None
 
         from combat.stat_milestones import get_strength_bonus
-        # ── Sunder (Physical trait): armor penetration ──
+        # ── Armour penetration: Sunder trait + form tradition (Sundering) ──
+        from combat.form_perks import get_armor_pen_multiplier
+        pen_mult = get_armor_pen_multiplier(ally, pre_dmg)
         effective_con_mod = target["con_mod"]
-        if pre_dmg and pre_dmg.get("armor_pen", 1.0) < 1.0:
-            effective_con_mod = int(target["con_mod"] * pre_dmg["armor_pen"])
+        if pen_mult < 1.0:
+            effective_con_mod = int(target["con_mod"] * pen_mult)
             if effective_con_mod < target["con_mod"]:
-                c_print(f"  ⚔️ Sunder! {target['name']}'s armor is reduced.")
+                c_print(f"  ⚔️ {target['name']}'s armor is reduced.")
         dmg = random.randint(3, 8) + scaling_val + get_strength_bonus(ally) - effective_con_mod
         dmg = max(0, dmg)
 
-        # Consume power_buff (empowers this attack — e.g. Overclock from an ally)
-        for buff in ally.get("active_buffs", [])[:]:
-            if buff.get("type") == "power_buff":
-                val = buff.get("value", 0)
-                dmg = int(dmg * (1 + val))
-                ally["active_buffs"].remove(buff)
-                c_print(f"  ⚡ {display_name(ally)} is Empowered! Damage increased by {int(val * 100)}%!")
-                break
+        # Percentage damage buffs (power_buff + damage_boost) stack additively.
+        # power_buff is consumed here and empowers this attack.
+        from combat.status_effects import get_damage_buff_multiplier
+        _buff_msgs = []
+        _damage_buff_mult = get_damage_buff_multiplier(
+            ally, consume_power_buff=True, messages=_buff_msgs
+        )
+        for _buff_msg in _buff_msgs:
+            c_print(f"  ⚡ {display_name(ally)} is {_buff_msg}")
+        if _damage_buff_mult != 1.0:
+            dmg = int(dmg * _damage_buff_mult)
 
         # Hunter's Mark: increased damage taken
         if target.get("hunters_mark"):
@@ -1497,11 +1658,6 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         dt_mult = get_damage_taken_multiplier(target)
         if dt_mult != 1.0:
             dmg = int(dmg * dt_mult)
-
-        # Apply damage_boost buffs (multi-turn, non-consuming)
-        for buff in ally.get("active_buffs", []):
-            if buff.get("type") == "damage_boost":
-                dmg = int(dmg * (1 + buff.get("value", 0)))
 
         # Event Horizon: The Hierophant — basic attacks ×0.75
         from event_horizon import joker_damage_multiplier
@@ -1532,10 +1688,10 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         # ── Pierce (Magical trait): ignore portion of enemy elemental resistance ──
         if pre_dmg and pre_dmg.get("res_ignore", 0) > 0 and element:
             target_res = target.get("elemental_res", {}).get(element, 1.0)
-            if target_res < 1.0:
+            if target_res > 1.0:  # enemy resists this element (rating > 1 = resistance)
                 attacker_dmg_mult = ally.get("elemental_dmg", {}).get(element, 1.0)
                 mitigated_res = 1.0 + (target_res - 1.0) * (1.0 - pre_dmg["res_ignore"])
-                final_dmg = int(dmg * attacker_dmg_mult * mitigated_res)
+                final_dmg = int(dmg * attacker_dmg_mult * (2.0 - mitigated_res))
                 final_dmg = max(0, final_dmg)
                 c_print(f"  🔮 Pierce! {target['name']}'s {element} resistance is partially bypassed.")
 
@@ -1570,6 +1726,14 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
         final_dmg = int(final_dmg * get_robe_multiplier(ally, player))
         from combat.weapon.chance_and_choice import apply_chance_and_choice
         final_dmg = apply_chance_and_choice(ally, final_dmg)
+
+        # Form tradition (Cleaving / Focused)
+        from combat.form_perks import get_outgoing_damage_multiplier
+        final_dmg = int(final_dmg * get_outgoing_damage_multiplier(ally))
+
+        # Father's Legacy (Orc child): +7.5% damage below 50% HP
+        from family import father_legacy_damage_mult
+        final_dmg = int(final_dmg * father_legacy_damage_mult(ally))
 
         target["hp"] -= final_dmg
         # Event Horizon — Death: allies drain 10% of the damage dealt
@@ -1692,19 +1856,31 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             c_print("  No usable items in the shared inventory.")
             return "retry"
 
-        c_print("\n  Shared Battle Inventory:")
-        for display_idx, (_, itm) in enumerate(combat_items):
-            qty = itm.get("count", 1)
-            qty_str = f" x{qty}" if qty > 1 else ""
-            c_print(f"  {display_idx+1}. {itm['name']}{qty_str} ({itm['type']})")
+        # GUI mode (renders_menus) draws the shared item panel itself — the
+        # legacy list would otherwise flood the combat log with the bag dump.
+        if not c_renders_menus():
+            c_print("\n  Shared Battle Inventory:")
+            for display_idx, (_, itm) in enumerate(combat_items):
+                qty = itm.get("count", 1)
+                qty_str = f" x{qty}" if qty > 1 else ""
+                c_print(f"  {display_idx+1}. {itm['name']}{qty_str} ({itm['type']})")
 
         try:
             choice = int(c_input("  Use which item? (0 to cancel): ")) - 1
             if choice < 0 or choice >= len(combat_items):
                 return "retry"
             true_idx, item = combat_items[choice]
-            msg = ""
+            # Lead with the user + item name (effect-only lines were opaque).
+            msg = f"{display_name(ally)} uses {item['name']}. "
             target = None
+            from family import father_legacy_item_mult
+            legacy_item_mult = father_legacy_item_mult(ally)
+
+            # Capture is the player's alone — never let an ally waste a net
+            # (the Stellar Field Kit is a one-shot quest loan).
+            if item.get("capture_net"):
+                c_print("  Only you can work a capture net — allies cannot.")
+                return "retry"
 
             # ── Fractured Hourglass: reusable free-action cooldown reduction ──
             from combat.fractured_hourglass import is_fractured_hourglass, use_fractured_hourglass
@@ -1754,22 +1930,24 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             # Healing items affect the ally using them
             if "power" in item and item.get("type") == "consumable":
                 old_hp = ally["current_hp"]
-                new_hp = min(old_hp + item["power"], ally["max_hp"])
+                heal_power = int(item["power"] * legacy_item_mult)
+                new_hp = min(old_hp + heal_power, ally["max_hp"])
                 healed_amount = new_hp - old_hp
                 ally["current_hp"] = new_hp
                 msg += f"{display_name(ally)} recovers {healed_amount} HP. "
 
             if "heal_over_time" in item:
+                hot_val = int(item["heal_over_time"] * legacy_item_mult)
                 ally.setdefault("active_buffs", []).append({
                     "type": "hot",
-                    "value": item["heal_over_time"],
+                    "value": hot_val,
                     "remaining": item.get("duration", 3)
                 })
-                msg += f"{display_name(ally)} starts regenerating {item['heal_over_time']} HP each turn. "
+                msg += f"{display_name(ally)} starts regenerating {hot_val} HP each turn. "
 
             if "temp_stat" in item:
                 stat = item["temp_stat"]
-                val = item.get("base_power", 3)
+                val = int(item.get("base_power", 3) * legacy_item_mult)
                 ally.setdefault("active_buffs", []).append({
                     "stat": stat,
                     "value": val,
@@ -1780,7 +1958,7 @@ def handle_ally_turn(ally, player, enemies, p_str, p_con, p_dex, p_ler, p_wis, p
             if "defense_buff" in item:
                 ally.setdefault("active_buffs", []).append({
                     "type": "defense",
-                    "value": item["defense_buff"],
+                    "value": int(item["defense_buff"] * legacy_item_mult),
                     "remaining": item.get("duration", 3)
                 })
                 msg += f"Damage taken by {display_name(ally)} reduced by {item['defense_buff']} for {item.get('duration',3)} turns. "
@@ -1923,6 +2101,7 @@ _HEROINE_TEMPLATE_KEYS = {
     "red_hood":  "wonderland_red_hood",
     "dorothy":   "wonderland_dorothy",
     "palette":   "wonderland_palette",
+    "sylvana":   "sylvana",
 }
 
 _HEROINE_TEMPLATE_KEYS_INVERSE = {v: k for k, v in _HEROINE_TEMPLATE_KEYS.items()}
@@ -1932,6 +2111,7 @@ _HEROINE_INTERNAL_KEYS = {
     "red_hood":  "wl_redhood_state",
     "dorothy":   "wl_dorothy_state",
     "palette":   "palette_state",
+    "sylvana":   "sylvana_state",
 }
 
 _HEROINE_PERMANENT_FLAGS = {
@@ -1939,6 +2119,7 @@ _HEROINE_PERMANENT_FLAGS = {
     "red_hood":  "wonderland_heroine_redhood_permanent",
     "dorothy":   "wonderland_heroine_dorothy_permanent",
     "palette":   "palette_heroine_permanent",
+    "sylvana":   "sylvana_heroine_permanent",
 }
 
 # ── Auto-equip builds for temp heroines (4 slots per heroine) ──────────
@@ -1949,19 +2130,34 @@ _HEROINE_EQUIPMENT_BUILDS = {
     "dorothy":  ("nether_grimoire", "arcane_vestments", "mystic_crown", "astral_ring"),
 }
 
+# Floor bands for heroine auto-gear. The bands sit slightly past the 10-floor
+# guest milestones (15/25/35) so Red Hood (invited after Floor 10) starts on
+# the basic tier, Dorothy (after Floor 20) starts on tier 1, and Alice (after
+# Floor 30) starts on tier 2. Enhancement is capped at rare +4: the 2026-10
+# equipment rework applies enhancement before the rarity multiplier, so the
+# old flat +5 on all four pieces dominated heroine stats.
+_HEROINE_GEAR_TIERS = (
+    (15, "common", 0),
+    (25, "uncommon", 1),
+    (35, "rare", 3),
+)
+_HEROINE_GEAR_TOP_TIER = ("rare", 4)
+
+
 def _get_heroine_floor_rarity(floor):
-    """Determine equipment rarity for a heroine based on the floor they join.
-    
-    Returns (rarity_str, enhance_level) tuple.
+    """Determine auto-equip rarity/enhancement for a heroine's join floor.
+
+    Returns a ``(rarity_str, enhance_level)`` tuple. Non-numeric input falls
+    back to the first tier so old or partial saves never crash the equipper.
     """
-    if floor <= 20:
-        return "common", 5
-    elif floor <= 35:
-        return "uncommon", 5
-    elif floor <= 45:
-        return "rare", 5
-    else:
-        return "epic", 5
+    try:
+        floor = max(1, int(floor))
+    except (TypeError, ValueError):
+        floor = 1
+    for cap, rarity, enhance in _HEROINE_GEAR_TIERS:
+        if floor <= cap:
+            return rarity, enhance
+    return _HEROINE_GEAR_TOP_TIER
 
 
 def _auto_equip_heroine(ally, heroine_key, floor):
@@ -1997,6 +2193,57 @@ def _auto_equip_heroine(ally, heroine_key, floor):
     e_res, e_dmg = compute_ally_elemental(ally)
     ally["elemental_res"] = e_res
     ally["elemental_dmg"] = e_dmg
+
+
+def migrate_heroine_auto_gear(player):
+    """Re-tier inn-granted gear on temporary heroines (one-time save migration).
+
+    Older builds equipped every guest at common +5 regardless of depth. Only
+    slots still holding the heroine's exact auto-equip item id are replaced,
+    so quest weapons (Vorpal Blade, Ruby Slippers) and player-issued gear are
+    preserved. Runs once per save via ``heroine_gear_tier_version``.
+    """
+    try:
+        version = int(player.get("heroine_gear_tier_version", 1) or 1)
+    except (TypeError, ValueError):
+        version = 1
+    if version >= 2:
+        return
+
+    from leveling import get_shared_biome_max_floor
+    from resources.items import build_item
+    from combat.elemental import compute_ally_elemental
+
+    floor = get_shared_biome_max_floor(player, "wonderland")
+    rarity, enhance = _get_heroine_floor_rarity(floor)
+    slot_map = ("weapon", "armor", "accessory1", "accessory2")
+    roster = list(player.get("allies", []) or []) + list(
+        player.get("wonderland_benched_allies", []) or [])
+
+    for ally in roster:
+        if not isinstance(ally, dict) or not ally.get("_wonderland_temp"):
+            continue
+        build = _HEROINE_EQUIPMENT_BUILDS.get(ally.get("_heroine_key"))
+        equipped = ally.get("equipped")
+        if not build or not isinstance(equipped, dict):
+            continue
+        touched = False
+        for item_id, slot in zip(build, slot_map):
+            item = equipped.get(slot)
+            if not isinstance(item, dict) or item.get("id") != item_id:
+                continue
+            try:
+                equipped[slot] = build_item(item_id, rarity=rarity,
+                                            enhance=enhance)
+                touched = True
+            except KeyError:
+                continue
+        if touched:
+            res, dmg = compute_ally_elemental(ally)
+            ally["elemental_res"] = res
+            ally["elemental_dmg"] = dmg
+
+    player["heroine_gear_tier_version"] = 2
 
 
 def compute_heroine_temp_stats(base_mods, player_level):
@@ -2068,9 +2315,16 @@ def create_heroine_ally(player, heroine_key, floor=None):
         "silenced": False,
         "is_ally": True,
         "affection": 50,
-        "affection_cap": 100,
+        "affection_cap": 200,
         "engaged": False,
         "married": False,
+        "pregnant": False,
+        "conceived_day": 0,
+        "due_day": 0,
+        "next_conception_day": 0,
+        "pregnancy_pity": 0,
+        "is_trueborn": False,
+        "no_romance": False,
         "monster_girl": False,
         "exp": 0,
         "level_hp_bonus": max(0, (player_level - 1) * 4),
@@ -2100,8 +2354,18 @@ def create_heroine_ally(player, heroine_key, floor=None):
     from combat.ally_skills import initialize_ally_skills
     initialize_ally_skills(ally, template_key, race)
 
-    # Auto-equip based on floor tier and build (temp heroines only)
+    # Auto-equip based on the party's Wonderland progress. `saved_dungeon_floor`
+    # is transient — clearing a floor wipes it, so the inn's recruit path used
+    # to fall back to floor 1 and put every guest on the basic gear tier.
     effective_floor = floor if floor is not None else player.get("saved_dungeon_floor", 1)
+    if heroine_key in _HEROINE_EQUIPMENT_BUILDS:
+        from leveling import get_shared_biome_max_floor
+        try:
+            passed_floor = max(1, int(effective_floor or 1))
+        except (TypeError, ValueError):
+            passed_floor = 1
+        effective_floor = max(
+            passed_floor, get_shared_biome_max_floor(player, "wonderland"))
     _auto_equip_heroine(ally, heroine_key, effective_floor)
 
     return ally
@@ -2163,10 +2427,16 @@ def promote_heroine_to_permanent(player, ally, join_level=None):
         "red_hood": "grandmothers_lesson",
         "dorothy":  "somewhere_over_rainbow",
         "palette":  "living_pigment",
+        "sylvana":  "mirror_queens_grace",
     }
     perm_passive = perm_passive_map.get(heroine_key)
     if perm_passive:
         ally["_heroine_permanent_passive"] = perm_passive
+
+    # Guest pacing: promotion closes her tea-party arc.
+    import wonderland_guests
+    if heroine_key in wonderland_guests.GUEST_NAMES:
+        wonderland_guests.set_guest_state(player, heroine_key, "resolved")
 
     return ally
 
@@ -2203,6 +2473,9 @@ def set_heroine_state(player, heroine_key, state):
         perm_key = _HEROINE_PERMANENT_FLAGS.get(heroine_key)
         if perm_key:
             player[perm_key] = True
+            # Deed titles: the Wonderland capstone checks these flags.
+            from titles import check_unlock
+            check_unlock(player)
 
 
 def get_heroine_state(player, heroine_key):

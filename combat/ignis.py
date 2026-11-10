@@ -75,11 +75,9 @@ def combat_ignis(player, floor=None, enemies=None):
             boss["base_con_mod"] = boss["con_mod"]
             enemies.append(boss)
 
-    c_print("\n" + "=" * 55)
-    c_print("The chamber floor groans under immense weight.")
+    c_print("\nThe chamber floor groans under immense weight.")
     c_print("A featureless iron colossus rises from the forge-pit...")
     c_print(f"Ignis, the Melt-Forge Golem — HP: {boss['hp']}")
-    c_print("=" * 55)
     c_input("Press Enter to face the Melt-Forge...")
 
     context = {
@@ -96,10 +94,8 @@ def combat_ignis(player, floor=None, enemies=None):
         # ── Phase 3: Final Form at ≤30% HP ──
         if not ctx["final_form"] and b["hp"] <= int(b["max_hp"] * 0.30):
             ctx["final_form"] = True
-            c_print("\n" + "!" * 55)
             c_print("[CRITICAL OVERHEATING] Ignis exceeds every thermal limit.")
             c_print("The forge burns white-hot. Heat builds every turn. Double actions!")
-            c_print("!" * 55)
 
         # ── Phase 2: Forge Intensifies at ≤60% HP ──
         if not ctx["forge_intensifies"] and b["hp"] <= int(b["max_hp"] * 0.60):

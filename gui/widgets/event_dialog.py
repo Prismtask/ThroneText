@@ -12,7 +12,7 @@ purely the attention-grabbing notice.
 Usage:
 
     from gui.widgets.event_dialog import show_event_notice
-    show_event_notice(events, day_text="Day 169 (M6-D19)", parent=root)
+    show_event_notice(events, day_text="19/02 · Summer", parent=root)
 """
 
 import queue
@@ -94,11 +94,25 @@ def show_event_notice(events: List[dict],
             pass
 
 
+# ── Dialog sizing ─────────────────────────────────────────────────────────────
+# A fixed height cannot know how many lines a wrapped description will take
+# (wild-dungeon spawn notices list every ruin). Build the content first, then
+# size the window to it; when the events would overflow the screen the body
+# becomes scrollable instead of clipping its labels.
+_DIALOG_WIDTH = 460
+_PAD_X = 24
+_SCROLL_GUTTER = 26   # room for the vertical scrollbar when it appears
+_SCREEN_MARGIN = 80   # keep the whole dialog on screen
+# Fixed vertical chrome: header pady (18+8) + body pady (4+4) + buttons (8+16)
+_CHROME_PAD_Y = 58
+
+
 class _EventNoticeDialog:
     """Modal Toplevel showing event notices (level-up dialog style)."""
 
     def __init__(self, events, day_text=None, parent=None):
         self._result_queue = None  # Set externally for cross-thread use
+        self._scrollable = False
 
         top = _safe_toplevel(parent) if parent else _safe_toplevel()
         if top is None:
@@ -106,13 +120,13 @@ class _EventNoticeDialog:
         self.dialog = tk.Toplevel(top)
         self.dialog.title("Event Notice")
         self.dialog.transient(top)
-        self.dialog.grab_set()
         self.dialog.resizable(False, False)
         self.dialog.configure(bg=Theme.BG_DARK)
+        self.dialog.withdraw()  # lay out offscreen, then reveal fully sized
 
         # ── Header ────────────────────────────────────────────────────
         header = tk.Frame(self.dialog, bg=Theme.BG_DARK)
-        header.pack(fill=tk.X, padx=24, pady=(18, 8))
+        header.pack(fill=tk.X, padx=_PAD_X, pady=(18, 8))
 
         tk.Label(
             header,
@@ -143,50 +157,14 @@ class _EventNoticeDialog:
                 font=Theme.FONT,
             ).pack(pady=(2, 0))
 
-        # ── Body: one block per event ─────────────────────────────────
-        body = tk.Frame(self.dialog, bg=Theme.BG_DARK)
-        body.pack(fill=tk.BOTH, expand=True, padx=24, pady=4)
+        # Width follows the header so larger font settings are not clipped.
+        self.dialog.update_idletasks()
+        width = max(_DIALOG_WIDTH, header.winfo_reqwidth() + 2 * _PAD_X + 8)
+        wrap = max(160, width - 2 * _PAD_X - _SCROLL_GUTTER)
 
-        for i, evt in enumerate(events):
-            if i > 0:
-                tk.Frame(body, bg=Theme.BORDER, height=1).pack(
-                    fill=tk.X, pady=6)
-
-            tag = "[FIXED]" if evt.get("fixed") else "[RANDOM]"
-            tk.Label(
-                body,
-                text=f"{evt.get('name', 'Unknown Event')}  {tag}",
-                bg=Theme.BG_DARK,
-                fg="#ffd166",
-                font=Theme.FONT_BOLD,
-                wraplength=380,
-                justify=tk.LEFT,
-            ).pack(anchor=tk.W, pady=(0, 2))
-
-            duration = evt.get("duration") or _DEFAULT_DURATION
-            tk.Label(
-                body,
-                text=f"\u23f3 Duration: {duration}",
-                bg=Theme.BG_DARK,
-                fg=Theme.ACCENT_HOVER,
-                font=Theme.FONT,
-                wraplength=380,
-                justify=tk.LEFT,
-            ).pack(anchor=tk.W, pady=(0, 4))
-
-            tk.Label(
-                body,
-                text=evt.get("desc", ""),
-                bg=Theme.BG_DARK,
-                fg=Theme.TEXT,
-                font=Theme.FONT,
-                wraplength=380,
-                justify=tk.LEFT,
-            ).pack(anchor=tk.W)
-
-        # ── Continue button ───────────────────────────────────────────
+        # ── Continue button (packed BEFORE the body so it can't clip) ──
         btn_area = tk.Frame(self.dialog, bg=Theme.BG_DARK)
-        btn_area.pack(fill=tk.X, pady=(8, 16))
+        btn_area.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 16))
 
         cont_btn = tk.Button(
             btn_area,
@@ -204,18 +182,131 @@ class _EventNoticeDialog:
         cont_btn.pack()
         cont_btn.focus_set()
 
+        # ── Body: scrollable list, one block per event ────────────────
+        body_outer = tk.Frame(self.dialog, bg=Theme.BG_DARK)
+        body_outer.pack(fill=tk.BOTH, expand=True, padx=_PAD_X, pady=4)
+
+        canvas = tk.Canvas(body_outer, bg=Theme.BG_DARK, bd=0,
+                           highlightthickness=0)
+        self._body_canvas = canvas
+        body = tk.Frame(canvas, bg=Theme.BG_DARK)
+        canvas.create_window((0, 0), window=body, anchor="nw", width=wrap)
+        scrollbar = tk.Scrollbar(body_outer, orient=tk.VERTICAL,
+                                 command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        for i, evt in enumerate(events):
+            if i > 0:
+                tk.Frame(body, bg=Theme.BORDER, height=1).pack(
+                    fill=tk.X, pady=6)
+
+            tag = "[FIXED]" if evt.get("fixed") else "[RANDOM]"
+            tk.Label(
+                body,
+                text=f"{evt.get('name') or 'Unknown Event'}  {tag}",
+                bg=Theme.BG_DARK,
+                fg="#ffd166",
+                font=Theme.FONT_BOLD,
+                wraplength=wrap,
+                justify=tk.LEFT,
+            ).pack(anchor=tk.W, pady=(0, 2))
+
+            duration = evt.get("duration") or _DEFAULT_DURATION
+            tk.Label(
+                body,
+                text=f"\u23f3 Duration: {duration}",
+                bg=Theme.BG_DARK,
+                fg=Theme.ACCENT_HOVER,
+                font=Theme.FONT,
+                wraplength=wrap,
+                justify=tk.LEFT,
+            ).pack(anchor=tk.W, pady=(0, 4))
+
+            tk.Label(
+                body,
+                text=evt.get("desc") or "",
+                bg=Theme.BG_DARK,
+                fg=Theme.TEXT,
+                font=Theme.FONT,
+                wraplength=wrap,
+                justify=tk.LEFT,
+            ).pack(anchor=tk.W)
+
+        # ── Size to content; scroll only when the screen can't fit it ──
+        self.dialog.update_idletasks()
+        body_h = max(body.winfo_reqheight(), 1)
+        chrome_h = (header.winfo_reqheight()
+                    + btn_area.winfo_reqheight() + _CHROME_PAD_Y)
+        needed_h = chrome_h + body_h
+        try:
+            max_h = max(260, self.dialog.winfo_screenheight() - _SCREEN_MARGIN)
+        except tk.TclError:
+            max_h = 640
+        view_h = min(needed_h, max_h)
+        canvas_h = max(1, view_h - chrome_h)
+
+        canvas.configure(height=canvas_h, width=wrap)
+        if body_h > canvas_h:
+            self._scrollable = True
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            canvas.configure(scrollregion=(0, 0, body.winfo_reqwidth(), body_h))
+            body.bind("<Configure>", self._sync_scrollregion)
+            self.dialog.bind("<MouseWheel>", self._on_mousewheel, add="+")
+            self.dialog.bind("<Button-4>", self._on_mousewheel, add="+")
+            self.dialog.bind("<Button-5>", self._on_mousewheel, add="+")
+            self.dialog.bind("<Prior>", lambda e: self._scroll(-1, "pages"))
+            self.dialog.bind("<Next>", lambda e: self._scroll(1, "pages"))
+        else:
+            canvas.pack(fill=tk.BOTH, expand=True)
+
+        self._center(width, view_h)
+
         self.dialog.bind("<Return>", lambda e: self._dismiss())
         self.dialog.bind("<KP_Enter>", lambda e: self._dismiss())
         self.dialog.bind("<Escape>", lambda e: self._dismiss())
         self.dialog.protocol("WM_DELETE_WINDOW", self._dismiss)
 
-        # Size & center — grows with the number of events
-        needed_h = 210 + len(events) * 95
-        self._center(440, min(needed_h, 600))
-
-        self.dialog.wait_visibility()
+        self.dialog.deiconify()
+        try:
+            self.dialog.wait_visibility()
+        except tk.TclError:
+            pass
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass
         self.dialog.lift()
         self.dialog.focus_force()
+
+    # ── Scrolling ─────────────────────────────────────────────────────
+
+    def _on_mousewheel(self, event):
+        if not self._scrollable:
+            return None
+        if getattr(event, "num", None) == 4:
+            steps = -1
+        elif getattr(event, "num", None) == 5:
+            steps = 1
+        else:
+            if event.delta == 0:
+                return None
+            steps = -1 if event.delta > 0 else 1
+        self._body_canvas.yview_scroll(steps, "units")
+        return "break"
+
+    def _scroll(self, amount, what):
+        if not self._scrollable:
+            return None
+        self._body_canvas.yview_scroll(amount, what)
+        return "break"
+
+    def _sync_scrollregion(self, _event=None):
+        try:
+            self._body_canvas.configure(
+                scrollregion=self._body_canvas.bbox("all"))
+        except tk.TclError:
+            pass
 
     def _dismiss(self, _event=None):
         if self._result_queue is not None:

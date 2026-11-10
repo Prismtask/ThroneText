@@ -305,10 +305,11 @@ def shadow_jabberwock_turn_hook(enemy, ctx, pl, p_con, defending, enemies_list):
             return 1, True, None, 1.0, 0
         else:
             c_print('\n  💀 "VORPAL BEAM!" — A line of pale light tears through the party!')
+            from combat.elemental import resistance_multiplier
             for target in _get_living_targets(pl):
                 dmg = random.randint(40, 60)
                 res = target.get("elemental_res", {}).get("thunder", 1.0)
-                final_dmg = max(1, int(dmg * res))
+                final_dmg = max(1, int(dmg * resistance_multiplier(res)))
                 target["current_hp"] = max(0, target.get("current_hp", 0) - final_dmg)
                 c_print(f"    {target.get('name', 'You')} takes {final_dmg} damage [THUNDER]!")
                 if target.get("current_hp", 0) <= 0:

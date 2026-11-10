@@ -267,3 +267,119 @@ def ok_dialog(
     dialog.lift()
     dialog.grab_set()
     ok_btn.focus_set()
+
+
+def choice_dialog(
+    parent: tk.Widget,
+    title: str,
+    heading: str,
+    subtitle: str = "",
+    details: str = "",
+    options=None,
+    on_choice: Optional[Callable[[str], None]] = None,
+    default_choice: Optional[str] = None,
+    min_width: int = 380,
+):
+    """Show a modal list-of-buttons dialog (the floor-clear window style).
+
+    Args:
+        parent: Parent widget — must still be alive (the dialog is created
+                as a child of its toplevel).
+        title: Window title.
+        heading: Large accent headline (e.g. "=== FLOOR 5/6 CLEARED ===").
+        subtitle: Optional normal-weight line under the heading.
+        details: Optional dim multi-line block (stats, loot, ...).
+        options: list of (key, label) pairs rendered as stacked buttons.
+        on_choice: Callback(key) fired when a button is clicked (or the
+                   window is closed, using default_choice).
+        default_choice: Key used for the window X / Escape / Return.
+
+    Returns the Toplevel dialog.
+    """
+    root = _safe_toplevel(parent)
+    dialog = tk.Toplevel(root)
+    dialog.title(title)
+    dialog.transient(root)
+    dialog.withdraw()   # build offscreen to avoid a blank flash
+    dialog.resizable(False, False)
+    dialog.configure(bg=Theme.BG_DARK)
+
+    closed = [False]
+
+    def _choose(key):
+        if closed[0]:
+            return
+        closed[0] = True
+        try:
+            dialog.destroy()
+        except tk.TclError:
+            pass
+        if on_choice is not None and key is not None:
+            on_choice(key)
+
+    if heading:
+        tk.Label(
+            dialog, text=heading,
+            bg=Theme.BG_DARK, fg=Theme.ACCENT,
+            font=Theme.FONT_LARGE,
+        ).pack(pady=(14, 4))
+
+    if subtitle:
+        tk.Label(
+            dialog, text=subtitle,
+            bg=Theme.BG_DARK, fg=Theme.TEXT,
+            font=Theme.FONT,
+            wraplength=min_width - 30,
+            justify=tk.CENTER,
+        ).pack(pady=(0, 6))
+
+    if details:
+        tk.Label(
+            dialog, text=details,
+            bg=Theme.BG_DARK, fg=Theme.TEXT_DIM,
+            font=Theme.FONT_SMALL,
+            justify=tk.CENTER,
+            wraplength=min_width - 30,
+        ).pack(pady=(0, 10))
+
+    btn_frame = tk.Frame(dialog, bg=Theme.BG_DARK)
+    btn_frame.pack(pady=(0, 12))
+
+    for key, label in (options or []):
+        tk.Button(
+            btn_frame, text=label,
+            command=lambda k=key: _choose(k),
+            bg=Theme.BUTTON_BG, fg=Theme.BUTTON_FG,
+            activebackground=Theme.BUTTON_ACTIVE_BG,
+            font=Theme.FONT_BOLD, width=28, anchor=tk.W,
+            cursor="hand2",
+        ).pack(pady=3)
+
+    def _close_default(_event=None):
+        _choose(default_choice)
+
+    dialog.protocol("WM_DELETE_WINDOW", _close_default)
+    dialog.bind("<Escape>", _close_default)
+    dialog.bind("<Return>", _close_default)
+    dialog.bind("<KP_Enter>", _close_default)
+
+    # Size to the built content, then center on the parent toplevel.
+    dialog.update_idletasks()
+    dw = max(min_width, dialog.winfo_reqwidth())
+    dh = dialog.winfo_reqheight()
+    try:
+        px = root.winfo_x()
+        py = root.winfo_y()
+        pw = max(1, root.winfo_width())
+        ph = max(1, root.winfo_height())
+    except Exception:
+        px = py = 100
+        pw = ph = 600
+    dialog.geometry(f"{int(dw)}x{int(dh)}+{px + (pw - int(dw)) // 2}+{py + (ph - int(dh)) // 2}")
+
+    # Show only once the content is built (prevents a blank window flash)
+    dialog.deiconify()
+    dialog.lift()
+    dialog.grab_set()
+    dialog.focus_set()
+    return dialog

@@ -33,9 +33,11 @@
 # and Woodcutter's Broken Axe (secondary).
 
 import random
+import wonderland_guests
 from combat.stats import enemy_stats, compute_player_stats
 from combat.player_actions import handle_player_turn
-from combat.combat_ui import format_enemy_status_line, print_superboss_header
+from combat.combat_ui import (format_enemy_status_line, print_superboss_header,
+                              defer_dialogue)
 from combat.superboss_common import superboss_combat_loop
 from combat.status_effects import apply_bleed
 from combat.ally import get_active_allies, compute_ally_stats
@@ -150,6 +152,12 @@ def _wolf_turn_hook(enemy, ctx, player, p_con, defending, **kwargs):
 
     # ── Howl every 5 actions ───────────────────────────────────────────
     if actions_count > 0 and actions_count % 5 == 0:
+        if ctx.get("redhood_variant"):
+            c_print('\n  Red Hood slams her axe into the ground. "Not this time."')
+            c_print("  ↠ The Howl breaks — no damage buff, no swallow extension.")
+            ctx["wolf_actions"] = actions_count + 1
+            return 1, True, None, 1.0, 0
+
         c_print('\n  🐺 "The Wolf throws back its head and HOWLS —')
         c_print('     the very trees shudder!"')
         c_print("  ↠ +20% damage for 2 turns!")
@@ -206,6 +214,18 @@ def _post_round_hook(ctx, enemies):
 
     # ── Case 1: An ally is already swallowed ───────────────────────────
     if ctx.get("swallowed_ally") is not None:
+        # Count this round's damage from the Wolf's actual HP loss. Reading
+        # the delta here (rather than in pre_player_hook) means EVERY source
+        # counts — basic attacks, skills, DoTs, ally actions — and the final
+        # round's damage is counted before the threshold is checked. The old
+        # pre_player tracking ran before the round's actions, so the last
+        # round of skill damage was silently dropped.
+        prev_hp = ctx.get("_swallow_last_hp", wolf["hp"])
+        ctx["swallow_damage_dealt"] = (
+            ctx.get("swallow_damage_dealt", 0) + max(0, prev_hp - wolf["hp"])
+        )
+        ctx["_swallow_last_hp"] = wolf["hp"]
+
         ctx["swallow_turns_remaining"] = ctx.get("swallow_turns_remaining", 0) - 1
 
         ally = ctx["swallowed_ally"]
@@ -238,9 +258,6 @@ def _post_round_hook(ctx, enemies):
                     ally["defeated"] = True
                     c_print(f"     {ally_name} has been defeated by the digestive acids...")
 
-        # Track damage dealt TO the wolf (reset per round below in next case)
-        # We track this by checking wolf HP change — handled externally
-
         return None
 
     # ── Case 2: No ally swallowed — try to swallow one ────────────────
@@ -253,13 +270,17 @@ def _post_round_hook(ctx, enemies):
         c_print(f"     {target_name} is SWALLOWED WHOLE — removed from the field!")
         c_print(f"     Deal {SWALLOW_DAMAGE_THRESHOLD}+ damage in {SWALLOW_DURATION} turns to free them!")
 
-        # Remove ally from field
+        # Remove ally from field. `defeated` keeps them out of the turn order
+        # and targeting; `_swallowed` also hides their card from the party
+        # panel (they are inside the Wolf, not lying on the ground).
         target["defeated"] = True  # temporary — restored on free
+        target["_swallowed"] = True
         ctx["swallowed_ally"] = target
         ctx["swallow_turns_remaining"] = SWALLOW_DURATION
         ctx["swallow_damage_dealt"] = 0
-        # Snapshot wolf's current HP to track damage later
-        ctx["_wolf_hp_at_swallow"] = wolf["hp"]
+        # Snapshot the Wolf's HP *after* this round — every point lost from
+        # here on counts toward freeing the ally.
+        ctx["_swallow_last_hp"] = wolf["hp"]
         return None
 
     # ── Case 3: All allies defended — Maul the player ──────────────────
@@ -284,6 +305,7 @@ def _free_ally(ctx):
     if ally is not None:
         ally["defeated"] = False
         ally["defending_this_turn"] = False
+        ally.pop("_swallowed", None)
     ctx["swallowed_ally"] = None
     ctx["swallow_turns_remaining"] = 0
     ctx["swallow_damage_dealt"] = 0
@@ -294,17 +316,20 @@ def _free_ally(ctx):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _pre_player_hook(ctx, elist):
-    """Track damage dealt to the Wolf for swallow escape, check HP thresholds."""
+    """Check HP thresholds at round start (swallow damage is tracked by the
+    post-round hook, which sees the completed round's HP delta)."""
     wolf = _find_wolf(elist)
     if wolf is None:
         return None
 
-    # Track damage dealt since last swallow for escape condition
-    if ctx.get("swallowed_ally") is not None:
-        prev_hp = ctx.get("_wolf_hp_at_swallow", wolf["hp"])
-        damage_dealt = max(0, prev_hp - wolf["hp"])
-        ctx["swallow_damage_dealt"] = ctx.get("swallow_damage_dealt", 0) + damage_dealt
-        ctx["_wolf_hp_at_swallow"] = wolf["hp"]  # reset tracker for next interval
+    # ── Huntress's Oath (Red Hood variant) ────────────────────────────
+    if (ctx.get("redhood_variant") and not ctx.get("redhood_oath_used")
+            and 0 < wolf["hp"] <= wolf["max_hp"] * 0.50):
+        ctx["redhood_oath_used"] = True
+        oath_dmg = max(1, int(wolf["max_hp"] * 0.08))
+        wolf["hp"] = max(1, wolf["hp"] - oath_dmg)
+        c_print("\n  🔪 Red Hood finds the old wound beneath the fur.")
+        c_print(f"  ↠ Huntress's Oath — the Wolf takes {oath_dmg} damage!")
 
     return None
 
@@ -344,10 +369,10 @@ def combat_big_bad_wolf(player, floor=None, enemies=None):
     red_hood = next((a for a in player.get("allies", [])
                      if a.get("_heroine_key") == "red_hood"
                      and a.get("current_hp", 0) > 0), None)
+    redhood_variant = bool(red_hood and wonderland_guests.is_variant_active(player, "red_hood"))
 
     # ── Opening narration ──────────────────────────────────────────────
     c_clear()
-    c_print("=" * 60)
     c_print("The forest path opens onto a clearing bathed in silver")
     c_print("moonlight.  A quaint cottage stands at the far end, its")
     c_print("door hanging askew.  The wind carries a low, rumbling growl.")
@@ -361,21 +386,30 @@ def combat_big_bad_wolf(player, floor=None, enemies=None):
         c_print('"Grandmother..." Red Hood\'s voice cracks. "That\'s Grandmother\'s —"')
         c_print("")
         c_print("The Wolf grins. Its teeth are very, very sharp.")
+    if redhood_variant:
+        c_print("")
+        c_print("Red Hood steps past you, axe already in hand.")
+        c_print('"No more endings for you," she says. "Not this one."')
     c_print('"Grandmother?  Oh, I ALREADY ate Grandmother."')
     c_print("")
     c_print("It grins.  All the better to EAT you with.")
-    c_print("=" * 60)
     c_print(f"\nBig Bad Wolf — HP: {boss['hp']}")
     c_input("\nPress Enter to face the Big Bad Wolf...")
 
     # ── Combat context ─────────────────────────────────────────────────
+    # Clear stale swallow markers from an interrupted/previous fight.
+    for _ally in player.get("allies", []):
+        _ally.pop("_swallowed", None)
+
     context = {
         "wolf_actions": 0,            # how many times the Wolf has acted
         "swallowed_ally": None,       # reference to swallowed ally (or None)
         "swallow_turns_remaining": 0, # turns until ally is freed/spat
         "swallow_damage_dealt": 0,    # damage dealt since last swallow
-        "_wolf_hp_at_swallow": boss["hp"],  # snapshot for damage tracking
+        "_swallow_last_hp": boss["hp"],  # Wolf HP at last post-round check
         "wolf_enraged": False,        # whether enrage has triggered
+        "redhood_variant": redhood_variant,  # Huntress's Oath armed
+        "redhood_oath_used": False,
         "_player": player,            # player reference for post_round_hook
     }
 
@@ -386,14 +420,12 @@ def combat_big_bad_wolf(player, floor=None, enemies=None):
         if _is_wolf(target) and target.get("hp", 0) <= 0:
             from combat.ally import promote_heroine_to_permanent, set_heroine_state
 
-            c_print("\n" + "=" * 60)
-            c_print("The Wolf collapses. Its great body shrinks, the bristling")
+            c_print("\nThe Wolf collapses. Its great body shrinks, the bristling")
             c_print("fur receding until all that remains is a gaunt, grey shape")
             c_print("lying still on the cottage floor.")
             c_print("")
             c_print("The crimson hood slips from its jaws and drifts to the")
             c_print("ground, lighter than it should be.")
-            c_print("=" * 60)
 
             # ── Red Hood permanent unlock ──────────────────────────────
             if red_hood:
@@ -402,23 +434,27 @@ def combat_big_bad_wolf(player, floor=None, enemies=None):
                 set_heroine_state(player, "red_hood", "permanent")
                 player["wl_boss_defeated_big_bad_wolf"] = True
 
-                c_print(f'\n  Red Hood kneels beside the body. Her hands are')
-                c_print('  shaking — not from fear. From something else.')
-                c_print('')
-                c_print('  "He\'s gone. He\'s really gone."')
-                c_print('')
-                c_print('  She picks up the crimson hood. It\'s clean now,')
-                c_print('  as though the Wolf\'s mouth never touched it.')
-                c_print('')
-                c_print('  "Grandmother... I finished it. The story you started."')
-                c_print('')
-                c_print('  She ties the hood around her shoulders. It fits')
-                c_print('  differently now — not a child\'s cloak, but a hunter\'s.')
-                c_print('')
-                c_print('  "You helped me finish this. I\'m not going anywhere."')
-                c_print('')
-                c_print('  Red Hood becomes a PERMANENT ally.')
-                c_input("Press Enter...")
+                # Ending prose plays on the dungeon screen after the fight
+                # (the combat ticker only shows 3 lines).
+                defer_dialogue(player, [
+                    "",
+                    "  Red Hood kneels beside the body. Her hands are",
+                    "  shaking — not from fear. From something else.",
+                    "",
+                    '  "He\'s gone. He\'s really gone."',
+                    "",
+                    "  She picks up the crimson hood. It\'s clean now,",
+                    "  as though the Wolf\'s mouth never touched it.",
+                    "",
+                    '  "Grandmother... I finished it. The story you started."',
+                    "",
+                    "  She ties the hood around her shoulders. It fits",
+                    "  differently now — not a child\'s cloak, but a hunter\'s.",
+                    "",
+                    '  "You helped me finish this. I\'m not going anywhere."',
+                    "",
+                    "  Red Hood becomes a PERMANENT ally.",
+                ], title="Red Hood")
 
     # ── Run combat loop ────────────────────────────────────────────────
     result = superboss_combat_loop(
