@@ -1,7 +1,7 @@
 # facilities/blacksmith.py
 import random
 from resources.items import (
-    ITEM_RARITY, ITEMS, fusion_fee, reforge_cost, build_item, enhance_cap_for,
+    ITEM_RARITY, ITEMS, fusion_fee, build_item, enhance_cap_for,
     compute_equipment_mods, compute_elemental_dmg, compute_elemental_res,
 )
 from resources.dialogues import BLACKSMITH_DIALOGUES
@@ -436,29 +436,36 @@ def infuse_item(player, dialogues, city_id):
     term.pause()
 
 
-def reforge_item(player, dialogues, city_id):
-    """Re-roll one elemental infusion slot with a keep-or-replace choice.
+# Element stripping (2026-11-10): replaces the old gold-priced re-roll. The
+# smith burns one flower slot out of a piece; every three flowers that were
+# worked into it return one flower of the same element (3:1, like transmute).
+STRIP_REFUND_RATIO = 3
 
-    The fee is paid before the roll (docs/gold_economy_pacing_design.md D2),
-    so a bad result still costs gold; keeping the old element does not refund.
+
+def strip_element(player, dialogues, city_id):
+    """Strip one elemental infusion slot and recover its flowers at 3:1.
+
+    The piece keeps its remaining slots and stats; the burned element is gone
+    for good and the work costs no gold. A unique's authored primary element
+    is part of the piece and can never be stripped, but its flower slots can.
     """
     from resources.item_generation import (
-        roll_reforge_element, apply_reforge_element,
+        flower_for_element, infusion_flowers_invested, strip_infusion_slot,
     )
 
     pool = _infusable_pool(player, require_infusions=True)
     if not pool:
-        term.print("\n--- Reforge Element ---")
-        term.print("Nothing here has an infusion to re-roll. Use 'Infuse Element'")
-        term.print("first; a unique's primary element stays locked and cannot be")
-        term.print("reforged, but its flower slots can.")
+        term.print("\n--- Strip Element ---")
+        term.print("Nothing here carries an element to strip. Use 'Infuse Element'")
+        term.print("first; a unique's primary element is part of the piece and")
+        term.print("cannot be stripped, but its flower slots can.")
         term.pause()
         return
 
-    term.print("\n--- Reforge Element (Re-roll) ---")
-    term.print("The smith re-works one flower slot into another element, keeping")
-    term.print("its damage value and/or resistance tier. The fee is paid whether")
-    term.print("you keep the old element or accept the new one.")
+    term.print("\n--- Strip Element (Recover Flowers, 3:1) ---")
+    term.print("The smith burns one flower slot out of the metal. Every three")
+    term.print("flowers worked into that slot return one flower of the same")
+    term.print("element; leftovers are lost to the forge. No gold is taken.")
 
     options = []
     styles = []
@@ -483,10 +490,12 @@ def reforge_item(player, dialogues, city_id):
     infusions = item.get("infusions") or []
     slot_labels = []
     for idx, inf in enumerate(infusions):
+        refund = infusion_flowers_invested(item, idx) // STRIP_REFUND_RATIO
         slot_labels.append(f"{idx + 1}. {inf['element'].title()} — "
-                           f"{_infusion_slot_text(item, inf)}")
+                           f"{_infusion_slot_text(item, inf)} "
+                           f"({refund} flower{'s' if refund != 1 else ''} back)")
     if len(slot_labels) > 1:
-        slot_choice = term.menu(slot_labels, prompt="Which infusion slot?",
+        slot_choice = term.menu(slot_labels, prompt="Which element to strip?",
                                 allow_cancel=True)
         if slot_choice < 0:
             return
@@ -494,33 +503,23 @@ def reforge_item(player, dialogues, city_id):
     else:
         slot_index = 0
 
-    current_element = infusions[slot_index].get("element")
-    cost = get_discounted_price(reforge_cost(item), player, city_id)
-    term.print(f"\nRe-forging {item['name']} costs {cost} gold (discounts applied).")
-    if player.get("gold", 0) < cost:
-        term.print(dialogues["not_enough_gold"])
-        term.pause()
-        return
-    if not term.confirm("Pay the fee?"):
-        return
-
-    player["gold"] = player.get("gold", 0) - cost
-    new_element = roll_reforge_element(item, slot_index)
-    if new_element is None:
-        player["gold"] += cost
-        term.print("No other element is available for that slot. Your gold is returned.")
-        term.pause()
+    element = infusions[slot_index].get("element")
+    invested = infusion_flowers_invested(item, slot_index)
+    refund = invested // STRIP_REFUND_RATIO
+    flower_id = flower_for_element(element)
+    flower_name = ITEMS.get(flower_id, {}).get("name", "flower")
+    if refund:
+        refund_line = f"{refund}× {flower_name} comes back"
+    else:
+        refund_line = f"no {flower_name} comes back"
+    term.print(f"\n{invested} flower{'s' if invested != 1 else ''} went into "
+               f"{element.title()}; {refund_line} (3:1).")
+    if not term.confirm(f"Strip {element.title()} from {item['name']}?"):
         return
 
-    term.print(f"\nThe smith quenches the metal: {current_element.title()} → "
-               f"{new_element.title()}.")
-    if not term.confirm(f"Replace {current_element.title()} with {new_element.title()}?"):
-        term.print("You keep the current infusion. The fee is spent.")
-        term.pause()
-        return
-
-    if not apply_reforge_element(item, base_def, slot_index, new_element):
-        term.print("The reforge fails — the old infusion remains.")
+    result = strip_infusion_slot(item, base_def, slot_index)
+    if not result:
+        term.print("The smith cannot strip that element.")
         term.pause()
         return
 
@@ -533,7 +532,15 @@ def reforge_item(player, dialogues, city_id):
         owner["elemental_res"] = res
         owner["elemental_dmg"] = dmg
 
-    term.print(f"The piece is now {item['name']}!")
+    if refund > 0 and flower_id:
+        flower = build_item(flower_id, "common")
+        flower["count"] = refund
+        add_item_to_inventory(player, flower)
+
+    term.print(f"\nThe {element.title()} hisses out of the metal. "
+               f"{item['name']} no longer carries it.")
+    if refund > 0 and flower_id:
+        term.print(f"The smith hands you {refund}× {flower_name}.")
     term.pause()
 
 
@@ -685,7 +692,7 @@ def blacksmith_menu(player, city_id="solmere"):
         choice = term.menu([
             "Enhance Equipment",
             "Infuse Element (Flower Essence)",
-            "Reforge Element (Re-roll)",
+            "Strip Element (Recover Flowers, 3:1)",
             "Commission (Order a Base)",
             "Transmute Flowers (3:1)",
             "Fuse (Scroll + Equipment)",
@@ -699,7 +706,7 @@ def blacksmith_menu(player, city_id="solmere"):
             infuse_item(player, dialogues, city_id)
             advance_time(player, 30)
         elif choice == 2:
-            reforge_item(player, dialogues, city_id)
+            strip_element(player, dialogues, city_id)
             advance_time(player, 30)
         elif choice == 3:
             commission_item(player, dialogues, city_id)

@@ -751,7 +751,7 @@ decision-log item 15 stands). When every gate is met, Vesper's menu gains
 | `utils.py` (`apply_death_penalty`) | Defensive EH wipe (run + actor effects) **+ grant `_eh_pending_payout` after the toll**. |
 | `combat/weapon/piece_of_relationship.py` (NEW) | MC-only trophy: ally-count tiers, battle-start buffs, ally-targeted mark hook + `player_only` guard for ally equips. |
 | `combat/weapon/chance_and_choice.py` (NEW) | Trophy: per-action 50/50 ×0.25/×1.75 roll wired into the four party damage paths. |
-| `combat/weapon/dopo_robe.py` (NEW) | Trophy: blade-only live damage multipliers (wearer 1.40/1.50; blade allies 1.15). |
+| `combat/weapon/dopo_robe.py` (NEW) | Trophy: blade-only live damage multipliers (wearer 1.40/1.50; other blade-wielders 1.15; player counts when an ally wears it). |
 | `combat/enemy_ai.py` | Rift regen flag + POR tier +7: mark the attacker when an ally is targeted (hit or miss). |
 | `combat/ally.py` (`equip_ally_item`) | Refuse `player_only` items for allies (new flag convention). |
 | `resources/items.py` | Three trophy item defs (`unique`, `description`, trophy flags). |
@@ -907,12 +907,13 @@ Obtained: **r75**. Blade-synergy armor. The whole effect requires the
 | Condition | Effect |
 |---|---|
 | Wearer wields a blade | wearer damage **×1.40** |
-| Each blade-wielding ally (excluding the wearer; **benched count**) | wearer **+5% per ally, uncapped** (×1.40 + 0.05·N); each such ally **×1.15** |
+| Each other blade-wielder (excluding the wearer; **benched count**; the player also counts when an ally wears it) | wearer **+5% per wielder, uncapped** (×1.40 + 0.05·N); each such wielder **×1.15** |
 
 - **Weapon check:** only `weapon_type == "blade"` activates the effect.
-- **Stacking (locked):** the wearer's bonus grows +5% per blade-wielding ally
+- **Stacking (locked):** the wearer's bonus grows +5% per other blade-wielder
   with **no cap**; N counts **all recruited allies**, active or benched (user
-  decision). Reserve allies still receive their own ×1.15 when swapped in.
+  decision), plus the player when an ally wears the robe. Reserve allies still
+  receive their own ×1.15 when swapped in.
 - **Live-read at damage time** (handles mid-combat ally swaps; no battle-start
   application needed): helper returns the multiplier per attacking actor.
 - Player + allies both usable (actor-based); allies can wear it if their own

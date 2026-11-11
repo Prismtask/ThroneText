@@ -182,6 +182,8 @@ kill_gold_new  = kill_gold_old − (k(anchor) − 1) × loot_sell_per_kill(ancho
 
 **Status:** ✅ Shipped v0.1.9.8 — "Reforge Element (Re-roll)" in `facilities/blacksmith.py`; `reforge_cost()` in `resources/items.py`; pure `roll_reforge_element()` / `apply_reforge_element()` helpers in `resources/item_generation.py`. The fee is paid before the roll; keeping the old element does not refund it. The fee stays on `item_value` (D10 pricing-only).
 
+**Replaced 2026-11-10:** the re-roll was retired for **Strip Element (Recover Flowers, 3:1)** — the smith removes one flower slot entirely and returns one flower per three infused, with no gold fee. `reforge_cost()` was deleted.
+
 **Touch points:** `facilities/blacksmith.py` (new service + menu), `inventory.py` / `resources/item_generation.py` (re-roll helper), tests. Item-based, so player/ally parity is automatic.
 
 ---
@@ -319,6 +321,7 @@ kill_gold_new  = kill_gold_old − (k(anchor) − 1) × loot_sell_per_kill(ancho
 - `resources/item_generation.py`: `roll_reforge_element()` (pure) + `apply_reforge_element()`.
 - Tests: `tests/_diag_reforge.py` — cost, pure roll, apply, value/tier preservation, unique exclusion.
 - Changelog v0.1.9.8.
+- **Replaced 2026-11-10:** `strip_element()` in `facilities/blacksmith.py`; `infusion_flowers_invested()` + `strip_infusion_slot()` in `resources/item_generation.py`; no gold fee, 3:1 flower refund. `tests/_diag_reforge.py` now covers stripping.
 
 **Phase 3 — k-scaling (D9–D12) — ✅ shipped v0.1.9.9**
 - `resources/items.py`: `market_anchor_level()`, `market_index()`, `market_value()`, `kill_gold_offset()`.

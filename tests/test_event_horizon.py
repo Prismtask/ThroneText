@@ -441,6 +441,32 @@ class TestTrophies(unittest.TestCase):
         p["equipped"]["weapon"] = sword_item()
         self.assertEqual(dopo_robe.get_robe_multiplier(p, p), 1.0)
 
+    def test_dopo_robe_ally_wearer_counts_player(self):
+        from combat.weapon import dopo_robe
+        p = make_player()
+        p["equipped"] = {
+            "weapon": {"id": "hero_blade", "name": "Hero Blade", "weapon_type": "blade"},
+        }
+        wearer = make_ally("W", "blade")
+        wearer["equipped"]["armor"] = robe_item()
+        p["allies"] = [wearer, make_ally("A", "blade"), make_ally("B", "axe")]
+
+        # The player + the other blade ally are two other blade-wielders.
+        self.assertAlmostEqual(
+            dopo_robe.get_robe_multiplier(wearer, p),
+            dopo_robe.WEARER_BASE + 2 * dopo_robe.WEARER_PER_ALLY)
+        self.assertAlmostEqual(dopo_robe.get_robe_multiplier(p, p), dopo_robe.ALLY_BONUS)
+        self.assertAlmostEqual(
+            dopo_robe.get_robe_multiplier(p["allies"][1], p), dopo_robe.ALLY_BONUS)
+        self.assertEqual(dopo_robe.get_robe_multiplier(p["allies"][2], p), 1.0)
+
+        # A non-blade player stops counting toward the wearer's total.
+        p["equipped"]["weapon"] = sword_item()
+        self.assertAlmostEqual(
+            dopo_robe.get_robe_multiplier(wearer, p),
+            dopo_robe.WEARER_BASE + dopo_robe.WEARER_PER_ALLY)
+        self.assertEqual(dopo_robe.get_robe_multiplier(p, p), 1.0)
+
     def test_chance_and_choice(self):
         from combat.weapon import chance_and_choice as cac
         random.seed(11)

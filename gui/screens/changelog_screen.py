@@ -101,6 +101,14 @@ class ChangelogScreen(BaseScreen):
         # Checked by tests/_diag_version_consistency.py.
         self._add_version("v0.1.9.0 — The Family We Choose")
 
+        self._add_section("Blacksmith — Element Stripping")
+        self._add_bullet("The Blacksmith's **Reforge Element** service is now **Strip Element**: "
+                         "the smith **removes a flower slot** from the chosen piece instead of "
+                         "re-rolling it.")
+        self._add_bullet("Stripped flowers are **recovered at 3:1** — every three flowers infused "
+                         "into that slot return **one flower of the same element**. The work is "
+                         "**free**, and a unique's primary element still cannot be stripped.")
+
         self._add_section("Combat & Dungeon Presentation")
         self._add_bullet("Superboss **intro narration** now reveals **three lines at a time** on the "
                          "combat screen — each **Continue** press shows the next page — so the boss "

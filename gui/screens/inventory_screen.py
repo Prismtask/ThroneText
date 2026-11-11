@@ -341,7 +341,7 @@ class InventoryScreen(BaseScreen):
         if load > 0:
             cap = cargo_capacity(self.player)
             cap_text += f"  |  Cargo: {load} wt"
-            cap_text += f"/{cap} wt" if cap > 0 else " wt (no mount)"
+            cap_text += f"/{cap} wt" if cap > 0 else " (no mount)"
         self.styled_label(self.bag_frame, text=cap_text).pack(anchor=tk.W, pady=(4, 8))
 
         # ── Flowers: their own tab with live counts ──────────────────────

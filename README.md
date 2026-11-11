@@ -208,7 +208,7 @@ Each city offers a subset of the following services:
 |---------|-------------|
 | **Shop** | Buy consumables, equipment, and supplies. Stock size and prices vary by city and scale with your highest level or cleared floor. |
 | **Inn** | Rest to restore HP. Cost varies by city; free after a certain hour in some places. |
-| **Blacksmith** | Enhance equipment (+1 to +N) using gold, **reforge an elemental infusion** (re-roll the element, keep its value/tier), or **fuse Scrolls** onto equipment to set its rarity. Prices scale with the item. Charisma and Karma reduce costs. |
+| **Blacksmith** | Enhance equipment (+1 to +N) using gold, **infuse flowers** for elemental traits, **strip an element** (the smith removes it and returns one flower per three invested), or **fuse Scrolls** onto equipment to set its rarity. Prices scale with the item. Charisma and Karma reduce costs. |
 | **Temple** | Receive blessings that buff all attributes (+1 to +3) for 2–5 floors depending on donation tier. Cures curses. |
 | **Guild** | Pick up **bounties** (hunt contracts) and **Ascend** to raise your level cap. Bounties scale with your level and **Karma**. Higher Karma = harder contracts, better rewards. Ranked Bronze → Silver → Gold → Platinum, with a 1–5 star difficulty. Defeat or capture a creature to fill the **Bestiary** — an entry records name, race, level, dungeon, enemy type, full stats, elemental damage/resistances, and a short description. |
 | **Trade Hall** | Buy a **House Deed** (one per player), buy and sell goods, and acquire **mounts** that reduce travel time and encounter danger. |
@@ -450,7 +450,7 @@ A coin, simple in one's eye: **once per damaging action**, a 50/50 flip scales t
 #### Old Dopo Robe — room 75
 Blade-synergy armor. The effect requires the **wearer** to wield a `blade` weapon:
 - Wearer damage **×1.40**.
-- Each **other** blade-wielding ally — active or bench — grants the wearer **+5% damage, uncapped**, and each of those allies deals **×1.15** damage when they act.
+- Each **other** blade-wielder grants the wearer **+5% damage, uncapped**, and each of them deals **×1.15** damage when they act. This counts every recruited ally (active or bench), and the player also counts when an ally wears the robe.
 
 Base: +8 CON, +4 DEX.
 

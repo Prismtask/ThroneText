@@ -1238,39 +1238,51 @@ def apply_infusion(item, element, base_def):
     return True, ""
 
 
-def roll_reforge_element(item, slot_index, rng=random):
-    """Return a new element for one infusion slot without mutating the item.
+# ── Element stripping (blacksmith flower recovery) ──────────────────────────
+def _infusion_value_steps(value, ladder):
+    """Ladder steps a slot's multiplier has advanced through."""
+    return sum(1 for step in ladder if step <= float(value) + 1e-9)
 
-    The new element is never the current one and never duplicates another
-    slot's element (weapons collapse duplicates in their damage dict).
+
+def infusion_flowers_invested(item, slot_index):
+    """How many flowers were worked into one infusion slot.
+
+    Weapons advance one ladder step per flower; armor, accessories and unique
+    flower slots advance one resistance tier per flower (tier 0 = one flower).
+    Dual-profile uniques upgrade both axes on every flower, so the deeper axis
+    answers.
     """
     infusions = item.get("infusions") or []
     if not (0 <= slot_index < len(infusions)):
-        return None
-    current = infusions[slot_index].get("element")
-    used = {inf.get("element") for i, inf in enumerate(infusions) if i != slot_index}
-    if item.get("unique") and item.get("primary_element"):
-        # A unique's primary element is locked and cannot be rolled into a
-        # secondary/tertiary slot.
-        used.add(item.get("primary_element"))
-    candidates = [el for el in FLOWER_ITEMS if el != current and el not in used]
-    return rng.choice(candidates) if candidates else None
+        return 0
+    entry = infusions[slot_index]
+    unique = bool(item.get("unique"))
+    steps = []
+    if entry.get("value") is not None:
+        ladder = WEAPON_SLOT_LADDERS[
+            min(slot_index + (1 if unique else 0), len(WEAPON_SLOT_LADDERS) - 1)]
+        steps.append(_infusion_value_steps(
+            entry.get("value", INFUSION_START), ladder))
+    if entry.get("tier") is not None:
+        steps.append(int(entry.get("tier", 0)) + 1)
+    return max(steps) if steps else 0
 
 
-def apply_reforge_element(item, base_def, slot_index, element):
-    """Set one infusion slot's element and rebuild the item in place."""
+def strip_infusion_slot(item, base_def, slot_index):
+    """Remove one infusion slot and rebuild the instance in place.
+
+    Returns ``(element, flowers_invested)`` or None when the slot does not
+    exist. A unique's authored primary element lives outside ``infusions``
+    and is never stripped; its flower slots are.
+    """
     infusions = [dict(i) for i in (item.get("infusions") or [])]
-    if not (0 <= slot_index < len(infusions)) or element not in FLOWER_ITEMS:
-        return False
-    if item.get("unique") and element == item.get("primary_element"):
-        return False
-    if any(i != slot_index and inf.get("element") == element
-           for i, inf in enumerate(infusions)):
-        return False
-    infusions[slot_index]["element"] = element
+    if not (0 <= slot_index < len(infusions)):
+        return None
+    invested = infusion_flowers_invested(item, slot_index)
+    element = infusions.pop(slot_index).get("element")
     item["infusions"] = infusions
     refresh_infused_instance(item, base_def)
-    return True
+    return element, invested
 
 
 def install_base_forms(items):

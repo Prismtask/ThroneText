@@ -103,8 +103,9 @@ UNIQUE_EFFECTS = {
     ),
     "dopo_robe": (
         "While the wearer wields a blade: the wearer deals ×1.40 damage, +5% "
-        "per blade-wielding ally (all recruited allies count, even benched — "
-        "uncapped); each blade-wielding ally deals ×1.15."
+        "per other blade-wielder — all recruited allies count, even benched, "
+        "and a blade-wielding player also counts when an ally wears the robe "
+        "(uncapped); each other blade-wielder deals ×1.15."
     ),
     "piece_of_relationship": (
         "Tiers by bonded allies (200 affection, active or benched): 2–3 — MC "

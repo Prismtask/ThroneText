@@ -3,9 +3,10 @@
 Blade-synergy aura, live-read at damage time (handles mid-combat ally swaps):
 
 - The whole effect requires the *wearer* to wield a blade.
-- Wearer:   ×1.40 base, +5% per blade-wielding ALLY (all recruited allies,
-            including benched), UNCAPPED.
-- Each blade-wielding ally (excluding the wearer): ×1.15.
+- Wearer:   ×1.40 base, +5% per other blade-wielder, UNCAPPED. All recruited
+            allies count (including benched). When an ALLY wears the robe, a
+            blade-wielding player also counts.
+- Each other blade-wielder (excluding the wearer): ×1.15.
 
 Actor-based: the player or any ally may wear the robe (they become the wearer).
 Wired into the four party damage paths (player basic / skills, ally basic /
@@ -68,8 +69,14 @@ def find_wearer(player):
 
 
 def count_blade_allies(player, wearer):
-    """All recruited allies wielding a blade (incl. benched), excluding wearer."""
+    """All other blade-wielders, excluding the wearer.
+
+    Counts every recruited ally (including benched). When an ally wears the
+    robe, the player also counts if they wield a blade.
+    """
     count = 0
+    if wearer is not player and weapon_is_blade(_weapon_of(player)):
+        count += 1
     for ally in player.get("allies", []):
         if ally is wearer:
             continue

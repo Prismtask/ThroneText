@@ -106,7 +106,7 @@ def item_value_at_rarity(item_or_def, rarity):
 # ── Market index (docs/gold_economy_pacing_design.md §3.1) ────────────────────
 # Sale prices scale with the player's progression. item_value() stays the
 # intrinsic worth; market_value() is the pricing-layer multiplier. Services
-# (fusion, reforge, scroll, enhance) intentionally stay on item_value().
+# (fusion, scroll, enhance) intentionally stay on item_value().
 
 MARKET_INDEX_BANDS = (
     (5, 1.0),
@@ -216,11 +216,6 @@ def fusion_fee(old_item, new_rarity, minimum=150, per_value=50):
     old_value = item_value(old_item)
     new_value = item_value_at_rarity(old_item, new_rarity)
     return max(minimum, int(round(per_value * max(0, new_value - old_value))))
-
-
-def reforge_cost(item):
-    """Gold cost to re-roll one infusion slot (gold economy D2)."""
-    return int(round(40 * item_value(item)))
 
 
 # ── Shared equipment math (enhance/element/rarity consistency) ──────────────

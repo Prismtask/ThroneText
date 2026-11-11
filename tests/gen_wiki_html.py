@@ -453,7 +453,8 @@ def build_equipment_markdown():
     lines += [
         "",
         "Flowers are consumed by blacksmith services: **1 per infusion**, **1 per Forge "
-        "Commission**, and **3 → 1** element transmutation.",
+        "Commission**, and **3 → 1** element transmutation. Stripping an element returns "
+        "**1 flower per 3** that were infused into that slot.",
         "",
         "## Sources",
         "",
@@ -477,6 +478,8 @@ def build_equipment_markdown():
         "+ element source. |",
         "| Infuse Element (blacksmith) | — | Consumes 1 per infusion | Same element upgrades the "
         "slot; a new element fills the next (caps 1.48 / 1.20 / 1.15). |",
+        "| Strip Element (blacksmith) | — | Refunds floor(flowers / 3) of the stripped element "
+        "| Removes one flower slot; no gold fee. |",
         "| Transmute Flowers (blacksmith) | — | 3 → 1 of another element | No gold fee; fixes "
         "element-locked farming streaks. |",
         "",
